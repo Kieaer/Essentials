@@ -2,6 +2,7 @@ package essentials
 
 import arc.ApplicationListener
 import arc.Core
+import arc.Events
 import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Http
@@ -20,6 +21,8 @@ import java.io.*
 import java.net.ServerSocket
 import java.net.SocketException
 import java.net.URL
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -31,6 +34,10 @@ class Main: Plugin() {
         val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         val daemon : ExecutorService = Executors.newCachedThreadPool()
         var connectType = false
+
+        fun currentTime() : String {
+            return LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd a HH:mm:ss"))
+        }
     }
 
     var webServer = WebServer()
@@ -190,7 +197,8 @@ class Main: Plugin() {
             fooArray.forEach {
                 Vars.netServer.addPacketHandler(it) { packet, _ ->
                     packet.kick(Bundle(packet.locale)["event.antigrief.foo"])
-                    Log.info(Bundle()["event.antigrief.foo.log"])
+                    Log.info(Bundle()["event.antigrief.foo.log", packet.plainName(), "Packet"])
+                    Events.fire(CustomEvents.PlayerBanned(packet.plainName(), packet.uuid(), currentTime(), "foo"))
                 }
             }
         }

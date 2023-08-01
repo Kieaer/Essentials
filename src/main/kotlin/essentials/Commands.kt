@@ -20,6 +20,7 @@ import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
 import essentials.Event.worldHistory
+import essentials.Main.Companion.currentTime
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
@@ -1529,6 +1530,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         result.add(database[it.id])
                     }
                 } else {
+                    val ips = netServer.admins.findByIPs(arg[0])
+                    if (!ips.isEmpty) {
+
+                    }
                     result.add(database[arg[0]])
                 }
             } else {
@@ -1870,7 +1875,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 json.removeAll { a -> a.asObject().get("id").asString() == target.first().id }
                 Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
-                Events.fire(PlayerUnbanned(player.plainName(), target.first().lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd a HH:mm:ss"))))
+                Events.fire(PlayerUnbanned(player.plainName(), target.first().lastName, currentTime()))
             } else {
                 err("player.not.found")
             }
@@ -2026,12 +2031,16 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     }
                                 }
 
-                                Event.voteType = "map"
-                                Event.voteMap = target
-                                Event.voteReason = arg[2]
-                                Event.voteStarter = player
-                                Event.voting = true
-                                sendStart("command.vote.map.start", target.name(), arg[2])
+                                if (target != null) {
+                                    Event.voteType = "map"
+                                    Event.voteMap = target
+                                    Event.voteReason = arg[2]
+                                    Event.voteStarter = player
+                                    Event.voting = true
+                                    sendStart("command.vote.map.start", target.name(), arg[2])
+                                } else {
+                                    err("command.vote.map.not.exists")
+                                }
                             } catch (e : IndexOutOfBoundsException) {
                                 err("command.vote.map.not.exists")
                             }
@@ -2087,7 +2096,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     "back" -> {
                         if (!Permission.check(player, "vote.back")) return
                         if (!saveDirectory.child("rollback.msav").exists()) {
-                            player.sendMessage("command.vote.back.no.file")
+                            err("command.vote.back.no.file")
                             return
                         }
                         if (arg.size == 1) {
