@@ -37,6 +37,7 @@ import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import mindustry.ui.Menus
 import mindustry.world.Tile
+import mindustry.world.blocks.ConstructBlock.ConstructBuild
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.Stringify
@@ -83,7 +84,7 @@ object Event {
     var voteTeam : Team = state.rules.defaultTeam
     var voteCooltime : Int = 0
     var voted = Seq<String>()
-    var lastVoted = LocalTime.now()
+    var lastVoted : LocalTime? = LocalTime.now()
     var isAdminVote = false
     var isCanceled = false
 
@@ -106,21 +107,29 @@ object Event {
     val offlinePlayers = Seq<DB.PlayerData>()
 
     private val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
-    private val blockSelectRegex : Pattern = Pattern.compile(".*build.*")
+    private val blockSelectRegex : Pattern = Pattern.compile("^build\\d{1,2}\$")
     private val nameRegex : Pattern = Pattern.compile("(.*\\[.*].*)|　|^(.*\\s+.*)+\$")
 
     fun register() {
+        fun checkValidBlock(tile : Tile) : String {
+            return if (tile.build != null && blockSelectRegex.matcher(tile.block().name).matches()) {
+                (tile.build as ConstructBuild).current.name
+            } else {
+                tile.block().name
+            }
+        }
+
         Events.on(WithdrawEvent::class.java) {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(LogType.WithDraw, Bundle()["log.withdraw", it.player.plainName(), it.player.unit().item().name, it.amount, it.tile.block.name, it.tile.tileX(), it.tile.tileY()])
-                addLog(TileLog(System.currentTimeMillis(), it.player.name, "withdraw", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team, it.tile.config()))
+                addLog(TileLog(System.currentTimeMillis(), it.player.name, "withdraw", it.tile.tile.x, it.tile.tile.y, checkValidBlock(it.tile.tile), it.tile.rotation, it.tile.team, it.tile.config()))
             }
         }
 
         Events.on(DepositEvent::class.java) {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
-                log(LogType.Deposit, Bundle()["log.deposit", it.player.plainName(), it.player.unit().item().name, it.amount, it.tile.block.name, it.tile.tileX(), it.tile.tileY()])
-                addLog(TileLog(System.currentTimeMillis(), it.player.name, "deposit", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team, it.tile.config()))
+                log(LogType.Deposit, Bundle()["log.deposit", it.player.plainName(), it.player.unit().item().name, it.amount, checkValidBlock(it.tile.tile), it.tile.tileX(), it.tile.tileY()])
+                addLog(TileLog(System.currentTimeMillis(), it.player.name, "deposit", it.tile.tile.x, it.tile.tile.y, checkValidBlock(it.tile.tile), it.tile.rotation, it.tile.team, it.tile.config()))
             }
         }
 
@@ -143,13 +152,13 @@ object Event {
                     }
                 }
 
-                addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, it.tile.block().name, it.tile.rotation, it.tile.team, it.value))
+                addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, checkValidBlock(it.tile.tile), it.tile.rotation, it.tile.team, it.value))
             }
         }
 
         Events.on(TapEvent::class.java) {
-            log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), it.tile.block().name])
-            addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, it.tile.block().name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, null))
+            log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), checkValidBlock(it.tile)])
+            addLog(TileLog(System.currentTimeMillis(), it.player.name, "tap", it.tile.x, it.tile.y, checkValidBlock(it.tile), if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, null))
             val data = findPlayerData(it.player.uuid())
             if (data != null) {
                 PluginData.warpBlocks.forEach { two ->
@@ -315,7 +324,7 @@ object Event {
             content.blocks().each { two ->
                 var buf = 0
                 two.requirements.forEach { item ->
-                    buf = +item.amount
+                    buf += item.amount
                 }
                 blockExp.put(two.name, buf)
             }
@@ -490,26 +499,26 @@ object Event {
                 if (!player.unit().isNull && target != null && it.tile.block() != null && player.unit().buildPlan() != null) {
                     val block = it.tile.block()
                     if (!it.breaking) {
-                        log(LogType.Block, Bundle()["log.block.place", target.name, block.name, it.tile.x, it.tile.y])
-                        addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, it.tile.block().name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
+                        log(LogType.Block, Bundle()["log.block.place", target.name, checkValidBlock(it.tile), it.tile.x, it.tile.y])
+                        addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, checkValidBlock(it.tile), if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
 
                         if (!state.rules.infiniteResources) {
                             target.blockPlaceCount++
-                            target.exp = target.exp + blockExp.get(block.name)
-                            target.currentExp = target.currentExp + blockExp.get(block.name)
+                            target.exp += blockExp.get(block.name)
+                            target.currentExp += blockExp.get(block.name)
                         }
 
                         if (isDebug) {
                             Log.info("${player.name} placed ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
                         }
                     } else if (it.breaking) {
-                        log(LogType.Block, Bundle()["log.block.break", target.name, block.name, it.tile.x, it.tile.y])
-                        addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, player.unit().buildPlan().block.name, if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
+                        log(LogType.Block, Bundle()["log.block.break", target.name, checkValidBlock(it.tile), it.tile.x, it.tile.y])
+                        addLog(TileLog(System.currentTimeMillis(), target.name, "break", it.tile.x, it.tile.y, checkValidBlock(player.unit().buildPlan().tile()), if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
 
                         if (!state.rules.infiniteResources) {
                             target.blockBreakCount++
-                            target.exp = target.exp - blockExp.get(player.unit().buildPlan().block.name)
-                            target.currentExp = target.currentExp - blockExp.get(player.unit().buildPlan().block.name)
+                            target.exp -= blockExp.get(player.unit().buildPlan().block.name)
+                            target.currentExp -= blockExp.get(player.unit().buildPlan().block.name)
                         }
                     }
                 }
@@ -517,8 +526,9 @@ object Event {
         }
 
         Events.on(BuildSelectEvent::class.java) {
-            if (it.builder is Playerc && it.builder.buildPlan() != null && !blockSelectRegex.matcher(it.builder.buildPlan().block.name).matches() && it.tile.block() !== Blocks.air && it.breaking) {
-                log(LogType.Block, Bundle()["log.block.remove", (it.builder as Playerc).plainName(), it.tile.block().name, it.tile.x, it.tile.y])
+            if (it.builder is Playerc && it.builder.buildPlan() != null && it.tile.block() !== Blocks.air && it.breaking) {
+                log(LogType.Block, Bundle()["log.block.remove", (it.builder as Playerc).plainName(), checkValidBlock(it.tile), it.tile.x, it.tile.y])
+                addLog(TileLog(System.currentTimeMillis(), (it.builder as Playerc).plainName(), "select", it.tile.x, it.tile.y, checkValidBlock(player.unit().buildPlan().tile()), if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.tile.build.config()))
             }
         }
 
@@ -732,7 +742,6 @@ object Event {
                     }
                 }
             } else {
-                // 닉네임이 블랙리스트에 등록되어 있는지 확인
                 PluginData.blacklist.forEach { pattern ->
                     if (pattern.matcher(it.packet.name).matches()) {
                         it.connection.kick(Bundle(it.packet.locale)["event.player.name.blacklisted"], 0L)
@@ -872,7 +881,7 @@ object Event {
         var messageCount = Config.messageTime
         var messageOrder = 0
 
-        data class effectData(val x : Float, val y : Float, val rotate : Float, val effectLevel : Int?, val level : Int, val color : Color)
+        data class EffectData(val x : Float, val y : Float, val rotate : Float, val effectLevel : Int?, val level : Int, val color : Color)
 
         Core.app.addListener(object: ApplicationListener {
             override fun update() {
@@ -896,7 +905,7 @@ object Event {
                                 val bundle = Bundle(it.languageTag)
                                 val message = bundle["event.exp.earn.defeat", it.currentExp + score]
 
-                                it.exp = it.exp + ((score * it.expMultiplier).toInt())
+                                it.exp += ((score * it.expMultiplier).toInt())
                                 it.player.sendMessage(message)
                             }
                         }
@@ -949,7 +958,7 @@ object Event {
 
                     if (Config.moveEffects) {
                         if (milsCount == 5) {
-                            val effectList = Seq<effectData>()
+                            val effectList = Seq<EffectData>()
 
                             database.players.forEach {
                                 if (it.player.unit() != null && it.player.unit().health > 0f) {
@@ -971,7 +980,7 @@ object Event {
                                         }
                                     }
 
-                                    effectList.add(effectData(it.player.x, it.player.y, it.player.unit().rotation, it.effectLevel, it.level, color))
+                                    effectList.add(EffectData(it.player.x, it.player.y, it.player.unit().rotation, it.effectLevel, it.level, color))
                                 }
                             }
 
@@ -1068,8 +1077,8 @@ object Event {
                             }
 
                             val randomResult = (random.nextInt(7) * it.expMultiplier).toInt()
-                            it.exp = it.exp + randomResult
-                            it.currentExp = it.currentExp + randomResult
+                            it.exp += randomResult
+                            it.currentExp += randomResult
                             Commands.Exp[it]
 
                             if (Config.expDisplay) {
@@ -1205,7 +1214,7 @@ object Event {
                                         }
 
                                         "random" -> {
-                                            if (lastVoted.plusMinutes(10).isBefore(LocalTime.now())) {
+                                            if (lastVoted!!.plusMinutes(10).isBefore(LocalTime.now())) {
                                                 send("command.vote.random.cool")
                                             } else {
                                                 if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 420)
@@ -1240,10 +1249,10 @@ object Event {
                                                             Groups.build.each {
                                                                 if (voteStarter != null) {
                                                                     if (it.team == voteStarter!!.team()) {
-                                                                        it.block.health = it.block.health / 2
+                                                                        it.block.health /= 2
                                                                     }
                                                                 } else {
-                                                                    it.block.health = it.block.health / 2
+                                                                    it.block.health /= 2
                                                                 }
                                                             }
                                                             Groups.player.forEach {
@@ -1289,7 +1298,7 @@ object Event {
                                                                         it.health(it.health() - 10f)
                                                                     }
                                                                     Groups.build.each {
-                                                                        it.block.health = it.block.health / 30
+                                                                        it.block.health /= 30
                                                                     }
                                                                 }
                                                                 if (tick == 300) {
@@ -1371,7 +1380,7 @@ object Event {
                                             json.removeAll { a -> a.asObject().get("id").asString() == uuid }
                                             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
-                                            DB.Player.update({ DB.Player.uuid eq uuid }) { it ->
+                                            DB.Player.update({ DB.Player.uuid eq uuid }) {
                                                 it[DB.Player.banTime] = null
                                             }
                                             Events.fire(PlayerTempUnbanned(name))
@@ -1592,7 +1601,7 @@ object Event {
                 0
             }
 
-            target.exp = target.exp + ((score * target.expMultiplier).toInt())
+            target.exp += ((score * target.expMultiplier).toInt())
             result = target.currentExp + score
 
             Commands.Exp[target]
