@@ -20,6 +20,7 @@ import essentials.CustomEvents.PlayerTempBanned
 import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
+import essentials.Event.resetVote
 import essentials.Event.worldHistory
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
@@ -2127,6 +2128,12 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         } else {
                             err("command.vote.cooltime")
                         }
+                    }
+
+                    "reset" -> {
+                        if (!Permission.check(player, "vote.reset")) return
+                        resetVote()
+                        send("command.vote.reset")
                     }
 
                     else -> {

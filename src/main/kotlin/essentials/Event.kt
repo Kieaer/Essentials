@@ -1634,7 +1634,7 @@ object Event {
         }
     }
 
-    private fun resetVote() {
+    fun resetVote() {
         voting = false
         voteType = null
         voteTarget = null
