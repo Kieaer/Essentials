@@ -9,6 +9,7 @@ import arc.util.Http
 import arc.util.Log
 import essentials.Permission.bundle
 import mindustry.Vars
+import mindustry.Vars.netServer
 import mindustry.game.Team
 import mindustry.mod.Plugin
 import mindustry.net.Administration
@@ -234,7 +235,7 @@ class Main: Plugin() {
 
         if (!Fi(Config.banList).exists()) {
             val data = JsonArray()
-            Vars.netServer.admins.banned.forEach {
+            netServer.admins.banned.forEach {
                 val json = JsonObject()
                 json.add("id", it.id)
 
@@ -253,11 +254,20 @@ class Main: Plugin() {
             }
 
             Fi(Config.banList).writeString(data.toString(Stringify.HJSON))
+        } else {
+            netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
+            for (bans in JsonArray.readHjson(Fi(Config.banList).readString()).asArray()) {
+                val data = bans.asObject()
+                val id = data.get("id").asString()
+                val ips = data.get("ip").asArray()
+                netServer.admins.banPlayer(id)
+                for (ip in ips) {
+                    netServer.admins.banPlayerIP(ip.asString())
+                }
+            }
+
+            netServer.admins.save()
         }
-
-
-        Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
-        Vars.netServer.admins.save()
 
         Log.info(Bundle()["event.plugin.loaded"])
     }

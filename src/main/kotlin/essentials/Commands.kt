@@ -15,12 +15,12 @@ import arc.util.Strings
 import arc.util.Threads.sleep
 import arc.util.Tmp
 import com.github.lalyos.jfiglet.FigletFont
-import essentials.CustomEvents.*
+import essentials.CustomEvents.PlayerNameChanged
+import essentials.CustomEvents.PlayerTempBanned
 import essentials.Event.findPlayerData
 import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
 import essentials.Event.worldHistory
-import essentials.Main.Companion.currentTime
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
@@ -83,6 +83,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 }
             }
 
+            // todo clear ban list
+            /*Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
+            Vars.netServer.admins.save()
+            */
             handler.register("broadcast", "<text...>", "Broadcast message to all servers") { a, p : Playerc -> Client(a, p).broadcast() }
             handler.register("changemap", "<name> [gamemode]", "Change the world or gamemode immediately.") { a, p : Playerc -> Client(a, p).changemap() }
             handler.register("changename", "<new_name> [player]", "Change player name.") { a, p : Playerc -> Client(a, p).changename() }
@@ -135,7 +139,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("tp", "<player>", "Teleport to other players") { a, p : Playerc -> Client(a, p).tp() }
             handler.register("tpp", "[player]", "Lock on camera the target player.") { a, p : Playerc -> Client(a, p).tpp() }
             handler.register("track", "Displays the mouse positions of players.") { a, p : Playerc -> Client(a, p).track() }
-            handler.register("unban", "<uuid>", "Unban player") { a, p : Playerc -> Client(a, p).unban() }
+            handler.register("unban", "<uuid/ip>", "Unban player") { a, p : Playerc -> Client(a, p).unban() }
             handler.register("unmute", "<player>", "Unmute player") { a, p : Playerc -> Client(a, p).unmute() }
             handler.register("url", "<command>", "Opens a URL contained in a specific command.") { a, p : Playerc -> Client(a, p).url() }
             handler.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Adds a weather effect to the map.") { a, p : Playerc -> Client(a, p).weather() }
@@ -1869,15 +1873,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun unban() {
             if (!Permission.check(player, "unban")) return
-            val target = netServer.admins.findByName(arg[0])
-            if (target != null) {
-                val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-                json.removeAll { a -> a.asObject().get("id").asString() == target.first().id }
-                Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
-
-                Events.fire(PlayerUnbanned(player.plainName(), target.first().lastName, currentTime()))
+            if (!netServer.admins.unbanPlayerID(arg[0])) {
+                if (!netServer.admins.unbanPlayerIP(arg[0])) {
+                    err("player.not.found")
+                } else {
+                    send("command.unban.ip", arg[0])
+                }
             } else {
-                err("player.not.found")
+                send("command.unban.id", arg[0])
             }
         }
 

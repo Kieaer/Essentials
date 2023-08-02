@@ -18,6 +18,7 @@ import com.github.pemistahl.lingua.api.Language
 import com.github.pemistahl.lingua.api.LanguageDetector
 import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essentials.CustomEvents.*
+import essentials.Main.Companion.currentTime
 import essentials.Main.Companion.database
 import mindustry.Vars.*
 import mindustry.content.*
@@ -625,9 +626,6 @@ object Event {
 
             Fi(Config.banList).writeString(JsonArray.readHjson(Fi(Config.banList).readString()).asArray().add(json).toString(Stringify.HJSON))
 
-            netServer.admins.playerInfo.values().forEach(Consumer { info : PlayerInfo -> info.banned = false })
-            netServer.admins.save()
-
             if (!ips.isEmpty && !names.isEmpty) {
                 log(LogType.Player, Bundle()["log.player.banned", names.first(), ips.first()])
             }
@@ -646,7 +644,22 @@ object Event {
             json.removeAll { a -> a.asObject().get("id").asString() == it.uuid }
             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
-            Events.fire(PlayerUnbanned("Console", netServer.admins.getInfo(it.uuid).lastName, LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
+            Events.fire(PlayerUnbanned(netServer.admins.getInfo(it.uuid).lastName, currentTime()))
+        }
+
+        Events.on(PlayerIpUnbanEvent::class.java) {
+            if (Config.blockIP) {
+                val os = System.getProperty("os.name").lowercase(Locale.getDefault())
+                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                    Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s ${it.ip} -j DROP"))
+                }
+            }
+
+            val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
+            json.removeAll { a -> a.asObject().get("ip").asString() == it.ip }
+            Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
+
+            Events.fire(PlayerUnbanned(netServer.admins.findByIP(it.ip).lastName, currentTime()))
         }
 
         Events.on(WorldLoadEvent::class.java) {

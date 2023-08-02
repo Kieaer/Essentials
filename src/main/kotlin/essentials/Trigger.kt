@@ -456,7 +456,7 @@ object Trigger {
                     }
 
                     if (Config.countAllServers) {
-                        Core.settings.put("totalPlayers", total + database.players.size)
+                        Core.settings.put("totalPlayers", total + Groups.player.size())
                         Core.settings.saveValues()
                     }
 
