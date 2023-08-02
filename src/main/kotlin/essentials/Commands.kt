@@ -2016,19 +2016,21 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         }
                         if (arg[1].toIntOrNull() != null) {
                             try {
-                                var target = maps.all().find { e -> e.name().contains(arg[1]) }
+                                var target : Map? = null
+                                val list = maps.all().sortedBy { a -> a.name() }
+                                val arr = ObjectMap<Map, Int>()
+                                list.forEachIndexed { index, map ->
+                                    arr.put(map, index)
+                                }
+                                arr.forEach {
+                                    if (it.value == arg[1].toInt()) {
+                                        target = it.key
+                                        return@forEach
+                                    }
+                                }
+
                                 if (target == null) {
-                                    val list = maps.all().sortedBy { a -> a.name() }
-                                    val arr = ObjectMap<Map, Int>()
-                                    list.forEachIndexed { index, map ->
-                                        arr.put(map, index)
-                                    }
-                                    arr.forEach {
-                                        if (it.value == arg[1].toInt()) {
-                                            target = it.key
-                                            return@forEach
-                                        }
-                                    }
+                                    maps.all().find { e -> e.name().contains(arg[1]) }
                                 }
 
                                 if (target != null) {
@@ -2037,7 +2039,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     Event.voteReason = arg[2]
                                     Event.voteStarter = player
                                     Event.voting = true
-                                    sendStart("command.vote.map.start", target.name(), arg[2])
+                                    sendStart("command.vote.map.start", target!!.name(), arg[2])
                                 } else {
                                     err("command.vote.map.not.exists")
                                 }
