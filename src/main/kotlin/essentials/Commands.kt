@@ -272,7 +272,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if (world != null) {
                 fun convert(text : String) : Array<String>? {
                     return try {
-                        val art = FigletFont.convertOneLine(Main::class.java.classLoader.getResourceAsStream("5x7.flf"), text)
+                        val art = FigletFont.convertOneLine(Main::class.java.classLoader.getResourceAsStream("6x10.flf"), text)
                         art.split("\n").toTypedArray()
                     } catch (e : ArrayIndexOutOfBoundsException) {
                         null
