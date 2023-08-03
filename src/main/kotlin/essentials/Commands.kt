@@ -43,11 +43,6 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
-import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.JDABuilder
-import net.dv8tion.jda.api.events.message.MessageReceivedEvent
-import net.dv8tion.jda.api.hooks.ListenerAdapter
-import net.dv8tion.jda.api.requests.GatewayIntent
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
@@ -318,16 +313,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         fun discord() {
             if (!Permission.check(player, "discord")) return
             if (Config.discordURL.isNotEmpty()) Call.openURI(player.con(), Config.discordURL)
-            if (data.discord == null) {
-                val number = if (Discord.pin.containsKey(player.uuid())) {
-                    Discord.pin.get(player.uuid())
-                } else {
-                    Discord.queue(player)
-                }
-                send("command.discord.pin", number.toString().replace(",", ""))
-            } else {
-                send("command.discord.already")
-            }
+            Events.fire(CustomEvents.DiscordURLOpen(data))
         }
 
         fun dps() {
@@ -2440,116 +2426,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val level = calculateLevel(xp.toDouble())
             target.level = level
             return "$xp (${floor(levelXp.toDouble()).toInt()}) / ${floor(max.toDouble()).toInt()}"
-        }
-    }
-
-    object Discord: ListenerAdapter() {
-        val pin : ObjectMap<String, Int> = ObjectMap()
-        var jda : JDA? = null
-
-        fun start() {
-            if (Config.botToken.isNotEmpty()) {
-                jda = JDABuilder.createDefault(Config.botToken).enableIntents(GatewayIntent.MESSAGE_CONTENT).build()
-                jda!!.awaitReady()
-                jda!!.addEventListener(this)
-            }
-        }
-
-        override fun onMessageReceived(event : MessageReceivedEvent) {
-            if (event.channel.id == Config.channelToken && !event.author.isBot) {
-                if (event.message.contentStripped.toIntOrNull() != null) {
-                    if (pin.containsValue(event.message.contentStripped, true)) {
-                        val data = database[pin.findKey(event.message.contentStripped.toInt(), true)]
-                        data?.discord = event.author.id
-                        pin.remove(pin.findKey(event.message.contentStripped.toInt(), true))
-                        event.message.reply(Bundle()["event.discord.auth.success"]).queue()
-                    } else {
-
-                    }
-                } else if (Core.settings.getInt("port") == port) {
-                    with(event.message.contentStripped) {
-                        when {
-                            this.equals("!help", true) -> {
-                                val message = """
-                                    ``!help`` ${Bundle()["event.discord.help.help"]}
-                                    ``!ping`` ${Bundle()["event.discord.help.ping"]}
-                                """.trimIndent()
-                                event.message.reply(message).queue {
-                                    sleep(7000)
-                                    it.delete()
-                                }
-                            }
-
-                            this.equals("!ping", true) -> {
-                                val start = System.currentTimeMillis()
-                                event.message.reply("pong!").queue { ping ->
-                                    val end = System.currentTimeMillis()
-                                    ping.editMessage("pong! (" + (end - start) + "ms).")
-                                    sleep(5000)
-                                    ping.delete()
-                                }
-                            }
-
-                            this.startsWith("!auth", true) -> {
-                                val arg = event.message.contentStripped.replace("!auth ", "").split(" ")
-                                if (arg.size == 1) {
-                                    try {
-                                        if (database.getAll().find { it.discord != null && it.discord == event.message.author.id } == null) {
-                                            var data : DB.PlayerData? = null
-                                            for (a in pin) {
-                                                if (a.value == arg[0].toInt()) {
-                                                    data = database.getAll().find { b -> b.name == a.key }
-                                                }
-                                            }
-
-                                            if (data != null) {
-                                                data.discord = event.message.author.id
-                                                event.message.reply(Bundle()["event.discord.auth.success"]).queue {
-                                                    sleep(5000)
-                                                    it.delete()
-                                                }
-                                                pin.removeAll { a -> a.value == arg[0].toInt() }
-                                            } else {
-                                                event.message.reply(Bundle()["event.discord.auth.not-found"]).queue {
-                                                    sleep(5000)
-                                                    it.delete()
-                                                }
-                                            }
-                                        } else {
-                                            event.message.reply(Bundle()["event.discord.auth.already-exists"]).queue {
-                                                sleep(5000)
-                                                it.delete()
-                                            }
-                                        }
-                                    } catch (e : Exception) {
-                                        event.message.reply(Bundle()["event.discord.auth.pin.invalid"]).queue {
-                                            sleep(5000)
-                                            it.delete()
-                                        }
-                                    }
-                                } else {
-                                    event.message.reply(Bundle()["event.discord.auth.usage"]).queue {
-                                        sleep(5000)
-                                        it.delete()
-                                    }
-                                }
-                            }
-
-                            else -> {}
-                        }
-                    }
-                }
-            }
-        }
-
-        fun queue(player : Playerc) : Int {
-            val number = (Math.random() * 9999).toInt()
-            pin.put(player.uuid(), number)
-            return number
-        }
-
-        fun shutdownNow() {
-            jda?.shutdown()
         }
     }
 }

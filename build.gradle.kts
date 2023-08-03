@@ -32,9 +32,6 @@ dependencies {
 
     implementation("com.github.PersonTheCat:hjson-java:3.0.0-C11")
     implementation("de.svenkubiak:jBCrypt:0.4.3")
-    implementation("net.dv8tion:JDA:5.0.0-beta.10") {
-        exclude("opus-java")
-    }
 
     //implementation("com.github.gimlet2:kottpd:0.2.1")
     implementation("org.apache.maven:maven-artifact:4.0.0-alpha-3")

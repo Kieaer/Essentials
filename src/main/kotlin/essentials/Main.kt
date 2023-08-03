@@ -136,7 +136,6 @@ class Main: Plugin() {
         daemon.submit(if (isPortOpen) Trigger.Server else Trigger.Client)
         if (Config.webServer) webServer.start()
         connectType = isPortOpen
-        if (Config.botToken.isNotEmpty() && Config.channelToken.isNotEmpty()) Commands.Discord.start()
 
         if (Config.update) {
             Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest").timeout(1000).error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }.submit {
@@ -224,7 +223,6 @@ class Main: Plugin() {
                     Trigger.Client.send("exit")
                 }
                 daemon.shutdownNow()
-                Commands.Discord.shutdownNow()
                 Permission.sort()
                 Config.save()
                 database.close()

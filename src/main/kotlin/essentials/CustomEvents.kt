@@ -8,4 +8,5 @@ class CustomEvents {
     class PlayerUnbanned(val name : String, val date : String)
     class PlayerBanned(val name : String, val uuid : String, val date : String, val reason : String)
     class PlayerNameChanged(val oldName : String, val newName : String, val uuid : String)
+    class DiscordURLOpen(val data : DB.PlayerData)
 }

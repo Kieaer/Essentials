@@ -64,10 +64,7 @@ object Config {
 
     var shareBanListServer = "127.0.0.1"
 
-    var botToken = ""
-    var channelToken = ""
     var discordURL = ""
-    var banChannelToken = ""
 
     private var configVersion = 19
 
@@ -164,10 +161,7 @@ object Config {
         security.add("blockNewUser", blockNewUser, bundle["config.blocknewuser"])
 
         val discord = JsonObject()
-        discord.add("botToken", botToken, bundle["config.discord.token"])
-        discord.add("channelToken", channelToken, bundle["config.discord.channel"])
         discord.add("discordURL", discordURL, bundle["config.discord.url"])
-        discord.add("banChannelToken", banChannelToken, bundle["config.discord.ban"])
 
         obj.setComment(bundle["config.detail", "https://github.com/Kieaer/Essentials/wiki/Config-detail-information"])
         obj.add("plugin", plugin)
@@ -233,10 +227,7 @@ object Config {
         allowMobile = security.getBoolean("allowMobile", allowMobile)
         blockNewUser = security.getBoolean("blockNewUser", blockNewUser)
 
-        botToken = discord.getString("botToken", botToken)
-        channelToken = discord.getString("channelToken", channelToken)
         discordURL = discord.getString("discordURL", discordURL)
-        banChannelToken = discord.getString("banChannelToken", banChannelToken)
 
         if (chatlimit) {
             if (!allowLanguageRegex.matcher(chatlanguage).matches()) {
