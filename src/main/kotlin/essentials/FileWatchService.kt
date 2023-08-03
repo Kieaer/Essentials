@@ -3,9 +3,13 @@ package essentials
 import arc.Core
 import arc.files.Fi
 import arc.util.Log
+import mindustry.Vars
+import mindustry.net.Administration
+import org.hjson.JsonArray
 import org.hjson.ParseException
 import java.io.IOException
 import java.nio.file.*
+import java.util.function.Consumer
 
 object FileWatchService: Runnable {
     private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
@@ -35,6 +39,19 @@ object FileWatchService: Runnable {
                         } else if (paths == "config.txt") {
                             Config.load()
                             Log.info(Bundle()["config.reloaded"])
+                        } else if (paths == "ban.txt") {
+                            Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
+                            for (bans in JsonArray.readHjson(Fi(Config.banList).readString()).asArray()) {
+                                val data = bans.asObject()
+                                val id = data.get("id").asString()
+                                val ips = data.get("ip").asArray()
+                                Vars.netServer.admins.playerInfo.values().find { a -> a.id == id }?.banned = true
+                                for (ip in ips) {
+                                    Vars.netServer.admins.playerInfo.values().find { a -> a.lastIP == ip.asString() }?.banned = true
+                                }
+                            }
+
+                            Vars.netServer.admins.save()
                         }
                     }
                 }

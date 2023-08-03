@@ -257,9 +257,9 @@ class Main: Plugin() {
                 val data = bans.asObject()
                 val id = data.get("id").asString()
                 val ips = data.get("ip").asArray()
-                netServer.admins.banPlayer(id)
+                netServer.admins.playerInfo.values().find { a -> a.id == id }?.banned = true
                 for (ip in ips) {
-                    netServer.admins.banPlayerIP(ip.asString())
+                    netServer.admins.playerInfo.values().find { a -> a.lastIP == ip.asString() }?.banned = true
                 }
             }
 
