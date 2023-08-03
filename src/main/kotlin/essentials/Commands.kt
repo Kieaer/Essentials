@@ -285,7 +285,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 if (text != null) {
                     for (line in text) {
                         for (char in line) {
-                            if (char == '#') {
+                            if (char == '#' && world.tile(x, y).passable()) {
                                 Call.setTile(world.tile(x, y), Blocks.scrapWall, Team.sharded, 0)
                             }
                             x++
