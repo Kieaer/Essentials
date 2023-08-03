@@ -1526,9 +1526,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             val result = ArrayList<DB.PlayerData?>()
-            val data = findPlayers(arg[0])
+            val target = findPlayers(arg[0])
 
-            if (data == null) {
+            if (target == null) {
                 val e = netServer.admins.findByName(arg[0])
                 if (e.size > 0) {
                     e.forEach {
@@ -1536,17 +1536,23 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 } else {
                     val ips = netServer.admins.findByIPs(arg[0])
-                    if (!ips.isEmpty) {
-
+                    for (a in ips) {
+                        if (a.id != null) result.add(database[a.id])
                     }
-                    result.add(database[arg[0]])
                 }
             } else {
-                result.add(database[data.uuid()])
+                result.add(database[target.uuid()])
             }
 
-            if (result.size > 0) {
-                result.forEach {
+            val prebuilt = Seq<Pair<String, Array<Array<String>>>>()
+            val buffer = Mathf.ceil(result.size.toFloat() / 6)
+            val pages = if (buffer > 1.0) buffer - 1 else 0
+            val title = bundle["command.search.title"]
+
+            for (page in 0..pages) {
+                val build = StringBuilder()
+                for (a in 6 * page until (6 * (page + 1)).coerceAtMost(result.size)) {
+                    val it = result[a]
                     if (it != null) {
                         val texts = """
                         ${bundle["command.info.name"]}: ${it.name}
@@ -1569,11 +1575,45 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.mute"]}: ${it.mute}
                         ${bundle["command.info.status"]}: ${it.status}
                         """.trimIndent()
-                        player.sendMessage(texts)
+                        build.append(texts)
                     }
                 }
-                send("command.search.total", result.size) // todo 메뉴 형식으로 바꾸기
+
+                val options = arrayOf(
+                    arrayOf("<-", bundle["command.maps.page", page, pages], "->"),
+                    arrayOf(bundle["command.maps.close"])
+                )
+
+                prebuilt.add(Pair(build.toString(), options))
             }
+
+            data.status.put("page", "0")
+
+            var mainMenu = 0
+            mainMenu = Menus.registerMenu { player, select ->
+                var page = data.status.get("page").toInt()
+                when (select) {
+                    0 -> {
+                        if (page != 0) page--
+                        Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
+                    }
+
+                    1 -> {
+                        Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
+                    }
+
+                    2 -> {
+                        if (page != pages) page++
+                        Call.menu(player.con(), mainMenu, title, prebuilt.get(page).first, prebuilt.get(page).second)
+                    }
+
+                    else -> {
+                        data.status.remove("page")
+                    }
+                }
+                data.status.put("page", page.toString())
+            }
+            Call.menu(player.con(), mainMenu, title, prebuilt.get(0).first, prebuilt.get(0).second)
         }
 
         fun setitem() {
