@@ -104,7 +104,7 @@ object Event {
     var dpsTile : Tile? = null
     var maxdps = 0f
     var unitLimitMessageCooldown = 0
-    val offlinePlayers = Seq<DB.PlayerData>()
+    var offlinePlayers = Seq<DB.PlayerData>()
 
     private val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
     private val blockSelectRegex : Pattern = Pattern.compile("^build\\d{1,2}\$")
@@ -479,6 +479,7 @@ object Event {
                 }
             }
             if (voting && voteType == "gg") resetVote()
+            offlinePlayers = Seq()
             worldHistory = Seq()
             pvpSpectors = Seq()
             pvpPlayer = ObjectMap()

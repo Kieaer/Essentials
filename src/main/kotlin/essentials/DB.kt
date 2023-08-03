@@ -19,7 +19,9 @@ import java.io.FileOutputStream
 import java.net.URL
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class DB {
     val players : Seq<PlayerData> = Seq()
@@ -27,6 +29,13 @@ class DB {
     lateinit var db : Database
     var dbServer : Server? = null
     var dbVersion = 2
+
+    fun backup() {
+        if (Main.root.child("backup").list().size > 20) {
+            Main.root.child("backup").list().first().delete()
+        }
+        Main.root.child("database.mv.db").copyTo(Main.root.child("backup/database-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd hh-mm-ss"))}.mv.db"))
+    }
 
     fun open() {
         try {
@@ -73,159 +82,169 @@ class DB {
                 }
             }
 
-            var migrateVersion = if (Main.root.child("data/migrateVersion.txt").exists()) {
-                Main.root.child("data/migrateVersion.txt").readString().toInt()
-            } else {
-                0
-            }
-
-            if (Main.root.child("database.db.mv.db").exists()) {
-                updateLibrary("1.4.200")
-
-                Main.root.child("database.db.mv.db").moveTo(Main.root.child("old-database.mv.db"))
-                migrateVersion = 0
-            }
-
             connectServer()
 
-            try {
-                transaction {
-                    connection.commit()
-                }
-            } catch (e : JdbcSQLNonTransientConnectionException) {
-                close()
-                updateLibrary("2.1.214")
-
-                Main.root.child("database.mv.db").moveTo(Main.root.child("old-database-v2.mv.db"))
-                migrateVersion = 1
-                connectServer()
-            }
-
-            if (Main.root.child("data/script.sql").exists()) {
-                Log.info(Bundle()["event.plugin.db.updating"])
-                when (migrateVersion) {
-                    0 -> RunScript.main("-url", "jdbc:h2:${Config.database}", "-user", "sa", "-script", Main.root.child("data/script.sql").absolutePath(), "-options", "FROM_1X")
-                    1 -> RunScript.main("-url", "jdbc:h2:${Config.database}", "-user", "sa", "-script", Main.root.child("data/script.sql").absolutePath())
+            if (!isRemote) {
+                var migrateVersion = if (Main.root.child("data/migrateVersion.txt").exists()) {
+                    Main.root.child("data/migrateVersion.txt").readString().toInt()
+                } else {
+                    0
                 }
 
-                Main.root.child("data/script_backup.sql").delete()
-                Main.root.child("data/script.sql").moveTo(Main.root.child("data/script_backup.sql"))
+                if (Main.root.child("database.db.mv.db").exists()) {
+                    updateLibrary("1.4.200")
 
-                close()
-                connectServer()
-            }
+                    Main.root.child("database.db.mv.db").moveTo(Main.root.child("old-database.mv.db"))
+                    migrateVersion = 0
+                }
 
-            Main.root.child("data/migrateVersion.txt").writeString("1")
+                backup()
+                Main.daemon.submit {
+                    while (!Thread.currentThread().isInterrupted) {
+                        TimeUnit.DAYS.sleep(1)
+                        backup()
+                    }
+                }
 
-            transaction {
-                if (!connection.isClosed) {
-                    SchemaUtils.create(Player)
-                    SchemaUtils.create(Data)
-                    SchemaUtils.create(DB)
 
-                    if (DB.selectAll().empty()) {
-                        val query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='PLAYER'"
-                        val list = mutableListOf<String>()
-                        exec(query) {
-                            val id = it.findColumn("COLUMN_NAME")
-                            while (it.next()) {
-                                list.add(it.getString(id))
-                            }
-                        }
+                try {
+                    transaction {
+                        connection.commit()
+                    }
+                } catch (e : JdbcSQLNonTransientConnectionException) {
+                    close()
+                    updateLibrary("2.1.214")
 
-                        DB.insert {
-                            val ver = if (!list.contains("blockPlaceCount")) {
-                                0
-                            } else if (!list.contains("pvpEliminationTeamCount")) {
-                                1
-                            } else {
-                                dbVersion
-                            }
-                            it[version] = ver
-                        }
+                    Main.root.child("database.mv.db").moveTo(Main.root.child("old-database-v2.mv.db"))
+                    migrateVersion = 1
+                    connectServer()
+                }
+
+                if (Main.root.child("data/script.sql").exists()) {
+                    Log.info(Bundle()["event.plugin.db.updating"])
+                    when (migrateVersion) {
+                        0 -> RunScript.main("-url", "jdbc:h2:${Config.database}", "-user", "sa", "-script", Main.root.child("data/script.sql").absolutePath(), "-options", "FROM_1X")
+                        1 -> RunScript.main("-url", "jdbc:h2:${Config.database}", "-user", "sa", "-script", Main.root.child("data/script.sql").absolutePath())
                     }
 
-                    if (!isRemote) {
-                        fun upgrade() {
-                            val command = when (DB.selectAll().first()[DB.version]) {
-                                0 -> {
-                                    listOf(
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS placecount RENAME TO \"blockPlaceCount\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS breakcount RENAME TO \"blockBreakCount\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS joincount RENAME TO \"totalJoinCount\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS kickcount RENAME TO \"totalKickCount\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS lastdate RENAME TO \"lastLoginTime\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS \"joinDate\" RENAME TO \"firstPlayDate\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS playtime RENAME TO \"totalPlayTime\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS attackclear RENAME TO \"attackModeClear\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS pvpwincount RENAME TO \"pvpVictoriesCount\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS pvplosecount RENAME TO \"pvpDefeatCount\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS colornick RENAME TO \"animatedName\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS id RENAME TO \"accountID\"",
-                                        "ALTER TABLE Player ALTER COLUMN IF EXISTS pw RENAME TO \"accountPW\"",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS discord CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"effectLevel\" INTEGER",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"effectColor\" CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"hideRanking\" BOOLEAN",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS freeze BOOLEAN",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS hud CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tpp CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"tppTeam\" INTEGER",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS log BOOLEAN",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"oldUUID\" CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"banTime\" CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"duplicateName\" CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tracking BOOLEAN",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"joinStacks\" INTEGER",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLoginDate\" CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLeaveDate\" CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"showLevelEffects\" CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"currentPlayTime\" INTEGER",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"isConnected\" BOOLEAN",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldName\" CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldMode\" CHARACTER VARYING",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldId\" INTEGER",
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"mvpTime\" INTEGER",
-                                        "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false,\"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0, \"mvpTime\" = 0",
-                                        "UPDATE db SET version = 1"
-                                    )
-                                }
+                    Main.root.child("data/script_backup.sql").delete()
+                    Main.root.child("data/script.sql").moveTo(Main.root.child("data/script_backup.sql"))
 
-                                1 -> {
-                                    listOf(
-                                        "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"pvpEliminationTeamCount\" INTEGER",
-                                        "UPDATE player SET \"pvpEliminationTeamCount\" = 0",
-                                        "UPDATE db SET version = 2"
-                                    )
-                                }
+                    close()
+                    connectServer()
+                }
 
-                                else -> listOf()
+                Main.root.child("data/migrateVersion.txt").writeString("1")
+
+                transaction {
+                    if (!connection.isClosed) {
+                        SchemaUtils.create(Player)
+                        SchemaUtils.create(Data)
+                        SchemaUtils.create(DB)
+
+                        if (DB.selectAll().empty()) {
+                            val query = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='PLAYER'"
+                            val list = mutableListOf<String>()
+                            exec(query) {
+                                val id = it.findColumn("COLUMN_NAME")
+                                while (it.next()) {
+                                    list.add(it.getString(id))
+                                }
                             }
 
-                            execInBatch(command)
-                        }
-
-                        var isUpgraded = false
-                        while (DB.selectAll().first()[DB.version] != dbVersion) {
-                            isUpgraded = true
-                            upgrade()
-                        }
-
-                        if (isUpgraded) {
-                            Log.info(Bundle()["event.plugin.db.version", dbVersion])
-                            Log.warn(Bundle()["event.plugin.db.warning"])
-                        }
-
-                        try {
-                            getAll()
-                        } catch (e : ParseException) {
-                            Player.update {
-                                it[status] = "{}"
+                            DB.insert {
+                                val ver = if (!list.contains("blockPlaceCount")) {
+                                    0
+                                } else if (!list.contains("pvpEliminationTeamCount")) {
+                                    1
+                                } else {
+                                    dbVersion
+                                }
+                                it[version] = ver
                             }
                         }
 
-                        if (!Main.root.child("data/isDuplicateNameChecked.txt").exists()) {
-                            val sql = """
+                        if (!isRemote) {
+                            fun upgrade() {
+                                val command = when (DB.selectAll().first()[DB.version]) {
+                                    0 -> {
+                                        listOf(
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS placecount RENAME TO \"blockPlaceCount\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS breakcount RENAME TO \"blockBreakCount\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS joincount RENAME TO \"totalJoinCount\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS kickcount RENAME TO \"totalKickCount\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS lastdate RENAME TO \"lastLoginTime\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS \"joinDate\" RENAME TO \"firstPlayDate\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS playtime RENAME TO \"totalPlayTime\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS attackclear RENAME TO \"attackModeClear\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS pvpwincount RENAME TO \"pvpVictoriesCount\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS pvplosecount RENAME TO \"pvpDefeatCount\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS colornick RENAME TO \"animatedName\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS id RENAME TO \"accountID\"",
+                                            "ALTER TABLE Player ALTER COLUMN IF EXISTS pw RENAME TO \"accountPW\"",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS discord CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"effectLevel\" INTEGER",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"effectColor\" CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"hideRanking\" BOOLEAN",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS freeze BOOLEAN",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS hud CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tpp CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"tppTeam\" INTEGER",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS log BOOLEAN",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"oldUUID\" CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"banTime\" CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"duplicateName\" CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS tracking BOOLEAN",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"joinStacks\" INTEGER",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLoginDate\" CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastLeaveDate\" CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"showLevelEffects\" CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"currentPlayTime\" INTEGER",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"isConnected\" BOOLEAN",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldName\" CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldMode\" CHARACTER VARYING",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"lastPlayedWorldId\" INTEGER",
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"mvpTime\" INTEGER",
+                                            "UPDATE player SET \"hideRanking\" = false, freeze = false, log = false, tracking = false,\"joinStacks\" = 0, \"showLevelEffects\" = true, \"isConnected\" = false, \"currentPlayTime\" = 0, \"mvpTime\" = 0",
+                                            "UPDATE db SET version = 1"
+                                        )
+                                    }
+
+                                    1 -> {
+                                        listOf(
+                                            "ALTER TABLE Player ADD COLUMN IF NOT EXISTS \"pvpEliminationTeamCount\" INTEGER",
+                                            "UPDATE player SET \"pvpEliminationTeamCount\" = 0",
+                                            "UPDATE db SET version = 2"
+                                        )
+                                    }
+
+                                    else -> listOf()
+                                }
+
+                                execInBatch(command)
+                            }
+
+                            var isUpgraded = false
+                            while (DB.selectAll().first()[DB.version] != dbVersion) {
+                                isUpgraded = true
+                                upgrade()
+                            }
+
+                            if (isUpgraded) {
+                                Log.info(Bundle()["event.plugin.db.version", dbVersion])
+                                Log.warn(Bundle()["event.plugin.db.warning"])
+                            }
+
+                            try {
+                                getAll()
+                            } catch (e : ParseException) {
+                                Player.update {
+                                    it[status] = "{}"
+                                }
+                            }
+
+                            if (!Main.root.child("data/isDuplicateNameChecked.txt").exists()) {
+                                val sql = """
                                 UPDATE player SET "duplicateName" = null;
                                 SELECT * FROM player t1 WHERE EXISTS (
                                     SELECT 1
@@ -237,31 +256,32 @@ class DB {
                                 )
                             """.trimIndent()
 
-                            exec(sql) { rs ->
-                                while (rs.next()) {
-                                    val data = get(rs.getString("uuid"))
-                                    if (data != null) {
-                                        try {
-                                            if (rs.getString("duplicateName") == "null") {
-                                                data.duplicateName = data.name
+                                exec(sql) { rs ->
+                                    while (rs.next()) {
+                                        val data = get(rs.getString("uuid"))
+                                        if (data != null) {
+                                            try {
+                                                if (rs.getString("duplicateName") == "null") {
+                                                    data.duplicateName = data.name
+                                                }
+                                            } catch (e : ParseException) {
+                                                if (data.duplicateName == null) {
+                                                    data.duplicateName = data.name
+                                                }
                                             }
-                                        } catch (e : ParseException) {
-                                            if (data.duplicateName == null) {
-                                                data.duplicateName = data.name
-                                            }
+                                            update(data.uuid, data)
                                         }
-                                        update(data.uuid, data)
                                     }
                                 }
-                            }
 
-                            Main.root.child("data/isDuplicateNameChecked.txt").writeString("Yes! No more time spent checking player name duplicates on plugin startup lol")
+                                Main.root.child("data/isDuplicateNameChecked.txt").writeString("Yes! No more time spent checking player name duplicates on plugin startup lol")
+                            }
                         }
+                    } else {
+                        Log.err(Bundle()["event.plugin.db.wrong"])
+                        dbServer?.stop()
+                        Core.app.exit()
                     }
-                } else {
-                    Log.err(Bundle()["event.plugin.db.wrong"])
-                    dbServer?.stop()
-                    Core.app.exit()
                 }
             }
         } catch (e : Exception) {

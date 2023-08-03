@@ -66,7 +66,7 @@ object Config {
 
     var discordURL = ""
 
-    private var configVersion = 19
+    private var configVersion = 20
 
     private fun wizard() {
         Log.info(bundle["config.wiki"])

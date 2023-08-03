@@ -8,8 +8,7 @@ import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
 import essentials.Permission.bundle
-import mindustry.Vars
-import mindustry.Vars.netServer
+import mindustry.Vars.*
 import mindustry.game.Team
 import mindustry.mod.Plugin
 import mindustry.net.Administration
@@ -141,7 +140,7 @@ class Main: Plugin() {
             Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest").timeout(1000).error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }.submit {
                 if (it.status == Http.HttpStatus.OK) {
                     val json = JsonValue.readJSON(it.resultAsString).asObject()
-                    Vars.mods.list().forEach { mod ->
+                    mods.list().forEach { mod ->
                         if (mod.meta.name == "Essentials") {
                             PluginData.pluginVersion = mod.meta.version
                             return@forEach
@@ -158,7 +157,7 @@ class Main: Plugin() {
                 }
             }
         } else {
-            Vars.mods.list().forEach { mod ->
+            mods.list().forEach { mod ->
                 if (mod.meta.name == "Essentials") {
                     PluginData.pluginVersion = mod.meta.version
                     return@forEach
@@ -166,24 +165,24 @@ class Main: Plugin() {
             }
         }
 
-        Vars.netServer.admins.addActionFilter { e ->
+        netServer.admins.addActionFilter { e ->
             if (e.player == null) return@addActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
             val isHub = PluginData["hubMode"]
             PluginData.warpBlocks.forEach {
                 if (e.tile != null) {
-                    if (it.mapName == Vars.state.map.name() && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
+                    if (it.mapName == state.map.name() && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
                         return@addActionFilter false
                     }
                 }
             }
 
-            if (Vars.state.rules.pvp && Config.pvpAutoTeam && e.player.team() == Team.derelict) {
+            if (state.rules.pvp && Config.pvpAutoTeam && e.player.team() == Team.derelict) {
                 return@addActionFilter false
             }
 
             if (data != null) {
-                if (isHub != null && isHub == Vars.state.map.name()) {
+                if (isHub != null && isHub == state.map.name()) {
                     return@addActionFilter Permission.check(e.player, "hub.build")
                 } else {
                     return@addActionFilter true
@@ -195,7 +194,7 @@ class Main: Plugin() {
         if (Config.blockfooclient) {
             val fooArray = arrayOf("fooCheck", "fooTransmission", "fooTransmissionEnabled")
             fooArray.forEach {
-                Vars.netServer.addPacketHandler(it) { packet, _ ->
+                netServer.addPacketHandler(it) { packet, _ ->
                     packet.kick(Bundle(packet.locale)["event.antigrief.foo"])
                     Log.info(Bundle()["event.antigrief.foo.log", packet.plainName(), "Packet"])
                     Events.fire(CustomEvents.PlayerBanned(packet.plainName(), packet.uuid(), currentTime(), "foo"))
