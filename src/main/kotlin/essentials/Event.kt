@@ -58,7 +58,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.function.Consumer
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -1567,12 +1566,13 @@ object Event {
     }
 
     private fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData, isConnected : Boolean) {
-        if (PluginData.playtime < 300L) {
-            val oldLevel = target.level
-            val result : Int
-            val time = target.currentPlayTime.toInt()
+        val oldLevel = target.level
+        var result : Int = target.currentExp
+        val time = target.currentPlayTime.toInt()
 
-            val bundle = Bundle(target.languageTag)
+        val bundle = Bundle(target.languageTag)
+
+        if (PluginData.playtime > 300L) {
             var coreitem = 0
             state.stats.coreItemCount.forEach {
                 coreitem += it.value
@@ -1615,8 +1615,9 @@ object Event {
                     database.queue(target)
                 }
             }
-            if (isConnected) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
         }
+
+        if (isConnected) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
     }
 
     fun findPlayerData(uuid : String) : DB.PlayerData? {
