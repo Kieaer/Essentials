@@ -741,6 +741,9 @@ object Event {
                         return@forEach
                     }
                 }
+            } else if (Config.antiGrief && Groups.player.find { p -> p.con.address == it.connection.address } != null) {
+                it.connection.kick(Packets.KickReason.idInUse)
+                kickReason = "ip"
             } else {
                 PluginData.blacklist.forEach { pattern ->
                     if (pattern.matcher(it.packet.name).matches()) {
