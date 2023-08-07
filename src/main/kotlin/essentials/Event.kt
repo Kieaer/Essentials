@@ -713,7 +713,7 @@ object Event {
                 kickReason = "banned.ip"
             } else if (findPlayerData(it.packet.uuid) != null) {
                 it.connection.kick(Bundle(it.packet.locale)["event.player.exists"])
-            } else if (Config.blockNewUser && netServer.admins.getInfo(it.packet.uuid) == null) {
+            } else if (Config.blockNewUser && database[it.connection.uuid] == null) {
                 it.connection.kick(Bundle(it.packet.locale)["event.player.new.blocked"], 0L)
                 kickReason = "newuser"
             } else if (!Config.allowMobile && it.connection.mobile) {
