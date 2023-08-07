@@ -374,11 +374,10 @@ object Event {
             netServer.chatFormatter = NetServer.ChatFormatter { player : Player, message : String ->
                 var isMute = false
 
+                log(LogType.Chat, "${player.plainName()}: $message")
                 if (!message.startsWith("/")) {
                     val data = findPlayerData(player.uuid())
                     if (data != null) {
-                        log(LogType.Chat, "${data.name}: $message")
-
                         if (!data.mute) {
                             val isAdmin = Permission.check(player, "vote.pass")
                             if (voting && message.equals("y", true) && voteStarter != player && !voted.contains(player.uuid())) {
