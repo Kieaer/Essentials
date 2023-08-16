@@ -1613,16 +1613,17 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 return
             }
 
-            val target = findPlayers(arg[0])
+            val target = netServer.admins.findByName(arg[0])
             if (target != null) {
                 val reason = arg[1]
-                val infos = netServer.admins.findByName(target.uuid()).first()
+                val infos = netServer.admins.findByName(target.first().plainLastName()).first()
                 val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-                val text = Bundle()["command.report.texts", target.plainName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
+                val text = Bundle()["command.report.texts", target.first().plainLastName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
 
-                Event.log(Event.LogType.Report, date + text, target.plainName())
-                Log.info(Bundle()["command.report.received", player.plainName(), target.plainName(), reason])
-                send("command.report.done", target.plainName())
+                Event.log(Event.LogType.Report, date + text, target.first().plainLastName())
+                Log.info(Bundle()["command.report.received", player.plainName(), target.first().plainLastName(), reason])
+                send("command.report.done", target.first().plainLastName())
+                Events.fire(CustomEvents.PlayerReported(player.plainName(), target.first().plainLastName(), reason))
             } else {
                 err("player.not.found")
             }

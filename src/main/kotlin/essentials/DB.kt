@@ -34,7 +34,7 @@ class DB {
         if (Main.root.child("backup").list().size > 20) {
             Main.root.child("backup").list().first().delete()
         }
-        Main.root.child("database.mv.db").copyTo(Main.root.child("backup/database-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd hh-mm-ss"))}.mv.db"))
+        Main.root.child("database.mv.db").copyTo(Main.root.child("backup/database-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db"))
     }
 
     fun open() {

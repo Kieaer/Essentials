@@ -711,11 +711,6 @@ object Event {
             } else if (isIPbanned != null) {
                 it.connection.kick(Packets.KickReason.banned)
                 kickReason = "banned.ip"
-            } else if (findPlayerData(it.packet.uuid) != null) {
-                it.connection.kick(Bundle(it.packet.locale)["event.player.exists"])
-            } else if (Config.blockNewUser && database[it.connection.uuid] == null) {
-                it.connection.kick(Bundle(it.packet.locale)["event.player.new.blocked"], 0L)
-                kickReason = "newuser"
             } else if (!Config.allowMobile && it.connection.mobile) {
                 it.connection.kick(Bundle(it.packet.locale)["event.player.not.allow.mobile"], 0L)
                 kickReason = "mobile"
@@ -753,10 +748,27 @@ object Event {
                 }
             }
 
-            if (kickReason.isEmpty()) {
-                log(LogType.Player, "${it.packet.name} (${it.packet.uuid}, ${it.connection.address}) connected.")
+            if (kickReason.isNotEmpty()) {
+                log(LogType.Player, Bundle()["event.player.kick", it.packet.name, it.packet.uuid, it.connection.address, Bundle()["event.player.kick.reason.$kickReason"]])
+                Events.fire(PlayerConnectKicked(it.packet.name, Bundle()["event.player.kick.reason.$kickReason"]))
+            }
+        }
+
+        Events.on(PlayerConnect::class.java) {
+            var kickReason = ""
+
+            if (findPlayerData(it.player.uuid()) != null) {
+                it.player.kick(Bundle(it.player.locale)["event.player.exists"])
+            } else if (Config.blockNewUser && database[it.player.uuid()] == null) {
+                it.player.kick(Bundle(it.player.locale)["event.player.new.blocked"], 0L)
+                kickReason = "newuser"
+            }
+
+            if (kickReason.isNotEmpty()) {
+                log(LogType.Player, Bundle()["event.player.kick", it.player.plainName(), it.player.uuid(), it.player.con.address, Bundle()["event.player.kick.reason.$kickReason"]])
+                Events.fire(PlayerConnectKicked(it.player.plainName(), Bundle()["event.player.kick.reason.$kickReason"]))
             } else {
-                Log.info(Bundle()["event.player.kick.reason.$kickReason"])
+                log(LogType.Player, Bundle()["event.player.connected", it.player.plainName(), it.player.uuid(), it.player.con.address])
             }
         }
 
@@ -1460,7 +1472,7 @@ object Event {
             var main = root.child("log/$type.log")
             val folder = root.child("log")
 
-            if (main != null && main.length() > 2048 * 256) {
+            if (main != null && main.length() > 2048 * 1024) {
                 main.writeString("end of file. $time", true)
                 try {
                     if (!root.child("log/old/$type").exists()) {
