@@ -1068,7 +1068,7 @@ object Event {
                             }
 
                             // 잠수 플레이어 카운트
-                            if (Config.afk && it.player.unit() != null && !it.player.unit().moving() && !it.player.unit().mining() && !Permission.check(it.player, "afk.admin")) {
+                            if (Config.afk && it.player.unit() != null && !it.player.unit().moving() && !it.player.unit().mining() && !Permission.check(it.player, "afk.admin") && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()) {
                                 it.afkTime++
                                 if (it.afkTime == Config.afkTime) {
                                     if (Config.afkServer.isEmpty()) {
@@ -1088,6 +1088,7 @@ object Event {
                                 }
                             } else {
                                 it.afkTime = 0
+                                it.previousMousePosition = it.player.mouseX() + it.player.mouseY()
                             }
 
                             val randomResult = (random.nextInt(7) * it.expMultiplier).toInt()

@@ -397,6 +397,7 @@ class DB {
         var currentExp : Int = 0
 
         var afkTime : Int = 0
+        var previousMousePosition : Float = 0F
         var player : Playerc = mindustry.gen.Player.create()
         var entityid : Int = 0
 
