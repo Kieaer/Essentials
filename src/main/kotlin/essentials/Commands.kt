@@ -300,7 +300,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     for (line in text) {
                         for (char in line) {
                             if (char == '#' && world.tile(x, y).block() != null && world.tile(x, y).block() == Blocks.air) {
-                                Call.setTile(world.tile(x, y), Blocks.scrapWall, Team.sharded, 0)
+                                Call.setTile(world.tile(x, y), Blocks.scrapWall, player.team(), 0)
                             }
                             x++
                         }
@@ -811,7 +811,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val lineBreak = "\n"
 
             if (arg.isNotEmpty()) {
-                if (!Permission.check(player, "info.admin")) {
+                if (!Permission.check(player, "info.other")) {
                     err("command.permission.false")
                     return
                 }
@@ -909,7 +909,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(target.uuid()) || netServer.admins.isIPBanned(target.con().address))}"
                     val other = findPlayerData(target.uuid())
                     if (other != null) {
-                        val menu = if (Permission.check(other.player, "info.admin")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
+                        val menu = if (Permission.check(other.player, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
                         targetData = other
                         Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
                     } else {
@@ -921,7 +921,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(p.id) || netServer.admins.isIPBanned(p.lastIP))}"
                         val other = database[p.id]
                         if (other != null) {
-                            val menu = if (Permission.check(other.player, "info.admin")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
+                            val menu = if (Permission.check(other.player, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
                             targetData = other
                             Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
                         } else {
