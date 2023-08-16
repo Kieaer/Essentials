@@ -700,7 +700,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else {
                     val t : Tile = player.tileOn()
                     PluginData.warpBlocks.add(PluginData.WarpBlock(name, t.build.tileX(), t.build.tileY(), t.block().name, t.block().size, ip, port, arg[2]))
-                    send("command.hub.block.added", "$x:$y", ip)
+                    send("command.hub.block.added", "$x:$y", arg[1])
                     PluginData.save(false)
                     PluginData.changed = true
                 }
@@ -710,7 +710,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         err("command.hub.count.parameter")
                     } else {
                         PluginData.warpCounts.add(PluginData.WarpCount(name, world.tile(x, y).pos(), ip, port, 0, 1))
-                        send("command.hub.count", "$x:$y", ip)
+                        send("command.hub.count", "$x:$y", arg[1])
                         PluginData.save(false)
                         PluginData.changed = true
                     }
@@ -726,7 +726,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 "remove" -> {
                     PluginData.warpBlocks.removeAll { a -> a.ip == ip && a.port == port }
                     PluginData.warpZones.removeAll { a -> a.ip == ip && a.port == port }
-                    send("command.hub.removed", ip, port)
+                    send("command.hub.removed", arg[1])
                     PluginData.save(false)
                     PluginData.changed = true
                 }

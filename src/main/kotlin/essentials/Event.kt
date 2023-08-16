@@ -166,6 +166,7 @@ object Event {
                             database.players.forEach { data ->
                                 data.player.sendMessage(Bundle(data.languageTag)["event.tap.server", it.player.plainName(), two.description])
                             }
+                            // why?
                             val format = NumberFormat.getNumberInstance(Locale.US)
                             format.isGroupingUsed = false
 
