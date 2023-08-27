@@ -101,7 +101,7 @@ object Event {
     var isGlobalMute = false
     var dpsBlocks = 0f
     var dpsTile : Tile? = null
-    var maxdps = 0f
+    var maxdps : Float? = null
     var unitLimitMessageCooldown = 0
     var offlinePlayers = Seq<DB.PlayerData>()
 
@@ -1102,11 +1102,15 @@ object Event {
                         }
 
                         if (dpsTile != null) {
-                            if (dpsBlocks > maxdps) maxdps = dpsBlocks
+                            if (maxdps == null) {
+                                maxdps = 0f
+                            } else if (dpsBlocks > maxdps!!) {
+                                maxdps = dpsBlocks
+                            }
                             val message = "Max DPS: $maxdps/min\nDPS: ${dpsBlocks}/s"
                             Call.label(message, 1f, dpsTile!!.worldx(), dpsTile!!.worldy())
                         } else {
-                            maxdps = 0f
+                            maxdps = null
                         }
                         dpsBlocks = 0f
 
@@ -1493,7 +1497,7 @@ object Event {
                             }
                         }
 
-                        maxdps = 0f
+                        maxdps = null
                         minuteCount = 0
                     } else {
                         minuteCount++
@@ -1506,7 +1510,7 @@ object Event {
                         rollbackCount = Config.rollbackTime
                         messageCount = Config.messageTime
                         messageOrder = 0
-                        maxdps = 0f
+                        maxdps = null
                         resetVote()
                     } else {
                         secondCount++
