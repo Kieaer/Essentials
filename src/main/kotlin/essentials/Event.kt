@@ -588,7 +588,13 @@ object Event {
 
         Events.on(PlayerLeave::class.java) {
             log(LogType.Player, Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address])
-            val data = database.players.find { data -> data.name == it.player.name }
+            val data = database.players.find { data ->
+                if (data.oldUUID != null) {
+                    data.oldUUID == it.player.uuid()
+                } else {
+                    data.uuid == it.player.uuid()
+                }
+            }
             if (data != null) {
                 data.lastPlayedWorldName = state.map.plainName()
                 data.lastPlayedWorldMode = state.rules.modeName
@@ -899,6 +905,53 @@ object Event {
         data class EffectData(val x : Float, val y : Float, val rotate : Float, val effectLevel : Int?, val level : Int, val color : Color)
 
         Core.app.addListener(object: ApplicationListener {
+            override fun init() {
+                if (Config.blockfooclient) {
+                    netServer.addPacketHandler("fooTransmission") { packet, _ ->
+                        val json = JsonObject()
+                        json.add("id", packet.uuid())
+
+                        val ips = JsonArray()
+                        for (a in netServer.admins.getInfo(packet.uuid()).ips) {
+                            ips.add(a)
+                        }
+                        json.add("ip", ips)
+
+                        val names = JsonArray()
+                        for (a in netServer.admins.getInfo(packet.uuid()).names) {
+                            names.add(a)
+                        }
+
+                        json.add("name", names)
+
+                        Fi(Config.banList).writeString(JsonArray.readHjson(Fi(Config.banList).readString()).asArray().add(json).toString(Stringify.HJSON))
+
+                        /*                        netServer.admins.playerInfo.values().forEach(Consumer { info : PlayerInfo -> info.banned = false })
+                                                netServer.admins.save()*/
+
+                        log(LogType.Player, Bundle()["event.antigrief.foo.log", names.first(), "Packet"])
+
+                        Thread {
+                            sleep(3000)
+                            packet.con.close()
+                        }.start()
+                    }
+
+                    Events.on(PlayerJoin::class.java) {
+                        Call.clientPacketReliable(it.player.con, "fooCheck", "1F")
+                    }
+                }
+
+                netServer.addPacketHandler("MySubtitle") { packet, _ ->
+                    packet.con.close()
+                    log(LogType.Player, Bundle()["event.antigrief.claj.log", packet.plainName(), "Packet"])
+                }
+
+                Events.on(PlayerJoin::class.java) {
+                    Call.clientPacketReliable("Subtitles", "fake");
+                }
+            }
+
             override fun update() {
                 if (state.isPlaying) {
                     if (Config.unbreakableCore) {
