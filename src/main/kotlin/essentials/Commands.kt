@@ -1554,7 +1554,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
                             string.append("[white]$a[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                         } else {
-                            string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeFormat(d[a].second.toString().toLong()) else d[a].second}\n")
+                            val text = if (arg[0].lowercase() == "time") {
+                                timeFormat(d[a].second.toString().toLong())
+                            } else if (arg[0].lowercase() == "exp") {
+                                "Lv.${Exp.calculateLevel(d[a].second as Int)} - ${d[a].second}"
+                            } else {
+                                d[a].second
+                            }
+                            string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] $text\n")
                         }
                     }
                     string.substring(0, string.length - 1)
@@ -1566,7 +1573,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
                                 string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
                             } else {
-                                string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] ${if (arg[0].lowercase() == "time") timeFormat(d[a].second.toString().toLong()) else d[a].second}")
+                                val text = if (arg[0].lowercase() == "time") {
+                                    timeFormat(d[a].second.toString().toLong())
+                                } else if (arg[0].lowercase() == "exp") {
+                                    "Lv.${Exp.calculateLevel(d[a].second as Int)} - ${d[a].second}"
+                                } else {
+                                    d[a].second
+                                }
+                                string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] $text")
                             }
                         }
                     }
@@ -2667,7 +2681,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             return requiredXP
         }
 
-        private fun calculateLevel(xp : Double) : Int {
+        fun calculateLevel(xp : Int) : Int {
             var level = 0
             var maxXp = calcXpForLevel(0)
             do maxXp += calcXpForLevel(++level) while (maxXp < xp)
@@ -2679,7 +2693,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val max = calculateFullTargetXp(currentlevel).toInt()
             val xp = target.exp
             val levelXp = max - xp
-            val level = calculateLevel(xp.toDouble())
+            val level = calculateLevel(xp)
             target.level = level
             return "$xp (${floor(levelXp.toDouble()).toInt()}) / ${floor(max.toDouble()).toInt()}"
         }
