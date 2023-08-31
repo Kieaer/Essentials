@@ -31,10 +31,12 @@ class DB {
     var dbVersion = 2
 
     fun backup() {
-        if (Main.root.child("backup").list().size > 20) {
-            Main.root.child("backup").list().first().delete()
+        if (Config.database.equals(Main.root.child("database").absolutePath(), false)) {
+            if (Main.root.child("backup").list().size > 20) {
+                Main.root.child("backup").list().first().delete()
+            }
+            Main.root.child("database.mv.db").copyTo(Main.root.child("backup/database-stable-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db"))
         }
-        Main.root.child("database.mv.db").copyTo(Main.root.child("backup/database-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db"))
     }
 
     fun open() {
@@ -82,6 +84,7 @@ class DB {
                 }
             }
 
+            backup()
             connectServer()
 
             if (!isRemote) {
@@ -98,11 +101,12 @@ class DB {
                     migrateVersion = 0
                 }
 
-                backup()
                 Main.daemon.submit {
                     while (!Thread.currentThread().isInterrupted) {
                         TimeUnit.DAYS.sleep(1)
-                        backup()
+                        transaction {
+                            execInBatch(listOf("BACKUP TO ${Main.root.child("backup/database-online-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db").absolutePath()}'"))
+                        }
                     }
                 }
 

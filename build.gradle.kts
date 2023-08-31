@@ -22,11 +22,11 @@ repositories {
     maven(url = "https://www.jitpack.io")
 }
 
-dependencies {
-    val exposedVersion = "0.41.1"
-    val mindustryVersion = "v145"
-    val arcVersion = "v145"
+val exposedVersion = "0.41.1"
+val mindustryVersion = "v145"
+val arcVersion = "v145"
 
+dependencies {
     compileOnly("com.github.anuken.arc:arc-core:$arcVersion")
     compileOnly("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
 
@@ -123,6 +123,14 @@ sourceSets{
     test{
         resources{
             srcDir("src/main/resources")
+        }
+    }
+}
+
+configurations.all {
+    resolutionStrategy.eachDependency { ->
+        if (this.requested.group == "com.github.Anuken.Arc") {
+            this.useVersion(mindustryVersion)
         }
     }
 }
