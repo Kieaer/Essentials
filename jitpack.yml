@@ -1,10 +1,8 @@
-linux:
-  apt:
-    packages:
-      - libc6=2.27-3ubuntu1.4
 jdk:
   - openjdk16
 before_install:
+  - nvm install 20.5.1
+  - nvm use 20.5.1
   - wget https://github.com/sormuras/bach/raw/releases/11/install-jdk.sh
   - source install-jdk.sh --feature 17
   - jshell --version
