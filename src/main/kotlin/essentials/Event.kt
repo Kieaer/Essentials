@@ -948,7 +948,7 @@ object Event {
                 }
 
                 Events.on(PlayerJoin::class.java) {
-                    Call.clientPacketReliable("Subtitles", "fake");
+                    Call.clientPacketReliable("Subtitles", "fake")
                 }
             }
 

@@ -105,7 +105,7 @@ class DB {
                     while (!Thread.currentThread().isInterrupted) {
                         TimeUnit.DAYS.sleep(1)
                         transaction {
-                            execInBatch(listOf("BACKUP TO ${Main.root.child("backup/database-online-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db").absolutePath()}'"))
+                            exec("BACKUP TO ${Main.root.child("backup/database-online-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db").absolutePath()}'")
                         }
                     }
                 }
@@ -417,10 +417,16 @@ class DB {
 
             other as PlayerData
 
-            if (uuid != other.uuid) return false
-
-            return true
+            return uuid == other.uuid
         }
+
+        override fun hashCode(): Int {
+            var result = name.hashCode()
+            result = 31 * result + uuid.hashCode()
+            return result
+        }
+
+
     }
 
     fun createData(data : PlayerData) {

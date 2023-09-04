@@ -4,7 +4,6 @@ import arc.Core
 import arc.files.Fi
 import essentials.Main.Companion.database
 import mindustry.Vars.netServer
-import mindustry.gen.Playerc
 import org.hjson.*
 import java.util.*
 

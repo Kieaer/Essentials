@@ -1959,7 +1959,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 fun winPercentage(team : Team) : Double {
                     var players = arrayOf<Pair<Team, Double>>()
                     database.players.forEach {
-                        var rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
+                        val rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
                         players += Pair(it.player.team(), if (rate.equals(Double.NaN)) 0.0 else rate)
                     }
 
