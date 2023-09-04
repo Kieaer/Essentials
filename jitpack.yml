@@ -1,0 +1,3 @@
+install:
+  - FILE="-Dfile=build/libs/Essentials.jar"
+  - ./gradlew install $FILE -DgroupId=com.github.kieaer -DartifactId=Essentials -Dversion=v18 -Dpackaging=jar -DgeneratePom=true

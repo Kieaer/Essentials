@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm") version "1.8.22"
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("com.github.node-gradle.node") version "5.0.0"
+    id("maven-publish")
 }
 
 java {
@@ -131,6 +132,17 @@ configurations.all {
     resolutionStrategy.eachDependency { ->
         if (this.requested.group == "com.github.Anuken.Arc") {
             this.useVersion(mindustryVersion)
+        }
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.github.kieaer"
+            artifactId = "Essentials"
+            version = "v18"
+            from(components["java"])
         }
     }
 }
