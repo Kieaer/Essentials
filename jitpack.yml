@@ -6,6 +6,7 @@ before_install:
   - wget https://github.com/sormuras/bach/raw/releases/11/install-jdk.sh
   - source install-jdk.sh --feature 17
   - jshell --version
+  - wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
 install:
   - ./gradlew jar
   - ./gradlew publishToMavenLocal
