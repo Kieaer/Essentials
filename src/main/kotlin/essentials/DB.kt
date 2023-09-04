@@ -407,59 +407,19 @@ class DB {
 
         // Use plugin test only
         var lastSentMessage : String = ""
+        override fun toString(): String {
+            return "PlayerData(name='$name', uuid='$uuid', languageTag='$languageTag', blockPlaceCount=$blockPlaceCount, blockBreakCount=$blockBreakCount, totalJoinCount=$totalJoinCount, totalKickCount=$totalKickCount, level=$level, exp=$exp, firstPlayDate=$firstPlayDate, lastLoginTime=$lastLoginTime, totalPlayTime=$totalPlayTime, attackModeClear=$attackModeClear, pvpVictoriesCount=$pvpVictoriesCount, pvpDefeatCount=$pvpDefeatCount, animatedName=$animatedName, permission='$permission', mute=$mute, accountID='$accountID', accountPW='$accountPW', status=$status, discord=$discord, effectLevel=$effectLevel, effectColor=$effectColor, hideRanking=$hideRanking, freeze=$freeze, hud=$hud, tpp=$tpp, tppTeam=$tppTeam, log=$log, oldUUID=$oldUUID, banTime=$banTime, duplicateName=$duplicateName, tracking=$tracking, joinStacks=$joinStacks, lastLoginDate=$lastLoginDate, lastLeaveDate=$lastLeaveDate, showLevelEffects=$showLevelEffects, currentPlayTime=$currentPlayTime, isConnected=$isConnected, lastPlayedWorldName=$lastPlayedWorldName, lastPlayedWorldMode=$lastPlayedWorldMode, lastPlayedWorldId=$lastPlayedWorldId, mvpTime=$mvpTime, pvpEliminationTeamCount=$pvpEliminationTeamCount, expMultiplier=$expMultiplier, currentExp=$currentExp, afkTime=$afkTime, previousMousePosition=$previousMousePosition, player=$player, entityid=$entityid, lastSentMessage='$lastSentMessage')"
+        }
 
-        override fun toString() : String {
-            return """
-                name: $name
-                uuid: $uuid
-                languageTag: $languageTag
-                blockPlaceCount: $blockPlaceCount
-                blockBreakCount: $blockBreakCount
-                totalJoinCount: $totalJoinCount
-                totalKickCount: $totalKickCount
-                level: $level
-                exp: $exp
-                firstPlayDate: $firstPlayDate
-                lastLoginTime: $lastLoginTime
-                totalPlayTime: $totalPlayTime
-                attackModeClear: $attackModeClear
-                pvpVictoriesCount: $pvpVictoriesCount
-                pvpDefeatCount: $pvpDefeatCount
-                animatedName: $animatedName
-                permission: $permission
-                mute: $mute
-                accountID: $accountID
-                accountPW: $accountPW
-                status: $status
-                discord: $discord
-                effectLevel: $effectLevel
-                effectColor: $effectColor
-                hideRanking: $hideRanking
-                freeze: $freeze
-                hud: $hud
-                tpp: $tpp
-                tppTeam: $tppTeam
-                log: $log
-                oldUUID: $oldUUID
-                banTime: $banTime
-                duplicateName: $duplicateName
-                tracking: $tracking
-                joinStacks: $joinStacks
-                afkTime: $afkTime
-                entityid: $entityid
-                lastLoginDate: ${if (lastLoginDate != null) lastLoginDate.toString() else "null"}
-                lastLeaveDate: ${if (lastLeaveDate != null) lastLeaveDate.toString() else "null"}
-                showLevelEffects: $showLevelEffects
-                expMultiplier: $expMultiplier
-                currentPlayTime: $currentPlayTime
-                isConnected: $isConnected
-                lastPlayedWorldName: $lastPlayedWorldName
-                lastPlayedWorldMode: $lastPlayedWorldMode
-                lastPlayedWorldId: $lastPlayedWorldId
-                mvpTime: $mvpTime
-                pvpEliminationTeamCount: $pvpEliminationTeamCount
-                currentExp: $currentExp
-            """.trimIndent()
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+
+            other as PlayerData
+
+            if (uuid != other.uuid) return false
+
+            return true
         }
     }
 
@@ -785,4 +745,6 @@ class DB {
         dbServer?.stop()
         TransactionManager.closeAndUnregister(db)
     }
+
+
 }

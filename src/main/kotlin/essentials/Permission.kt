@@ -216,23 +216,21 @@ object Permission {
         }
     }
 
-    operator fun get(player : Playerc) : PermissionData {
+    operator fun get(data : DB.PlayerData) : PermissionData {
         val result = PermissionData()
-        val p = database.players.find { e -> e.uuid == player.uuid() }
-
-        val u = user.find { it.asObject().has("uuid") && it.asObject().get("uuid").asString().equals(player.uuid()) }
+        val u = user.find { it.asObject().has("uuid") && it.asObject().get("uuid").asString().equals(data.uuid) }
         if (u != null) {
-            result.uuid = u.asObject().getString("uuid", player.uuid())
-            result.name = u.asObject().getString("name", player.name())
-            result.group = u.asObject().getString("group", p?.permission ?: default)
+            result.uuid = u.asObject().getString("uuid", data.uuid)
+            result.name = u.asObject().getString("name", data.player.name())
+            result.group = u.asObject().getString("group", data.permission)
             result.chatFormat = u.asObject().getString("chatFormat", Config.chatFormat)
             result.admin = u.asObject().getBoolean("admin", false)
             result.isAlert = u.asObject().getBoolean("isAlert", false)
             result.alertMessage = u.asObject().getString("alertMessage", "")
         } else {
-            result.uuid = player.uuid()
-            result.name = player.name()
-            result.group = p?.permission ?: default
+            result.uuid = data.uuid
+            result.name = data.player.name()
+            result.group = data.permission
             result.admin = false
             result.isAlert = false
             result.alertMessage = ""
@@ -241,13 +239,13 @@ object Permission {
         return result
     }
 
-    fun check(player : Playerc, command : String) : Boolean {
-        main[get(player).group].asObject()["permission"].asArray().forEach {
+    fun check(data : DB.PlayerData, command : String) : Boolean {
+        main[get(data).group].asObject()["permission"].asArray().forEach {
             if (it.asString() == command || it.asString().equals("all", true)) {
                 return true
             }
         }
-        return if (database.players.find { e -> e.uuid == player.uuid() } == null) false else false
+        return false
     }
 
     class PermissionData {

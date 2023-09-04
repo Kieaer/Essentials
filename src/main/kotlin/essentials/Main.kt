@@ -183,7 +183,7 @@ class Main: Plugin() {
 
             if (data != null) {
                 if (isHub != null && isHub == state.map.name()) {
-                    return@addActionFilter Permission.check(e.player, "hub.build")
+                    return@addActionFilter Permission.check(data, "hub.build")
                 } else {
                     return@addActionFilter true
                 }

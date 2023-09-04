@@ -86,9 +86,9 @@ object Trigger {
 
             val message = StringBuilder()
 
-            val perm = Permission[player]
-            if (perm.name.isNotEmpty()) player.name(Permission[player].name)
-            player.admin(Permission[player].admin)
+            val perm = Permission[data]
+            if (perm.name.isNotEmpty()) player.name(Permission[data].name)
+            player.admin(Permission[data].admin)
             message.appendLine(bundle[if (login) "event.player.logged" else "event.player.loaded"])
 
             data.entityid = order
@@ -120,9 +120,9 @@ object Trigger {
             }
 
             if (state.rules.pvp) {
-                if (Event.pvpPlayer.containsKey(player.uuid())) {
-                    player.team(Event.pvpPlayer.get(player.uuid()))
-                } else if (Event.pvpSpectors.contains(player.uuid()) || Permission.check(player, "pvp.spector")) {
+                if (Event.pvpPlayer.containsKey(data.uuid)) {
+                    player.team(Event.pvpPlayer.get(data.uuid))
+                } else if (Event.pvpSpectors.contains(data.uuid) || Permission.check(data, "pvp.spector")) {
                     player.team(Team.derelict)
                 } else if (Config.pvpAutoTeam) {
                     fun winPercentage(team : Team) : Double {
@@ -156,7 +156,7 @@ object Trigger {
             }
 
             if (Event.voting) {
-                if (Event.voteStarter != null) message.appendLine(bundle["command.vote.starter", Event.voteStarter!!.plainName()])
+                if (Event.voteStarter != null) message.appendLine(bundle["command.vote.starter", Event.voteStarter!!.player.plainName()])
                 message.appendLine(when (Event.voteType) {
                     "kick" -> bundle["command.vote.kick.start", Event.voteTarget!!.plainName(), Event.voteReason!!]
                     "map" -> bundle["command.vote.map.start", Event.voteMap!!.name(), Event.voteReason!!]

@@ -177,7 +177,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun changemap() {
-            if (!Permission.check(player, "changemap")) {
+            if (!Permission.check(data, "changemap")) {
                 err("command.permission.false")
                 return
             }
@@ -217,7 +217,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun changename() {
-            if (!Permission.check(player, "changename")) {
+            if (!Permission.check(data, "changename")) {
                 err("command.permission.false")
                 return
             }
@@ -247,7 +247,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun changepw() {
-            if (!Permission.check(player, "changepw")) {
+            if (!Permission.check(data, "changepw")) {
                 err("command.permission.false")
                 return
             }
@@ -264,7 +264,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun chat() {
-            if (!Permission.check(player, "chat")) {
+            if (!Permission.check(data, "chat")) {
                 err("command.permission.false")
                 return
             }
@@ -278,7 +278,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun chars(tile : Tile?) {
-            if (!Permission.check(player, "chars")) {
+            if (!Permission.check(data, "chars")) {
                 err("command.permission.false")
                 return
             }
@@ -314,7 +314,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun color() {
-            if (!Permission.check(player, "color")) {
+            if (!Permission.check(data, "color")) {
                 err("command.permission.false")
                 return
             }
@@ -323,7 +323,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun broadcast() {
-            if (!Permission.check(player, "broadcast")) {
+            if (!Permission.check(data, "broadcast")) {
                 err("command.permission.false")
                 return
             }
@@ -338,7 +338,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun discord() {
-            if (!Permission.check(player, "discord")) {
+            if (!Permission.check(data, "discord")) {
                 err("command.permission.false")
                 return
             }
@@ -348,7 +348,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun dps() {
-            if (!Permission.check(player, "dps")) {
+            if (!Permission.check(data, "dps")) {
                 err("command.permission.false")
                 return
             }
@@ -365,7 +365,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun effect() {
-            if (!Permission.check(player, "effect")) {
+            if (!Permission.check(data, "effect")) {
                 err("command.permission.false")
                 return
             }
@@ -402,7 +402,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun exp() {
-            if (!Permission.check(player, "exp")) {
+            if (!Permission.check(data, "exp")) {
                 err("command.permission.false")
                 return
             }
@@ -452,7 +452,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
             when (arg[0]) {
                 "set" -> {
-                    if (!Permission.check(player, "exp.admin")) {
+                    if (!Permission.check(data, "exp.admin")) {
                         err("command.permission.false")
                         return
                     }
@@ -461,7 +461,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 }
 
                 "hide" -> {
-                    if (!Permission.check(player, "exp.admin")) {
+                    if (!Permission.check(data, "exp.admin")) {
                         err("command.permission.false")
                         return
                     }
@@ -489,7 +489,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 }
 
                 "add" -> {
-                    if (!Permission.check(player, "exp.admin")) {
+                    if (!Permission.check(data, "exp.admin")) {
                         err("command.permission.false")
                         return
                     }
@@ -498,7 +498,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 }
 
                 "remove" -> {
-                    if (!Permission.check(player, "exp.admin")) {
+                    if (!Permission.check(data, "exp.admin")) {
                         err("command.permission.false")
                         return
                     }
@@ -513,7 +513,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun fillitems() {
-            if (!Permission.check(player, "fillitems")) {
+            if (!Permission.check(data, "fillitems")) {
                 err("command.permission.false")
                 return
             }
@@ -544,7 +544,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun freeze() {
-            if (!Permission.check(player, "freeze")) {
+            if (!Permission.check(data, "freeze")) {
                 err("command.permission.false")
                 return
             }
@@ -571,7 +571,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun gg() {
-            if (!Permission.check(player, "gg")) {
+            if (!Permission.check(data, "gg")) {
                 err("command.permission.false")
                 return
             }
@@ -584,7 +584,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun god() {
-            if (!Permission.check(player, "god")) {
+            if (!Permission.check(data, "god")) {
                 err("command.permission.false")
                 return
             }
@@ -594,7 +594,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun help() {
-            if (!Permission.check(player, "help")) {
+            if (!Permission.check(data, "help")) {
                 err("command.permission.false")
                 return
             }
@@ -611,7 +611,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val temp = Seq<String>()
             for (a in 0 until netServer.clientCommands.commandList.size) {
                 val command = netServer.clientCommands.commandList[a]
-                if (Permission.check(player, command.text)) {
+                if (Permission.check(data, command.text)) {
                     val description = try {
                         bundle["command.description." + command.text]
                     } catch (_ : MissingResourceException) {
@@ -642,7 +642,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun hub() {
-            if (!Permission.check(player, "hub")) {
+            if (!Permission.check(data, "hub")) {
                 err("command.permission.false")
                 return
             }
@@ -743,7 +743,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun hud() {
-            if (!Permission.check(player, "hud")) {
+            if (!Permission.check(data, "hud")) {
                 err("command.permission.false")
                 return
             }
@@ -774,7 +774,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun info() {
-            if (!Permission.check(player, "info")) {
+            if (!Permission.check(data, "info")) {
                 err("command.permission.false")
                 return
             }
@@ -811,7 +811,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             val lineBreak = "\n"
 
             if (arg.isNotEmpty()) {
-                if (!Permission.check(player, "info.other")) {
+                if (!Permission.check(data, "info.other")) {
                     err("command.permission.false")
                     return
                 }
@@ -909,7 +909,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(target.uuid()) || netServer.admins.isIPBanned(target.con().address))}"
                     val other = findPlayerData(target.uuid())
                     if (other != null) {
-                        val menu = if (Permission.check(other.player, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
+                        val menu = if (Permission.check(other, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
                         targetData = other
                         Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
                     } else {
@@ -921,7 +921,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(p.id) || netServer.admins.isIPBanned(p.lastIP))}"
                         val other = database[p.id]
                         if (other != null) {
-                            val menu = if (Permission.check(other.player, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
+                            val menu = if (Permission.check(other, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
                             targetData = other
                             Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
                         } else {
@@ -937,7 +937,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun js() {
-            if (!Permission.check(player, "js")) {
+            if (!Permission.check(data, "js")) {
                 Call.kick(player.con(), bundle["command.js.no.permission"])
                 return
             }
@@ -957,7 +957,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun kickall() {
-            if (!Permission.check(player, "kickall")) {
+            if (!Permission.check(data, "kickall")) {
                 err("command.permission.false")
                 return
             }
@@ -968,7 +968,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun kill() {
-            if (!Permission.check(player, "kill")) {
+            if (!Permission.check(data, "kill")) {
                 err("command.permission.false")
                 return
             }
@@ -982,7 +982,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun killall() {
-            if (!Permission.check(player, "killall")) {
+            if (!Permission.check(data, "killall")) {
                 err("command.permission.false")
                 return
             }
@@ -998,7 +998,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun killunit() {
-            if (!Permission.check(player, "killunit")) {
+            if (!Permission.check(data, "killunit")) {
                 err("command.permission.false")
                 return
             }
@@ -1044,7 +1044,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun lang() {
-            if (!Permission.check(player, "lang")) {
+            if (!Permission.check(data, "lang")) {
                 err("command.permission.false")
                 return
             }
@@ -1060,7 +1060,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun log() {
-            if (!Permission.check(player, "log")) {
+            if (!Permission.check(data, "log")) {
                 err("command.permission.false")
                 return
             }
@@ -1075,7 +1075,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun login() {
-            if (!Permission.check(player, "login")) {
+            if (!Permission.check(data, "login")) {
                 err("command.permission.false")
                 return
             }
@@ -1107,7 +1107,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun maps() {
-            if (!Permission.check(player, "maps")) {
+            if (!Permission.check(data, "maps")) {
                 err("command.permission.false")
                 return
             }
@@ -1162,7 +1162,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun me() {
-            if (!Permission.check(player, "me") || data.mute) return
+            if (!Permission.check(data, "me") || data.mute) return
             if (Config.chatBlacklist) {
                 val file = root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
                 if (file.isNotEmpty()) {
@@ -1178,7 +1178,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun meme() {
-            if (!Permission.check(player, "meme")) {
+            if (!Permission.check(data, "meme")) {
                 err("command.permission.false")
                 return
             }
@@ -1325,7 +1325,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun motd() {
-            if (!Permission.check(player, "motd")) {
+            if (!Permission.check(data, "motd")) {
                 err("command.permission.false")
                 return
             }
@@ -1341,7 +1341,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun mute() {
-            if (!Permission.check(player, "mute")) {
+            if (!Permission.check(data, "mute")) {
                 err("command.permission.false")
                 return
             }
@@ -1374,7 +1374,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun pause() {
-            if (!Permission.check(player, "pause")) {
+            if (!Permission.check(data, "pause")) {
                 err("command.permission.false")
                 return
             }
@@ -1389,7 +1389,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun players() {
-            if (!Permission.check(player, "players")) {
+            if (!Permission.check(data, "players")) {
                 err("command.permission.false")
                 return
             }
@@ -1443,7 +1443,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun pm() {
-            if (!Permission.check(player, "pm") || data.mute) return
+            if (!Permission.check(data, "pm") || data.mute) return
             val target = findPlayers(arg[0])
             if (target == null) {
                 err("player.not.found")
@@ -1451,7 +1451,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 player.sendMessage("[green][PM] ${target.plainName()}[yellow] => [white] ${arg[1]}")
                 target.sendMessage("[blue][PM] [gray][${data.entityid}][]${player.plainName()}[yellow] => [white] ${arg[1]}")
                 database.players.forEach {
-                    if (Permission.check(it.player, "pm.other") && it.uuid != player.uuid() && target.uuid() != it.player.uuid()) {
+                    if (Permission.check(it, "pm.other") && it.uuid != player.uuid() && target.uuid() != it.player.uuid()) {
                         it.player.sendMessage("[sky]${player.plainName()}[][yellow] => [pink]${target.plainName()} [white]: ${arg[1]}")
                     }
                 }
@@ -1461,7 +1461,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun ranking() {
-            if (!Permission.check(player, "ranking")) {
+            if (!Permission.check(data, "ranking")) {
                 err("command.permission.false")
                 return
             }
@@ -1598,7 +1598,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun register() {
-            if (!Permission.check(player, "register")) {
+            if (!Permission.check(data, "register")) {
                 err("command.permission.false")
                 return
             }
@@ -1622,7 +1622,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun report() {
-            if (!Permission.check(player, "report")) {
+            if (!Permission.check(data, "report")) {
                 err("command.permission.false")
                 return
             }
@@ -1644,7 +1644,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun rollback() {
-            if (!Permission.check(player, "rollback")) {
+            if (!Permission.check(data, "rollback")) {
                 err("command.permission.false")
                 return
             }
@@ -1681,7 +1681,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun search() {
-            if (!Permission.check(player, "search")) {
+            if (!Permission.check(data, "search")) {
                 err("command.permission.false")
                 return
             }
@@ -1783,7 +1783,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun setitem() {
-            if (!Permission.check(player, "setitem")) {
+            if (!Permission.check(data, "setitem")) {
                 err("command.permission.false")
                 return
             }
@@ -1819,7 +1819,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun setperm() {
-            if (!Permission.check(player, "setperm")) {
+            if (!Permission.check(data, "setperm")) {
                 err("command.permission.false")
                 return
             }
@@ -1851,7 +1851,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun skip() {
-            if (!Permission.check(player, "skip")) {
+            if (!Permission.check(data, "skip")) {
                 err("command.permission.false")
                 return
             }
@@ -1877,7 +1877,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun spawn() {
-            if (!Permission.check(player, "spawn")) {
+            if (!Permission.check(data, "spawn")) {
                 err("command.permission.false")
                 return
             }
@@ -1931,7 +1931,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 return String.format("%d:%02d:%02d:%02d", days % 365, hour % 24, min % 60, seconds % 60)
             }
 
-            if (!Permission.check(player, "status")) {
+            if (!Permission.check(data, "status")) {
                 err("command.permission.false")
                 return
             }
@@ -1997,7 +1997,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun team() {
-            if (!Permission.check(player, "team")) {
+            if (!Permission.check(data, "team")) {
                 err("command.permission.false")
                 return
             }
@@ -2006,7 +2006,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
             if (arg.size == 1) {
                 player.team(team)
-            } else if (Permission.check(player, "team.other")) {
+            } else if (Permission.check(data, "team.other")) {
                 val other = findPlayers(arg[1])
                 if (other != null) {
                     other.team(team)
@@ -2017,7 +2017,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun tempban() {
-            if (!Permission.check(player, "tempban")) {
+            if (!Permission.check(data, "tempban")) {
                 err("command.permission.false")
                 return
             }
@@ -2049,7 +2049,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun time() {
-            if (!Permission.check(player, "time")) {
+            if (!Permission.check(data, "time")) {
                 err("command.permission.false")
                 return
             }
@@ -2060,7 +2060,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun tp() {
-            if (!Permission.check(player, "tp")) {
+            if (!Permission.check(data, "tp")) {
                 err("command.permission.false")
                 return
             }
@@ -2077,7 +2077,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun tpp() {
-            if (!Permission.check(player, "tp")) {
+            if (!Permission.check(data, "tp")) {
                 err("command.permission.false")
                 return
             }
@@ -2110,7 +2110,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun track() {
-            if (!Permission.check(player, "tp")) {
+            if (!Permission.check(data, "tp")) {
                 err("command.permission.false")
                 return
             }
@@ -2121,7 +2121,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun unban() {
-            if (!Permission.check(player, "unban")) {
+            if (!Permission.check(data, "unban")) {
                 err("command.permission.false")
                 return
             }
@@ -2138,7 +2138,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun unmute() {
-            if (!Permission.check(player, "unmute")) {
+            if (!Permission.check(data, "unmute")) {
                 err("command.permission.false")
                 return
             }
@@ -2171,7 +2171,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun url() {
-            if (!Permission.check(player, "url")) {
+            if (!Permission.check(data, "url")) {
                 err("command.permission.false")
                 return
             }
@@ -2186,7 +2186,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun weather() {
-            if (!Permission.check(player, "weather")) {
+            if (!Permission.check(data, "weather")) {
                 err("command.permission.false")
                 return
             }
@@ -2232,7 +2232,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
             }
-            if (!Permission.check(player, "vote")) {
+            if (!Permission.check(data, "vote")) {
                 err("command.permission.false")
                 return
             }
@@ -2246,13 +2246,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 return
             }
             if (!Event.voting) {
-                if (database.players.size <= 3 && !Permission.check(player, "vote.admin")) {
+                if (database.players.size <= 3 && !Permission.check(data, "vote.admin")) {
                     err("command.vote.enough")
                     return
                 }
                 when (arg[0]) {
                     "kick" -> {
-                        if (!Permission.check(player, "vote.kick")) {
+                        if (!Permission.check(data, "vote.kick")) {
                             err("command.permission.false")
                             return
                         }
@@ -2263,14 +2263,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         }
                         val target = findPlayers(arg[1])
                         if (target != null) {
-                            if (Permission.check(target, "kick.admin")) {
+                            if (Permission.check(data, "kick.admin")) {
                                 err("command.vote.kick.target.admin")
                             } else {
                                 Event.voteTarget = target
                                 Event.voteTargetUUID = target.uuid()
                                 Event.voteReason = arg[2]
                                 Event.voteType = "kick"
-                                Event.voteStarter = player
+                                Event.voteStarter = data
                                 Event.voting = true
                                 sendStart("command.vote.kick.start", target.plainName(), arg[2])
                             }
@@ -2281,7 +2281,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                     // vote map <map name> <reason>
                     "map" -> {
-                        if (!Permission.check(player, "vote.map")) {
+                        if (!Permission.check(data, "vote.map")) {
                             err("command.permission.false")
                             return
                         }
@@ -2317,7 +2317,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     Event.voteType = "map"
                                     Event.voteMap = target
                                     Event.voteReason = arg[2]
-                                    Event.voteStarter = player
+                                    Event.voteStarter = data
                                     Event.voting = true
                                     sendStart("command.vote.map.start", target!!.name(), arg[2])
                                 } else {
@@ -2333,14 +2333,14 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                     // vote gg
                     "gg" -> {
-                        if (!Permission.check(player, "vote.gg")) {
+                        if (!Permission.check(data, "vote.gg")) {
                             err("command.permission.false")
                             return
                         }
 
                         if (Event.voteCooltime == 0) {
                             Event.voteType = "gg"
-                            Event.voteStarter = player
+                            Event.voteStarter = data
                             Event.voting = true
                             if (state.rules.pvp) {
                                 Event.voteTeam = player.team()
@@ -2357,7 +2357,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                     // vote skip <count>
                     "skip" -> {
-                        if (!Permission.check(player, "vote.skip")) {
+                        if (!Permission.check(data, "vote.skip")) {
                             err("command.permission.false")
                             return
                         }
@@ -2371,7 +2371,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 if (Event.voteCooltime == 0) {
                                     Event.voteType = "skip"
                                     Event.voteWave = arg[1].toInt()
-                                    Event.voteStarter = player
+                                    Event.voteStarter = data
                                     Event.voting = true
                                     Event.voteCooltime = 120
                                     sendStart("command.vote.skip.start", arg[1])
@@ -2384,7 +2384,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                     // vote back <reason>
                     "back" -> {
-                        if (!Permission.check(player, "vote.back")) {
+                        if (!Permission.check(data, "vote.back")) {
                             err("command.permission.false")
                             return
                         }
@@ -2399,21 +2399,21 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         }
                         Event.voteType = "back"
                         Event.voteReason = arg[1]
-                        Event.voteStarter = player
+                        Event.voteStarter = data
                         Event.voting = true
                         sendStart("command.vote.back.start", arg[1])
                     }
 
                     // vote random
                     "random" -> {
-                        if (!Permission.check(player, "vote.random")) {
+                        if (!Permission.check(data, "vote.random")) {
                             err("command.permission.false")
                             return
                         }
 
                         if (Event.voteCooltime == 0) {
                             Event.voteType = "random"
-                            Event.voteStarter = player
+                            Event.voteStarter = data
                             Event.voting = true
                             Event.voteCooltime = 360
                             sendStart("command.vote.random.start")
@@ -2423,7 +2423,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
 
                     "reset" -> {
-                        if (!Permission.check(player, "vote.reset")) {
+                        if (!Permission.check(data, "vote.reset")) {
                             err("command.permission.false")
                             return
                         }
@@ -2441,14 +2441,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         fun votekick() {
             if (arg[0].contains("#")) {
-                val f = Groups.player.find { p -> p.id() == arg[0].substring(1).toInt() }
-
-                if (Permission.check(f, "kick.admin")) {
+                val target = database.players.find { e -> e.uuid == Groups.player.find { p -> p.id() == arg[0].substring(1).toInt() }.uuid() }
+                if (target != null && Permission.check(target, "kick.admin")) {
                     err("command.vote.kick.target.admin")
-                } else {
-                    val array = arrayOf("kick", f.name, "Kick")
-                    vote(player, array)
                 }
+
+                val array = arrayOf("kick", target.name, "Kick")
+                vote(player, array)
             }
         }
 

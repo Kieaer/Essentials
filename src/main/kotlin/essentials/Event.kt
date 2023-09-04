@@ -78,7 +78,7 @@ object Event {
     var voteReason : String? = null
     var voteMap : Map? = null
     var voteWave : Int? = null
-    var voteStarter : Playerc? = null
+    var voteStarter : DB.PlayerData? = null
     var isPvP : Boolean = false
     var voteTeam : Team = state.rules.defaultTeam
     var voteCooltime : Int = 0
@@ -380,8 +380,8 @@ object Event {
                     val data = findPlayerData(player.uuid())
                     if (data != null) {
                         if (!data.mute) {
-                            val isAdmin = Permission.check(player, "vote.pass")
-                            if (voting && message.equals("y", true) && voteStarter != player && !voted.contains(player.uuid())) {
+                            val isAdmin = Permission.check(data, "vote.pass")
+                            if (voting && message.equals("y", true) && voteStarter != data && !voted.contains(player.uuid())) {
                                 if (isAdmin) {
                                     isAdminVote = true
                                 } else {
@@ -428,8 +428,8 @@ object Event {
                                     }
                                 }
                             }
-                            val format = Permission[player].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message)
-                            return@ChatFormatter if (isGlobalMute && Permission.check(player, "chat.admin") && !isMute) {
+                            val format = Permission[data].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message)
+                            return@ChatFormatter if (isGlobalMute && Permission.check(data, "chat.admin") && !isMute) {
                                 format
                             } else if (!isGlobalMute && !(voting && message.contains("y") && !isMute)) {
                                 format
@@ -694,7 +694,7 @@ object Event {
                 pvpSpectors = Seq<String>()
 
                 for (data in database.players) {
-                    if (Permission.check(data.player, "pvp.spector")) {
+                    if (Permission.check(data, "pvp.spector")) {
                         data.player.team(Team.derelict)
                     }
                 }
@@ -1126,7 +1126,7 @@ object Event {
                             }
 
                             // 잠수 플레이어 카운트
-                            if (Config.afk && it.player.unit() != null && !it.player.unit().moving() && !it.player.unit().mining() && !Permission.check(it.player, "afk.admin") && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()) {
+                            if (Config.afk && it.player.unit() != null && !it.player.unit().moving() && !it.player.unit().mining() && !Permission.check(it, "afk.admin") && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()) {
                                 it.afkTime++
                                 if (it.afkTime == Config.afkTime) {
                                     if (Config.afkServer.isEmpty()) {
@@ -1190,7 +1190,7 @@ object Event {
                                                 }
                                                 msg.append("$color${floor(unit.health.toDouble())}")
 
-                                                if (unit.team != it.player.team() && Permission.check(it.player, "hud.enemy")) {
+                                                if (unit.team != it.player.team() && Permission.check(it, "hud.enemy")) {
                                                     Call.label(it.player.con(), msg.toString(), Time.delta, unit.getX(), unit.getY())
                                                 } else if (unit.team == it.player.team()) {
                                                     Call.label(it.player.con(), msg.toString(), Time.delta, unit.getX(), unit.getY())
@@ -1203,7 +1203,7 @@ object Event {
                         }
 
                         if (voting) {
-                            if (Groups.player.find { a -> a.uuid() == voteStarter!!.uuid() } == null) {
+                            if (Groups.player.find { a -> a.uuid() == voteStarter!!.uuid } == null) {
                                 send("command.vote.canceled.leave")
                                 resetVote()
                             } else {
@@ -1260,7 +1260,7 @@ object Event {
                                         }
 
                                         "gg" -> {
-                                            if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid(), 180)
+                                            if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid, 180)
                                             if (isPvP) {
                                                 world.tiles.forEach {
                                                     if (it.build != null && it.build.team != null && it.build.team == voteTeam) {
@@ -1273,7 +1273,7 @@ object Event {
                                         }
 
                                         "skip" -> {
-                                            if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 180)
+                                            if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid, 180)
                                             for (a in 0..voteWave!!) {
                                                 spawner.spawnEnemies()
                                                 state.wave++
@@ -1290,7 +1290,7 @@ object Event {
                                             if (lastVoted!!.plusMinutes(10).isBefore(LocalTime.now())) {
                                                 send("command.vote.random.cool")
                                             } else {
-                                                if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid(), 420)
+                                                if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid, 420)
                                                 lastVoted = LocalTime.now()
                                                 send("command.vote.random.done")
                                                 Thread {
@@ -1303,7 +1303,7 @@ object Event {
                                                             send("command.vote.random.unit")
                                                             Groups.unit.each {
                                                                 if (voteStarter != null) {
-                                                                    if (it.team == voteStarter!!.team()) it.kill()
+                                                                    if (it.team == voteStarter!!.player.team()) it.kill()
                                                                 } else {
                                                                     it.kill()
                                                                 }
@@ -1321,7 +1321,7 @@ object Event {
                                                             send("command.vote.random.health")
                                                             Groups.build.each {
                                                                 if (voteStarter != null) {
-                                                                    if (it.team == voteStarter!!.team()) {
+                                                                    if (it.team == voteStarter!!.player.team()) {
                                                                         it.block.health /= 2
                                                                     }
                                                                 } else {
@@ -1338,7 +1338,7 @@ object Event {
                                                             send("command.vote.random.fill.core")
                                                             if (voteStarter != null) {
                                                                 content.items().forEach {
-                                                                    state.teams.cores(voteStarter!!.team()).first().items.add(it, Random(516).nextInt(500))
+                                                                    state.teams.cores(voteStarter!!.player.team()).first().items.add(it, Random(516).nextInt(500))
                                                                 }
                                                             } else {
                                                                 content.items().forEach {
@@ -1378,7 +1378,7 @@ object Event {
                                                                     send("command.vote.random.supply")
                                                                     repeat(2) {
                                                                         if (voteStarter != null) {
-                                                                            UnitTypes.oct.spawn(voteStarter!!.team(), voteStarter!!.x, voteStarter!!.y)
+                                                                            UnitTypes.oct.spawn(voteStarter!!.player.team(), voteStarter!!.player.x, voteStarter!!.player.y)
                                                                         } else {
                                                                             UnitTypes.oct.spawn(Team.sharded, state.teams.cores(Team.sharded).first().x, state.teams.cores(Team.sharded).first().y)
                                                                         }
