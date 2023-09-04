@@ -47,6 +47,7 @@ import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
@@ -1598,18 +1599,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
         }
 
         fun register() {
-            if (!Permission.check(data, "register")) {
-                err("command.permission.false")
-                return
-            }
-
             if (Config.authType != Config.AuthType.None) {
                 if (arg.size != 3) {
                     send("command.reg.usage")
                 } else if (arg[1] != arg[2]) {
                     err("command.reg.incorrect")
                 } else {
-                    if (transaction { DB.Player.select { DB.Player.accountID.eq(arg[0]) }.firstOrNull() } == null) {
+                    if (transaction { DB.Player.select { DB.Player.accountID.eq(arg[0]).and(DB.Player.uuid.eq(player.uuid())).and(DB.Player.oldUUID.eq(player.uuid())) }.firstOrNull() } == null) {
                         Trigger.createPlayer(player, arg[0], arg[1])
                         Log.info(Bundle()["log.data_created", player.plainName()])
                     } else {
