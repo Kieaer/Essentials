@@ -1,3 +1,7 @@
+linux:
+  apt:
+    packages:
+      - libc6=2.27-3ubuntu1.4
 jdk:
   - openjdk16
 before_install:
