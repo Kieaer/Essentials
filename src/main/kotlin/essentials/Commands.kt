@@ -862,6 +862,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 3 -> 10080
                                 4 -> 20160
                                 5 -> 43800
+                                6 -> -1
                                 else -> 0
                             }
 
@@ -873,6 +874,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     3 -> "1week"
                                     4 -> "2week"
                                     5 -> "1month"
+                                    6 -> "permanent"
                                     else -> ""
                                 }
                             }"]
@@ -887,9 +889,12 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 }
 
                                 Call.menu(player.con(), tempBanConfirmMenu, bundle["info.title.tempban"], bundle["info.tempban.comfirm", timeText] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
-                            } else {
+                            } else if (s == 6) {
                                 val banConfirmMenu = Menus.registerMenu { _, i ->
                                     if (i == 0) {
+                                        if (targetData != null) {
+                                            Call.kick(targetData!!.player.con(), Packets.KickReason.banned)
+                                        };
                                         banPlayer(targetData)
                                     }
                                 }
@@ -899,8 +904,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         }
                         Call.menu(player.con(), innerMenu, bundle["info.title.ban.time"], bundle["info.ban.comfirm"] + lineBreak, banMenus)
                     } else if (select == 2) {
-                        if (target != null) {
-                            Call.kick(target.con(), Packets.KickReason.kick)
+                        if (targetData != null) {
+                            Call.kick(targetData!!.player.con(), Packets.KickReason.kick)
                         }
                     }
                 }
