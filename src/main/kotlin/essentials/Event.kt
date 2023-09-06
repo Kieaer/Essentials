@@ -1197,11 +1197,11 @@ object Event {
                                             if (Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
                                                 netServer.admins.banPlayerID(voteTargetUUID)
                                                 send("command.vote.kick.target.banned", name)
-                                                Events.fire(PlayerVoteBanned(name, voteReason!!, onlinePlayers.toString()))
+                                                Events.fire(PlayerVoteBanned(voteStarter!!.name, name, voteReason!!, onlinePlayers.toString()))
                                             } else {
                                                 voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
                                                 send("command.vote.kick.target.kicked", name)
-                                                Events.fire(PlayerVoteKicked(name, voteReason!!, onlinePlayers.toString()))
+                                                Events.fire(PlayerVoteKicked(voteStarter!!.name, name, voteReason!!, onlinePlayers.toString()))
                                             }
                                         }
 

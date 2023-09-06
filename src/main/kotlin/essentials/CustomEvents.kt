@@ -1,8 +1,8 @@
 package essentials
 
 class CustomEvents {
-    class PlayerVoteKicked(val name : String, val voteReason : String, val online : String)
-    class PlayerVoteBanned(val name : String, val voteReason : String, val online : String)
+    class PlayerVoteKicked(val voteStarter : String, val name : String, val voteReason : String, val online : String)
+    class PlayerVoteBanned(val voteStarter : String, val name : String, val voteReason : String, val online : String)
     class PlayerTempUnbanned(val name : String)
     class PlayerTempBanned(val name : String, val by : String, val date : String)
     class PlayerUnbanned(val name : String, val date : String)
