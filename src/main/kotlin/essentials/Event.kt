@@ -680,6 +680,7 @@ object Event {
 
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
+            PluginData.isSurrender = false
             dpsTile = null
             if (saveDirectory.child("rollback.msav").exists()) saveDirectory.child("rollback.msav").delete()
 
@@ -1221,6 +1222,7 @@ object Event {
                                                     }
                                                 }
                                             } else {
+                                                PluginData.isSurrender = true;
                                                 Events.fire(GameOverEvent(state.rules.waveTeam))
                                             }
                                         }
@@ -1643,7 +1645,7 @@ object Event {
             }
         }
 
-        if (isConnected) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
+        if (isConnected && Config.expAlert) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
     }
 
     fun findPlayerData(uuid : String) : DB.PlayerData? {

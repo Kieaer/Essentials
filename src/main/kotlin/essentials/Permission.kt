@@ -217,7 +217,7 @@ object Permission {
 
     operator fun get(data : DB.PlayerData) : PermissionData {
         val result = PermissionData()
-        val u = user.find { it.asObject().has("uuid") && it.asObject().get("uuid").asString().equals(data.uuid) }
+        val u = user.find { it.asObject().has("uuid") && it.asObject().get("uuid").asString() == data.uuid }
         if (u != null) {
             result.uuid = u.asObject().getString("uuid", data.uuid)
             result.name = u.asObject().getString("name", data.player.name())

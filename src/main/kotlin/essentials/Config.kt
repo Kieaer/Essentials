@@ -45,6 +45,7 @@ object Config {
     var chatBlacklist = false
     var chatBlacklistRegex = false
     var expDisplay = false
+    var expAlert = false
     var minimalName = false
     var blockfooclient = false
     var allowMobile = true
@@ -138,6 +139,7 @@ object Config {
         features.add("chatBlacklist", chatBlacklist, bundle["config.chatblacklist"])
         features.add("chatBlacklistRegex", chatBlacklistRegex, bundle["config.chatblacklist.regex"])
         features.add("expDisplay", expDisplay, bundle["config.expDisplay"])
+        features.add("expAlert", expAlert, bundle["config.expAlert"])
         features.add("blockIP", blockIP, bundle["config.blockIP"])
         features.add("waveskip", waveskip, bundle["config.waveskip"])
         features.add("unbreakableCore", unbreakableCore, bundle["config.unbreakablecore"])
@@ -209,6 +211,7 @@ object Config {
         chatBlacklist = features.getBoolean("chatBlacklist", chatBlacklist)
         chatBlacklistRegex = features.getBoolean("chatBlacklistRegex", chatBlacklistRegex)
         expDisplay = features.getBoolean("expDisplay", expDisplay)
+        expAlert = features.getBoolean("expAlert", expAlert)
         blockIP = features.getBoolean("blockIP", blockIP)
         waveskip = features.getInt("waveskip", waveskip)
         unbreakableCore = features.getBoolean("unbreakableCore", unbreakableCore)
