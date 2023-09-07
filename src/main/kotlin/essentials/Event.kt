@@ -1210,6 +1210,7 @@ object Event {
                                             for (it in database.players) {
                                                 earnEXP(state.rules.waveTeam, it.player, it, true)
                                             }
+                                            PluginData.isSurrender = true;
                                             back(voteMap)
                                         }
 
@@ -1238,6 +1239,7 @@ object Event {
                                         }
 
                                         "back" -> {
+                                            PluginData.isSurrender = true;
                                             back(null)
                                         }
 
