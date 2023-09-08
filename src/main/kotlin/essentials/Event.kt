@@ -710,13 +710,9 @@ object Event {
 
         Events.on(ConnectPacketEvent::class.java) {
             var kickReason = ""
-            val isIDBanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("id").asString() == it.packet.uuid }
             val isIPbanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("ip").asArray().find { b -> b.asString() == it.connection.address } != null }
 
-            if (isIDBanned != null) {
-                it.connection.kick(Packets.KickReason.banned)
-                kickReason = "banned.id"
-            } else if (isIPbanned != null) {
+            if (isIPbanned != null) {
                 it.connection.kick(Packets.KickReason.banned)
                 kickReason = "banned.ip"
             } else if (!Config.allowMobile && it.connection.mobile) {
@@ -763,9 +759,13 @@ object Event {
         }
 
         Events.on(PlayerConnect::class.java) {
+            val isIDBanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("id").asString() == it.player.uuid() }
             var kickReason = ""
 
-            if (findPlayerData(it.player.uuid()) != null) {
+            if (isIDBanned != null) {
+                it.player.kick(Packets.KickReason.banned)
+                kickReason = "banned.id"
+            } else if (findPlayerData(it.player.uuid()) != null) {
                 it.player.kick(Bundle(it.player.locale)["event.player.exists"])
             } else if (Config.blockNewUser && database[it.player.uuid()] == null) {
                 it.player.kick(Bundle(it.player.locale)["event.player.new.blocked"], 0L)
