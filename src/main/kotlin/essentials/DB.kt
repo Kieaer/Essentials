@@ -35,7 +35,9 @@ class DB {
             if (Main.root.child("backup").list().size > 20) {
                 Main.root.child("backup").list().first().delete()
             }
-            Main.root.child("database.mv.db").copyTo(Main.root.child("backup/database-stable-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db"))
+            transaction {
+                exec("BACKUP TO 'config/mods/Essentials/backup/offline-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.zip'")
+            }
         }
     }
 
@@ -84,8 +86,8 @@ class DB {
                 }
             }
 
-            backup()
             connectServer()
+            backup()
 
             if (!isRemote) {
                 var migrateVersion = if (Main.root.child("data/migrateVersion.txt").exists()) {
@@ -105,11 +107,10 @@ class DB {
                     while (!Thread.currentThread().isInterrupted) {
                         TimeUnit.DAYS.sleep(1)
                         transaction {
-                            exec("BACKUP TO ${Main.root.child("backup/database-online-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db").absolutePath()}'")
+                            exec("BACKUP TO 'config/mods/Essentials/backup/online-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.zip'")
                         }
                     }
                 }
-
 
                 try {
                     transaction {
