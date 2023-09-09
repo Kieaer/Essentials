@@ -107,7 +107,7 @@ object Event {
 
     private val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
     private val blockSelectRegex : Pattern = Pattern.compile("^build\\d{1,2}\$")
-    private val nameRegex : Pattern = Pattern.compile("(.*\\[.*].*)|^(.*\\s+.*)+\$")
+    private val nameRegex : Pattern = Pattern.compile("^[\\uAC00-\\uD7AF\\u1100-\\u11FF\\u3130-\\u318F0-9a-zA-Z\\(\\)]+\$")
 
     fun register() {
         fun checkValidBlock(tile : Tile) : String {
@@ -719,14 +719,15 @@ object Event {
                 it.connection.kick(Bundle(it.packet.locale)["event.player.not.allow.mobile"], 0L)
                 kickReason = "mobile"
                 /*} else if (Config.fixedName) {
-                    if (it.packet.name.length > 32) {
-                        it.connection.kick(Bundle(it.packet.locale)["event.player.name.long"], 0L)
-                        kickReason = "name.long"
-                    }
-                    if (nameRegex.matcher(it.packet.name).matches()) {
-                        it.connection.kick(Bundle(it.packet.locale)["event.player.name.not.allow"], 0L)
-                        kickReason = "name.regex"
-                    }*/
+                if (it.packet.name.length > 32) {
+                    it.connection.kick(Bundle(it.packet.locale)["event.player.name.long"], 0L)
+                    kickReason = "name.long"
+                }*/
+            } else if (Config.fixedName) {
+                if (nameRegex.matcher(it.packet.name).matches()) {
+                    it.connection.kick(Bundle(it.packet.locale)["event.player.name.not.allow"], 0L)
+                    kickReason = "name.regex"
+                }
             } else if (Config.minimalName && it.packet.name.length < 4) {
                 it.connection.kick(Bundle(it.packet.locale)["event.player.name.short"], 0L)
                 kickReason = "name.short"
