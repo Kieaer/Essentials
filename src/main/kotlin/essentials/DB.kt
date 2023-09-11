@@ -1,83 +1,40 @@
 package essentials
 
+import arc.Core
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
-import essentials.Main.Companion.root
 import mindustry.gen.Playerc
+import org.h2.tools.Server
 import org.hjson.JsonObject
+import org.hjson.ParseException
 import org.hjson.Stringify
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
-import org.postgresql.util.PSQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.system.exitProcess
-
 
 class DB {
     val players : Seq<PlayerData> = Seq()
+    private var isRemote : Boolean = false
+    lateinit var db : Database
+    var dbServer : Server? = null
     var dbVersion = 3
-
+    var migrateVersion = 2
+    var migrateData : Seq<PlayerData>? = null
 
     fun open() {
-        var migrateData: Seq<PlayerData> = Seq()
-
         try {
-            if (root.child("database.mv.db").exists()) {
-                val new = "postgresql://127.0.0.1:5432/essentials"
+            if (Main.root.child("database.mv.db").exists()) {
                 val old = Database.connect("jdbc:h2:${Config.database}", "org.h2.Driver", "sa", "")
-                transaction {
-                    exec("ALTER TABLE player ADD COLUMN IF NOT EXISTS strict BOOLEAN DEFAULT FALSE")
-                }
                 migrateData = getAll()
                 TransactionManager.closeAndUnregister(old)
-                Config.database = new
             }
 
-            try {
-                Database.connect(
-                    "jdbc:${Config.database}",
-                    "org.postgresql.Driver",
-                    Config.databaseID,
-                    Config.databasePW
-                )
-                transaction { connection.isClosed }
-            } catch (e: PSQLException) {
-                if (Config.databasePW.isNotBlank()) {
-                    Config.save()
-                    Config.update()
-                }
-
-                /*try {
-                    val updateConnection = Database.connect(
-                        "jdbc:${Config.database}",
-                        "org.postgresql.Driver",
-                        Config.databaseID,
-                        Config.databasePW
-                    )
-                    transaction {
-                        exec("ALTER TABLE data ADD version TEXT DEFAULT '1' NOT NULL")
-                        exec("UPDATE player SET status='{}'")
-                        exec("UPDATE player SET \"lastLoginDate\" = NULL WHERE \"lastLoginDate\" = 'null'")
-                        exec("UPDATE player SET \"lastLeaveDate\" = NULL WHERE \"lastLeaveDate\" = 'null'")
-                        exec("UPDATE player SET \"duplicateName\" = NULL WHERE \"duplicateName\" = 'null'")
-                    }
-                    TransactionManager.closeAndUnregister(updateConnection)
-                } catch (e: SQLException) {
-                    e.printStackTrace()
-                }*/
-
-                Database.connect(
-                    "jdbc:${Config.database}",
-                    "org.postgresql.Driver",
-                    Config.databaseID,
-                    Config.databasePW
-                )
-            }
+            db = Database.connect("jdbc:postgresql://127.0.0.1:5432/postgres", "org.postgresql.Driver", Config.databaseID, Config.databasePW)
 
             transaction {
                 if (!connection.isClosed) {
@@ -85,85 +42,99 @@ class DB {
                     SchemaUtils.create(Data)
                     SchemaUtils.create(DB)
 
-                    fun upgrade() {
-                        val currentVersion = DB.selectAll().first()[DB.version]
-                        println(currentVersion)
-                        when (currentVersion) {
-                            3 -> {
+                    if (!isRemote) {
+                        fun upgrade() {
+                            when (DB.selectAll().first()[DB.version]) {
+                                2 -> {
+                                    exec("UPDATE player SET status='{}'")
+                                    exec("UPDATE player SET \"lastLoginDate\" = NULL WHERE \"lastLoginDate\" = 'null'")
+                                    exec("UPDATE player SET \"lastLeaveDate\" = NULL WHERE \"lastLeaveDate\" = 'null'")
+                                    exec("UPDATE player SET \"duplicateName\" = NULL WHERE \"duplicateName\" = 'null'")
+                                    listOf("")
 
+                                    if (!Data.selectAll().empty() && JsonObject.readJSON(String(Base64.getDecoder().decode(Data.selectAll().first()[Data.data]))).asObject().getBoolean("isDuplicateNameChecked", false)) {
+                                        val duplicate = Player.selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }.map { it[Player.name] }
+                                        for (value in duplicate) {
+                                            Player.update({ Player.name eq value }) {
+                                                it[duplicateName] = value
+                                            }
+                                        }
+                                        PluginData.save(true)
+                                    }
+                                }
+                                else -> listOf("")
                             }
-
-                            else -> listOf("")
-                        }
-                    }
-
-                    if (migrateData.size != 0) {
-                        val total = migrateData.size
-                        for ((progress, data) in migrateData.withIndex()) {
-                            createData(data)
-                            print("\r$progress/$total")
-                        }
-                        println()
-                        DB.update {
-                            it[version] = 3
                         }
 
-                        exec("UPDATE player SET status='{}'")
-                        exec("UPDATE player SET \"lastLoginDate\" = NULL WHERE \"lastLoginDate\" = 'null'")
-                        exec("UPDATE player SET \"lastLeaveDate\" = NULL WHERE \"lastLeaveDate\" = 'null'")
-                        exec("UPDATE player SET \"duplicateName\" = NULL WHERE \"duplicateName\" = 'null'")
-
-                        root.child("database.mv.db").moveTo(root.child("database-v18.1.mv.db"))
-                    }
-
-                    var isUpgraded = false
-                    if (DB.selectAll().empty()) {
-                        DB.insert {
-                            it[version] = dbVersion
-                        }
-                    } else {
+                        var isUpgraded = false
                         while (DB.selectAll().first()[DB.version] != dbVersion) {
                             isUpgraded = true
                             upgrade()
                         }
-                    }
 
-                    if (isUpgraded) {
-                        Log.info(Bundle()["event.plugin.db.version", dbVersion])
-                        Log.warn(Bundle()["event.plugin.db.warning"])
-                    }
+                        if (isUpgraded) {
+                            Log.info(Bundle()["event.plugin.db.version", dbVersion])
+                            Log.warn(Bundle()["event.plugin.db.warning"])
+                        }
 
-                    if (!Data.selectAll().empty() && JsonObject.readJSON(String(Base64.getDecoder().decode(Data.selectAll().first()[Data.data]))).asObject().getBoolean("isDuplicateNameChecked", false)) {
-                        val duplicate = Player.selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }.map { it[Player.name] }
-                        for (value in duplicate) {
-                            Player.update({ Player.name eq value }) {
-                                it[duplicateName] = value
+                        try {
+                            getAll()
+                        } catch (e : ParseException) {
+                            Player.update {
+                                it[status] = "{}"
                             }
                         }
-                        PluginData.save(true)
+
+                        if (!Main.root.child("data/isDuplicateNameChecked.txt").exists()) {
+                            val sql = """
+                                UPDATE player SET "duplicateName" = null;
+                                SELECT * FROM player t1 WHERE EXISTS (
+                                    SELECT 1
+                                    FROM player t2
+                                    WHERE t2.name = t1.name
+                                    GROUP BY t2.name
+                                    HAVING COUNT(*) > 1
+                                    AND MIN(t2."firstPlayDate") <> t1."firstPlayDate"
+                                )
+                            """.trimIndent()
+
+                            exec(sql) { rs ->
+                                while (rs.next()) {
+                                    val data = get(rs.getString("uuid"))
+                                    if (data != null) {
+                                        try {
+                                            if (rs.getString("duplicateName") == "null") {
+                                                data.duplicateName = data.name
+                                            }
+                                        } catch (e : ParseException) {
+                                            if (data.duplicateName == null) {
+                                                data.duplicateName = data.name
+                                            }
+                                        }
+                                        update(data.uuid, data)
+                                    }
+                                }
+                            }
+
+
+
+                            Main.root.child("data/isDuplicateNameChecked.txt").writeString("Yes! No more time spent checking player name duplicates on plugin startup lol")
+                        }
                     }
                 } else {
                     Log.err(Bundle()["event.plugin.db.wrong"])
-                    exitProcess(1)
+                    dbServer?.stop()
+                    Core.app.exit()
                 }
             }
-        } catch (e : PSQLException) {
-            if (Config.databasePW.isEmpty()) {
-                Log.warn(Bundle()["event.plugin.db.account.empty"])
-            } else {
-                e.printStackTrace()
-                Log.err(Bundle()["event.plugin.db.account.wrong"])
-            }
-            exitProcess(1)
         } catch (e : Exception) {
             e.printStackTrace()
-            exitProcess(1)
+            Core.app.exit()
         }
     }
 
     object Data: Table() {
         val data = text("data")
-        val version = integer("version")
     }
 
     object DB: Table() {
@@ -600,5 +571,9 @@ class DB {
                 return null
             }
         }
+    }
+
+    fun close() {
+        TransactionManager.closeAndUnregister(db)
     }
 }
