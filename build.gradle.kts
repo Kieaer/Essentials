@@ -44,6 +44,8 @@ dependencies {
     implementation(files("libs/lingua.jar"))
     implementation("org.slf4j:slf4j-nop:2.0.6")
     implementation("com.github.lalyos:jfiglet:0.0.9")
+    implementation("org.postgresql:postgresql:42.6.0")
+
 
     testImplementation("com.github.anuken.arc:arc-core:$arcVersion")
     testImplementation("com.github.anuken.mindustryjitpack:core:$mindustryVersion")

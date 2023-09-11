@@ -54,95 +54,93 @@ object PluginData {
 
     data class Banned(val time : Long, val name : String, val uuid : String, val reason : String)
 
-    operator fun get(key : String) : String? {
-        return status.get(key)
-    }
-
     fun save(first : Boolean) {
-        val data = JsonObject()
-        var buffer = JsonArray()
+        transaction {
+            val data = JsonObject()
+            var buffer = JsonArray()
 
-        warpZones.forEach {
-            val obj = JsonObject()
-            obj.add("mapName", it.mapName)
-            obj.add("start", it.start)
-            obj.add("finish", it.finish)
-            obj.add("touch", it.click)
-            obj.add("ip", it.ip)
-            obj.add("port", it.port)
-            buffer.add(obj)
-        }
-        data.add("warpZones", buffer)
-        buffer = JsonArray()
+            warpZones.forEach {
+                val obj = JsonObject()
+                obj.add("mapName", it.mapName)
+                obj.add("start", it.start)
+                obj.add("finish", it.finish)
+                obj.add("touch", it.click)
+                obj.add("ip", it.ip)
+                obj.add("port", it.port)
+                buffer.add(obj)
+            }
+            data.add("warpZones", buffer)
+            buffer = JsonArray()
 
-        warpBlocks.forEach {
-            val obj = JsonObject()
-            obj.add("mapName", it.mapName)
-            obj.add("x", it.x)
-            obj.add("y", it.y)
-            obj.add("tileName", it.tileName)
-            obj.add("size", it.size)
-            obj.add("ip", it.ip)
-            obj.add("port", it.port)
-            obj.add("description", it.description)
-            buffer.add(obj)
-        }
-        data.add("warpBlocks", buffer)
-        buffer = JsonArray()
+            warpBlocks.forEach {
+                val obj = JsonObject()
+                obj.add("mapName", it.mapName)
+                obj.add("x", it.x)
+                obj.add("y", it.y)
+                obj.add("tileName", it.tileName)
+                obj.add("size", it.size)
+                obj.add("ip", it.ip)
+                obj.add("port", it.port)
+                obj.add("description", it.description)
+                buffer.add(obj)
+            }
+            data.add("warpBlocks", buffer)
+            buffer = JsonArray()
 
-        warpCounts.forEach {
-            val obj = JsonObject()
-            obj.add("mapName", it.mapName)
-            obj.add("pos", it.pos)
-            obj.add("ip", it.ip)
-            obj.add("port", it.port)
-            obj.add("players", it.players)
-            obj.add("numbersize", it.numbersize)
-            buffer.add(obj)
-        }
-        data.add("warpCounts", buffer)
-        buffer = JsonArray()
+            warpCounts.forEach {
+                val obj = JsonObject()
+                obj.add("mapName", it.mapName)
+                obj.add("pos", it.pos)
+                obj.add("ip", it.ip)
+                obj.add("port", it.port)
+                obj.add("players", it.players)
+                obj.add("numbersize", it.numbersize)
+                buffer.add(obj)
+            }
+            data.add("warpCounts", buffer)
+            buffer = JsonArray()
 
-        warpTotals.forEach {
-            val obj = JsonObject()
-            obj.add("mapName", it.mapName)
-            obj.add("pos", it.pos)
-            obj.add("totalplayers", it.totalplayers)
-            obj.add("numbersize", it.numbersize)
-            buffer.add(obj)
-        }
-        data.add("warpTotals", buffer)
-        buffer = JsonArray()
+            warpTotals.forEach {
+                val obj = JsonObject()
+                obj.add("mapName", it.mapName)
+                obj.add("pos", it.pos)
+                obj.add("totalplayers", it.totalplayers)
+                obj.add("numbersize", it.numbersize)
+                buffer.add(obj)
+            }
+            data.add("warpTotals", buffer)
+            buffer = JsonArray()
 
-        blacklist.forEach {
-            buffer.add(it.pattern())
-        }
-        data.add("blacklist", buffer)
-        buffer = JsonArray()
+            blacklist.forEach {
+                buffer.add(it.pattern())
+            }
+            data.add("blacklist", buffer)
+            buffer = JsonArray()
 
-        banned.forEach {
-            val obj = JsonObject()
-            obj.add("time", it.time)
-            obj.add("name", it.name)
-            obj.add("uuid", it.uuid)
-            obj.add("reason", it.reason)
-            buffer.add(obj)
-        }
-        data.add("banned", buffer)
+            banned.forEach {
+                val obj = JsonObject()
+                obj.add("time", it.time)
+                obj.add("name", it.name)
+                obj.add("uuid", it.uuid)
+                obj.add("reason", it.reason)
+                buffer.add(obj)
+            }
+            data.add("banned", buffer)
 
-        val json = JsonObject()
-        status.forEach {
-            json.add(it.key, it.value)
-        }
-        data.add("status", json.toString())
+            val json = JsonObject()
+            status.forEach {
+                json.add(it.key, it.value)
+            }
+            data.add("status", json.toString())
 
-        val encode = Base64.getEncoder()
-        lastMemory = encode.encodeToString(data.toString().toByteArray())
+            val encode = Base64.getEncoder()
+            lastMemory = encode.encodeToString(data.toString().toByteArray())
 
-        if (first) {
-            transaction {
-                DB.Data.insert {
-                    it[DB.Data.data] = lastMemory
+            if (first) {
+                transaction {
+                    DB.Data.insert {
+                        it[DB.Data.data] = lastMemory
+                    }
                 }
             }
         }
@@ -192,6 +190,8 @@ object PluginData {
                                 val obj = it.asObject()
                                 banned.add(Banned(obj.get("time").asLong(), obj.get("name").asString(), obj.get("uuid").asString(), obj.get("reason").asString()))
                             }
+
+                            data["isDuplicateNameChecked"].asBoolean()
 
                             try {
                                 JsonArray.readJSON(data["status"].asString().replace("\\", "")).asObject().forEach {

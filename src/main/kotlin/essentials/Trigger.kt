@@ -184,6 +184,7 @@ object Trigger {
         data.name = player.name()
         data.uuid = player.uuid()
         data.firstPlayDate = System.currentTimeMillis()
+        data.lastLoginDate = LocalDate.now()
         data.accountID = id ?: player.plainName()
         data.accountPW = if (password == null) player.plainName() else BCrypt.hashpw(password, BCrypt.gensalt())
         data.permission = "user"
