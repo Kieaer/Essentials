@@ -1099,7 +1099,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     Bundle(player.locale())["command.login.already"]
                 } else {
                     if (findPlayerData(result.uuid) == null) {
-                        database.players.remove { a -> a.uuid == player.uuid() }
+                        database.players.removeAll { a -> a.uuid == player.uuid() }
                         result.oldUUID = result.uuid
                         result.uuid = player.uuid()
                         Trigger.loadPlayer(player, result, true)

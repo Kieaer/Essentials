@@ -587,13 +587,7 @@ object Event {
 
         Events.on(PlayerLeave::class.java) {
             log(LogType.Player, Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address])
-            val data = database.players.find { data ->
-                if (data.oldUUID != null) {
-                    data.oldUUID == it.player.uuid()
-                } else {
-                    data.uuid == it.player.uuid()
-                }
-            }
+            val data = database.players.find { e -> e.uuid == it.player.uuid() }
             if (data != null) {
                 data.lastPlayedWorldName = state.map.plainName()
                 data.lastPlayedWorldMode = state.rules.modeName
@@ -608,7 +602,7 @@ object Event {
 
                 database.queue(data)
                 offlinePlayers.add(data)
-                database.players.remove(data)
+                database.players.removeAll { e -> e.uuid == data.uuid }
             }
         }
 
