@@ -902,8 +902,10 @@ object Event {
                         if (state.rules.pvp) {
                             if (it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)) {
                                 it.pvpDefeatCount++
-                                it.player.team(Team.derelict)
-                                pvpSpectors.add(it.uuid)
+                                if (Config.pvpSpector) {
+                                    it.player.team(Team.derelict)
+                                    pvpSpectors.add(it.uuid)
+                                }
                                 pvpPlayer.remove(it.uuid)
 
                                 val time = it.currentPlayTime

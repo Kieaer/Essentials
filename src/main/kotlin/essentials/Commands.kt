@@ -2366,7 +2366,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         if (arg.size == 1) {
                             send("command.vote.skip.wrong")
                         } else if (arg[1].toIntOrNull() != null) {
-                            if (arg[1].toInt() > 3) {
+                            if (arg[1].toInt() > Config.skiplimit) {
                                 send("command.vote.skip.toomany")
                             } else {
                                 if (Event.voteCooltime == 0) {
