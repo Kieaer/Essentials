@@ -682,7 +682,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         send("command.hub.mode.off")
                     }
                     PluginData.save(false)
-                    PluginData.changed = true
                 }
 
                 "zone" -> {
@@ -703,7 +702,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     PluginData.warpBlocks.add(PluginData.WarpBlock(name, t.build.tileX(), t.build.tileY(), t.block().name, t.block().size, ip, port, arg[2]))
                     send("command.hub.block.added", "$x:$y", arg[1])
                     PluginData.save(false)
-                    PluginData.changed = true
                 }
 
                 "count" -> {
@@ -713,7 +711,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         PluginData.warpCounts.add(PluginData.WarpCount(name, world.tile(x, y).pos(), ip, port, 0, 1))
                         send("command.hub.count", "$x:$y", arg[1])
                         PluginData.save(false)
-                        PluginData.changed = true
                     }
                 }
 
@@ -721,7 +718,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     PluginData.warpTotals.add(PluginData.WarpTotal(name, world.tile(x, y).pos(), 0, 1))
                     send("command.hub.total", "$x:$y")
                     PluginData.save(false)
-                    PluginData.changed = true
                 }
 
                 "remove" -> {
@@ -729,14 +725,12 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     PluginData.warpZones.removeAll { a -> a.ip == ip && a.port == port }
                     send("command.hub.removed", arg[1])
                     PluginData.save(false)
-                    PluginData.changed = true
                 }
 
                 "reset" -> {
                     PluginData.warpTotals.clear()
                     PluginData.warpCounts.clear()
                     PluginData.save(false)
-                    PluginData.changed = true
                 }
 
                 else -> send("command.hub.help")
@@ -894,7 +888,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     if (i == 0) {
                                         if (targetData != null) {
                                             Call.kick(targetData!!.player.con(), Packets.KickReason.banned)
-                                        };
+                                        }
                                         banPlayer(targetData)
                                     }
                                 }

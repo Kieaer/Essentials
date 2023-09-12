@@ -264,25 +264,7 @@ object Trigger {
         override fun run() {
             while (!currentThread().isInterrupted) {
                 try {
-                    try {
-                        if (PluginData.changed && PluginData.lastMemory.isNotEmpty()) {
-                            transaction {
-                                DB.Data.update {
-                                    it[this.data] = PluginData.lastMemory
-                                }
-                                DB.Data.selectAll().first().run {
-                                    if (this[DB.Data.data] !== PluginData.lastMemory) {
-                                        println("validateError")
-                                    }
-                                }
-                            }
-                            PluginData.changed = false
-                        } else if (!PluginData.changed) {
-                            PluginData.load()
-                        }
-                    } catch (e : Exception) {
-                        e.printStackTrace()
-                    }
+                    PluginData.load()
 
                     var total = 0
                     val serverInfo = getServerInfo()

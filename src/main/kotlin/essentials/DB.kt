@@ -9,6 +9,7 @@ import org.h2.tools.Server
 import org.hjson.JsonObject
 import org.hjson.ParseException
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
@@ -18,11 +19,8 @@ import java.util.*
 
 class DB {
     val players : Seq<PlayerData> = Seq()
-    private var isRemote : Boolean = false
     lateinit var db : Database
-    var dbServer : Server? = null
     var dbVersion = 3
-    var migrateVersion = 2
     var migrateData : Seq<PlayerData>? = null
 
     fun open() {
@@ -41,74 +39,45 @@ class DB {
                     SchemaUtils.create(Data)
                     SchemaUtils.create(DB)
 
-                    if (!isRemote) {
-                        fun upgrade() {
-                            val command = when (DB.selectAll().first()[DB.version]) {
-                                2 -> listOf("")
-                                else -> listOf("")
-                            }
-
-                            execInBatch(command)
-                        }
-
-                        var isUpgraded = false
-                        while (DB.selectAll().first()[DB.version] != dbVersion) {
-                            isUpgraded = true
-                            upgrade()
-                        }
-
-                        if (isUpgraded) {
-                            Log.info(Bundle()["event.plugin.db.version", dbVersion])
-                            Log.warn(Bundle()["event.plugin.db.warning"])
-                        }
-
-                        try {
-                            getAll()
-                        } catch (e : ParseException) {
-                            Player.update {
-                                it[status] = "{}"
-                            }
-                        }
-
-                        if (!Main.root.child("data/isDuplicateNameChecked.txt").exists()) {
-                            val sql = """
-                                UPDATE player SET "duplicateName" = null;
-                                SELECT * FROM player t1 WHERE EXISTS (
-                                    SELECT 1
-                                    FROM player t2
-                                    WHERE t2.name = t1.name
-                                    GROUP BY t2.name
-                                    HAVING COUNT(*) > 1
-                                    AND MIN(t2."firstPlayDate") <> t1."firstPlayDate"
-                                )
-                            """.trimIndent()
-
-                            exec(sql) { rs ->
-                                while (rs.next()) {
-                                    val data = get(rs.getString("uuid"))
-                                    if (data != null) {
-                                        try {
-                                            if (rs.getString("duplicateName") == "null") {
-                                                data.duplicateName = data.name
-                                            }
-                                        } catch (e : ParseException) {
-                                            if (data.duplicateName == null) {
-                                                data.duplicateName = data.name
-                                            }
-                                        }
-                                        update(data.uuid, data)
-                                    }
+                    fun upgrade() {
+                        when (DB.selectAll().first()[DB.version]) {
+                            2 -> {
+                                val total = migrateData!!.size
+                                for ((progress, data) in migrateData!!.withIndex()) {
+                                    createData(data)
+                                    print("\r$progress/$total")
+                                }
+                                println()
+                                DB.update {
+                                    it[version] = 3
                                 }
                             }
-
-
-
-                            Main.root.child("data/isDuplicateNameChecked.txt").writeString("Yes! No more time spent checking player name duplicates on plugin startup lol")
+                            else -> listOf("")
                         }
+                    }
+
+                    var isUpgraded = false
+                    while (DB.selectAll().empty() || DB.selectAll().first()[DB.version] != dbVersion) {
+                        isUpgraded = true
+                        upgrade()
+                    }
+
+                    if (isUpgraded) {
+                        Log.info(Bundle()["event.plugin.db.version", dbVersion])
+                        Log.warn(Bundle()["event.plugin.db.warning"])
+                    }
+
+                    if (!Data.selectAll().empty() && JsonObject.readJSON(Data.selectAll().first()[Data.data]).asObject().getBoolean("isDuplicateNameChecked", false)) {
+                        val duplicate = Player.selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }.map { it[Player.name] }
+                        for (value in duplicate) {
+                            Player.update({ Player.name eq value }) {
+                                it[duplicateName] = value
+                            }
+                        }
+                        PluginData.save(true)
                     }
                 } else {
                     Log.err(Bundle()["event.plugin.db.wrong"])
-                    dbServer?.stop()
                     Core.app.exit()
                 }
             }

@@ -279,7 +279,6 @@ object Event {
                         PluginData.warpZones.add(PluginData.WarpZone(state.map.plainName(), world.tile(x, y).pos(), it.tile.pos(), touch, ip, port))
                         player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (touch) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
                         PluginData.save(false)
-                        PluginData.changed = true
                     }
 
                     Call.menu(data.player.con(), menu, bundle["command.hub.zone.title"], bundle["command.hub.zone.message"], options)
@@ -354,7 +353,6 @@ object Event {
                     PluginData.status.remove("iptablesFirst")
                     Log.info(Bundle()["event.ban.iptables.remove"])
                     PluginData.save(false)
-                    PluginData.changed = true
                 }
             } else if (Config.blockIP && PluginData["iptablesFirst"] == null) {
                 if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
@@ -367,7 +365,6 @@ object Event {
                     }
                     PluginData.status.put("iptablesFirst", "none")
                     PluginData.save(false)
-                    PluginData.changed = true
                 }
             }
 

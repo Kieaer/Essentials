@@ -97,7 +97,6 @@ class Main: Plugin() {
                     isUpdate = true
                 }
                 PluginData.save(false)
-                PluginData.changed = true
 
                 if (isUpdate) {
                     URL("https://github.com/X4BNet/lists_vpn/blob/main/output/datacenter/ipv4.txt").openStream().use { b ->
