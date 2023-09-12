@@ -100,7 +100,7 @@ class Main: Plugin() {
                 PluginData.changed = true
 
                 if (isUpdate) {
-                    URL("https://github.com/X4BNet/lists_vpn/blob/main/output/datacenter/ipv4.txt").openStream().use { b ->
+                    URL("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").openStream().use { b ->
                         BufferedInputStream(b).use { bis ->
                             FileOutputStream(root.child("data/ipv4.txt").absolutePath()).use { fos ->
                                 val data = ByteArray(1024)
