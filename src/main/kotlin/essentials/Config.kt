@@ -116,6 +116,8 @@ object Config {
         plugin.add("report", report, bundle["config.report"])
         plugin.add("authType", authType.toString(), bundle["config.authtype"])
         plugin.add("database", database, bundle["config.database"])
+        plugin.add("databaseID", databaseID, bundle["config.database.id"])
+        plugin.add("databasePW", databasePW, bundle["config.database.pw"])
         plugin.add("banList", banList, bundle["config.banlist"])
 
         val features = JsonObject()
