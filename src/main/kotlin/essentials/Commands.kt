@@ -22,6 +22,7 @@ import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
 import essentials.Event.resetVote
 import essentials.Event.worldHistory
+import essentials.Main.Companion.currentTime
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
@@ -885,6 +886,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     if (i == 0) {
                                         data.banTime = time.toString()
                                         database.queue(data)
+                                        Events.fire(PlayerTempBanned(targetData!!.name, player.plainName(), LocalDateTime.now().plusMinutes(time.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
                                         banPlayer(data)
                                     }
                                 }
@@ -893,9 +895,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             } else if (s == 6) {
                                 val banConfirmMenu = Menus.registerMenu { _, i ->
                                     if (i == 0) {
-                                        if (targetData != null) {
-                                            Call.kick(targetData!!.player.con(), Packets.KickReason.banned)
-                                        };
+                                        Call.kick(targetData!!.player.con(), Packets.KickReason.banned)
+                                        Events.fire(CustomEvents.PlayerBanned(targetData!!.name, targetData!!.uuid, currentTime(), bundle["info.banned.reason.admin"]))
                                         banPlayer(targetData)
                                     }
                                 }
