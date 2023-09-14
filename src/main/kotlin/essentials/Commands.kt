@@ -839,6 +839,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         Fi(Config.banList).writeString(JsonArray.readHjson(Fi(Config.banList).readString()).asArray().add(json).toString(Stringify.HJSON))
 
                         Event.log(Event.LogType.Player, Bundle()["log.player.banned", name, ip])
+                        database.players.forEach {
+                            player.sendMessage(Bundle(it.languageTag)["info.banned.message", player.plainName(), data.name])
+                        }
                     }
                 }
 
