@@ -349,6 +349,7 @@ class DB {
         val lastPlayedWorldId = integer("lastPlayedWorldId").nullable()
         val mvpTime = integer("mvpTime")
         val pvpEliminationTeamCount = integer("pvpEliminationTeamCount")
+        val strict = bool("strict")
     }
 
     class PlayerData {
@@ -397,6 +398,7 @@ class DB {
         var lastPlayedWorldId : Int? = null
         var mvpTime : Int = 0
         var pvpEliminationTeamCount : Int = 0
+        var strict : Boolean = false
 
         var expMultiplier : Double = 1.0
         var currentExp : Int = 0
@@ -458,6 +460,7 @@ class DB {
                 it[lastPlayedWorldId] = data.lastPlayedWorldId
                 it[mvpTime] = data.mvpTime
                 it[pvpEliminationTeamCount] = data.pvpEliminationTeamCount
+                it[strict] = data.strict
             }
         }
     }
@@ -510,6 +513,7 @@ class DB {
             data.lastPlayedWorldId = it[Player.lastPlayedWorldId]
             data.mvpTime = it[Player.mvpTime]
             data.pvpEliminationTeamCount = it[Player.pvpEliminationTeamCount]
+            data.strict = it[Player.strict]
 
             val obj = ObjectMap<String, String>()
             JsonObject.readHjson(it[Player.status]).asObject().forEach {
@@ -572,6 +576,7 @@ class DB {
                 data.lastPlayedWorldId = it[Player.lastPlayedWorldId]
                 data.mvpTime = it[Player.mvpTime]
                 data.pvpEliminationTeamCount = it[Player.pvpEliminationTeamCount]
+                data.strict = it[Player.strict]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(it[Player.status]).asObject().forEach { member ->
@@ -656,6 +661,7 @@ class DB {
                 it[lastPlayedWorldId] = data.lastPlayedWorldId
                 it[mvpTime] = data.mvpTime
                 it[pvpEliminationTeamCount] = data.pvpEliminationTeamCount
+                it[strict] = data.strict
 
                 val json = JsonObject()
                 data.status.forEach {
@@ -714,6 +720,7 @@ class DB {
                 data.lastPlayedWorldId = this[Player.lastPlayedWorldId]
                 data.mvpTime = this[Player.mvpTime]
                 data.pvpEliminationTeamCount = this[Player.pvpEliminationTeamCount]
+                data.strict = this[Player.strict]
 
                 val obj = ObjectMap<String, String>()
                 JsonObject.readHjson(this[Player.status]).asObject().forEach {

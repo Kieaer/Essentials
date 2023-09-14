@@ -88,6 +88,7 @@ object Permission {
             adminPerm.add("search")
             adminPerm.add("skip")
             adminPerm.add("spawn")
+            adminPerm.add("strict")
             adminPerm.add("team")
             adminPerm.add("team.other")
             adminPerm.add("tempban")

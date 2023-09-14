@@ -129,6 +129,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("skip", "Start n wave immediately.") { a, p : Playerc -> Client(a, p).skip() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p : Playerc -> Client(a, p).spawn() }
             handler.register("status", "Show server status") { a, p : Playerc -> Client(a, p).status() }
+            handler.register("strict", "<player>", "Set whether the target player can build or not.") { a, p : Playerc -> Client(a, p).strict() }
             handler.register("t", "<message...>", "Send a message only to your teammates.") { a, p : Playerc -> Client(a, p).t() }
             handler.register("team", "<team_name> [name]", "Change team") { a, p : Playerc -> Client(a, p).team() }
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a, p : Playerc -> Client(a, p).tempban() }
@@ -1986,6 +1987,31 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             } else {
                 data.lastSentMessage = message.toString()
                 player.sendMessage(message.toString())
+            }
+        }
+
+        fun strict() {
+            if (!Permission.check(data, "strict")) {
+                err("command.permission.false")
+                return
+            }
+
+            val other = findPlayers(arg[0])
+            if (other != null) {
+                val target = findPlayerData(other.uuid())
+                if (target != null) {
+                    if (!target.strict) {
+                        target.strict = true
+                        database.queue(target)
+                        send("command.strict", target.name)
+                    } else {
+                        target.strict = false
+                        database.queue(target)
+                        send("command.strict.undo", target.name)
+                    }
+                } else {
+                    err("player.not.found")
+                }
             }
         }
 
