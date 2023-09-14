@@ -887,8 +887,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                         banPlayer(data)
                                     }
                                 }
-
-                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.title.tempban"], bundle["info.tempban.comfirm", timeText] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                                // 임시 차단
+                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.tempban.title"], bundle["info.tempban.confirm", timeText] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
                             } else if (s == 6) {
                                 val banConfirmMenu = Menus.registerMenu { _, i ->
                                     if (i == 0) {
@@ -898,11 +898,11 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                         banPlayer(targetData)
                                     }
                                 }
-
-                                Call.menu(player.con(), banConfirmMenu, bundle["info.title.ban.time"], bundle["info.ban.time"] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                                // 영구 차단
+                                Call.menu(player.con(), banConfirmMenu, bundle["info.ban.title"], bundle["info.ban.confirm"] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
                             }
                         }
-                        Call.menu(player.con(), innerMenu, bundle["info.title.ban.time"], bundle["info.ban.comfirm"] + lineBreak, banMenus)
+                        Call.menu(player.con(), innerMenu, bundle["info.tempban.title"], bundle["info.tempban.confirm"] + lineBreak, banMenus)
                     } else if (select == 2) {
                         if (targetData != null) {
                             Call.kick(targetData!!.player.con(), Packets.KickReason.kick)
@@ -917,7 +917,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     if (other != null) {
                         val menu = if (Permission.check(other, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
                         targetData = other
-                        Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
+                        Call.menu(player.con(), mainMenu, bundle["info.admin.title"], show(other) + banned + lineBreak, menu)
                     } else {
                         err("player.not.found")
                     }
@@ -929,7 +929,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         if (other != null) {
                             val menu = if (Permission.check(other, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
                             targetData = other
-                            Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
+                            Call.menu(player.con(), mainMenu, bundle["info.admin.title"], show(other) + banned + lineBreak, menu)
                         } else {
                             err("player.not.registered")
                         }
