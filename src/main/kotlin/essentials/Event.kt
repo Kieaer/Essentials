@@ -436,6 +436,7 @@ object Event {
                                 null
                             }
                         } else {
+                            player.sendMessage("[gray]${player.name} [orange] > [white]${message}")
                             return@ChatFormatter null
                         }
                     } else {
