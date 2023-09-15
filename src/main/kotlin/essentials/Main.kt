@@ -99,7 +99,7 @@ class Main: Plugin() {
                 PluginData.save(false)
 
                 if (isUpdate) {
-                    URL("https://github.com/X4BNet/lists_vpn/blob/main/output/datacenter/ipv4.txt").openStream().use { b ->
+                    URL("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").openStream().use { b ->
                         BufferedInputStream(b).use { bis ->
                             FileOutputStream(root.child("data/ipv4.txt").absolutePath()).use { fos ->
                                 val data = ByteArray(1024)
@@ -183,6 +183,8 @@ class Main: Plugin() {
             if (data != null) {
                 if (isHub != null && isHub == state.map.name()) {
                     return@addActionFilter Permission.check(data, "hub.build")
+                } else if (data.strict) {
+                    return@addActionFilter false
                 } else {
                     return@addActionFilter true
                 }

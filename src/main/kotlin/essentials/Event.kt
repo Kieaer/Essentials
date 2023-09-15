@@ -424,7 +424,7 @@ object Event {
                                     }
                                 }
                             }
-                            val format = Permission[data].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message)
+                            val format = Permission[data].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message).replace("%3", "${data.level}")
                             return@ChatFormatter if (isGlobalMute && Permission.check(data, "chat.admin") && !isMute) {
                                 format
                             } else if (!isGlobalMute && !(voting && message.contains("y") && !isMute)) {
@@ -433,6 +433,7 @@ object Event {
                                 null
                             }
                         } else {
+                            player.sendMessage("[gray]${player.name} [orange] > [white]${message}")
                             return@ChatFormatter null
                         }
                     } else {
@@ -899,8 +900,10 @@ object Event {
                         if (state.rules.pvp) {
                             if (it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)) {
                                 it.pvpDefeatCount++
-                                it.player.team(Team.derelict)
-                                pvpSpectors.add(it.uuid)
+                                if (Config.pvpSpector) {
+                                    it.player.team(Team.derelict)
+                                    pvpSpectors.add(it.uuid)
+                                }
                                 pvpPlayer.remove(it.uuid)
 
                                 val time = it.currentPlayTime

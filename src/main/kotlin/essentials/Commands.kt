@@ -22,6 +22,7 @@ import essentials.Event.findPlayers
 import essentials.Event.findPlayersByName
 import essentials.Event.resetVote
 import essentials.Event.worldHistory
+import essentials.Main.Companion.currentTime
 import essentials.Main.Companion.database
 import essentials.Main.Companion.root
 import essentials.Permission.bundle
@@ -129,6 +130,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             handler.register("skip", "Start n wave immediately.") { a, p : Playerc -> Client(a, p).skip() }
             handler.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p : Playerc -> Client(a, p).spawn() }
             handler.register("status", "Show server status") { a, p : Playerc -> Client(a, p).status() }
+            handler.register("strict", "<player>", "Set whether the target player can build or not.") { a, p : Playerc -> Client(a, p).strict() }
             handler.register("t", "<message...>", "Send a message only to your teammates.") { a, p : Playerc -> Client(a, p).t() }
             handler.register("team", "<team_name> [name]", "Change team") { a, p : Playerc -> Client(a, p).team() }
             handler.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a, p : Playerc -> Client(a, p).tempban() }
@@ -831,6 +833,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         Fi(Config.banList).writeString(JsonArray.readHjson(Fi(Config.banList).readString()).asArray().add(json).toString(Stringify.HJSON))
 
                         Event.log(Event.LogType.Player, Bundle()["log.player.banned", name, ip])
+                        database.players.forEach {
+                            player.sendMessage(Bundle(it.languageTag)["info.banned.message", player.plainName(), data.name])
+                        }
                     }
                 }
 
@@ -878,25 +883,25 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     if (i == 0) {
                                         data.banTime = time.toString()
                                         database.queue(data)
+                                        Events.fire(PlayerTempBanned(targetData!!.name, player.plainName(), LocalDateTime.now().plusMinutes(time.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
                                         banPlayer(data)
                                     }
                                 }
-
-                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.title.tempban"], bundle["info.tempban.comfirm", timeText] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                                // 임시 차단
+                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.tempban.title"], bundle["info.tempban.confirm", timeText] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
                             } else if (s == 6) {
                                 val banConfirmMenu = Menus.registerMenu { _, i ->
                                     if (i == 0) {
-                                        if (targetData != null) {
-                                            Call.kick(targetData!!.player.con(), Packets.KickReason.banned)
-                                        }
+                                        Call.kick(targetData!!.player.con(), Packets.KickReason.banned)
+                                        Events.fire(CustomEvents.PlayerBanned(targetData!!.name, targetData!!.uuid, currentTime(), bundle["info.banned.reason.admin"]))
                                         banPlayer(targetData)
                                     }
                                 }
-
-                                Call.menu(player.con(), banConfirmMenu, bundle["info.title.ban.time"], bundle["info.ban.time"] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                                // 영구 차단
+                                Call.menu(player.con(), banConfirmMenu, bundle["info.ban.title"], bundle["info.ban.confirm"] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
                             }
                         }
-                        Call.menu(player.con(), innerMenu, bundle["info.title.ban.time"], bundle["info.ban.comfirm"] + lineBreak, banMenus)
+                        Call.menu(player.con(), innerMenu, bundle["info.tempban.title"], bundle["info.tempban.confirm"] + lineBreak, banMenus)
                     } else if (select == 2) {
                         if (targetData != null) {
                             Call.kick(targetData!!.player.con(), Packets.KickReason.kick)
@@ -911,7 +916,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     if (other != null) {
                         val menu = if (Permission.check(other, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
                         targetData = other
-                        Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
+                        Call.menu(player.con(), mainMenu, bundle["info.admin.title"], show(other) + banned + lineBreak, menu)
                     } else {
                         err("player.not.found")
                     }
@@ -923,7 +928,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         if (other != null) {
                             val menu = if (Permission.check(other, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
                             targetData = other
-                            Call.menu(player.con(), mainMenu, bundle["info.title.admin"], show(other) + banned + lineBreak, menu)
+                            Call.menu(player.con(), mainMenu, bundle["info.admin.title"], show(other) + banned + lineBreak, menu)
                         } else {
                             err("player.not.registered")
                         }
@@ -1983,6 +1988,31 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
         }
 
+        fun strict() {
+            if (!Permission.check(data, "strict")) {
+                err("command.permission.false")
+                return
+            }
+
+            val other = findPlayers(arg[0])
+            if (other != null) {
+                val target = findPlayerData(other.uuid())
+                if (target != null) {
+                    if (!target.strict) {
+                        target.strict = true
+                        database.queue(target)
+                        send("command.strict", target.name)
+                    } else {
+                        target.strict = false
+                        database.queue(target)
+                        send("command.strict.undo", target.name)
+                    }
+                } else {
+                    err("player.not.found")
+                }
+            }
+        }
+
         fun t() {
             if (!data.mute) {
                 Groups.player.each({ p -> p.team() === player.team() }) { o ->
@@ -2360,7 +2390,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         if (arg.size == 1) {
                             send("command.vote.skip.wrong")
                         } else if (arg[1].toIntOrNull() != null) {
-                            if (arg[1].toInt() > 3) {
+                            if (arg[1].toInt() > Config.skiplimit) {
                                 send("command.vote.skip.toomany")
                             } else {
                                 if (Event.voteCooltime == 0) {

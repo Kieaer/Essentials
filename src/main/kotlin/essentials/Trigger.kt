@@ -122,7 +122,7 @@ object Trigger {
             if (state.rules.pvp) {
                 if (Event.pvpPlayer.containsKey(data.uuid)) {
                     player.team(Event.pvpPlayer.get(data.uuid))
-                } else if (Event.pvpSpectors.contains(data.uuid) || Permission.check(data, "pvp.spector")) {
+                } else if ((Config.pvpSpector && Event.pvpSpectors.contains(data.uuid)) || Permission.check(data, "pvp.spector")) {
                     player.team(Team.derelict)
                 } else if (Config.pvpAutoTeam) {
                     fun winPercentage(team : Team) : Double {
