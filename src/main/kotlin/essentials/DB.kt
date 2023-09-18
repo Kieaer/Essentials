@@ -13,6 +13,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
+import org.postgresql.util.PSQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
@@ -26,12 +27,19 @@ class DB {
     fun open() {
         try {
             if (Main.root.child("database.mv.db").exists()) {
+                val new = "postgresql://127.0.0.1:5432/essentials"
                 val old = Database.connect("jdbc:h2:${Config.database}", "org.h2.Driver", "sa", "")
                 migrateData = getAll()
                 TransactionManager.closeAndUnregister(old)
+                Config.database = new
             }
 
-            db = Database.connect("jdbc:postgresql://127.0.0.1:5432/postgres", "org.postgresql.Driver", Config.databaseID, Config.databasePW)
+            db = Database.connect(
+                Config.database,
+                "org.postgresql.Driver",
+                Config.databaseID,
+                Config.databasePW
+            )
 
             transaction {
                 if (!connection.isClosed) {
@@ -52,6 +60,7 @@ class DB {
                                     it[version] = 3
                                 }
                             }
+
                             else -> listOf("")
                         }
                     }
@@ -67,8 +76,11 @@ class DB {
                         Log.warn(Bundle()["event.plugin.db.warning"])
                     }
 
-                    if (!Data.selectAll().empty() && JsonObject.readJSON(Data.selectAll().first()[Data.data]).asObject().getBoolean("isDuplicateNameChecked", false)) {
-                        val duplicate = Player.selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }.map { it[Player.name] }
+                    if (!Data.selectAll().empty() && JsonObject.readJSON(Data.selectAll().first()[Data.data]).asObject()
+                            .getBoolean("isDuplicateNameChecked", false)
+                    ) {
+                        val duplicate = Player.selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }
+                            .map { it[Player.name] }
                         for (value in duplicate) {
                             Player.update({ Player.name eq value }) {
                                 it[duplicateName] = value
@@ -81,6 +93,14 @@ class DB {
                     Core.app.exit()
                 }
             }
+        } catch (e : PSQLException) {
+            if (Config.databasePW.isEmpty()) {
+                Log.warn(Bundle()["event.plugin.db.account.empty"])
+            } else {
+                Log.err(e.message)
+                Log.err(Bundle()["event.plugin.db.account.wrong"])
+            }
+            Core.app.exit()
         } catch (e : Exception) {
             e.printStackTrace()
             Core.app.exit()

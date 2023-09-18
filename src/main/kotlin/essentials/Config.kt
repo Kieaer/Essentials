@@ -18,8 +18,8 @@ object Config {
 
     var update = true
     var report = true
-    var database : String = "postgresql://127.0.0.1:5432/postgres"
-    var databaseID : String = "root"
+    var database : String = "postgresql://127.0.0.1:5432/essentials"
+    var databaseID : String = "postgres"
     var databasePW : String = ""
     var authType = AuthType.None
     var banList : String = Core.settings.dataDirectory.child("mods/Essentials/ban.txt").absolutePath()
