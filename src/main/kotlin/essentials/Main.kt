@@ -181,10 +181,15 @@ class Main: Plugin() {
             }
 
             if (data != null) {
-                return@addActionFilter (isHub != null && isHub == state.map.name() && Permission.check(data, "hub.build")) || isHub == null && !data.strict
-            } else {
-                return@addActionFilter false
+                if (isHub != null && isHub == state.map.name()) {
+                    return@addActionFilter Permission.check(data, "hub.build")
+                } else if (data.strict) {
+                    return@addActionFilter false
+                } else {
+                    return@addActionFilter true
+                }
             }
+            return@addActionFilter false
         }
 
         if (Config.blockfooclient) {
