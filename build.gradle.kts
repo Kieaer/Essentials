@@ -99,12 +99,12 @@ tasks.register("web") {
     val build = tasks["nodeBuild"]
     val install = tasks["nodeInstall"]
     if (!file("./src/www/node_modules").exists()) {
-        doFirst {
-            dependsOn(install)
-        }
+        dependsOn(install)
+        dependsOn(build)
+        build.mustRunAfter(install)
+    } else {
+        dependsOn(build)
     }
-
-    dependsOn(build)
 
     project.delete(
         files("./src/main/resources/www")
