@@ -1,22 +1,22 @@
 package essentials
 
-import arc.Core
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import mindustry.gen.Playerc
-import org.h2.tools.Server
 import org.hjson.JsonObject
-import org.hjson.ParseException
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
 import org.postgresql.util.PSQLException
+import java.sql.DriverManager
+import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.system.exitProcess
+
 
 class DB {
     val players : Seq<PlayerData> = Seq()
@@ -34,12 +34,34 @@ class DB {
                 Config.database = new
             }
 
-            db = Database.connect(
-                Config.database,
-                "org.postgresql.Driver",
-                Config.databaseID,
-                Config.databasePW
-            )
+            try {
+                db = Database.connect(
+                    "jdbc:${Config.database}",
+                    "org.postgresql.Driver",
+                    Config.databaseID,
+                    Config.databasePW
+                )
+                transaction { connection.isClosed }
+            } catch (e: PSQLException) {
+                TransactionManager.closeAndUnregister(db)
+                try {
+                    DriverManager.getConnection("jdbc:${Config.database.replace("essentials","")}", Config.databaseID, Config.databasePW).use { conn ->
+                        conn.createStatement().use { stmt ->
+                            val sql = "CREATE DATABASE essentials"
+                            stmt.executeUpdate(sql)
+                        }
+                    }
+                } catch (e: SQLException) {
+                    e.printStackTrace()
+                }
+
+                db = Database.connect(
+                    "jdbc:${Config.database}",
+                    "org.postgresql.Driver",
+                    Config.databaseID,
+                    Config.databasePW
+                )
+            }
 
             transaction {
                 if (!connection.isClosed) {
@@ -66,9 +88,15 @@ class DB {
                     }
 
                     var isUpgraded = false
-                    while (DB.selectAll().empty() || DB.selectAll().first()[DB.version] != dbVersion) {
-                        isUpgraded = true
-                        upgrade()
+                    if (DB.selectAll().empty()) {
+                        DB.insert {
+                            it[version] = dbVersion
+                        }
+                    } else {
+                        while (DB.selectAll().first()[DB.version] != dbVersion) {
+                            isUpgraded = true
+                            upgrade()
+                        }
                     }
 
                     if (isUpgraded) {
@@ -76,9 +104,7 @@ class DB {
                         Log.warn(Bundle()["event.plugin.db.warning"])
                     }
 
-                    if (!Data.selectAll().empty() && JsonObject.readJSON(Data.selectAll().first()[Data.data]).asObject()
-                            .getBoolean("isDuplicateNameChecked", false)
-                    ) {
+                    if (!Data.selectAll().empty() && JsonObject.readJSON(String(Base64.getDecoder().decode(Data.selectAll().first()[Data.data]))).asObject().getBoolean("isDuplicateNameChecked", false)) {
                         val duplicate = Player.selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }
                             .map { it[Player.name] }
                         for (value in duplicate) {
@@ -90,20 +116,20 @@ class DB {
                     }
                 } else {
                     Log.err(Bundle()["event.plugin.db.wrong"])
-                    Core.app.exit()
+                    exitProcess(1)
                 }
             }
         } catch (e : PSQLException) {
             if (Config.databasePW.isEmpty()) {
                 Log.warn(Bundle()["event.plugin.db.account.empty"])
             } else {
-                Log.err(e.message)
+                e.printStackTrace()
                 Log.err(Bundle()["event.plugin.db.account.wrong"])
             }
-            Core.app.exit()
+            exitProcess(1)
         } catch (e : Exception) {
             e.printStackTrace()
-            Core.app.exit()
+            exitProcess(1)
         }
     }
 
