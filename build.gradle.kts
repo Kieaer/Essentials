@@ -84,8 +84,6 @@ tasks.register("compression") {
 
 node {
     download.set(true)
-    version.set("18.16.0")
-    npmVersion.set("9.5.1")
     nodeProjectDir.set(file("./src/www"))
 }
 
@@ -102,9 +100,10 @@ tasks.register("web") {
     val install = tasks["nodeInstall"]
     if (!file("./src/www/node_modules").exists()) {
         dependsOn(install)
+        dependsOn(build)
         build.mustRunAfter(install)
     } else {
-        dependsOn(install)
+        dependsOn(build)
     }
 
     project.delete(
