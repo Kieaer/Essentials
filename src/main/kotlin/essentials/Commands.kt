@@ -169,13 +169,11 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
         private fun send(msg : String, vararg parameters : Any) {
             val text = MessageFormat.format(bundle.resource.getString(msg), *parameters)
-            data.lastSentMessage = text
             player.sendMessage(text)
         }
 
         fun err(key : String, vararg parameters : Any) {
             val text = "[scarlet]" + MessageFormat.format(bundle.resource.getString(key), *parameters)
-            data.lastSentMessage = text
             player.sendMessage(text)
         }
 
@@ -640,7 +638,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             val msg = result.toString().substring(0, result.length - 1)
-            data.lastSentMessage = msg
             player.sendMessage(msg)
         }
 
@@ -1597,7 +1594,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
 
                     Core.app.post {
-                        data.lastSentMessage = string.toString()
                         player.sendMessage(string.toString())
                     }
                 } catch (e : Exception) {
@@ -1986,10 +1982,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     message.appendLine("${it.key.coloredName()} : ${round(it.value * 100).toInt()}%")
                 }
 
-                data.lastSentMessage = message.toString().dropLast(1)
                 player.sendMessage(message.toString().dropLast(1))
             } else {
-                data.lastSentMessage = message.toString()
                 player.sendMessage(message.toString())
             }
         }

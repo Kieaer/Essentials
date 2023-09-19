@@ -10,6 +10,7 @@ import PluginTest.Companion.path
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
+import arc.struct.Seq
 import essentials.DB
 import essentials.Event
 import essentials.Main.Companion.connectType
@@ -52,6 +53,18 @@ class ClientCommandTest {
         playerData = p.second
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun getMessage() : Seq<String> {
+        val c = Vars.ui.chatfrag::class.java
+        val f = c.getDeclaredField("messages")
+        f.isAccessible = true
+        return f.get(Vars.ui.chatfrag) as Seq<String>
+    }
+
+    private fun getLastMessage() : String {
+        return getMessage().last()
+    }
+
     @Test
     fun client_changemap() {
         // Require admin or above permission
@@ -59,7 +72,7 @@ class ClientCommandTest {
 
         // If map not found
         clientCommand.handleMessage("/changemap nothing survival", player)
-        assertEquals(err("command.changemap.map.not.found", "nothing"), playerData.lastSentMessage)
+        assertEquals(err("command.changemap.map.not.found", "nothing"), getLastMessage())
 
         // Number method
         clientCommand.handleMessage("/changemap 0 survival", player)
@@ -71,7 +84,7 @@ class ClientCommandTest {
 
         // If player enter wrong gamemode
         clientCommand.handleMessage("/changemap fork creative", player)
-        assertEquals(err("command.changemap.mode.not.found", "creative"), playerData.lastSentMessage)
+        assertEquals(err("command.changemap.mode.not.found", "creative"), getLastMessage())
 
         // If player enter only map name
         clientCommand.handleMessage("/changemap glacier", player)
@@ -96,14 +109,14 @@ class ClientCommandTest {
 
         // If target player not found
         clientCommand.handleMessage("/changename eat yammi", player)
-        assertEquals(err("player.not.found"), playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), getLastMessage())
 
         // If target player exists but registered
         val notRegisteredUser = createPlayer()
         val oldName = notRegisteredUser.name()
         clientCommand.handleMessage("/changename not ${registeredUser.first.name()}", player)
         assertEquals(oldName, notRegisteredUser.name())
-        assertEquals(err("player.not.registered"), playerData.lastSentMessage)
+        assertEquals(err("player.not.registered"), getLastMessage())
         leavePlayer(notRegisteredUser)
     }
 
@@ -115,11 +128,11 @@ class ClientCommandTest {
         // Change password
         clientCommand.handleMessage("/changepw pass pass", player)
         assertTrue(BCrypt.checkpw("pass", playerData.accountPW))
-        assertEquals(log("command.changepw.apply"), playerData.lastSentMessage)
+        assertEquals(log("command.changepw.apply"), getLastMessage())
 
         // If password isn't same
         clientCommand.handleMessage("/changepw pass wd", player)
-        assertEquals(err("command.changepw.same"), playerData.lastSentMessage)
+        assertEquals(err("command.changepw.same"), getLastMessage())
     }
 
     @Test
@@ -267,35 +280,35 @@ class ClientCommandTest {
 
         // If player enter wrong value
         clientCommand.handleMessage("/exp set number", player)
-        assertEquals(err("command.exp.invalid"), playerData.lastSentMessage)
+        assertEquals(err("command.exp.invalid"), getLastMessage())
 
         // Hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
         database.update(player.uuid(), playerData)
         clientCommand.handleMessage("/ranking exp", player)
         sleep(250)
-        assertFalse(playerData.lastSentMessage.contains(player.name))
+        assertFalse(getLastMessage().contains(player.name))
 
         // Un-hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
         database.update(player.uuid(), playerData)
         clientCommand.handleMessage("/ranking exp", player)
         sleep(250)
-        assertTrue(playerData.lastSentMessage.contains(player.name))
+        assertTrue(getLastMessage().contains(player.name))
 
         // Hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.first.name}", player)
         database.update(dummy.first.uuid(), dummy.second)
         clientCommand.handleMessage("/ranking exp", player)
         sleep(250)
-        assertFalse(playerData.lastSentMessage.contains(dummy.first.name))
+        assertFalse(getLastMessage().contains(dummy.first.name))
 
         // Un-hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.second.entityid}", player)
         database.update(dummy.first.uuid(), dummy.second)
         clientCommand.handleMessage("/ranking exp", player)
         sleep(250)
-        assertTrue(playerData.lastSentMessage.contains(dummy.first.name))
+        assertTrue(getLastMessage().contains(dummy.first.name))
 
         // Add exp value
         clientCommand.handleMessage("/exp add 500", player)
@@ -346,20 +359,20 @@ class ClientCommandTest {
 
         // If target player not found
         clientCommand.handleMessage("/exp set 10 dummy", player)
-        assertEquals(err("player.not.found"), playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), getLastMessage())
 
         // If target player exist but not registered
         val bot = createPlayer()
         clientCommand.handleMessage("/exp set 10 ${bot.name}", player)
-        assertEquals(err("player.not.registered"), playerData.lastSentMessage)
+        assertEquals(err("player.not.registered"), getLastMessage())
 
         // If the target player is not logged in and looking for a player that isn't in the database
         clientCommand.handleMessage("/exp hide 냠냠", player)
-        assertEquals(err("player.not.found"), playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), getLastMessage())
 
         // If player enter wrong command
         clientCommand.handleMessage("/exp wrongCommand", player)
-        assertEquals(err("command.exp.invalid.command"), playerData.lastSentMessage)
+        assertEquals(err("command.exp.invalid.command"), getLastMessage())
     }
 
     @Test
@@ -374,11 +387,11 @@ class ClientCommandTest {
         // If player core doesn't exist
         Call.deconstructFinish(Vars.state.teams.cores(player.team()).first().tile, Blocks.air, player.unit())
         clientCommand.handleMessage("/fillitems", player)
-        assertEquals(err("command.fillitems.core.empty"), playerData.lastSentMessage)
+        assertEquals(err("command.fillitems.core.empty"), getLastMessage())
 
         // If target team core doesn't exist
         clientCommand.handleMessage("/fillitems green", player)
-        assertEquals(err("command.fillitems.core.empty"), playerData.lastSentMessage)
+        assertEquals(err("command.fillitems.core.empty"), getLastMessage())
 
         // If target team core exists
         Call.constructFinish(player.tileOn(), Blocks.coreShard, player.unit(), 0, Team.green, null)
@@ -405,7 +418,7 @@ class ClientCommandTest {
                 fail()
             }
         }
-        assertEquals(log("command.freeze.done", dummy.first.name), playerData.lastSentMessage)
+        assertEquals(log("command.freeze.done", dummy.first.name), getLastMessage())
 
         // Un-freeze target player
         oldX = dummy.first.unit().x
@@ -420,16 +433,16 @@ class ClientCommandTest {
                 fail()
             }
         }
-        assertEquals(log("command.freeze.undo", dummy.first.name), playerData.lastSentMessage)
+        assertEquals(log("command.freeze.undo", dummy.first.name), getLastMessage())
 
         // If player exists but not registered
         val bot = createPlayer()
         clientCommand.handleMessage("/freeze ${bot.name}", player)
-        assertEquals(err("player.not.registered"), playerData.lastSentMessage)
+        assertEquals(err("player.not.registered"), getLastMessage())
 
         // If player not found
         clientCommand.handleMessage("/freeze nothing", player)
-        assertEquals(err("player.not.found"), playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), getLastMessage())
     }
 
     @Test
@@ -504,17 +517,17 @@ class ClientCommandTest {
         setPermission("visitor", true)
 
         clientCommand.handleMessage("/help", player)
-        assertTrue(playerData.lastSentMessage.contains("help"))
+        assertTrue(getLastMessage().contains("help"))
         clientCommand.handleMessage("/help 1", player)
-        assertTrue(playerData.lastSentMessage.contains("help"))
+        assertTrue(getLastMessage().contains("help"))
         clientCommand.handleMessage("/help 3", player)
-        assertFalse(playerData.lastSentMessage.contains("help"))
+        assertFalse(getLastMessage().contains("help"))
 
         setPermission("user", true)
         clientCommand.handleMessage("/help", player)
-        assertTrue(playerData.lastSentMessage.contains("vote"))
+        assertTrue(getLastMessage().contains("vote"))
         clientCommand.handleMessage("/help 3", player)
-        println(playerData.lastSentMessage)
+        println(getLastMessage())
         clientCommand.handleMessage("/help 5", player)
 
         setPermission("owner", true)

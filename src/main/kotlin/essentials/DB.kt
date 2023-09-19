@@ -407,9 +407,6 @@ class DB {
         var previousMousePosition : Float = 0F
         var player : Playerc = mindustry.gen.Player.create()
         var entityid : Int = 0
-
-        // Use plugin test only
-        var lastSentMessage : String = ""
     }
 
     fun createData(data : PlayerData) {

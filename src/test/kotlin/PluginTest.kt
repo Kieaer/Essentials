@@ -1,8 +1,13 @@
 import arc.*
+import arc.Core.*
+import arc.assets.AssetManager
 import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.graphics.Camera
 import arc.graphics.Color
+import arc.scene.Scene
+import arc.scene.ui.Label
+import arc.struct.Seq
 import arc.util.CommandHandler
 import arc.util.Log
 import essentials.*
@@ -16,13 +21,12 @@ import mindustry.core.*
 import mindustry.game.EventType
 import mindustry.game.EventType.ServerLoadEvent
 import mindustry.game.Team
-import mindustry.gen.Groups
-import mindustry.gen.Player
-import mindustry.gen.Playerc
+import mindustry.gen.*
 import mindustry.maps.Map
 import mindustry.mod.Mod
 import mindustry.net.Net
 import mindustry.net.NetConnection
+import mindustry.ui.fragments.ChatFragment
 import mindustry.world.Tile
 import net.datafaker.Faker
 import org.hjson.JsonArray
@@ -36,6 +40,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import java.io.File
 import java.lang.Thread.sleep
+import java.lang.reflect.Method
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -43,6 +48,7 @@ import java.text.MessageFormat
 import java.util.*
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
+
 
 class PluginTest {
     companion object {
@@ -72,8 +78,8 @@ class PluginTest {
             }
 
             Core.settings = Settings()
-            Core.settings.dataDirectory = Fi("")
-            path = Core.settings.dataDirectory
+            settings.dataDirectory = Fi("")
+            path = settings.dataDirectory
 
             path.child("locales").writeString("en")
             path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=7\nbuild=custom build")
@@ -128,6 +134,7 @@ class PluginTest {
                                 }
                             }
                         }
+                        gl = FakeGraphics()
                     }
 
                     override fun init() {
@@ -157,10 +164,19 @@ class PluginTest {
                 path.child("locales").delete()
                 path.child("version.properties").delete()
 
-                Core.settings.put("debugMode", true)
+                settings.put("debugMode", true)
 
                 netClient = NetClient()
-                Core.camera = Camera()
+                camera = Camera()
+
+                assets = AssetManager()
+                scene = Scene()
+                scene.registerStyles(Label::class.java)
+                ui = UI()
+                ui.chatfrag = ChatFragment()
+                val method: Method = ChatFragment::class.java.getDeclaredMethod("setup")
+                method.setAccessible(true)
+                ui.chatfrag = method.invoke(ui.chatfrag) as ChatFragment
             } catch (r : Throwable) {
                 Assert.fail(r.stackTraceToString())
             }
@@ -281,7 +297,7 @@ class PluginTest {
             obj.add("admin", admin)
             json.add(obj)
 
-            Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt").writeString(json.toString())
+            settings.dataDirectory.child("mods/Essentials/permission_user.txt").writeString(json.toString())
             Permission.load()
         }
 

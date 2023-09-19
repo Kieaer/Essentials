@@ -5,6 +5,7 @@ import PluginTest.Companion.newPlayer
 import PluginTest.Companion.path
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
+import arc.struct.Seq
 import essentials.DB
 import essentials.Main.Companion.database
 import mindustry.Vars
@@ -35,6 +36,18 @@ class FeatureTest {
         playerData = p.second
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun getMessage() : Seq<String> {
+        val c = Vars.ui.chatfrag::class.java
+        val f = c.getDeclaredField("messages")
+        f.isAccessible = true
+        return f.get(Vars.ui.chatfrag) as Seq<String>
+    }
+
+    private fun getLastMessage() : String {
+        return getMessage().last()
+    }
+
     @Test
     fun pvpBalanceTest() {
         // Require user or above permission
@@ -56,7 +69,7 @@ class FeatureTest {
          }*/
 
         clientCommand.handleMessage("/status", player)
-        println(playerData.lastSentMessage)
+        println(getLastMessage())
 
         println("core 개수: " + Vars.state.teams.active.size)
 
