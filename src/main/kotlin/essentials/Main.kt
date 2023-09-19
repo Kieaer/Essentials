@@ -216,7 +216,6 @@ class Main: Plugin() {
                 daemon.shutdownNow()
                 Permission.sort()
                 Config.save()
-                database.close()
                 webServer.stop()
                 if (Config.webServer) webServer.stop()
             }

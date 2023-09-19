@@ -20,7 +20,6 @@ import kotlin.system.exitProcess
 
 class DB {
     val players : Seq<PlayerData> = Seq()
-    lateinit var db : Database
     var dbVersion = 3
     var migrateData : Seq<PlayerData>? = null
 
@@ -34,6 +33,7 @@ class DB {
                 Config.database = new
             }
 
+            var db: Database? = null
             try {
                 db = Database.connect(
                     "jdbc:${Config.database}",
@@ -43,7 +43,6 @@ class DB {
                 )
                 transaction { connection.isClosed }
             } catch (e: PSQLException) {
-                TransactionManager.closeAndUnregister(db)
                 try {
                     DriverManager.getConnection("jdbc:${Config.database.replace("essentials","")}", Config.databaseID, Config.databasePW).use { conn ->
                         conn.createStatement().use { stmt ->
@@ -55,12 +54,14 @@ class DB {
                     e.printStackTrace()
                 }
 
-                db = Database.connect(
+                Database.connect(
                     "jdbc:${Config.database}",
                     "org.postgresql.Driver",
                     Config.databaseID,
                     Config.databasePW
                 )
+            } finally {
+                if (db != null) TransactionManager.closeAndUnregister(db)
             }
 
             transaction {
@@ -548,8 +549,10 @@ class DB {
                 data.duplicateName = this[Player.duplicateName]
                 data.tracking = this[Player.tracking]
                 data.joinStacks = this[Player.joinStacks]
-                data.lastLoginDate = if (data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate])
-                data.lastLeaveDate = if (data.lastLeaveDate == null) null else LocalDateTime.parse(this[Player.lastLeaveDate])
+                data.lastLoginDate =
+                    if (data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate])
+                data.lastLeaveDate =
+                    if (data.lastLeaveDate == null) null else LocalDateTime.parse(this[Player.lastLeaveDate])
                 data.showLevelEffects = this[Player.showLevelEffects]
                 data.currentPlayTime = this[Player.currentPlayTime]
                 data.isConnected = this[Player.isConnected]
@@ -566,14 +569,14 @@ class DB {
                 }
                 data.status = obj
 
-                return if (data.accountID == data.accountPW) data else if (BCrypt.checkpw(pw, data.accountPW)) data else null
+                return if (data.accountID == data.accountPW) data else if (BCrypt.checkpw(
+                        pw,
+                        data.accountPW
+                    )
+                ) data else null
             } else {
                 return null
             }
         }
-    }
-
-    fun close() {
-        TransactionManager.closeAndUnregister(db)
     }
 }
