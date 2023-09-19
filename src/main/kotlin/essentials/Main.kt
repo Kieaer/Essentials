@@ -53,10 +53,6 @@ class Main: Plugin() {
         Permission.load()
         PluginData.load()
 
-        if (Config.database != root.child("database").absolutePath()) {
-            Log.info(Bundle()["event.database.remote"])
-        }
-
         if (Config.blockIP) {
             val os = System.getProperty("os.name").lowercase(Locale.getDefault())
             if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {

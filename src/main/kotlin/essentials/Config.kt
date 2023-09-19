@@ -190,7 +190,7 @@ object Config {
         update = plugin.getBoolean("update", update)
         report = plugin.getBoolean("report", report)
         authType = AuthType.valueOf(plugin.get("authType").asString().replaceFirstChar { it.uppercase() })
-        database = if (plugin.getString("database", database) == "default") database else plugin.getString("database", database)
+        database = plugin.getString("database", database)
         databaseID = plugin.getString("databaseID", databaseID)
         databasePW = plugin.getString("databasePW", databasePW)
         banList = plugin.getString("banList", banList)
