@@ -47,6 +47,7 @@ class DB {
                     DriverManager.getConnection("jdbc:${Config.database.replace("essentials","")}", Config.databaseID, Config.databasePW).use { conn ->
                         conn.createStatement().use { stmt ->
                             stmt.executeUpdate("CREATE DATABASE essentials")
+                            stmt.executeUpdate("ALTER TABLE data ADD version TEXT DEFAULT '1' NOT NULL")
                             stmt.executeUpdate("UPDATE player SET status='{}'")
                             stmt.executeUpdate("UPDATE player SET \"lastLoginDate\" = NULL WHERE \"lastLoginDate\" = 'null'")
                             stmt.executeUpdate("UPDATE player SET \"lastLeaveDate\" = NULL WHERE \"lastLeaveDate\" = 'null'")
@@ -136,6 +137,7 @@ class DB {
 
     object Data: Table() {
         val data = text("data")
+        val version = integer("version")
     }
 
     object DB: Table() {

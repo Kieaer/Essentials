@@ -2,7 +2,6 @@ package essentials
 
 import arc.struct.ObjectMap
 import arc.struct.Seq
-import arc.util.Log
 import mindustry.Vars
 import mindustry.world.Tile
 import org.hjson.JsonArray
@@ -35,6 +34,7 @@ object PluginData {
     var changed = false
     var isRankingWorking = false
     var isSurrender = false
+    var version = 0
 
     data class WarpZone(val mapName : String, val start : Int, val finish : Int, val click : Boolean, val ip : String, val port : Int) {
         val startTile : Tile get() = Vars.world.tile(start)
@@ -140,10 +140,15 @@ object PluginData {
             if (first) {
                 DB.Data.insert {
                     it[DB.Data.data] = encoded
+                    it[DB.Data.version] = 1
                 }
             } else {
+                val currentVersion = DB.Data.selectAll().first().run {
+                    this[DB.Data.version]++
+                }
                 DB.Data.update {
                     it[this.data] = encoded
+                    it[this.version] = currentVersion
                 }
             }
         }
@@ -159,46 +164,50 @@ object PluginData {
                 if (DB.Data.selectAll().firstOrNull() == null) {
                     save(true)
                 } else {
-                    warpZones = Seq<WarpZone>()
-                    warpBlocks = Seq<WarpBlock>()
-                    warpCounts = Seq<WarpCount>()
-                    warpTotals = Seq<WarpTotal>()
-                    blacklist = Seq<Pattern>()
-                    banned = Seq<Banned>()
-                    status = ObjectMap<String, String>()
-
                     DB.Data.selectAll().first().run {
-                        val data = JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
+                        if (this[DB.Data.version] > version) {
+                            warpZones = Seq<WarpZone>()
+                            warpBlocks = Seq<WarpBlock>()
+                            warpCounts = Seq<WarpCount>()
+                            warpTotals = Seq<WarpTotal>()
+                            blacklist = Seq<Pattern>()
+                            banned = Seq<Banned>()
+                            status = ObjectMap<String, String>()
 
-                        data["warpZones"].asArray().forEach {
-                            val obj = it.asObject()
-                            warpZones.add(WarpZone(obj.get("mapName").asString(), obj.get("start").asInt(), obj.get("finish").asInt(), obj.get("touch").asBoolean(), obj.get("ip").asString(), obj.get("port").asInt()))
-                        }
+                            val data = JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
 
-                        data["warpBlocks"].asArray().forEach {
-                            val obj = it.asObject()
-                            warpBlocks.add(WarpBlock(obj.get("mapName").asString(), obj.get("x").asInt(), obj.get("y").asInt(), obj.get("tileName").asString(), obj.get("size").asInt(), obj.get("ip").asString(), obj.get("port").asInt(), obj.get("description").asString()))
-                        }
+                            data["warpZones"].asArray().forEach {
+                                val obj = it.asObject()
+                                warpZones.add(WarpZone(obj.get("mapName").asString(), obj.get("start").asInt(), obj.get("finish").asInt(), obj.get("touch").asBoolean(), obj.get("ip").asString(), obj.get("port").asInt()))
+                            }
 
-                        data["warpCounts"].asArray().forEach {
-                            val obj = it.asObject()
-                            warpCounts.add(WarpCount(obj.get("mapName").asString(), obj.get("pos").asInt(), obj.get("ip").asString(), obj.get("port").asInt(), obj.get("players").asInt(), obj.get("numbersize").asInt()))
-                        }
+                            data["warpBlocks"].asArray().forEach {
+                                val obj = it.asObject()
+                                warpBlocks.add(WarpBlock(obj.get("mapName").asString(), obj.get("x").asInt(), obj.get("y").asInt(), obj.get("tileName").asString(), obj.get("size").asInt(), obj.get("ip").asString(), obj.get("port").asInt(), obj.get("description").asString()))
+                            }
 
-                        data["warpTotals"].asArray().forEach {
-                            val obj = it.asObject()
-                            warpTotals.add(WarpTotal(obj.get("mapName").asString(), obj.get("pos").asInt(), obj.get("totalplayers").asInt(), obj.get("numbersize").asInt()))
-                        }
+                            data["warpCounts"].asArray().forEach {
+                                val obj = it.asObject()
+                                warpCounts.add(WarpCount(obj.get("mapName").asString(), obj.get("pos").asInt(), obj.get("ip").asString(), obj.get("port").asInt(), obj.get("players").asInt(), obj.get("numbersize").asInt()))
+                            }
 
-                        data["blacklist"].asArray().forEach { blacklist.add(Pattern.compile(it.asString())) }
+                            data["warpTotals"].asArray().forEach {
+                                val obj = it.asObject()
+                                warpTotals.add(WarpTotal(obj.get("mapName").asString(), obj.get("pos").asInt(), obj.get("totalplayers").asInt(), obj.get("numbersize").asInt()))
+                            }
 
-                        data["banned"].asArray().forEach {
-                            val obj = it.asObject()
-                            banned.add(Banned(obj.get("time").asLong(), obj.get("name").asString(), obj.get("uuid").asString(), obj.get("reason").asString()))
-                        }
+                            data["blacklist"].asArray().forEach { blacklist.add(Pattern.compile(it.asString())) }
 
-                        JsonArray.readJSON(data["status"].asString().replace("\\", "")).asObject().forEach {
-                            status.put(it.name, it.value.asString())
+                            data["banned"].asArray().forEach {
+                                val obj = it.asObject()
+                                banned.add(Banned(obj.get("time").asLong(), obj.get("name").asString(), obj.get("uuid").asString(), obj.get("reason").asString()))
+                            }
+
+                            JsonArray.readJSON(data["status"].asString().replace("\\", "")).asObject().forEach {
+                                status.put(it.name, it.value.asString())
+                            }
+
+                            version = this[DB.Data.version]
                         }
                     }
                 }
