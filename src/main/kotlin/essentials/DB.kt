@@ -5,6 +5,7 @@ import arc.struct.Seq
 import arc.util.Log
 import mindustry.gen.Playerc
 import org.hjson.JsonObject
+import org.hjson.Stringify
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -45,8 +46,11 @@ class DB {
                 try {
                     DriverManager.getConnection("jdbc:${Config.database.replace("essentials","")}", Config.databaseID, Config.databasePW).use { conn ->
                         conn.createStatement().use { stmt ->
-                            val sql = "CREATE DATABASE essentials"
-                            stmt.executeUpdate(sql)
+                            stmt.executeUpdate("CREATE DATABASE essentials")
+                            stmt.executeUpdate("UPDATE player SET status='{}'")
+                            stmt.executeUpdate("UPDATE player SET \"lastLoginDate\" = NULL WHERE \"lastLoginDate\" = 'null'")
+                            stmt.executeUpdate("UPDATE player SET \"lastLeaveDate\" = NULL WHERE \"lastLeaveDate\" = 'null'")
+                            stmt.executeUpdate("UPDATE player SET \"duplicateName\" = NULL WHERE \"duplicateName\" = 'null'")
                         }
                     }
                 } catch (e: SQLException) {
@@ -103,8 +107,7 @@ class DB {
                     }
 
                     if (!Data.selectAll().empty() && JsonObject.readJSON(String(Base64.getDecoder().decode(Data.selectAll().first()[Data.data]))).asObject().getBoolean("isDuplicateNameChecked", false)) {
-                        val duplicate = Player.selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }
-                            .map { it[Player.name] }
+                        val duplicate = Player.selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }.map { it[Player.name] }
                         for (value in duplicate) {
                             Player.update({ Player.name eq value }) {
                                 it[duplicateName] = value
@@ -271,7 +274,7 @@ class DB {
                 it[mute] = data.mute
                 it[accountID] = data.accountID
                 it[accountPW] = data.accountPW
-                it[status] = data.status.toString()
+                it[status] = JsonObject().toString(Stringify.HJSON)
                 it[discord] = data.discord
                 it[effectLevel] = data.effectLevel
                 it[effectColor] = data.effectColor
@@ -503,7 +506,7 @@ class DB {
                 data.status.forEach {
                     json.add(it.key, it.value)
                 }
-                it[status] = json.toString()
+                it[status] = json.toString(Stringify.HJSON)
             }
         }
     }
@@ -546,10 +549,8 @@ class DB {
                 data.duplicateName = this[Player.duplicateName]
                 data.tracking = this[Player.tracking]
                 data.joinStacks = this[Player.joinStacks]
-                data.lastLoginDate =
-                    if (data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate])
-                data.lastLeaveDate =
-                    if (data.lastLeaveDate == null) null else LocalDateTime.parse(this[Player.lastLeaveDate])
+                data.lastLoginDate = if (data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate])
+                data.lastLeaveDate = if (data.lastLeaveDate == null) null else LocalDateTime.parse(this[Player.lastLeaveDate])
                 data.showLevelEffects = this[Player.showLevelEffects]
                 data.currentPlayTime = this[Player.currentPlayTime]
                 data.isConnected = this[Player.isConnected]
@@ -566,11 +567,7 @@ class DB {
                 }
                 data.status = obj
 
-                return if (data.accountID == data.accountPW) data else if (BCrypt.checkpw(
-                        pw,
-                        data.accountPW
-                    )
-                ) data else null
+                return if (data.accountID == data.accountPW) data else if (BCrypt.checkpw(pw, data.accountPW)) data else null
             } else {
                 return null
             }
