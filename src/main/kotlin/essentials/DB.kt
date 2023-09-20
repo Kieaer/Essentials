@@ -33,9 +33,8 @@ class DB {
                 Config.database = new
             }
 
-            var db: Database? = null
             try {
-                db = Database.connect(
+                Database.connect(
                     "jdbc:${Config.database}",
                     "org.postgresql.Driver",
                     Config.databaseID,
@@ -60,8 +59,6 @@ class DB {
                     Config.databaseID,
                     Config.databasePW
                 )
-            } finally {
-                if (db != null) TransactionManager.closeAndUnregister(db)
             }
 
             transaction {
