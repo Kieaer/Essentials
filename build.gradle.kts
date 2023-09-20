@@ -19,12 +19,13 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 repositories {
     mavenCentral()
+    maven(url = "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository")
     maven(url = "https://www.jitpack.io")
 }
 
 val exposedVersion = "0.41.1"
-val mindustryVersion = "v145"
-val arcVersion = "v145"
+val mindustryVersion = "v146"
+val arcVersion = "v146"
 
 dependencies {
     compileOnly("com.github.anuken.arc:arc-core:$arcVersion")
