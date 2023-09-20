@@ -20,6 +20,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 
 repositories {
     mavenCentral()
+    maven(url = "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository")
     maven(url = "https://www.jitpack.io")
 }
 
