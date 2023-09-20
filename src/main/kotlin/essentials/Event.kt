@@ -1383,22 +1383,20 @@ object Event {
 
                         Main.daemon.submit(Thread {
                             transaction {
-                                DB.Player.select { DB.Player.banTime eq null }.run {
-                                    for (data in this) {
-                                        val banTime = data[DB.Player.banTime]
-                                        val uuid = data[DB.Player.uuid]
-                                        val name = data[DB.Player.name]
+                                DB.Player.select { DB.Player.banTime neq null }.forEach { data ->
+                                    val banTime = data[DB.Player.banTime]
+                                    val uuid = data[DB.Player.uuid]
+                                    val name = data[DB.Player.name]
 
-                                        if (LocalDateTime.now().isAfter(LocalDateTime.parse(banTime))) {
-                                            val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-                                            json.removeAll { a -> a.asObject().get("id").asString() == uuid }
-                                            Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
+                                    if (LocalDateTime.now().isAfter(LocalDateTime.parse(banTime))) {
+                                        val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
+                                        json.removeAll { a -> a.asObject().get("id").asString() == uuid }
+                                        Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
-                                            DB.Player.update({ DB.Player.uuid eq uuid }) {
-                                                it[DB.Player.banTime] = null
-                                            }
-                                            Events.fire(PlayerTempUnbanned(name))
+                                        DB.Player.update({ DB.Player.uuid eq uuid }) {
+                                            it[DB.Player.banTime] = null
                                         }
+                                        Events.fire(PlayerTempUnbanned(name))
                                     }
                                 }
                             }
