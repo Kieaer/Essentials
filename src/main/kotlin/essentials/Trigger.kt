@@ -39,12 +39,12 @@ object Trigger {
     val clients = Seq<Socket>()
 
     fun loadPlayer(player : Playerc, data : DB.PlayerData, login : Boolean) {
-        if (data.duplicateName != "null" && data.duplicateName == player.name()) {
+        if (data.duplicateName != null && data.duplicateName == player.name()) {
             player.kick(Bundle(player.locale())["event.player.duplicate.name"])
         } else {
-            if (data.duplicateName != "null" && data.duplicateName != player.name()) {
+            if (data.duplicateName != null && data.duplicateName != player.name()) {
                 data.name = player.name()
-                data.duplicateName = "null"
+                data.duplicateName = null
             }
 
             if (data.lastLoginDate != null) {
