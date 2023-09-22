@@ -679,8 +679,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     if (PluginData["hubMode"] == null) {
                         PluginData.status.put("hubMode", state.map.name())
                         send("command.hub.mode.on")
-                    } else if (PluginData["hubMode"] != null && PluginData["hubMode"] != state.map.name()) {
-                        send("command.hub.mode.exists")
                     } else {
                         PluginData.status.remove("hubMode")
                         send("command.hub.mode.off")
