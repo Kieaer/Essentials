@@ -942,13 +942,15 @@ object Event {
                     }
                 }
 
-                netServer.addPacketHandler("MySubtitle") { packet, _ ->
-                    packet.con.close()
-                    log(LogType.Player, Bundle()["event.antigrief.claj.log", packet.plainName(), "Packet"])
-                }
+                if (Config.antiGrief) {
+                    netServer.addPacketHandler("MySubtitle") { packet, _ ->
+                        packet.con.close()
+                        log(LogType.Player, Bundle()["event.antigrief.claj.log", packet.plainName(), "Packet"])
+                    }
 
-                Events.on(PlayerJoin::class.java) {
-                    Call.clientPacketReliable("Subtitles", "fake");
+                    Events.on(PlayerJoin::class.java) {
+                        Call.clientPacketReliable("Subtitles", "fake");
+                    }
                 }
             }
 
