@@ -238,8 +238,8 @@ object Event {
                             "break" -> "[scarlet]${bundle["event.log.break"]}[]"
                             "place" -> "[sky]${bundle["event.log.place"]}[]"
                             "config" -> "[cyan]${bundle["event.log.config"]}[]"
-                            "withdraw" -> "[green]${bundle["event.log.withdraw"]}"
-                            "deposit" -> "[brown]${bundle["event.log.deposit"]}"
+                            "withdraw" -> "[green]${bundle["event.log.withdraw"]}[]"
+                            "deposit" -> "[brown]${bundle["event.log.deposit"]}[]"
                             else -> ""
                         }
 

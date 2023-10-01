@@ -849,7 +849,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 val banMenus = arrayOf(
                     arrayOf(bundle["info.button.tempban.10min"], bundle["info.button.tempban.1hour"], bundle["info.button.tempban.1day"]),
                     arrayOf(bundle["info.button.tempban.1week"], bundle["info.button.tempban.2week"], bundle["info.button.tempban.1month"]),
-                    arrayOf(bundle["info.button.ban.permanently"]),
+                    arrayOf(bundle["info.button.tempban.permanent"]),
                     arrayOf(bundle["info.button.close"])
                 )
 
@@ -867,40 +867,43 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 else -> 0
                             }
 
-                            val timeText = bundle["info.button.tempban.${
-                                when (s) {
-                                    0 -> "10min"
-                                    1 -> "1hour"
-                                    2 -> "1day"
-                                    3 -> "1week"
-                                    4 -> "2week"
-                                    5 -> "1month"
-                                    6 -> "permanent"
-                                    else -> ""
-                                }
-                            }"]
+                            try {
+                                val timeText = bundle["info.button.tempban.${
+                                    when (s) {
+                                        0 -> "10min"
+                                        1 -> "1hour"
+                                        2 -> "1day"
+                                        3 -> "1week"
+                                        4 -> "2week"
+                                        5 -> "1month"
+                                        6 -> "permanent"
+                                        else -> ""
+                                    }
+                                }"]
 
-                            if (s <= 5) {
-                                val tempBanConfirmMenu = Menus.registerMenu { _, i ->
-                                    if (i == 0) {
-                                        data.banTime = time.toString()
-                                        database.queue(data)
-                                        Events.fire(PlayerTempBanned(targetData!!.name, player.plainName(), LocalDateTime.now().plusMinutes(time.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
-                                        banPlayer(data)
+                                if (s <= 5) {
+                                    val tempBanConfirmMenu = Menus.registerMenu { _, i ->
+                                        if (i == 0) {
+                                            data.banTime = time.toString()
+                                            database.queue(data)
+                                            Events.fire(PlayerTempBanned(targetData!!.name, player.plainName(), LocalDateTime.now().plusMinutes(time.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
+                                            banPlayer(data)
+                                        }
                                     }
-                                }
-                                // 임시 차단
-                                Call.menu(player.con(), tempBanConfirmMenu, bundle["info.tempban.title"], bundle["info.tempban.confirm", timeText] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
-                            } else if (s == 6) {
-                                val banConfirmMenu = Menus.registerMenu { _, i ->
-                                    if (i == 0) {
-                                        Call.kick(targetData!!.player.con(), Packets.KickReason.banned)
-                                        Events.fire(CustomEvents.PlayerBanned(targetData!!.name, targetData!!.uuid, currentTime(), bundle["info.banned.reason.admin"]))
-                                        banPlayer(targetData)
+                                    // 임시 차단
+                                    Call.menu(player.con(), tempBanConfirmMenu, bundle["info.tempban.title"], bundle["info.tempban.confirm", timeText] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                                } else if (s == 6) {
+                                    val banConfirmMenu = Menus.registerMenu { _, i ->
+                                        if (i == 0) {
+                                            Call.kick(targetData!!.player.con(), Packets.KickReason.banned)
+                                            Events.fire(CustomEvents.PlayerBanned(targetData!!.name, targetData!!.uuid, currentTime(), bundle["info.banned.reason.admin"]))
+                                            banPlayer(targetData)
+                                        }
                                     }
+                                    // 영구 차단
+                                    Call.menu(player.con(), banConfirmMenu, bundle["info.ban.title"], bundle["info.ban.confirm"] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
                                 }
-                                // 영구 차단
-                                Call.menu(player.con(), banConfirmMenu, bundle["info.ban.title"], bundle["info.ban.confirm"] + lineBreak, arrayOf(arrayOf(bundle["info.button.ban"], bundle["info.button.cancel"])))
+                            } catch (_ : MissingResourceException) {
                             }
                         }
                         Call.menu(player.con(), innerMenu, bundle["info.tempban.title"], bundle["info.tempban.confirm"] + lineBreak, banMenus)
