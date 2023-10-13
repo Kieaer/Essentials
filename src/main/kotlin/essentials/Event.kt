@@ -42,6 +42,7 @@ import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.Stringify
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.FileInputStream
@@ -573,10 +574,12 @@ object Event {
                     it.player.sendMessage(Bundle(it.player.locale)["event.player.first.register"])
                 } else if (Config.authType == Config.AuthType.None) {
                     Main.daemon.submit(Thread {
-                        if (database.getAll().contains { a -> a.name == it.player.name() }) {
-                            Core.app.post { it.player.con.kick(Bundle(it.player.locale)["event.player.name.duplicate"], 0L) }
-                        } else {
-                            Core.app.post { Trigger.createPlayer(it.player, null, null) }
+                        transaction {
+                            if(DB.Player.slice(DB.Player.name).select { DB.Player.name eq it.player.name}.empty()) {
+                                Core.app.post { Trigger.createPlayer(it.player, null, null) }
+                            } else {
+                                Core.app.post { it.player.con.kick(Bundle(it.player.locale)["event.player.name.duplicate"], 0L) }
+                            }
                         }
                     })
                 }

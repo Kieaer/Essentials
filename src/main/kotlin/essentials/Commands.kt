@@ -48,8 +48,10 @@ import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
 import java.sql.Timestamp
@@ -1508,27 +1510,36 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                     PluginData.isRankingWorking = true
                     Core.app.post { player.sendMessage(bundle["command.ranking.wait"]) }
-                    val all = database.getAll()
-                    val time = mutableMapOf<ArrayMap<String, String>, Long>()
-                    val exp = mutableMapOf<ArrayMap<String, String>, Int>()
-                    val attack = mutableMapOf<ArrayMap<String, String>, Int>()
-                    val placeBlock = mutableMapOf<ArrayMap<String, String>, Int>()
-                    val breakBlock = mutableMapOf<ArrayMap<String, String>, Int>()
-                    val pvp = mutableMapOf<ArrayMap<String, String>, ArrayMap<Int, Int>>()
+                    val time = mutableMapOf<Pair<String, String>, Long>()
+                    val exp = mutableMapOf<Pair<String, String>, Int>()
+                    val attack = mutableMapOf<Pair<String, String>, Int>()
+                    val placeBlock = mutableMapOf<Pair<String, String>, Int>()
+                    val breakBlock = mutableMapOf<Pair<String, String>, Int>()
+                    val pvp = mutableMapOf<Pair<String, String>, Triple<Int, Int, Int>>()
 
-                    all.forEach {
-                        if (!it.hideRanking && JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("id").asString() == it.uuid } == null) {
-                            val info = ArrayMap<String, String>()
-                            val pvpCount = ArrayMap<Int, Int>()
-                            info.put(it.name, it.uuid)
-                            pvpCount.put(it.pvpVictoriesCount, it.pvpDefeatCount)
-
-                            time[info] = it.totalPlayTime
-                            exp[info] = it.exp
-                            attack[info] = it.attackModeClear
-                            placeBlock[info] = it.blockPlaceCount
-                            breakBlock[info] = it.blockBreakCount
-                            pvp[info] = pvpCount
+                    transaction {
+                        if (arg[0].lowercase() == "pvp") {
+                            DB.Player.slice(DB.Player.name, DB.Player.uuid, DB.Player.pvpVictoriesCount, DB.Player.pvpDefeatCount, DB.Player.pvpEliminationTeamCount).selectAll().map {
+                                pvp[Pair(it[DB.Player.name], it[DB.Player.uuid])] = Triple(it[DB.Player.pvpVictoriesCount], it[DB.Player.pvpDefeatCount], it[DB.Player.pvpEliminationTeamCount])
+                            }
+                        } else {
+                            val type = when(arg[0].lowercase()) {
+                                "time" -> DB.Player.totalPlayTime
+                                "exp" -> DB.Player.exp
+                                "attack" -> DB.Player.attackModeClear
+                                "place" -> DB.Player.blockPlaceCount
+                                "break" -> DB.Player.blockBreakCount
+                                else -> DB.Player.uuid // dummy
+                            }
+                            DB.Player.slice(type).selectAll().map {
+                                when(arg[0].lowercase()) {
+                                    "time" -> time[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.totalPlayTime]
+                                    "exp" -> exp[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.exp]
+                                    "attack" -> attack[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.attackModeClear]
+                                    "place" -> placeBlock[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.blockPlaceCount]
+                                    "break" -> breakBlock[Pair(it[DB.Player.name], it[DB.Player.uuid])] =it[DB.Player.blockBreakCount]
+                                }
+                            }
                         }
                     }
 
@@ -1538,9 +1549,9 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         "attack" -> attack.toList().sortedWith(compareBy { -it.second })
                         "place" -> placeBlock.toList().sortedWith(compareBy { -it.second })
                         "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
-                        "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.firstKey() })
+                        "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.first })
                         else -> {
-                            PluginData.isRankingWorking = true
+                            PluginData.isRankingWorking = false
                             return@Thread
                         }
                     }
@@ -1562,7 +1573,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         if (d[a].second is ArrayMap<*, *>) {
                             val rank = d[a].second as ArrayMap<*, *>
                             val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
-                            string.append("[white]$a[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
+                            string.append("[white]$a[] ${d[a].first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                         } else {
                             val text = if (arg[0].lowercase() == "time") {
                                 timeFormat(d[a].second.toString().toLong())
@@ -1571,17 +1582,17 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             } else {
                                 d[a].second
                             }
-                            string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] $text\n")
+                            string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] $text\n")
                         }
                     }
                     string.substring(0, string.length - 1)
                     string.append("[purple]=======================================[]\n")
                     for (a in d.indices) {
-                        if (d[a].first.firstValue() == player.uuid()) {
+                        if (d[a].first.second == player.uuid()) {
                             if (d[a].second is ArrayMap<*, *>) {
                                 val rank = d[a].second as ArrayMap<*, *>
                                 val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
-                                string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
+                                string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
                             } else {
                                 val text = if (arg[0].lowercase() == "time") {
                                     timeFormat(d[a].second.toString().toLong())
@@ -1590,7 +1601,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 } else {
                                     d[a].second
                                 }
-                                string.append("[white]${a + 1}[] ${d[a].first.firstKey()}[white] [yellow]-[] $text")
+                                string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] $text")
                             }
                         }
                     }
