@@ -25,31 +25,31 @@ import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
 import org.junit.AfterClass
+import org.junit.BeforeClass
 import org.junit.Test
 import org.mindrot.jbcrypt.BCrypt
 import java.lang.Thread.sleep
 
 class ClientCommandTest {
     companion object {
-        @AfterClass
+        private var done = false;
+        lateinit var playerData: DB.PlayerData
+
+        @BeforeClass
         @JvmStatic
-        fun client_shutdown() {
-            path.child("mods/Essentials").deleteDirectory()
-            path.child("maps").deleteDirectory()
+        fun setup() {
+            if (!done) {
+                loadGame()
+                loadPlugin()
+
+                val p = newPlayer()
+                Vars.player = p.first.self()
+                player = p.first.self()
+                playerData = p.second
+
+                done = true;
+            }
         }
-    }
-
-    var playerData : DB.PlayerData
-
-    init {
-        loadGame()
-        loadPlugin()
-        //test.runPost()
-
-        val p = newPlayer()
-        Vars.player = p.first.self()
-        player = p.first.self()
-        playerData = p.second
     }
 
     @Test

@@ -53,13 +53,6 @@ class PluginTest {
         val serverCommand : CommandHandler = CommandHandler("")
         val clientCommand : CommandHandler = CommandHandler("/")
 
-        @AfterClass
-        @JvmStatic
-        fun shutdown() {
-            path.child("mods/Essentials").deleteDirectory()
-            path.child("maps").deleteDirectory()
-        }
-
         @Mock
         lateinit var mockApplication : Application
 
@@ -74,6 +67,8 @@ class PluginTest {
             Core.settings = Settings()
             Core.settings.dataDirectory = Fi("")
             path = Core.settings.dataDirectory
+
+            path.child("maps").deleteDirectory()
 
             path.child("locales").writeString("en")
             path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=7\nbuild=custom build")
@@ -167,6 +162,9 @@ class PluginTest {
         }
 
         fun loadPlugin() {
+            path.child("mods/Essentials").deleteDirectory()
+
+            Config.databasePW = "pk1450"
             main = Main()
 
             Config.border = true
@@ -222,7 +220,9 @@ class PluginTest {
                     return
                 }
             }
-            player.name(faker.name().lastName())
+            val name = faker.name().lastName().toCharArray()
+            name.shuffle()
+            player.name(name.concatToString())
             player.con.uuid = getSaltString()
             player.con.usid = getSaltString()
             player.set(r.nextInt(300).toFloat(), r.nextInt(500).toFloat())
@@ -243,6 +243,7 @@ class PluginTest {
             val random = Random()
             return world.tile(random.nextInt(100), random.nextInt(100))
         }
+
 
         fun newPlayer() : Pair<Player, DB.PlayerData> {
             val player = createPlayer()

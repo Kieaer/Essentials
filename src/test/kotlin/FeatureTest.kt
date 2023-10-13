@@ -2,7 +2,6 @@ import PluginTest.Companion.clientCommand
 import PluginTest.Companion.loadGame
 import PluginTest.Companion.loadPlugin
 import PluginTest.Companion.newPlayer
-import PluginTest.Companion.path
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import essentials.DB
@@ -10,29 +9,27 @@ import essentials.Main.Companion.database
 import mindustry.Vars
 import mindustry.game.Team
 import mindustry.gen.Groups
-import org.junit.AfterClass
+import org.junit.BeforeClass
 import org.junit.Test
 
+
 class FeatureTest {
-    companion object {
-        @AfterClass
-        @JvmStatic
-        fun shutdown() {
-            path.child("mods/Essentials").deleteDirectory()
-            path.child("maps").deleteDirectory()
+    private var done = false;
+    lateinit var playerData: DB.PlayerData
+
+    @BeforeClass
+    fun setup() {
+        if (!done) {
+            loadGame()
+            loadPlugin()
+
+            val p = newPlayer()
+            Vars.player = p.first.self()
+            player = p.first.self()
+            playerData = p.second
+
+            done = true;
         }
-    }
-
-    var playerData : DB.PlayerData
-
-    init {
-        loadGame()
-        loadPlugin()
-
-        val p = newPlayer()
-        Vars.player = p.first.self()
-        player = p.first.self()
-        playerData = p.second
     }
 
     @Test

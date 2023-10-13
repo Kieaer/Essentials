@@ -804,7 +804,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, "command.info.time")}
                         ${bundle["command.info.playtime.current"]}: ${timeFormat(target.currentPlayTime, "command.info.time.minimal")}
                         ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
-                        ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${if (target.pvpVictoriesCount + target.pvpDefeatCount != 0) round(target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100) else "0%"}%[white])
+                        ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${if (target.pvpVictoriesCount + target.pvpDefeatCount != 0) round(target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100) else 0}%[white])
                         ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
                         """.trimIndent()
             }
@@ -1531,7 +1531,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 "break" -> DB.Player.blockBreakCount
                                 else -> DB.Player.uuid // dummy
                             }
-                            DB.Player.slice(type).selectAll().map {
+                            DB.Player.slice(DB.Player.name, DB.Player.uuid, type).selectAll().map {
                                 when(arg[0].lowercase()) {
                                     "time" -> time[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.totalPlayTime]
                                     "exp" -> exp[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.exp]
