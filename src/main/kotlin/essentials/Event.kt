@@ -42,7 +42,6 @@ import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.Stringify
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.FileInputStream
@@ -68,8 +67,8 @@ import kotlin.math.abs
 import kotlin.math.floor
 
 object Event {
-    var orignalBlockMultiplier = 1f
-    var orignalUnitMultiplier = 1f
+    var originalBlockMultiplier = 1f
+    var originalUnitMultiplier = 1f
     var enemyBuildingDestroyed = 0
 
     var voting = false
@@ -680,8 +679,8 @@ object Event {
 
             if (state.rules.pvp) {
                 if (Config.pvpPeace) {
-                    orignalBlockMultiplier = state.rules.blockDamageMultiplier
-                    orignalUnitMultiplier = state.rules.unitDamageMultiplier
+                    originalBlockMultiplier = state.rules.blockDamageMultiplier
+                    originalUnitMultiplier = state.rules.unitDamageMultiplier
                     state.rules.blockDamageMultiplier = 0f
                     state.rules.unitDamageMultiplier = 0f
                     pvpCount = Config.pvpPeaceTime
@@ -1361,8 +1360,8 @@ object Event {
                                 if (pvpCount != 0) {
                                     pvpCount--
                                 } else {
-                                    state.rules.blockDamageMultiplier = orignalBlockMultiplier
-                                    state.rules.unitDamageMultiplier = orignalUnitMultiplier
+                                    state.rules.blockDamageMultiplier = originalBlockMultiplier
+                                    state.rules.unitDamageMultiplier = originalUnitMultiplier
                                     send("event.pvp.peace.end")
                                 }
                             }
