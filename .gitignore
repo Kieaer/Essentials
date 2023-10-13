@@ -154,3 +154,4 @@ src/main/resources/www
 node_modules
 package-lock.json
 package.json
+/maps/
