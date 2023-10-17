@@ -10,16 +10,15 @@ import PluginTest.Companion.path
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
-import essentials.DB
-import essentials.Event
+import essentials.*
 import essentials.Main.Companion.connectType
 import essentials.Main.Companion.database
-import essentials.Trigger
 import junit.framework.TestCase.*
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.content.Liquids
+import mindustry.game.EventType
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
@@ -32,7 +31,7 @@ import java.lang.Thread.sleep
 
 class ClientCommandTest {
     companion object {
-        private var done = false;
+        private var done = false
         lateinit var playerData: DB.PlayerData
 
         @BeforeClass
@@ -47,7 +46,7 @@ class ClientCommandTest {
                 player = p.first.self()
                 playerData = p.second
 
-                done = true;
+                done = true
             }
         }
     }
@@ -99,12 +98,15 @@ class ClientCommandTest {
         assertEquals(err("player.not.found"), playerData.lastSentMessage)
 
         // If target player exists but registered
+        Config.authType = Config.AuthType.Password
         val notRegisteredUser = createPlayer()
+        Events.fire(EventType.PlayerJoin(notRegisteredUser.self()))
         val oldName = notRegisteredUser.name()
-        clientCommand.handleMessage("/changename not ${registeredUser.first.name()}", player)
+        clientCommand.handleMessage("/changename not ${notRegisteredUser.name()}", player)
         assertEquals(oldName, notRegisteredUser.name())
         assertEquals(err("player.not.registered"), playerData.lastSentMessage)
         leavePlayer(notRegisteredUser)
+        Config.authType = Config.AuthType.None
     }
 
     @Test
@@ -272,6 +274,7 @@ class ClientCommandTest {
         // Hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
         database.update(player.uuid(), playerData)
+        assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastSentMessage)
         clientCommand.handleMessage("/ranking exp", player)
         sleep(250)
         assertFalse(playerData.lastSentMessage.contains(player.name))
@@ -279,6 +282,7 @@ class ClientCommandTest {
         // Un-hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
         database.update(player.uuid(), playerData)
+        assertEquals(Bundle()["command.exp.ranking.unhide"], playerData.lastSentMessage)
         clientCommand.handleMessage("/ranking exp", player)
         sleep(250)
         assertTrue(playerData.lastSentMessage.contains(player.name))
@@ -286,16 +290,42 @@ class ClientCommandTest {
         // Hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.first.name}", player)
         database.update(dummy.first.uuid(), dummy.second)
-        clientCommand.handleMessage("/ranking exp", player)
-        sleep(250)
-        assertFalse(playerData.lastSentMessage.contains(dummy.first.name))
+        assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastSentMessage)
+        var next = true
+        var buffer = playerData.lastSentMessage
+        var count = 0
+        var exists = false
+        while (next) {
+            clientCommand.handleMessage("/ranking exp $count", player)
+            sleep(200)
+            next = playerData.lastSentMessage != buffer
+            buffer = playerData.lastSentMessage
+            count++
+            if (buffer.contains(dummy.first.name)) {
+                exists = true
+            }
+        }
+        if (exists) fail()
+        buffer = ""
+        count = 0
+        exists = false
+        next = true
 
         // Un-hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.second.entityid}", player)
         database.update(dummy.first.uuid(), dummy.second)
-        clientCommand.handleMessage("/ranking exp", player)
-        sleep(250)
-        assertTrue(playerData.lastSentMessage.contains(dummy.first.name))
+        assertEquals(Bundle()["command.exp.ranking.unhide"], playerData.lastSentMessage)
+        while (next) {
+            clientCommand.handleMessage("/ranking exp $count", player)
+            sleep(200)
+            next = playerData.lastSentMessage != buffer
+            buffer = playerData.lastSentMessage
+            count++
+            if (buffer.contains(dummy.first.name)) {
+                exists = true
+            }
+        }
+        if (!exists) fail()
 
         // Add exp value
         clientCommand.handleMessage("/exp add 500", player)
@@ -514,7 +544,6 @@ class ClientCommandTest {
         clientCommand.handleMessage("/help", player)
         assertTrue(playerData.lastSentMessage.contains("vote"))
         clientCommand.handleMessage("/help 3", player)
-        println(playerData.lastSentMessage)
         clientCommand.handleMessage("/help 5", player)
 
         setPermission("owner", true)

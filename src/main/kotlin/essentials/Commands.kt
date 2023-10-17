@@ -477,6 +477,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             val other = findPlayerData(target.uuid())
                             if (other != null) {
                                 other.hideRanking = !other.hideRanking
+                                database.queue(other)
                                 val msg = if (other.hideRanking) "hide" else "unhide"
                                 send("command.exp.ranking.$msg")
                                 return
@@ -1519,8 +1520,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                     transaction {
                         if (arg[0].lowercase() == "pvp") {
-                            DB.Player.slice(DB.Player.name, DB.Player.uuid, DB.Player.pvpVictoriesCount, DB.Player.pvpDefeatCount, DB.Player.pvpEliminationTeamCount).selectAll().map {
-                                pvp[Pair(it[DB.Player.name], it[DB.Player.uuid])] = Triple(it[DB.Player.pvpVictoriesCount], it[DB.Player.pvpDefeatCount], it[DB.Player.pvpEliminationTeamCount])
+                            DB.Player.slice(DB.Player.name, DB.Player.uuid, DB.Player.hideRanking, DB.Player.pvpVictoriesCount, DB.Player.pvpDefeatCount, DB.Player.pvpEliminationTeamCount).selectAll().map {
+                                if (!it[DB.Player.hideRanking]) {
+                                    pvp[Pair(it[DB.Player.name], it[DB.Player.uuid])] = Triple(it[DB.Player.pvpVictoriesCount], it[DB.Player.pvpDefeatCount], it[DB.Player.pvpEliminationTeamCount])
+                                }
                             }
                         } else {
                             val type = when(arg[0].lowercase()) {
@@ -1531,13 +1534,15 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 "break" -> DB.Player.blockBreakCount
                                 else -> DB.Player.uuid // dummy
                             }
-                            DB.Player.slice(DB.Player.name, DB.Player.uuid, type).selectAll().map {
-                                when(arg[0].lowercase()) {
-                                    "time" -> time[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.totalPlayTime]
-                                    "exp" -> exp[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.exp]
-                                    "attack" -> attack[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.attackModeClear]
-                                    "place" -> placeBlock[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.blockPlaceCount]
-                                    "break" -> breakBlock[Pair(it[DB.Player.name], it[DB.Player.uuid])] =it[DB.Player.blockBreakCount]
+                            DB.Player.slice(DB.Player.name, DB.Player.uuid, DB.Player.hideRanking, type).selectAll().map {
+                                if (!it[DB.Player.hideRanking]) {
+                                    when (arg[0].lowercase()) {
+                                        "time" -> time[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.totalPlayTime]
+                                        "exp" -> exp[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.exp]
+                                        "attack" -> attack[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.attackModeClear]
+                                        "place" -> placeBlock[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.blockPlaceCount]
+                                        "break" -> breakBlock[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.blockBreakCount]
+                                    }
                                 }
                             }
                         }
@@ -1586,22 +1591,24 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         }
                     }
                     string.substring(0, string.length - 1)
-                    string.append("[purple]=======================================[]\n")
-                    for (a in d.indices) {
-                        if (d[a].first.second == player.uuid()) {
-                            if (d[a].second is ArrayMap<*, *>) {
-                                val rank = d[a].second as ArrayMap<*, *>
-                                val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
-                                string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
-                            } else {
-                                val text = if (arg[0].lowercase() == "time") {
-                                    timeFormat(d[a].second.toString().toLong())
-                                } else if (arg[0].lowercase() == "exp") {
-                                    "Lv.${Exp.calculateLevel(d[a].second as Int)} - ${d[a].second}"
+                    if (!data.hideRanking) {
+                        string.append("[purple]=======================================[]\n")
+                        for (a in d.indices) {
+                            if (d[a].first.second == player.uuid()) {
+                                if (d[a].second is ArrayMap<*, *>) {
+                                    val rank = d[a].second as ArrayMap<*, *>
+                                    val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
+                                    string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
                                 } else {
-                                    d[a].second
+                                    val text = if (arg[0].lowercase() == "time") {
+                                        timeFormat(d[a].second.toString().toLong())
+                                    } else if (arg[0].lowercase() == "exp") {
+                                        "Lv.${Exp.calculateLevel(d[a].second as Int)} - ${d[a].second}"
+                                    } else {
+                                        d[a].second
+                                    }
+                                    string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] $text")
                                 }
-                                string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] $text")
                             }
                         }
                     }

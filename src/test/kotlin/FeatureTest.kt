@@ -14,7 +14,7 @@ import org.junit.Test
 
 
 class FeatureTest {
-    private var done = false;
+    private var done = false
     lateinit var playerData: DB.PlayerData
 
     @BeforeClass
@@ -28,7 +28,7 @@ class FeatureTest {
             player = p.first.self()
             playerData = p.second
 
-            done = true;
+            done = true
         }
     }
 
