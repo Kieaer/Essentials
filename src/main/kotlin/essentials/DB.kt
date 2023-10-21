@@ -3,6 +3,7 @@ package essentials
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
+import essentials.Main.Companion.root
 import mindustry.gen.Playerc
 import org.hjson.JsonObject
 import org.hjson.Stringify
@@ -11,7 +12,6 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
 import org.postgresql.util.PSQLException
-import java.sql.DriverManager
 import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -22,13 +22,18 @@ import kotlin.system.exitProcess
 class DB {
     val players : Seq<PlayerData> = Seq()
     var dbVersion = 3
-    var migrateData : Seq<PlayerData>? = null
+
 
     fun open() {
+        var migrateData: Seq<PlayerData> = Seq()
+
         try {
             if (Main.root.child("database.mv.db").exists()) {
-                val new = "postgresql://127.0.0.1:5432/essentials"
+                val new = "postgresql://127.0.0.1:5432/"
                 val old = Database.connect("jdbc:h2:${Config.database}", "org.h2.Driver", "sa", "")
+                transaction {
+                    exec("ALTER TABLE player ADD COLUMN IF NOT EXISTS strict BOOLEAN DEFAULT FALSE")
+                }
                 migrateData = getAll()
                 TransactionManager.closeAndUnregister(old)
                 Config.database = new
@@ -36,30 +41,53 @@ class DB {
 
             try {
                 Database.connect(
-                    "jdbc:${Config.database}",
+                    "jdbc:${Config.database}".plus("essentials?currentSchema=public"),
                     "org.postgresql.Driver",
                     Config.databaseID,
                     Config.databasePW
                 )
                 transaction { connection.isClosed }
             } catch (e: PSQLException) {
+                if (Config.databasePW.isNotBlank()) {
+                    Config.save()
+                    Config.update()
+                }
+
                 try {
-                    DriverManager.getConnection("jdbc:${Config.database.replace("essentials","")}", Config.databaseID, Config.databasePW).use { conn ->
-                        conn.createStatement().use { stmt ->
-                            stmt.executeUpdate("CREATE DATABASE essentials")
-                            stmt.executeUpdate("ALTER TABLE data ADD version TEXT DEFAULT '1' NOT NULL")
-                            stmt.executeUpdate("UPDATE player SET status='{}'")
-                            stmt.executeUpdate("UPDATE player SET \"lastLoginDate\" = NULL WHERE \"lastLoginDate\" = 'null'")
-                            stmt.executeUpdate("UPDATE player SET \"lastLeaveDate\" = NULL WHERE \"lastLeaveDate\" = 'null'")
-                            stmt.executeUpdate("UPDATE player SET \"duplicateName\" = NULL WHERE \"duplicateName\" = 'null'")
-                        }
+                    val tempConnection = Database.connect(
+                        "jdbc:${Config.database}",
+                        "org.postgresql.Driver",
+                        Config.databaseID,
+                        Config.databasePW
+                    )
+                    transaction {
+                        connection.autoCommit = true
+                        SchemaUtils.createDatabase("essentials")
+                        //exec("CREATE DATABASE essentials")
+                        connection.autoCommit = false
                     }
+                    TransactionManager.closeAndUnregister(tempConnection)
+                    val updateConnection = Database.connect(
+                        "jdbc:${Config.database}essentials?currentSchema=public",
+                        "org.postgresql.Driver",
+                        Config.databaseID,
+                        Config.databasePW
+                    )
+                    transaction {
+                        exec("SET search_path TO essentials,public;")
+                        exec("ALTER TABLE public.\"data\" ADD version TEXT DEFAULT '1' NOT NULL")
+                        exec("UPDATE player SET status='{}'")
+                        exec("UPDATE player SET \"lastLoginDate\" = NULL WHERE \"lastLoginDate\" = 'null'")
+                        exec("UPDATE player SET \"lastLeaveDate\" = NULL WHERE \"lastLeaveDate\" = 'null'")
+                        exec("UPDATE player SET \"duplicateName\" = NULL WHERE \"duplicateName\" = 'null'")
+                    }
+                    TransactionManager.closeAndUnregister(updateConnection)
                 } catch (e: SQLException) {
                     e.printStackTrace()
                 }
 
                 Database.connect(
-                    "jdbc:${Config.database}",
+                    "jdbc:${Config.database}".plus("essentials?currentSchema=public"),
                     "org.postgresql.Driver",
                     Config.databaseID,
                     Config.databasePW
@@ -73,17 +101,11 @@ class DB {
                     SchemaUtils.create(DB)
 
                     fun upgrade() {
-                        when (DB.selectAll().first()[DB.version]) {
-                            2 -> {
-                                val total = migrateData!!.size
-                                for ((progress, data) in migrateData!!.withIndex()) {
-                                    createData(data)
-                                    print("\r$progress/$total")
-                                }
-                                println()
-                                DB.update {
-                                    it[version] = 3
-                                }
+                        val currentVersion = DB.selectAll().first()[DB.version]
+                        println(currentVersion)
+                        when (currentVersion) {
+                            3 -> {
+
                             }
 
                             else -> listOf("")
@@ -96,9 +118,22 @@ class DB {
                             it[version] = dbVersion
                         }
                     } else {
-                        while (DB.selectAll().first()[DB.version] != dbVersion) {
-                            isUpgraded = true
-                            upgrade()
+                        if (migrateData.size != 0) {
+                            val total = migrateData.size
+                            for ((progress, data) in migrateData.withIndex()) {
+                                createData(data)
+                                print("\r$progress/$total")
+                            }
+                            println()
+                            DB.update {
+                                it[version] = 3
+                            }
+                            root.child("database.mv.db").moveTo(root.child("database-v18.1.mv.db"))
+                        } else {
+                            while (DB.selectAll().first()[DB.version] != dbVersion) {
+                                isUpgraded = true
+                                upgrade()
+                            }
                         }
                     }
 
