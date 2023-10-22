@@ -231,6 +231,12 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 if (target != null) {
                     val data = findPlayerData(target.uuid())
                     if (data != null) {
+                        DB.Player.slice(DB.Player.name).selectAll().map {
+                            if (it[DB.Player.name] == arg[0]) {
+                                err("command.changename.exists", arg[0])
+                                return
+                            }
+                        }
                         Events.fire(PlayerNameChanged(data.name, arg[0], data.uuid))
                         send("command.changename.apply.other", data.name, arg[0])
                         data.name = arg[0]
