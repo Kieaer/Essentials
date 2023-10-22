@@ -1583,10 +1583,13 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     string.append(bundle[firstMessage, page + 1, pages] + "\n")
 
                     for (a in per * page until (per * (page + 1)).coerceAtMost(d.size)) {
-                        if (d[a].second is ArrayMap<*, *>) {
-                            val rank = d[a].second as ArrayMap<*, *>
-                            val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
-                            string.append("[white]$a[] ${d[a].first.first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
+                        if (arg[0].lowercase() == "pvp") {
+                            val rank = d[a].second as Triple<*, *, *>
+                            val win = rank.first as Int
+                            val defeat = rank.second as Int
+                            val elimination = rank.third as Int
+                            val rate = round((win.toFloat() / (defeat.toFloat() + elimination.toFloat())) * 100)
+                            string.append("[white]$a[] ${d[a].first.first}[white] [yellow]-[] [green]$win${bundle["command.ranking.pvp.win"]}[] / [scarlet]$lose${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                         } else {
                             val text = if (arg[0].lowercase() == "time") {
                                 timeFormat(d[a].second.toString().toLong())

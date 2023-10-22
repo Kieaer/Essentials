@@ -317,8 +317,8 @@ class DB {
                 it[duplicateName] = data.duplicateName
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
-                it[lastLoginDate] = data.lastLoginDate.toString()
-                it[lastLeaveDate] = data.lastLeaveDate.toString()
+                it[lastLoginDate] = null
+                it[lastLeaveDate] = null
                 it[showLevelEffects] = data.showLevelEffects
                 it[currentPlayTime] = data.currentPlayTime
                 it[isConnected] = data.isConnected
