@@ -48,7 +48,6 @@ import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
@@ -898,7 +897,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 } else if (s == 6) {
                                     val banConfirmMenu = Menus.registerMenu { _, i ->
                                         if (i == 0) {
-                                            Call.kick(targetData!!.player.con(), Packets.KickReason.banned)
+                                            if (targetData!!.player.con() != null) Call.kick(
+                                                targetData!!.player.con(),
+                                                Packets.KickReason.banned
+                                            )
                                             Events.fire(CustomEvents.PlayerBanned(targetData!!.name, targetData!!.uuid, currentTime(), bundle["info.banned.reason.admin"]))
                                             banPlayer(targetData)
                                         }
@@ -1578,7 +1580,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         if (d[a].second is ArrayMap<*, *>) {
                             val rank = d[a].second as ArrayMap<*, *>
                             val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
-                            string.append("[white]$a[] ${d[a].first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
+                            string.append("[white]$a[] ${d[a].first.first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                         } else {
                             val text = if (arg[0].lowercase() == "time") {
                                 timeFormat(d[a].second.toString().toLong())
@@ -1587,7 +1589,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             } else {
                                 d[a].second
                             }
-                            string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] $text\n")
+                            string.append("[white]${a + 1}[] ${d[a].first.first}[white] [yellow]-[] $text\n")
                         }
                     }
                     string.substring(0, string.length - 1)
@@ -1598,7 +1600,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 if (d[a].second is ArrayMap<*, *>) {
                                     val rank = d[a].second as ArrayMap<*, *>
                                     val rate = round((rank.firstKey().toString().toFloat() / (rank.firstKey().toString().toFloat() + rank.firstValue().toString().toFloat())) * 100)
-                                    string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
+                                    string.append("[white]${a + 1}[] ${d[a].first.first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
                                 } else {
                                     val text = if (arg[0].lowercase() == "time") {
                                         timeFormat(d[a].second.toString().toLong())
@@ -1607,7 +1609,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                     } else {
                                         d[a].second
                                     }
-                                    string.append("[white]${a + 1}[] ${d[a].first}[white] [yellow]-[] $text")
+                                    string.append("[white]${a + 1}[] ${d[a].first.first}[white] [yellow]-[] $text")
                                 }
                             }
                         }

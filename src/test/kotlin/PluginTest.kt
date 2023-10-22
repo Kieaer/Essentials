@@ -27,7 +27,6 @@ import mindustry.world.Tile
 import net.datafaker.Faker
 import org.hjson.JsonArray
 import org.hjson.JsonObject
-import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any
@@ -302,7 +301,7 @@ class PluginTest {
     }
 
     @Test
-    fun dbUpgradeTest() {
+    fun dbUpgradeTest_14() {
         loadGame()
 
         // Copy Essentials 14.1 database
@@ -312,5 +311,10 @@ class PluginTest {
         println(Config.database)
 
         loadPlugin()
+    }
+
+    @Test
+    fun dbUpgradeTest_18() {
+
     }
 }

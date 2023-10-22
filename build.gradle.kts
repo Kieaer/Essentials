@@ -57,9 +57,9 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.4.0")
     testImplementation("org.locationtech.jts:jts-core:1.19.0")
 
-    val ktor = "2.3.1"
-    implementation("io.ktor:ktor-server-core:$ktor")
-    implementation("io.ktor:ktor-server-netty:$ktor")
+    val ktor = "2.3.5"
+    implementation("io.ktor:ktor-server-core-jvm:2.3.5")
+    implementation("io.ktor:ktor-server-netty-jvm:2.3.5")
     implementation("io.ktor:ktor-server-content-negotiation:$ktor")
     implementation("io.ktor:ktor-serialization-jackson:$ktor")
     implementation("io.ktor:ktor-server-rate-limit:$ktor")
