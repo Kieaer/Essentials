@@ -1589,7 +1589,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             val defeat = rank.second as Int
                             val elimination = rank.third as Int
                             val rate = round((win.toFloat() / (defeat.toFloat() + elimination.toFloat())) * 100)
-                            string.append("[white]$a[] ${d[a].first.first}[white] [yellow]-[] [green]$win${bundle["command.ranking.pvp.win"]}[] / [scarlet]$lose${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
+                            string.append("[white]$a[] ${d[a].first.first}[white] [yellow]-[] [green]$win${bundle["command.ranking.pvp.win"]}[] / [scarlet]$defeat${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                         } else {
                             val text = if (arg[0].lowercase() == "time") {
                                 timeFormat(d[a].second.toString().toLong())
