@@ -499,7 +499,7 @@ object Event {
                         log(LogType.Block, Bundle()["log.block.place", target.name, checkValidBlock(it.tile), it.tile.x, it.tile.y])
                         addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, checkValidBlock(it.tile), if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
 
-                        if (!state.rules.infiniteResources) {
+                        if (!state.rules.infiniteResources && it.tile.build.health() == it.tile.build.maxHealth) {
                             target.blockPlaceCount++
                             target.exp += blockExp.get(block.name)
                             target.currentExp += blockExp.get(block.name)
