@@ -31,11 +31,13 @@ class DB {
     var dbVersion = 2
 
     fun backup() {
-        if (Config.database.equals(Main.root.child("database").absolutePath(), false)) {
-            if (Main.root.child("backup").list().size > 20) {
-                Main.root.child("backup").list().first().delete()
+        if (Main.root.child("database.mv.db").exists()) {
+            if (Config.database.equals(Main.root.child("database").absolutePath(), false)) {
+                if (Main.root.child("backup").list().size > 20) {
+                    Main.root.child("backup").list().first().delete()
+                }
+                Main.root.child("database.mv.db").copyTo(Main.root.child("backup/database-stable-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db"))
             }
-            Main.root.child("database.mv.db").copyTo(Main.root.child("backup/database-stable-${LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH-mm-ss"))}.mv.db"))
         }
     }
 
