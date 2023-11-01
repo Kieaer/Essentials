@@ -5,6 +5,7 @@ import arc.struct.Seq
 import arc.util.Log
 import mindustry.gen.Playerc
 import org.hjson.JsonObject
+import org.hjson.Stringify
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -65,9 +66,10 @@ class DB {
 
             transaction {
                 if (!connection.isClosed) {
-                    SchemaUtils.create(Player)
-                    SchemaUtils.create(Data)
-                    SchemaUtils.create(DB)
+                    SchemaUtils.setSchema(Schema("public"))
+                    SchemaUtils.createMissingTablesAndColumns(Player)
+                    SchemaUtils.createMissingTablesAndColumns(Data)
+                    SchemaUtils.createMissingTablesAndColumns(DB)
 
                     fun upgrade() {
                         when (DB.selectAll().first()[DB.version]) {

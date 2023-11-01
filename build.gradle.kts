@@ -24,7 +24,7 @@ repositories {
     maven(url = "https://www.jitpack.io")
 }
 
-val exposedVersion = "0.32.1"
+val exposedVersion = "0.44.1"
 val mindustryVersion = "v146"
 val arcVersion = "v146"
 
