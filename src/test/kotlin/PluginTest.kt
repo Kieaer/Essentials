@@ -7,6 +7,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import essentials.*
 import essentials.Main.Companion.daemon
+import essentials.Main.Companion.root
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.fail
 import mindustry.Vars
@@ -38,6 +39,10 @@ import java.lang.Thread.sleep
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.ResultSet
+import java.sql.Statement
 import java.text.MessageFormat
 import java.util.*
 import java.util.zip.ZipFile
@@ -315,6 +320,15 @@ class PluginTest {
 
     @Test
     fun dbUpgradeTest_18() {
+        loadGame()
 
+        // Copy Essentials 18.2 database
+        val file = Paths.get("src", "test", "resources", "database-v1.db").toFile()
+        val desc = root.child("database.mv.db").file()
+        file.copyRecursively(desc, true)
+        Config.database = "C:/Users/cloud/AppData/Roaming/app/mods/Essentials/database"
+        println(Config.database)
+
+        loadPlugin()
     }
 }

@@ -23,16 +23,32 @@ class DB {
     val players : Seq<PlayerData> = Seq()
     lateinit var db : Database
     var dbVersion = 3
-    var migrateData : Seq<PlayerData>? = null
+
 
     fun open() {
+        var migrateData = Seq<PlayerData>()
+
         try {
             if (Main.root.child("database.mv.db").exists()) {
                 val new = "postgresql://127.0.0.1:5432/essentials"
-                val old = Database.connect("jdbc:h2:${Config.database}", "org.h2.Driver", "sa", "")
-                migrateData = getAll()
-                TransactionManager.closeAndUnregister(old)
-                Config.database = new
+                try {
+                    DriverManager.getConnection("jdbc:h2:${Config.database}", "sa", "").use { conn ->
+                        conn.createStatement().use { stmt ->
+                            stmt.execute("ALTER TABLE PLAYER ADD strict bool default false")
+                            stmt.executeUpdate("UPDATE player SET \"lastLoginDate\" = NULL WHERE \"lastLoginDate\" = 'null'")
+                            stmt.executeUpdate("UPDATE player SET \"lastLeaveDate\" = NULL WHERE \"lastLeaveDate\" = 'null'")
+                            stmt.executeUpdate("UPDATE player SET \"duplicateName\" = NULL WHERE \"duplicateName\" = 'null'")
+                            stmt.executeUpdate("UPDATE player SET status='{}'")
+
+                            val old = Database.connect("jdbc:h2:${Config.database}", "org.h2.Driver", "sa", "")
+                            migrateData = getAll()
+                            TransactionManager.closeAndUnregister(old)
+                            Config.database = new
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
 
             try {
@@ -67,15 +83,15 @@ class DB {
             transaction {
                 if (!connection.isClosed) {
                     SchemaUtils.setSchema(Schema("public"))
-                    SchemaUtils.createMissingTablesAndColumns(Player)
-                    SchemaUtils.createMissingTablesAndColumns(Data)
-                    SchemaUtils.createMissingTablesAndColumns(DB)
+                    SchemaUtils.create(Player)
+                    SchemaUtils.create(Data)
+                    SchemaUtils.create(DB)
 
                     fun upgrade() {
                         when (DB.selectAll().first()[DB.version]) {
                             2 -> {
-                                val total = migrateData!!.size
-                                for ((progress, data) in migrateData!!.withIndex()) {
+                                val total = migrateData.size
+                                for ((progress, data) in migrateData.withIndex()) {
                                     createData(data)
                                     print("\r$progress/$total")
                                 }
@@ -90,11 +106,17 @@ class DB {
                     }
 
                     var isUpgraded = false
-                    if (DB.selectAll().empty()) {
+                    if (DB.selectAll().empty() && migrateData.isEmpty) {
                         DB.insert {
                             it[version] = dbVersion
                         }
                     } else {
+                        if(!migrateData.isEmpty) {
+                            DB.insert {
+                                it[version] = 2
+                            }
+                        }
+
                         while (DB.selectAll().first()[DB.version] != dbVersion) {
                             isUpgraded = true
                             upgrade()
@@ -107,8 +129,7 @@ class DB {
                     }
 
                     if (!Data.selectAll().empty() && JsonObject.readJSON(String(Base64.getDecoder().decode(Data.selectAll().first()[Data.data]))).asObject().getBoolean("isDuplicateNameChecked", false)) {
-                        val duplicate = Player.selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }
-                            .map { it[Player.name] }
+                        val duplicate = Player.slice(Player.name, Player.duplicateName).selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }.map { it[Player.name] }
                         for (value in duplicate) {
                             Player.update({ Player.name eq value }) {
                                 it[duplicateName] = value
