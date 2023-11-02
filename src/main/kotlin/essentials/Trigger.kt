@@ -48,7 +48,7 @@ object Trigger {
             }
 
             if (data.lastLoginDate != null) {
-                if (ChronoUnit.DAYS.between(data.lastLoginDate, LocalDate.now()) == 1L) {
+                if (data.lastLoginDate!!.toEpochDay() - LocalDate.now().toEpochDay() >= 1) {
                     data.joinStacks++
                     if (data.joinStacks % 3 == 0) {
                         data.expMultiplier = 1.2
