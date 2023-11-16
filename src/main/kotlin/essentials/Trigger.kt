@@ -48,7 +48,7 @@ object Trigger {
             }
 
             if (data.lastLoginDate != null) {
-                if (data.lastLoginDate!!.toEpochDay() - LocalDate.now().toEpochDay() >= 1) {
+                if ((LocalDate.now().toEpochDay() - data.lastLoginDate!!.toEpochDay()) == 1L) {
                     data.joinStacks++
                     if (data.joinStacks % 3 == 0) {
                         data.expMultiplier = 1.2
