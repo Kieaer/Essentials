@@ -497,7 +497,6 @@ object Event {
                     val block = it.tile.block()
                     if (!it.breaking) {
                         log(LogType.Block, Bundle()["log.block.place", target.name, checkValidBlock(it.tile), it.tile.x, it.tile.y])
-                        addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, checkValidBlock(it.tile), if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
 
                         val buf = Seq<TileLog>()
                         worldHistory.forEach { two ->
@@ -506,11 +505,13 @@ object Event {
                             }
                         }
 
-                        if (!state.rules.infiniteResources && buf.last().tile != it.tile.block().name && it.tile.build.health() == it.tile.build.maxHealth) {
+                        if (!state.rules.infiniteResources && it.tile.build.maxHealth() == it.tile.block().health.toFloat()) {
                             target.blockPlaceCount++
                             target.exp += blockExp.get(block.name)
                             target.currentExp += blockExp.get(block.name)
                         }
+
+                        addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, checkValidBlock(it.tile), if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
 
                         if (isDebug) {
                             Log.info("${player.name} placed ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
