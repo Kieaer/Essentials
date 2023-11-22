@@ -1076,8 +1076,8 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
             data.languageTag = arg[0]
             database.queue(data)
-            send("command.language.set", Locale(arg[0]).language)
-            player.sendMessage(Bundle(arg[0])["command.language.preview", Locale(arg[0]).toLanguageTag()])
+            send("command.language.set", Locale.of(arg[0]).language)
+            player.sendMessage(Bundle(arg[0])["command.language.preview", Locale.of(arg[0]).toLanguageTag()])
         }
 
         fun log() {
@@ -2114,7 +2114,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             val now = LocalDateTime.now()
-            val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a HH:mm:ss").withLocale(Locale(data.languageTag))
+            val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a HH:mm:ss").withLocale(Locale.of(data.languageTag))
             send("command.time", now.format(dateTimeFormatter))
         }
 
