@@ -529,7 +529,7 @@ class DB {
                 data.status.forEach {
                     json.add(it.key, it.value)
                 }
-                it[status] = json.toString(Stringify.HJSON)
+                it[status] = json.toString()
             }
         }
     }
