@@ -2305,7 +2305,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 return
             }
             if (!Event.voting) {
-                if (database.players.size <= 3 && !Permission.check(data, "vote.admin")) {
+                if (database.players.filterNot { it.afk }.size <= 3 && !Permission.check(data, "vote.admin")) {
                     err("command.vote.enough")
                     return
                 }

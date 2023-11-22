@@ -804,7 +804,7 @@ object Event {
 
         fun check() : Int {
             return if (!isPvP) {
-                when (database.players.size) {
+                when (database.players.filterNot { it.afk }.size) {
                     1 -> 1
                     in 2..4 -> 2
                     in 5..6 -> 3
@@ -815,7 +815,7 @@ object Event {
                     else -> 8
                 }
             } else {
-                when (database.players.count { a -> a.player.team() == voteTeam }) {
+                when (database.players.count { a -> a.player.team() == voteTeam && !a.afk }) {
                     1 -> 1
                     in 2..4 -> 2
                     in 5..6 -> 3
@@ -1075,26 +1075,30 @@ object Event {
                                 }
 
                                 // 잠수 플레이어 카운트
-                                if (Config.afk && it.player.unit() != null && !it.player.unit().moving() && !it.player.unit().mining() && !Permission.check(it, "afk.admin") && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()) {
+                                if (it.player.unit() != null && !it.player.unit().moving() && !it.player.unit().mining() && !Permission.check(it, "afk.admin") && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()) {
                                     it.afkTime++
                                     if (it.afkTime == Config.afkTime) {
-                                        if (Config.afkServer.isEmpty()) {
-                                            it.player.kick(Bundle(it.languageTag)["event.player.afk"])
-                                            database.players.forEach { data ->
-                                                data.player.sendMessage(Bundle(data.languageTag)["event.player.afk.other", it.player.plainName()])
-                                            }
-                                        } else {
-                                            val server = Config.afkServer.split(":")
-                                            val port = if (server.size == 1) {
-                                                6567
+                                        it.afk = true
+                                        if (Config.afk) {
+                                            if (Config.afkServer.isEmpty()) {
+                                                it.player.kick(Bundle(it.languageTag)["event.player.afk"])
+                                                database.players.forEach { data ->
+                                                    data.player.sendMessage(Bundle(data.languageTag)["event.player.afk.other", it.player.plainName()])
+                                                }
                                             } else {
-                                                server[1].toInt()
+                                                val server = Config.afkServer.split(":")
+                                                val port = if (server.size == 1) {
+                                                    6567
+                                                } else {
+                                                    server[1].toInt()
+                                                }
+                                                Call.connect(it.player.con(), server[0], port)
                                             }
-                                            Call.connect(it.player.con(), server[0], port)
                                         }
                                     }
                                 } else {
                                     it.afkTime = 0
+                                    it.afk = false
                                     it.previousMousePosition = it.player.mouseX() + it.player.mouseY()
                                 }
 
