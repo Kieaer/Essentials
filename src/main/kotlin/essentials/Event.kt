@@ -427,7 +427,7 @@ object Event {
                             val format = Permission[data].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message).replace("%3", "${data.level}")
                             return@ChatFormatter if (isGlobalMute && Permission.check(data, "chat.admin") && !isMute) {
                                 format
-                            } else if (!isGlobalMute && !(voting && message.contains("y") && !isMute)) {
+                            } else if (!isGlobalMute && !(voting && message.contains("y", true) && !isMute)) {
                                 format
                             } else {
                                 null
