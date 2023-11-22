@@ -1683,7 +1683,6 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 return
             }
 
-            state.set(GameState.State.paused)
             worldHistory.forEach {
                 val buf = Seq<Event.TileLog>()
                 if (it.player.contains(arg[0])) {
@@ -1699,19 +1698,15 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     } else if (last.action == "break") {
                         Call.setTile(world.tile(last.x.toInt(), last.y.toInt()), content.block(last.tile), last.team, last.rotate)
 
-                        run breaking@{
-                            buf.reverse().forEach { tile ->
-                                if (tile.value != null) {
-                                    Call.tileConfig(null, world.tile(last.x.toInt(), last.y.toInt()).build, tile.value)
-                                    return@breaking
-                                }
+                        for (tile in buf.reverse()){
+                            if (tile.value != null) {
+                                Call.tileConfig(null, world.tile(last.x.toInt(), last.y.toInt()).build, tile.value)
+                                break;
                             }
                         }
-
                     }
                 }
             }
-            state.set(GameState.State.playing)
         }
 
         fun search() {
