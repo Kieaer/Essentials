@@ -20,7 +20,6 @@ import org.hjson.Stringify
 import java.io.*
 import java.net.ServerSocket
 import java.net.SocketException
-import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -95,7 +94,7 @@ class Main: Plugin() {
                 PluginData.save(false)
 
                 if (isUpdate) {
-                    URL("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").openStream().use { b ->
+                    Fi("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").read().use { b ->
                         BufferedInputStream(b).use { bis ->
                             FileOutputStream(root.child("data/ipv4.txt").absolutePath()).use { fos ->
                                 val data = ByteArray(1024)
@@ -267,20 +266,15 @@ class Main: Plugin() {
 
     override fun registerClientCommands(handler : CommandHandler) {
         Commands(handler, true)
-
-        if (root.child("bannedCommands.txt").exists()) {
-            val json = JsonArray.readHjson(root.child("bannedCommands.txt").readString())
-            for (command in json.asArray()) {
-                handler.removeCommand(command.asString())
-            }
-        } else {
-            root.child("bannedCommands.txt").writeString("[]")
-        }
+        removeBannedCommands(handler)
     }
 
     override fun registerServerCommands(handler : CommandHandler) {
         Commands(handler, false)
+        removeBannedCommands(handler)
+    }
 
+    private fun removeBannedCommands(handler : CommandHandler){
         if (root.child("bannedCommands.txt").exists()) {
             val json = JsonArray.readHjson(root.child("bannedCommands.txt").readString())
             for (command in json.asArray()) {

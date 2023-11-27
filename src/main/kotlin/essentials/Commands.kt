@@ -400,10 +400,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else {
                     err("command.effect.level")
                 }
-            } else if (arg[0].equals("off")) {
+            } else if (arg[0] == "off") {
                 data.showLevelEffects = false
                 send("command.effect.off")
-            } else if (arg[0].equals("on")) {
+            } else if (arg[0] == "on") {
                 data.showLevelEffects = true
                 send("command.effect.on")
             } else {
@@ -1701,7 +1701,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         for (tile in buf.reverse()){
                             if (tile.value != null) {
                                 Call.tileConfig(null, world.tile(last.x.toInt(), last.y.toInt()).build, tile.value)
-                                break;
+                                break
                             }
                         }
                     }

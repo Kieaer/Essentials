@@ -29,29 +29,33 @@ object FileWatchService: Runnable {
                     val kind = it.kind()
                     val paths = (it.context() as Path).fileName.toString()
                     if (kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-                        if (paths == "permission_user.txt" || paths == "permission.txt") {
-                            try {
-                                Permission.load()
-                                Log.info(Bundle()["config.permission.updated"])
-                            } catch (e : ParseException) {
-                                Log.err(e)
-                            }
-                        } else if (paths == "config.txt") {
-                            Config.load()
-                            Log.info(Bundle()["config.reloaded"])
-                        } else if (paths == "ban.txt") {
-                            Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
-                            for (bans in JsonArray.readHjson(Fi(Config.banList).readString()).asArray()) {
-                                val data = bans.asObject()
-                                val id = data.get("id").asString()
-                                val ips = data.get("ip").asArray()
-                                Vars.netServer.admins.playerInfo.values().find { a -> a.id == id }?.banned = true
-                                for (ip in ips) {
-                                    Vars.netServer.admins.playerInfo.values().find { a -> a.lastIP == ip.asString() }?.banned = true
+                        when (paths) {
+                            "permission_user.txt", "permission.txt" -> {
+                                try {
+                                    Permission.load()
+                                    Log.info(Bundle()["config.permission.updated"])
+                                } catch (e : ParseException) {
+                                    Log.err(e)
                                 }
                             }
+                            "config.txt" -> {
+                                Config.load()
+                                Log.info(Bundle()["config.reloaded"])
+                            }
+                            "ban.txt" -> {
+                                Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
+                                for (bans in JsonArray.readHjson(Fi(Config.banList).readString()).asArray()) {
+                                    val data = bans.asObject()
+                                    val id = data.get("id").asString()
+                                    val ips = data.get("ip").asArray()
+                                    Vars.netServer.admins.playerInfo.values().find { a -> a.id == id }?.banned = true
+                                    for (ip in ips) {
+                                        Vars.netServer.admins.playerInfo.values().find { a -> a.lastIP == ip.asString() }?.banned = true
+                                    }
+                                }
 
-                            Vars.netServer.admins.save()
+                                Vars.netServer.admins.save()
+                            }
                         }
                     }
                 }

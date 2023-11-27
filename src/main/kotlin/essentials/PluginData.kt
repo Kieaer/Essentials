@@ -2,7 +2,6 @@ package essentials
 
 import arc.struct.ObjectMap
 import arc.struct.Seq
-import arc.util.Log
 import mindustry.Vars
 import mindustry.world.Tile
 import org.hjson.JsonArray
@@ -30,9 +29,7 @@ object PluginData {
 
     var sudoPassword = ""
 
-    var lastMemory = ""
     var vpnList = Seq<String>()
-    var changed = false
     var isRankingWorking = false
     var isSurrender = false
 

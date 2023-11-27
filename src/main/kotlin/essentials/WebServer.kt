@@ -16,51 +16,55 @@ class WebServer {
 
     fun start() {
         server = embeddedServer(Netty, Config.webServerPort) {
-            install(ContentNegotiation) {
-                jackson()
-            }
-            install(RateLimit) {
-                register {
-                    rateLimiter(limit = Config.restAPIRequestsLimit, refillPeriod = Config.restAPILimitRefillPeriod.seconds)
-                }
-            }
-
-            routing {
-                rateLimit {
-                    route("/api/ranking") {
-                        get {
-                            val set = HashSet<HashMap<String, Any>>()
-
-                            val playerData = Main.database.getAllByExp().take(50)
-                            playerData.indices.forEach {
-                                val map = HashMap<String, Any>()
-                                map["rank"] = it + 1
-                                map["username"] = playerData[it].name
-                                map["level"] = playerData[it].level
-                                map["exp"] = playerData[it].exp
-                                map["playtime"] = playerData[it].totalPlayTime
-                                val stat = HashMap<String, Any>()
-                                stat["attackclear"] = playerData[it].attackModeClear
-                                stat["pvpwin"] = playerData[it].pvpVictoriesCount
-                                stat["pvplose"] = playerData[it].pvpDefeatCount
-                                map["stat"] = stat
-
-                                set.add(map)
-                            }
-
-                            call.respond(mapOf("data" to set))
-                        }
-                    }
-                }
-
-                singlePageApplication {
-                    useResources = true
-                    filesPath = "www"
-                    defaultPage = "index.html"
-                }
-            }
+            extracted()
         }
         server.start(false)
+    }
+
+    private fun Application.extracted() {
+        install(ContentNegotiation) {
+            jackson()
+        }
+        install(RateLimit) {
+            register {
+                rateLimiter(limit = Config.restAPIRequestsLimit, refillPeriod = Config.restAPILimitRefillPeriod.seconds)
+            }
+        }
+
+        routing {
+            rateLimit {
+                route("/api/ranking") {
+                    get {
+                        val set = HashSet<HashMap<String, Any>>()
+
+                        val playerData = Main.database.getAllByExp().take(50)
+                        playerData.indices.forEach {
+                            val map = HashMap<String, Any>()
+                            map["rank"] = it + 1
+                            map["username"] = playerData[it].name
+                            map["level"] = playerData[it].level
+                            map["exp"] = playerData[it].exp
+                            map["playtime"] = playerData[it].totalPlayTime
+                            val stat = HashMap<String, Any>()
+                            stat["attackclear"] = playerData[it].attackModeClear
+                            stat["pvpwin"] = playerData[it].pvpVictoriesCount
+                            stat["pvplose"] = playerData[it].pvpDefeatCount
+                            map["stat"] = stat
+
+                            set.add(map)
+                        }
+
+                        call.respond(mapOf("data" to set))
+                    }
+                }
+            }
+
+            singlePageApplication {
+                useResources = true
+                filesPath = "www"
+                defaultPage = "index.html"
+            }
+        }
     }
 
     fun stop() {

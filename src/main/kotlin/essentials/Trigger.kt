@@ -18,9 +18,6 @@ import mindustry.net.Host
 import mindustry.net.NetworkIO
 import mindustry.world.Tile
 import org.hjson.JsonArray
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import org.mindrot.jbcrypt.BCrypt
 import java.io.*
 import java.lang.Thread.currentThread
@@ -29,7 +26,6 @@ import java.net.*
 import java.nio.ByteBuffer
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
@@ -216,37 +212,29 @@ object Trigger {
                 val totalTiles = regionWidth * regionHeight
                 val tiles = mutableListOf<Tile>()
 
+                fun search(y: Int) {
+                    if (endPoint.x > startPoint.x) {
+                        for (x in startPoint.x until endPoint.x) {
+                            val areaValue = calculateAreaValue(x, y)
+                            val tile = Tile(Point(x, y), areaValue.toFloat())
+                            tiles.add(tile)
+                        }
+                    } else {
+                        for (x in endPoint.x until startPoint.x) {
+                            val areaValue = calculateAreaValue(x, y)
+                            val tile = Tile(Point(x, y), areaValue.toFloat())
+                            tiles.add(tile)
+                        }
+                    }
+                }
+
                 if (endPoint.y > startPoint.y) {
                     for (y in startPoint.y until endPoint.y) {
-                        if (endPoint.x > startPoint.x) {
-                            for (x in startPoint.x until endPoint.x) {
-                                val areaValue = calculateAreaValue(x, y)
-                                val tile = Tile(Point(x, y), areaValue.toFloat())
-                                tiles.add(tile)
-                            }
-                        } else {
-                            for (x in endPoint.x until startPoint.x) {
-                                val areaValue = calculateAreaValue(x, y)
-                                val tile = Tile(Point(x, y), areaValue.toFloat())
-                                tiles.add(tile)
-                            }
-                        }
+                        search(y)
                     }
                 } else {
                     for (y in endPoint.y until startPoint.y) {
-                        if (endPoint.x > startPoint.x) {
-                            for (x in startPoint.x until endPoint.x) {
-                                val areaValue = calculateAreaValue(x, y)
-                                val tile = Tile(Point(x, y), areaValue.toFloat())
-                                tiles.add(tile)
-                            }
-                        } else {
-                            for (x in endPoint.x until startPoint.x) {
-                                val areaValue = calculateAreaValue(x, y)
-                                val tile = Tile(Point(x, y), areaValue.toFloat())
-                                tiles.add(tile)
-                            }
-                        }
+                        search(y)
                     }
                 }
 
@@ -594,7 +582,7 @@ object Trigger {
 
     object Client: Runnable {
         private val address = Config.shareBanListServer
-        private const val port = 6000
+        private val port = 6000
         private val socket = Socket()
         private lateinit var reader : BufferedReader
         private lateinit var writer : BufferedWriter
