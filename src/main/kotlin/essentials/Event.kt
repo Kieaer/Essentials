@@ -682,6 +682,7 @@ object Event {
         Events.on(WorldLoadEvent::class.java) {
             PluginData.playtime = 0L
             PluginData.isSurrender = false
+            PluginData.isCheated = false
             dpsTile = null
             if (saveDirectory.child("rollback.msav").exists()) saveDirectory.child("rollback.msav").delete()
 

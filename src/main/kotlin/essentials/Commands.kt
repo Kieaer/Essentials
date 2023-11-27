@@ -1923,6 +1923,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         if (parameter != null) {
                             if (!unit.hidden) {
                                 unit.useUnitCap = false
+                                PluginData.isCheated = true
                                 for (a in 1..parameter) {
                                     Tmp.v1.rnd(spread)
                                     unit.spawn(player.team(), player.x + Tmp.v1.x, player.y + Tmp.v1.y)
@@ -1940,6 +1941,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                 type.equals("block", true) -> {
                     if (content.blocks().find { a -> a.name == name } != null) {
+                        PluginData.isCheated = true
                         Call.constructFinish(player.tileOn(), content.blocks().find { a -> a.name.equals(name, true) }, player.unit(), parameter?.toByte() ?: 0, player.team(), null)
                     } else {
                         err("command.spawn.invalid")

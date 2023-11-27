@@ -36,6 +36,8 @@ object PluginData {
     var isRankingWorking = false
     var isSurrender = false
 
+    var isCheated = false
+
     data class WarpZone(val mapName : String, val start : Int, val finish : Int, val click : Boolean, val ip : String, val port : Int) {
         val startTile : Tile get() = Vars.world.tile(start)
         val finishTile : Tile get() = Vars.world.tile(finish)
