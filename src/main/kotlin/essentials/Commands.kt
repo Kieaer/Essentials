@@ -806,7 +806,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         ${bundle["command.info.breakcount"]}: ${target.blockBreakCount}
                         ${bundle["command.info.level"]}: ${target.level}
                         ${bundle["command.info.exp"]}: ${Exp[target]}
-                        ${bundle["command.info.joindate"]}: ${Timestamp(target.firstPlayDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd a HH:mm:ss"))}
+                        ${bundle["command.info.joindate"]}: ${Timestamp(target.firstPlayDate).toLocalDateTime().format(DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss"))}
                         ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, "command.info.time")}
                         ${bundle["command.info.playtime.current"]}: ${timeFormat(target.currentPlayTime, "command.info.time.minimal")}
                         ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
@@ -864,7 +864,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 val mainMenu = Menus.registerMenu { player, select ->
                     if (select == 1) {
                         val innerMenu = Menus.registerMenu { _, s ->
-                            val time = when (s) {
+                            val time: Int = when (s) {
                                 0 -> 10
                                 1 -> 60
                                 2 -> 1440
@@ -892,10 +892,10 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                                 if (s <= 5) {
                                     val tempBanConfirmMenu = Menus.registerMenu { _, i ->
                                         if (i == 0) {
-                                            data.banTime = time.toString()
-                                            database.queue(data)
-                                            Events.fire(PlayerTempBanned(targetData!!.name, player.plainName(), LocalDateTime.now().plusMinutes(time.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
-                                            banPlayer(data)
+                                            targetData!!.banTime = time.toString()
+                                            database.queue(targetData!!)
+                                            Events.fire(PlayerTempBanned(targetData!!.name, player.plainName(), LocalDateTime.now().plusMinutes(time.toLong()).format(DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss"))))
+                                            banPlayer(targetData)
                                         }
                                     }
                                     // 임시 차단
@@ -1665,7 +1665,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if (target != null) {
                 val reason = arg[1]
                 val infos = netServer.admins.findByName(target.first().plainLastName()).first()
-                val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+                val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss"))
                 val text = Bundle()["command.report.texts", target.first().plainLastName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
 
                 Event.log(Event.LogType.Report, date + text, target.first().plainLastName())
@@ -2111,7 +2111,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             }
 
             val now = LocalDateTime.now()
-            val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd a HH:mm:ss").withLocale(Locale.of(data.languageTag))
+            val dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss").withLocale(Locale.of(data.languageTag))
             send("command.time", now.format(dateTimeFormatter))
         }
 
@@ -2584,7 +2584,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
             if (System.getenv("DEBUG_KEY") != null) {
                 val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
                 val client = "## Client commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-                val time = "README.md Generated time: ${DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now())}"
+                val time = "README.md Generated time: ${DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss").format(LocalDateTime.now())}"
 
                 val result = StringBuilder()
 
@@ -2710,7 +2710,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     if (minute != null) {
                         d.banTime = time.plusMinutes(minute.toLong()).toString()
                         Call.kick(other.con(), reason)
-                        Events.fire(PlayerTempBanned(d.name, player.plainName(), time.plusMinutes(minute.toLong()).format(DateTimeFormatter.ofPattern("YYYY-mm-dd HH:mm:ss"))))
+                        Events.fire(PlayerTempBanned(d.name, player.plainName(), time.plusMinutes(minute.toLong()).format(DateTimeFormatter.ofPattern("YYYY-MM-dd HH:mm:ss"))))
                     } else {
                         Log.info(stripColors(bundle["command.tempban.not.number"]))
                     }

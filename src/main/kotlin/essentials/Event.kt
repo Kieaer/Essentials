@@ -40,6 +40,7 @@ import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
 import org.hjson.JsonArray
 import org.hjson.JsonObject
+import org.hjson.JsonValue
 import org.hjson.Stringify
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -1485,7 +1486,7 @@ object Event {
     fun log(type : LogType, text : String, vararg name : String) {
         val maxLogFile = 20
         val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-        val time = DateTimeFormatter.ofPattern("yyyy-MM-dd HH_mm_ss").format(LocalDateTime.now())
+        val time = DateTimeFormatter.ofPattern("YYYY-MM-dd HH_mm_ss").format(LocalDateTime.now())
 
         if (type != LogType.Report) {
             val new = Paths.get(root.child("log/$type.log").path())

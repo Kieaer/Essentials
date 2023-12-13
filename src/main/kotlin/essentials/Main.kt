@@ -35,7 +35,7 @@ class Main: Plugin() {
         var connectType = false
 
         fun currentTime() : String {
-            return LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-mm-dd a HH:mm:ss"))
+            return LocalDateTime.now().format(DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss"))
         }
     }
 
