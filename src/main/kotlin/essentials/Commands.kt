@@ -825,6 +825,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                 val target = findPlayers(arg[0])
                 var targetData : DB.PlayerData? = null
+                var isBanned: Boolean = false
 
                 fun banPlayer(data : DB.PlayerData?) {
                     if (data != null) {
@@ -849,7 +850,45 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                     }
                 }
 
+                fun unbanPlayer(data : DB.PlayerData?) {
+                    if (data != null) {
+                        val name = data.name
+                        val ip = netServer.admins.getInfo(data.uuid).lastIP
+
+                        if (!netServer.admins.unbanPlayerID(arg[0])) {
+                            if (!netServer.admins.unbanPlayerIP(arg[0])) {
+                                err("player.not.found")
+                            } else {
+                                send("command.unban.ip", arg[0])
+                            }
+                        } else {
+                            send("command.unban.id", arg[0])
+                        }
+
+                        val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
+                        json.forEachIndexed { index, jsonValue ->
+                            if (jsonValue.asObject().get("ip").asArray().contains(JsonValue.valueOf(ip))) {
+                                json.remove(index)
+                            }
+                        }
+
+                        json.forEachIndexed { index, jsonValue ->
+                            if (jsonValue.asObject().get("id").asString() == data.uuid) {
+                                json.remove(index)
+                            }
+                        }
+                        Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
+
+                        Event.log(Event.LogType.Player, Bundle()["log.player.banned", name, ip])
+                    }
+                }
+
                 val controlMenus = arrayOf(
+                    arrayOf(bundle["info.button.close"]),
+                    arrayOf(bundle["info.button.ban"], bundle["info.button.kick"])
+                )
+
+                val unbanControlMenus = arrayOf(
                     arrayOf(bundle["info.button.close"]),
                     arrayOf(bundle["info.button.ban"], bundle["info.button.kick"])
                 )
@@ -862,7 +901,7 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 )
 
                 val mainMenu = Menus.registerMenu { player, select ->
-                    if (select == 1) {
+                    if (select == 1 && !isBanned) {
                         val innerMenu = Menus.registerMenu { _, s ->
                             val time: Int = when (s) {
                                 0 -> 10
@@ -918,6 +957,17 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                             }
                         }
                         Call.menu(player.con(), innerMenu, bundle["info.tempban.title"], bundle["info.tempban.confirm"] + lineBreak, banMenus)
+                    } else if (select == 1) {
+                        val unbanConfirmMenu = Menus.registerMenu { _, i ->
+                            if (i == 0) {
+                                targetData!!.banTime = null
+                                database.queue(targetData!!)
+                                unbanPlayer(targetData)
+                                Events.fire(CustomEvents.PlayerUnbanned(targetData!!.name, currentTime()))
+                                send("log.player.unbanned", targetData!!.name, targetData!!.uuid)
+                            }
+                        }
+                        Call.menu(player.con(), unbanConfirmMenu, bundle["info.unban.title"], bundle["info.unban.confirm", targetData!!.name] + lineBreak, arrayOf(arrayOf(bundle["info.button.unban"], bundle["info.button.cancel"])))
                     } else if (select == 2) {
                         if (targetData != null) {
                             Call.kick(targetData!!.player.con(), Packets.KickReason.kick)
@@ -927,10 +977,17 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
 
                 // todo 특정 플레이어 조회 안됨
                 if (target != null) {
-                    val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(target.uuid()) || netServer.admins.isIPBanned(target.con().address))}"
+                    isBanned = (netServer.admins.isIDBanned(target.uuid()) || netServer.admins.isIPBanned(target.con().address))
+                    val banned = "\n${bundle["info.banned"]}: $isBanned"
                     val other = findPlayerData(target.uuid())
                     if (other != null) {
-                        val menu = if (Permission.check(other, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
+                        val menu = if (Permission.check(other, "info.other")) {
+                            arrayOf(arrayOf(bundle["info.button.close"]))
+                        } else if (!isBanned){
+                            controlMenus
+                        } else {
+                            unbanControlMenus
+                        }
                         targetData = other
                         Call.menu(player.con(), mainMenu, bundle["info.admin.title"], show(other) + banned + lineBreak, menu)
                     } else {
@@ -939,10 +996,17 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                 } else {
                     val p = findPlayersByName(arg[0])
                     if (p != null) {
-                        val banned = "\n${bundle["info.banned"]}: ${(netServer.admins.isIDBanned(p.id) || netServer.admins.isIPBanned(p.lastIP))}"
+                        isBanned = (netServer.admins.isIDBanned(p.id) || netServer.admins.isIPBanned(p.lastIP))
+                        val banned = "\n${bundle["info.banned"]}: $isBanned"
                         val other = database[p.id]
                         if (other != null) {
-                            val menu = if (Permission.check(other, "info.other")) arrayOf(arrayOf(bundle["info.button.close"])) else controlMenus
+                            val menu = if (Permission.check(other, "info.other")) {
+                                arrayOf(arrayOf(bundle["info.button.close"]))
+                            } else if (!isBanned){
+                                controlMenus
+                            } else {
+                                unbanControlMenus
+                            }
                             targetData = other
                             Call.menu(player.con(), mainMenu, bundle["info.admin.title"], show(other) + banned + lineBreak, menu)
                         } else {
