@@ -659,7 +659,11 @@ object Event {
             }
 
             val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-            json.removeAll { a -> a.asObject().get("id").asString() == it.uuid }
+            json.forEachIndexed { index, jsonValue ->
+                if (jsonValue.asObject().get("id").asString() == it.uuid) {
+                    json.remove(index)
+                }
+            }
             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
             Events.fire(PlayerUnbanned(netServer.admins.getInfo(it.uuid).lastName, currentTime()))
