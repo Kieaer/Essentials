@@ -54,7 +54,7 @@ object Config {
     var blockIP = false
     var waveskip = 1
     var unbreakableCore = false
-    var moveEffects = true
+    var moveEffects = false
     var blockNewUser = false
     var webServer = false
     var webServerPort = 8123
