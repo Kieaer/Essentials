@@ -20,6 +20,7 @@ import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essentials.CustomEvents.*
 import essentials.Main.Companion.currentTime
 import essentials.Main.Companion.database
+import essentials.Main.Companion.root
 import mindustry.Vars.*
 import mindustry.content.*
 import mindustry.core.NetServer
@@ -1630,6 +1631,28 @@ object Event {
                     database.queue(target)
                 }
             }
+
+            if(!root.child("data/exp.json").exists()) {
+                root.child("data/exp.json").writeString("[]")
+            }
+            val resultArray = JsonArray.readJSON(root.child("data/exp.json").readString("UTF-8")).asArray()
+            val resultJson = JsonObject()
+            resultJson.add("name", target.name)
+            resultJson.add("uuid", target.uuid)
+            resultJson.add("coreItem", coreitem)
+            resultJson.add("erekirAttack", erekirAttack)
+            resultJson.add("erekirPvP", erekirPvP)
+            resultJson.add("time", time)
+            resultJson.add("enemyBuildingDestroyed", enemyBuildingDestroyed)
+            resultJson.add("buildingsDeconstructed", state.stats.buildingsDeconstructed)
+            resultJson.add("buildingsDestroyed", state.stats.buildingsDestroyed)
+            resultJson.add("wave", state.wave)
+            resultJson.add("multiplier", target.expMultiplier)
+            resultJson.add("score", score)
+            resultJson.add("totalScore", score * target.expMultiplier)
+
+            resultArray.add(resultJson)
+            root.child("data/exp.json").writeString(resultArray.toString())
         }
 
         if (isConnected && Config.expAlert) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])

@@ -433,8 +433,11 @@ object Trigger {
 
                     ping = 0.000
                     TimeUnit.SECONDS.sleep(3)
-                } catch (e : Exception) {
+                } catch (e : InterruptedException) {
                     currentThread().interrupt()
+                } catch (e : Exception) {
+                    e.printStackTrace()
+                    Core.app.exit()
                 }
             }
         }
