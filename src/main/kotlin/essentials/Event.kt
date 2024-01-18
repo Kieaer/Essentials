@@ -309,6 +309,10 @@ object Event {
         }
 
         Events.on(WaveEvent::class.java) {
+            for (data in database.players) {
+                data.exp += 500
+            }
+
             if (Config.waveskip > 1) {
                 var loop = 1
                 while (Config.waveskip != loop) {
@@ -1589,16 +1593,12 @@ object Event {
         val bundle = Bundle(target.languageTag)
 
         if (PluginData.playtime > 300L) {
-            var coreitem = 0
-            state.stats.coreItemCount.forEach {
-                coreitem += it.value
-            }
             val erekirAttack = if (state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed else 0
             val erekirPvP = if (state.planet == Planets.erekir) 5000 else 0
 
             val score = if (winner == p.team()) {
                 if (state.rules.attackMode) {
-                    (time + enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                    time + (enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
                 } else if (state.rules.pvp) {
                     time + erekirPvP + 5000
                 } else {
@@ -1607,8 +1607,6 @@ object Event {
             } else if (p.team() != Team.derelict) {
                 if (state.rules.attackMode) {
                     time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
-                } else if (state.rules.waves) {
-                    state.wave * 150
                 } else if (state.rules.pvp) {
                     time + 5000
                 } else {
@@ -1639,7 +1637,7 @@ object Event {
             val resultJson = JsonObject()
             resultJson.add("name", target.name)
             resultJson.add("uuid", target.uuid)
-            resultJson.add("coreItem", coreitem)
+            resultJson.add("date", currentTime())
             resultJson.add("erekirAttack", erekirAttack)
             resultJson.add("erekirPvP", erekirPvP)
             resultJson.add("time", time)
