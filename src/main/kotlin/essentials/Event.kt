@@ -580,22 +580,44 @@ object Event {
             it.player.admin(false)
 
             val data = database[it.player.uuid()]
-            if (Config.authType == Config.AuthType.None) {
-                if (data != null) {
-                    Trigger.loadPlayer(it.player, data, false)
-                } else if (Config.authType != Config.AuthType.None) {
-                    it.player.sendMessage(Bundle(it.player.locale)["event.player.first.register"])
-                } else if (Config.authType == Config.AuthType.None) {
+            if (Config.authType == Config.AuthType.Discord) {
+                if (data == null) {
                     Main.daemon.submit(Thread {
                         transaction {
-                            if(DB.Player.slice(DB.Player.name).select { DB.Player.name eq it.player.name}.empty()) {
+                            if (DB.Player.slice(DB.Player.name).select { DB.Player.name eq it.player.name }.empty()) {
                                 Core.app.post { Trigger.createPlayer(it.player, null, null) }
                             } else {
-                                Core.app.post { it.player.con.kick(Bundle(it.player.locale)["event.player.name.duplicate"], 0L) }
+                                Core.app.post {
+                                    it.player.con.kick(
+                                        Bundle(it.player.locale)["event.player.name.duplicate"],
+                                        0L
+                                    )
+                                }
                             }
                         }
                     })
+                } else {
+                    Trigger.loadPlayer(it.player, data, false)
                 }
+            } else if (Config.authType == Config.AuthType.None && data != null) {
+                Trigger.loadPlayer(it.player, data, false)
+            } else if (Config.authType != Config.AuthType.None) {
+                it.player.sendMessage(Bundle(it.player.locale)["event.player.first.register"])
+            } else if (Config.authType == Config.AuthType.None) {
+                Main.daemon.submit(Thread {
+                    transaction {
+                        if (DB.Player.slice(DB.Player.name).select { DB.Player.name eq it.player.name }.empty()) {
+                            Core.app.post { Trigger.createPlayer(it.player, null, null) }
+                        } else {
+                            Core.app.post {
+                                it.player.con.kick(
+                                    Bundle(it.player.locale)["event.player.name.duplicate"],
+                                    0L
+                                )
+                            }
+                        }
+                    }
+                })
             }
         }
 

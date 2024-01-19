@@ -172,6 +172,10 @@ object Trigger {
             data.isConnected = true
             database.players.add(data)
             player.sendMessage(message.toString())
+
+            if (Config.authType == Config.AuthType.Discord && data.discord.isNullOrEmpty()) {
+                player.sendMessage(bundle["event.discord.not.registered"])
+            }
         }
     }
 
