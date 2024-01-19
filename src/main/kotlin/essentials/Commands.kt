@@ -251,7 +251,26 @@ class Commands(handler : CommandHandler, isClient : Boolean) {
                         err("player.not.registered")
                     }
                 } else {
-                    err("player.not.found")
+                    val offline = database[arg[1]]
+                    if (offline == null) {
+                        err("player.not.found")
+                    } else {
+                        var exists = false
+                        transaction {
+                            DB.Player.slice(DB.Player.name).selectAll().map {
+                                if (it[DB.Player.name] == arg[0]) {
+                                    err("command.changename.exists", arg[0])
+                                    exists = true
+                                }
+                            }
+                        }
+                        if (!exists) {
+                            Events.fire(PlayerNameChanged(offline.name, arg[0], offline.uuid))
+                            send("command.changename.apply.other", offline.name, arg[0])
+                            offline.name = arg[0]
+                            database.queue(offline)
+                        }
+                    }
                 }
             } else {
                 data.name = arg[0]
