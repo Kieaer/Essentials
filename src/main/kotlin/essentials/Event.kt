@@ -68,6 +68,7 @@ import kotlin.io.path.Path
 import kotlin.math.abs
 import kotlin.math.floor
 
+
 object Event {
     var originalBlockMultiplier = 1f
     var originalUnitMultiplier = 1f
@@ -867,7 +868,13 @@ object Event {
 
         fun back(map : Map?) {
             Core.app.post {
-                val savePath : Fi = saveDirectory.child("rollback.msav")
+                val savePath: Fi = if (Core.settings.getBool("autosave")) {
+                    saveDirectory.findAll { f: Fi ->
+                        f.name().startsWith("auto_")
+                    }.min { obj: Fi -> obj.lastModified().toFloat() }
+                } else {
+                    saveDirectory.child("rollback.msav")
+                }
 
                 try {
                     val mode = state.rules.mode()
