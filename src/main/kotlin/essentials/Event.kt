@@ -511,7 +511,7 @@ object Event {
                             }
                         }
 
-                        if (!state.rules.infiniteResources && it.tile.build.maxHealth() == it.tile.block().health.toFloat()) {
+                        if (!state.rules.infiniteResources && it.tile != null && it.tile.build != null && it.tile.build.maxHealth() == it.tile.block().health.toFloat()) {
                             target.blockPlaceCount++
                             target.exp += blockExp.get(block.name)
                             target.currentExp += blockExp.get(block.name)
