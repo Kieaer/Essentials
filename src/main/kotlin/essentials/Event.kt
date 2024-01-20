@@ -876,26 +876,33 @@ object Event {
                     saveDirectory.child("rollback.msav")
                 }
 
-                try {
-                    val mode = state.rules.mode()
-                    val reloader = WorldReloader()
+                if (savePath != null) {
 
-                    reloader.begin()
+                    try {
+                        val mode = state.rules.mode()
+                        val reloader = WorldReloader()
 
-                    if (map != null) {
-                        world.loadMap(map, map.applyRules(mode))
-                    } else {
-                        SaveIO.load(savePath)
+                        reloader.begin()
+
+                        if (map != null) {
+                            world.loadMap(map, map.applyRules(mode))
+                        } else {
+                            SaveIO.load(savePath)
+                        }
+
+                        state.rules = state.map.applyRules(mode)
+
+                        logic.play()
+                        reloader.end()
+
+                        savePath.delete()
+                    } catch (t: Exception) {
+                        t.printStackTrace()
                     }
-
-                    state.rules = state.map.applyRules(mode)
-
-                    logic.play()
-                    reloader.end()
-                } catch (t : Exception) {
-                    t.printStackTrace()
+                    if (map == null) send("command.vote.back.done")
+                } else {
+                    send("command.vote.back.fail")
                 }
-                if (map == null) send("command.vote.back.done")
             }
         }
 
