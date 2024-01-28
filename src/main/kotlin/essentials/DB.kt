@@ -82,10 +82,9 @@ class DB {
 
             transaction {
                 if (!connection.isClosed) {
-                    SchemaUtils.setSchema(Schema("public"))
-                    SchemaUtils.create(Player)
-                    SchemaUtils.create(Data)
-                    SchemaUtils.create(DB)
+                    SchemaUtils.createMissingTablesAndColumns(Player)
+                    SchemaUtils.createMissingTablesAndColumns(Data)
+                    SchemaUtils.createMissingTablesAndColumns(DB)
 
                     fun upgrade() {
                         when (DB.selectAll().first()[DB.version]) {
@@ -156,15 +155,15 @@ class DB {
         }
     }
 
-    object Data: Table() {
+    object Data : Table("public.data") {
         val data = text("data")
     }
 
-    object DB: Table() {
+    object DB : Table("public.db") {
         val version = integer("version")
     }
 
-    object Player: Table() {
+    object Player : Table("public.player") {
         val name = text("name").index()
         val uuid = text("uuid")
         val languageTag = text("languageTag")
