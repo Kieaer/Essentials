@@ -1269,14 +1269,19 @@ object Event {
                                             }
 
                                             "random" -> {
-                                                if (lastVoted!!.plusMinutes(10).isBefore(LocalTime.now())) {
+                                                if (LocalTime.now()
+                                                        .isAfter(lastVoted!!.plusMinutes(10L)) && Permission.check(
+                                                        voteStarter!!,
+                                                        "vote.random.bypass"
+                                                    )
+                                                ) {
                                                     send("command.vote.random.cool")
                                                 } else {
                                                     if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid, 420)
                                                     lastVoted = LocalTime.now()
                                                     send("command.vote.random.done")
                                                     Thread {
-                                                        val map : Map
+                                                        var map: Map
                                                         val random = Random()
                                                         send("command.vote.random.is")
                                                         sleep(3000)
@@ -1320,11 +1325,23 @@ object Event {
                                                                 send("command.vote.random.fill.core")
                                                                 if (voteStarter != null) {
                                                                     content.items().forEach {
-                                                                        state.teams.cores(voteStarter!!.player.team()).first().items.add(it, Random(516).nextInt(500))
+                                                                        if (!it.isHidden) {
+                                                                            state.teams.cores(voteStarter!!.player.team())
+                                                                                .first().items.add(
+                                                                                it,
+                                                                                Random().nextInt(2000)
+                                                                            )
+                                                                        }
                                                                     }
                                                                 } else {
                                                                     content.items().forEach {
-                                                                        state.teams.cores(Team.sharded).first().items.add(it, Random(516).nextInt(500))
+                                                                        if (!it.isHidden) {
+                                                                            state.teams.cores(Team.sharded)
+                                                                                .first().items.add(
+                                                                                it,
+                                                                                Random().nextInt(2000)
+                                                                            )
+                                                                        }
                                                                     }
                                                                 }
                                                             }
