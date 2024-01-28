@@ -178,7 +178,7 @@ class Main: Plugin() {
             if (data != null) {
                 if (isHub != null && isHub == state.map.name()) {
                     return@addActionFilter Permission.check(data, "hub.build")
-                } else if (data.strict) {
+                } else if (data.strict || (Config.authType != Config.AuthType.None && data.discord.isNullOrEmpty())) {
                     return@addActionFilter false
                 } else {
                     return@addActionFilter true
@@ -266,23 +266,10 @@ class Main: Plugin() {
 
     override fun registerClientCommands(handler : CommandHandler) {
         Commands(handler, true)
-        removeBannedCommands(handler)
     }
 
     override fun registerServerCommands(handler : CommandHandler) {
         Commands(handler, false)
-        removeBannedCommands(handler)
-    }
-
-    private fun removeBannedCommands(handler : CommandHandler){
-        if (root.child("bannedCommands.txt").exists()) {
-            val json = JsonArray.readHjson(root.child("bannedCommands.txt").readString())
-            for (command in json.asArray()) {
-                handler.removeCommand(command.asString())
-            }
-        } else {
-            root.child("bannedCommands.txt").writeString("[]")
-        }
     }
 
     private fun createFile() {
