@@ -10,6 +10,8 @@ import arc.struct.ArrayMap
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.CommandHandler
+import arc.util.CommandHandler.Command
+import arc.util.CommandHandler.CommandRunner
 import arc.util.Log
 import arc.util.Strings
 import arc.util.Threads.sleep
@@ -53,6 +55,7 @@ import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
+import java.lang.reflect.Field
 import java.sql.Timestamp
 import java.text.MessageFormat
 import java.time.LocalDateTime
@@ -63,7 +66,8 @@ import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.math.round
 
-class Commands(private var handler: CommandHandler, isClient: Boolean) {
+
+class Commands(var handler: CommandHandler, isClient: Boolean) {
     companion object {
         var clientCommands = CommandHandler("/")
         var serverCommands = CommandHandler("")
@@ -74,20 +78,11 @@ class Commands(private var handler: CommandHandler, isClient: Boolean) {
             clientCommands.removeCommand("help")
             if (Config.vote) {
                 clientCommands.removeCommand("vote")
-                clientCommands.register(
-                    "vote",
-                    "<kick/map/gg/skip/back/random> [player/amount/world_name] [reason]",
-                    "Start voting"
-                ) { a, p: Playerc -> Client(a, p).vote(p, a) }
+                clientCommands.register("vote", "<kick/map/gg/skip/back/random> [player/amount/world_name] [reason]", "Start voting") { a, p : Playerc -> Client(a, p).vote(p, a) }
 
                 clientCommands.removeCommand("votekick")
                 if (Config.votekick) {
-                    clientCommands.register("votekick", "<name...>", "Start kick voting") { a, p: Playerc ->
-                        Client(
-                            a,
-                            p
-                        ).votekick()
-                    }
+                    clientCommands.register("votekick", "<name...>", "Start kick voting") { a, p : Playerc -> Client(a, p).votekick() }
                 }
             }
 
@@ -95,239 +90,63 @@ class Commands(private var handler: CommandHandler, isClient: Boolean) {
             /*Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
             Vars.netServer.admins.save()
             */
-            clientCommands.register(
-                "broadcast",
-                "<text...>",
-                "Broadcast message to all servers"
-            ) { a, p: Playerc -> Client(a, p).broadcast() }
-            clientCommands.register(
-                "changemap",
-                "<name> [gamemode]",
-                "Change the world or gamemode immediately."
-            ) { a, p: Playerc -> Client(a, p).changemap() }
-            clientCommands.register(
-                "changename",
-                "<new_name> [player]",
-                "Change player name."
-            ) { a, p: Playerc -> Client(a, p).changename() }
-            clientCommands.register(
-                "changepw",
-                "<new_password> <password_repeat>",
-                "Change account password."
-            ) { a, p: Playerc -> Client(a, p).changepw() }
-            clientCommands.register("chat", "<on/off>", "Mute all players without admins.") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).chat()
-            }
-            clientCommands.register("chars", "<text...>", "Make pixel texts") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).chars(null)
-            }
-            clientCommands.register("color", "Enable color nickname") { a, p: Playerc -> Client(a, p).color() }
-            clientCommands.register(
-                "discord",
-                "Authenticate your Discord account to the server."
-            ) { a, p: Playerc -> Client(a, p).discord() }
-            clientCommands.register("dps", "Create damage per seconds meter block") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).dps()
-            }
-            clientCommands.register(
-                "effect",
-                "<on/off/level> [color]",
-                "Turn other players' effects on or off, or set effects and colors for each level."
-            ) { a, p: Playerc -> Client(a, p).effect() }
-            clientCommands.register(
-                "exp",
-                "<set/hide/add/remove> [values/player] [player]",
-                "Edit account EXP values"
-            ) { a, p: Playerc -> Client(a, p).exp() }
-            clientCommands.register("fillitems", "[team]", "Fill the core with items.") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).fillitems()
-            }
-            clientCommands.register("freeze", "<player>", "Stop player unit movement") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).freeze()
-            }
-            clientCommands.register("gg", "[team]", "Force gameover") { a, p: Playerc -> Client(a, p).gg() }
-            clientCommands.register("god", "[name]", "Set max player health") { a, p: Playerc -> Client(a, p).god() }
-            clientCommands.register("help", "[page]", "Show command lists") { a, p: Playerc -> Client(a, p).help() }
-            clientCommands.register(
-                "hub",
-                "<set/zone/block/count/total/remove/reset> [ip] [parameters...]",
-                "Create a server to server point."
-            ) { a, p: Playerc -> Client(a, p).hub() }
-            clientCommands.register("hud", "<health>", "Enable unit information.") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).hud()
-            }
-            clientCommands.register("info", "[player]", "Show your information") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).info()
-            }
-            clientCommands.register("js", "[code...]", "Execute JavaScript codes") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).js()
-            }
-            clientCommands.register(
-                "kickall",
-                "All users except yourself and the administrator will be kicked"
-            ) { a, p: Playerc -> Client(a, p).kickall() }
-            clientCommands.register("kill", "[player]", "Kill player.") { a, p: Playerc -> Client(a, p).kill() }
-            clientCommands.register("killall", "[team]", "Kill all enemy units") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).killall()
-            }
-            clientCommands.register(
-                "killunit",
-                "<name> [amount] [team]",
-                "Destroys specific units only."
-            ) { a, p: Playerc -> Client(a, p).killunit() }
-            clientCommands.register(
-                "lang",
-                "<language_tag>",
-                "Set the language for your account."
-            ) { a, p: Playerc -> Client(a, p).lang() }
-            clientCommands.register("log", "Enable block log") { a, p: Playerc -> Client(a, p).log() }
-            clientCommands.register("login", "<id> <password>", "Access your account") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).login()
-            }
-            clientCommands.register("maps", "[page]", "Show server maps") { a, p: Playerc -> Client(a, p).maps() }
-            clientCommands.register("me", "<text...>", "broadcast * message") { a, p: Playerc -> Client(a, p).me() }
-            clientCommands.register("meme", "<type>", "Enjoy meme features!") { a, p: Playerc -> Client(a, p).meme() }
-            clientCommands.register("motd", "Show server motd.") { a, p: Playerc -> Client(a, p).motd() }
-            clientCommands.register("mute", "<player>", "Mute player") { a, p: Playerc -> Client(a, p).mute() }
-            clientCommands.register("pause", "Pause server") { a, p: Playerc -> Client(a, p).pause() }
-            clientCommands.register("players", "[page]", "Show players list") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).players()
-            }
-            clientCommands.register("pm", "<player> [message...]", "Send private messgae") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).pm()
-            }
-            clientCommands.register(
-                "ranking",
-                "<time/exp/attack/place/break/pvp> [page]",
-                "Show players ranking"
-            ) { a, p: Playerc -> Client(a, p).ranking() }
-            clientCommands.register(
-                "reg",
-                "<id> <password> <password_repeat>",
-                "Register account"
-            ) { a, p: Playerc -> Client(a, p).register() }
-            clientCommands.register("report", "<player> <reason...>", "Report player") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).report()
-            }
-            clientCommands.register(
-                "rollback",
-                "<player>",
-                "Undo all actions taken by the player."
-            ) { a, p: Playerc -> Client(a, p).rollback() }
-            clientCommands.register("search", "[value]", "Search player data") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).search()
-            }
-            clientCommands.register(
-                "setitem",
-                "<item> <amount> [team]",
-                "Set team core item amount"
-            ) { a, p: Playerc -> Client(a, p).setitem() }
-            clientCommands.register(
-                "setperm",
-                "<player> <group>",
-                "Set the player's permission group."
-            ) { a, p: Playerc -> Client(a, p).setperm() }
-            clientCommands.register("skip", "Start n wave immediately.") { a, p: Playerc -> Client(a, p).skip() }
-            clientCommands.register(
-                "spawn",
-                "<unit/block> <name> [amount/rotate]",
-                "Spawns units at the player's location."
-            ) { a, p: Playerc -> Client(a, p).spawn() }
-            clientCommands.register("status", "Show server status") { a, p: Playerc -> Client(a, p).status() }
-            clientCommands.register(
-                "strict",
-                "<player>",
-                "Set whether the target player can build or not."
-            ) { a, p: Playerc -> Client(a, p).strict() }
-            clientCommands.register(
-                "t",
-                "<message...>",
-                "Send a message only to your teammates."
-            ) { a, p: Playerc -> Client(a, p).t() }
-            clientCommands.register("team", "<team_name> [name]", "Change team") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).team()
-            }
-            clientCommands.register(
-                "tempban",
-                "<player> <time> [reason]",
-                "Ban the player for a certain period of time."
-            ) { a, p: Playerc -> Client(a, p).tempban() }
-            clientCommands.register("time", "Show server time") { a, p: Playerc -> Client(a, p).time() }
-            clientCommands.register("tp", "<player>", "Teleport to other players") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).tp()
-            }
-            clientCommands.register("tpp", "[player]", "Lock on camera the target player.") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).tpp()
-            }
-            clientCommands.register("track", "Displays the mouse positions of players.") { a, p: Playerc ->
-                Client(
-                    a,
-                    p
-                ).track()
-            }
-            clientCommands.register("unban", "<uuid/ip>", "Unban player") { a, p: Playerc -> Client(a, p).unban() }
-            clientCommands.register("unmute", "<player>", "Unmute player") { a, p: Playerc -> Client(a, p).unmute() }
-            clientCommands.register(
-                "url",
-                "<command>",
-                "Opens a URL contained in a specific command."
-            ) { a, p: Playerc -> Client(a, p).url() }
-            clientCommands.register(
-                "weather",
-                "<rain/snow/sandstorm/sporestorm> <seconds>",
-                "Adds a weather effect to the map."
-            ) { a, p: Playerc -> Client(a, p).weather() }
+            clientCommands.register("broadcast", "<text...>", "Broadcast message to all servers") { a, p : Playerc -> Client(a, p).broadcast() }
+            clientCommands.register("changemap", "<name> [gamemode]", "Change the world or gamemode immediately.") { a, p : Playerc -> Client(a, p).changemap() }
+            clientCommands.register("changename", "<new_name> [player]", "Change player name.") { a, p : Playerc -> Client(a, p).changename() }
+            clientCommands.register("changepw", "<new_password> <password_repeat>", "Change account password.") { a, p : Playerc -> Client(a, p).changepw() }
+            clientCommands.register("chat", "<on/off>", "Mute all players without admins.") { a, p : Playerc -> Client(a, p).chat() }
+            clientCommands.register("chars", "<text...>", "Make pixel texts") { a, p : Playerc -> Client(a, p).chars(null) }
+            clientCommands.register("color", "Enable color nickname") { a, p : Playerc -> Client(a, p).color() }
+            clientCommands.register("discord", "Authenticate your Discord account to the server.") { a, p : Playerc -> Client(a, p).discord() }
+            clientCommands.register("dps", "Create damage per seconds meter block") { a, p : Playerc -> Client(a, p).dps() }
+            clientCommands.register("effect", "<on/off/level> [color]", "Turn other players' effects on or off, or set effects and colors for each level.") { a, p : Playerc -> Client(a, p).effect() }
+            clientCommands.register("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account EXP values") { a, p : Playerc -> Client(a, p).exp() }
+            clientCommands.register("fillitems", "[team]", "Fill the core with items.") { a, p : Playerc -> Client(a, p).fillitems() }
+            clientCommands.register("freeze", "<player>", "Stop player unit movement") { a, p : Playerc -> Client(a, p).freeze() }
+            clientCommands.register("gg", "[team]", "Force gameover") { a, p : Playerc -> Client(a, p).gg() }
+            clientCommands.register("god", "[name]", "Set max player health") { a, p : Playerc -> Client(a, p).god() }
+            clientCommands.register("help", "[page]", "Show command lists") { a, p : Playerc -> Client(a, p).help() }
+            clientCommands.register("hub", "<set/zone/block/count/total/remove/reset> [ip] [parameters...]", "Create a server to server point.") { a, p : Playerc -> Client(a, p).hub() }
+            clientCommands.register("hud", "<health>", "Enable unit information.") { a, p : Playerc -> Client(a, p).hud() }
+            clientCommands.register("info", "[player]", "Show your information") { a, p : Playerc -> Client(a, p).info() }
+            clientCommands.register("js", "[code...]", "Execute JavaScript codes") { a, p : Playerc -> Client(a, p).js() }
+            clientCommands.register("kickall", "All users except yourself and the administrator will be kicked") { a, p : Playerc -> Client(a, p).kickall() }
+            clientCommands.register("kill", "[player]", "Kill player.") { a, p : Playerc -> Client(a, p).kill() }
+            clientCommands.register("killall", "[team]", "Kill all enemy units") { a, p : Playerc -> Client(a, p).killall() }
+            clientCommands.register("killunit", "<name> [amount] [team]", "Destroys specific units only.") { a, p : Playerc -> Client(a, p).killunit() }
+            clientCommands.register("lang", "<language_tag>", "Set the language for your account.") { a, p : Playerc -> Client(a, p).lang() }
+            clientCommands.register("log", "Enable block log") { a, p : Playerc -> Client(a, p).log() }
+            clientCommands.register("login", "<id> <password>", "Access your account") { a, p : Playerc -> Client(a, p).login() }
+            clientCommands.register("maps", "[page]", "Show server maps") { a, p : Playerc -> Client(a, p).maps() }
+            clientCommands.register("me", "<text...>", "broadcast * message") { a, p : Playerc -> Client(a, p).me() }
+            clientCommands.register("meme", "<type>", "Enjoy meme features!") { a, p : Playerc -> Client(a, p).meme() }
+            clientCommands.register("motd", "Show server motd.") { a, p : Playerc -> Client(a, p).motd() }
+            clientCommands.register("mute", "<player>", "Mute player") { a, p : Playerc -> Client(a, p).mute() }
+            clientCommands.register("pause", "Pause server") { a, p : Playerc -> Client(a, p).pause() }
+            clientCommands.register("players", "[page]", "Show players list") { a, p : Playerc -> Client(a, p).players() }
+            clientCommands.register("pm", "<player> [message...]", "Send private messgae") { a, p : Playerc -> Client(a, p).pm() }
+            clientCommands.register("ranking", "<time/exp/attack/place/break/pvp> [page]", "Show players ranking") { a, p : Playerc -> Client(a, p).ranking() }
+            clientCommands.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p : Playerc -> Client(a, p).register() }
+            clientCommands.register("report", "<player> <reason...>", "Report player") { a, p : Playerc -> Client(a, p).report() }
+            clientCommands.register("rollback", "<player>", "Undo all actions taken by the player.") { a, p : Playerc -> Client(a, p).rollback() }
+            clientCommands.register("search", "[value]", "Search player data") { a, p : Playerc -> Client(a, p).search() }
+            clientCommands.register("setitem", "<item> <amount> [team]", "Set team core item amount") { a, p : Playerc -> Client(a, p).setitem() }
+            clientCommands.register("setperm", "<player> <group>", "Set the player's permission group.") { a, p : Playerc -> Client(a, p).setperm() }
+            clientCommands.register("skip", "Start n wave immediately.") { a, p : Playerc -> Client(a, p).skip() }
+            clientCommands.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p : Playerc -> Client(a, p).spawn() }
+            clientCommands.register("status", "Show server status") { a, p : Playerc -> Client(a, p).status() }
+            clientCommands.register("strict", "<player>", "Set whether the target player can build or not.") { a, p : Playerc -> Client(a, p).strict() }
+            clientCommands.register("t", "<message...>", "Send a message only to your teammates.") { a, p : Playerc -> Client(a, p).t() }
+            clientCommands.register("team", "<team_name> [name]", "Change team") { a, p : Playerc -> Client(a, p).team() }
+            clientCommands.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a, p : Playerc -> Client(a, p).tempban() }
+            clientCommands.register("time", "Show server time") { a, p : Playerc -> Client(a, p).time() }
+            clientCommands.register("tp", "<player>", "Teleport to other players") { a, p : Playerc -> Client(a, p).tp() }
+            clientCommands.register("tpp", "[player]", "Lock on camera the target player.") { a, p : Playerc -> Client(a, p).tpp() }
+            clientCommands.register("track", "Displays the mouse positions of players.") { a, p : Playerc -> Client(a, p).track() }
+            clientCommands.register("unban", "<uuid/ip>", "Unban player") { a, p : Playerc -> Client(a, p).unban() }
+            clientCommands.register("unmute", "<player>", "Unmute player") { a, p : Playerc -> Client(a, p).unmute() }
+            clientCommands.register("url", "<command>", "Opens a URL contained in a specific command.") { a, p : Playerc -> Client(a, p).url() }
+            clientCommands.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Adds a weather effect to the map.") { a, p : Playerc -> Client(a, p).weather() }
 
             if (root.child("bannedCommands.txt").exists()) {
                 val json = JsonArray.readHjson(root.child("bannedCommands.txt").readString())
@@ -338,23 +157,25 @@ class Commands(private var handler: CommandHandler, isClient: Boolean) {
                 root.child("bannedCommands.txt").writeString("[]")
             }
 
-            handler = clientCommands
+            for(a in clientCommands.commandList) {
+                val f: Field = Command::class.java.getDeclaredField("runner")
+                f.setAccessible(true)
+                val value = f.get(a)
+                handler.register(a.text, a.paramText, a.description, value as CommandRunner<*>)
+            }
         } else {
             serverCommands.register("debug", "[bool]", "Show plugin internal informations") { a -> Server(a).debug() }
             serverCommands.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
             serverCommands.register("reload", "Reload permission and config files.") { a -> Server(a).reload() }
-            serverCommands.register(
-                "setperm",
-                "<player> <group>",
-                "Set the player's permission group."
-            ) { a -> Server(a).setperm() }
-            serverCommands.register(
-                "tempban",
-                "<player> <time> [reason]",
-                "Ban the player for a certain period of time."
-            ) { a -> Server(a).tempban() }
+            serverCommands.register("setperm", "<player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
+            serverCommands.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a -> Server(a).tempban() }
 
-            handler = serverCommands
+            for(a in serverCommands.commandList) {
+                val f: Field = Command::class.java.getDeclaredField("runner")
+                f.setAccessible(true)
+                val value = f.get(a)
+                handler.register(a.text, a.paramText, a.description, value as CommandRunner<*>)
+            }
         }
     }
 
@@ -1053,7 +874,7 @@ class Commands(private var handler: CommandHandler, isClient: Boolean) {
 
                 val target = findPlayers(arg[0])
                 var targetData : DB.PlayerData? = null
-                var isBanned: Boolean = false
+                var isBanned = false
 
                 fun banPlayer(data : DB.PlayerData?) {
                     if (data != null) {
@@ -3016,8 +2837,8 @@ class Commands(private var handler: CommandHandler, isClient: Boolean) {
     }
 
     object Exp {
-        private const val baseXP = 1000
-        private const val exponent = 1.12
+        private val baseXP = 1000
+        private val exponent = 1.12
         private fun calcXpForLevel(level : Int) : Double {
             return baseXP + baseXP * level.toDouble().pow(exponent)
         }

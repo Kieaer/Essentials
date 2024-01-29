@@ -82,9 +82,9 @@ class DB {
 
             transaction {
                 if (!connection.isClosed) {
-                    SchemaUtils.createMissingTablesAndColumns(Player)
-                    SchemaUtils.createMissingTablesAndColumns(Data)
-                    SchemaUtils.createMissingTablesAndColumns(DB)
+                    SchemaUtils.create(Player)
+                    SchemaUtils.create(Data)
+                    SchemaUtils.create(DB)
 
                     fun upgrade() {
                         when (DB.selectAll().first()[DB.version]) {

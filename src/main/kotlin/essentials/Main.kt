@@ -178,7 +178,10 @@ class Main: Plugin() {
             if (data != null) {
                 if (isHub != null && isHub == state.map.name()) {
                     return@addActionFilter Permission.check(data, "hub.build")
-                } else if (data.strict || (Config.authType != Config.AuthType.None && data.discord.isNullOrEmpty())) {
+                } else if (data.strict) {
+                    return@addActionFilter false
+                } else if (Config.authType == Config.AuthType.Discord && data.discord.isNullOrEmpty()) {
+                    e.player.sendMessage(Bundle(e.player.locale)["event.discord.not.registered"])
                     return@addActionFilter false
                 } else {
                     return@addActionFilter true
