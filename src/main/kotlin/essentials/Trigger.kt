@@ -462,7 +462,7 @@ object Trigger {
                     host.port = port
                     listener.accept(host)
                 }
-            } catch (e : SocketTimeoutException) {
+            } catch (e : Exception) {
                 listener.accept(Host(0, null, null, null, 0, 0, 0, null, null, 0, null, null))
             }
         }
