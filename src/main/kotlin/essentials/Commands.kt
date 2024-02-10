@@ -108,7 +108,12 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             clientCommands.register("help", "[page]", "Show command lists") { a, p : Playerc -> Client(a, p).help() }
             clientCommands.register("hub", "<set/zone/block/count/total/remove/reset> [ip] [parameters...]", "Create a server to server point.") { a, p : Playerc -> Client(a, p).hub() }
             clientCommands.register("hud", "<health>", "Enable unit information.") { a, p : Playerc -> Client(a, p).hud() }
-            clientCommands.register("info", "[player]", "Show your information") { a, p : Playerc -> Client(a, p).info() }
+            clientCommands.register("info", "[player...]", "Show your information") { a, p: Playerc ->
+                Client(
+                    a,
+                    p
+                ).info()
+            }
             clientCommands.register("js", "[code...]", "Execute JavaScript codes") { a, p : Playerc -> Client(a, p).js() }
             clientCommands.register("kickall", "All users except yourself and the administrator will be kicked") { a, p : Playerc -> Client(a, p).kickall() }
             clientCommands.register("kill", "[player]", "Kill player.") { a, p : Playerc -> Client(a, p).kill() }
