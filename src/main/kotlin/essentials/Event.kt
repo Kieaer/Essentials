@@ -690,6 +690,7 @@ object Event {
             json.forEachIndexed { index, jsonValue ->
                 if (jsonValue.asObject().get("id").asString() == it.uuid) {
                     json.remove(index)
+                    return@forEachIndexed
                 }
             }
             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
@@ -709,6 +710,7 @@ object Event {
             json.forEachIndexed { index, jsonValue ->
                 if (jsonValue.asObject().get("ip").asArray().contains(JsonValue.valueOf(it.ip))) {
                     json.remove(index)
+                    return@forEachIndexed
                 }
             }
             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
