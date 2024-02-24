@@ -1025,29 +1025,31 @@ object Event {
                         if (Config.moveEffects) {
                             if (milsCount == 5) {
                                 database.players.forEach {
-                                    if (it.player.unit() != null && it.player.unit().health > 0f) {
+                                    if (it.showLevelEffects && it.player.unit() != null && it.player.unit().health > 0f) {
                                         val color = if (it.effectColor != null) {
                                             if (Colors.get(it.effectColor) != null) Colors.get(it.effectColor) else Color.valueOf(it.effectColor)
                                         } else {
                                             it.player.color()
                                         }
 
-                                        // todo 효과 더 만들기
-                                        when (it.effectLevel ?: it.level) {
-                                            in 10..19 -> Call.effect(it.player.con(), Fx.freezing, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                            in 20..29 -> Call.effect(it.player.con(), Fx.overdriven, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                            in 30..39 -> {
-                                                Call.effect(it.player.con(), Fx.burning, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                                Call.effect(it.player.con(), Fx.melting, it.player.x, it.player.y, it.player.unit().rotation, color)
+                                        for(e in database.players) {
+                                            // todo 효과 더 만들기
+                                            when (it.effectLevel ?: it.level) {
+                                                in 10..19 -> Call.effect(it.player.con(), Fx.freezing, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                in 20..29 -> Call.effect(it.player.con(), Fx.overdriven, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                in 30..39 -> {
+                                                    Call.effect(it.player.con(), Fx.burning, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                    Call.effect(it.player.con(), Fx.melting, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                }
+                                                in 40..49 -> Call.effect(it.player.con(), Fx.steam, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                in 50..59 -> Call.effect(it.player.con(), Fx.shootSmallSmoke, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                in 60..69 -> Call.effect(it.player.con(), Fx.mine, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                in 70..79 -> Call.effect(it.player.con(), Fx.explosion, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                in 80..89 -> Call.effect(it.player.con(), Fx.hitLaser, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                in 90..99 -> Call.effect(it.player.con(), Fx.crawlDust, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                in 100..Int.MAX_VALUE -> Call.effect(it.player.con(), Fx.mineImpact, e.player.x, e.player.y, e.player.unit().rotation, color)
+                                                else -> {}
                                             }
-                                            in 40..49 -> Call.effect(it.player.con(), Fx.steam, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                            in 50..59 -> Call.effect(it.player.con(), Fx.shootSmallSmoke, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                            in 60..69 -> Call.effect(it.player.con(), Fx.mine, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                            in 70..79 -> Call.effect(it.player.con(), Fx.explosion, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                            in 80..89 -> Call.effect(it.player.con(), Fx.hitLaser, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                            in 90..99 -> Call.effect(it.player.con(), Fx.crawlDust, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                            in 100..Int.MAX_VALUE -> Call.effect(it.player.con(), Fx.mineImpact, it.player.x, it.player.y, it.player.unit().rotation, color)
-                                            else -> {}
                                         }
                                     }
                                 }
