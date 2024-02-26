@@ -45,7 +45,11 @@ dependencies {
     implementation(files("libs/lingua.jar"))
     implementation("org.slf4j:slf4j-nop:2.0.6")
     implementation("com.github.lalyos:jfiglet:0.0.9")
-    implementation("org.postgresql:postgresql:42.6.0")
+
+    implementation("org.postgresql:postgresql:42.7.2")
+    implementation("com.mysql:mysql-connector-j:8.3.0")
+    implementation("org.mariadb.jdbc:mariadb-java-client:3.3.3")
+
 
 
     testImplementation("com.github.anuken.arc:arc-core:$arcVersion")

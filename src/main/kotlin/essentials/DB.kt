@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
 import org.postgresql.util.PSQLException
+import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
 import java.time.LocalDate
@@ -24,13 +25,56 @@ class DB {
     lateinit var db : Database
     var dbVersion = 3
 
+    @Throws(SQLException::class)
+    private fun getDriverName(): String {
+        val urls = arrayOf("mysql://127.0.0.1:3306/essentials", "mariadb://127.0.0.1:3306/essentials", "postgresql://127.0.0.1:5432/essentials")
+        var connection: Connection? = null
+        try {
+            Class.forName("org.postgresql.Driver")
+            Class.forName("com.mysql.cj.jdbc.Driver")
+            Class.forName("org.mariadb.jdbc.Driver")
+            var result = ""
+            for (url in urls) {
+                try {
+                    connection = DriverManager.getConnection("jdbc:$url", Config.databaseID, Config.databasePW)
+                    val actualDriverName = connection.metaData.driverName
+                    result = when (actualDriverName) {
+                        "PostgreSQL JDBC Driver" -> "org.postgresql.Driver"
+                        "MySQL Connector/J" -> "com.mysql.cj.jdbc.Driver"
+                        "MariaDB Connector/J" -> "org.mariadb.jdbc.Driver"
+                        else -> ""
+                    }
+                    if (result.isNotEmpty()) {
+                        return result
+                    }
+                } catch (_: SQLException) {
+                }
+            }
+            if (result.isEmpty()) {
+                throw SQLException("No database installed or essentials database not created.")
+            }
+            return result
+        } finally {
+            connection?.close()
+        }
+    }
+
+    private fun getDatabaseUrl(jdbcUrl: String) : String {
+        return when(jdbcUrl) {
+            "org.postgresql.Driver" -> "postgresql://127.0.0.1:5432/essentials"
+            "com.mysql.cj.jdbc.Driver" -> "mysql://127.0.0.1:3306/essentials"
+            "org.mariadb.jdbc.Driver" -> "mariadb://127.0.0.1:3306/essentials"
+            else -> ""
+        }
+    }
 
     fun open() {
         var migrateData = Seq<PlayerData>()
 
         try {
+            val driverName = getDriverName()
+            val databaseUrl = getDatabaseUrl(driverName)
             if (Main.root.child("database.mv.db").exists()) {
-                val new = "postgresql://127.0.0.1:5432/essentials"
                 try {
                     DriverManager.getConnection("jdbc:h2:${Config.database}", "sa", "").use { conn ->
                         conn.createStatement().use { stmt ->
@@ -43,7 +87,7 @@ class DB {
                             val old = Database.connect("jdbc:h2:${Config.database}", "org.h2.Driver", "sa", "")
                             migrateData = getAll()
                             TransactionManager.closeAndUnregister(old)
-                            Config.database = new
+                            Config.database = databaseUrl
                         }
                     }
                 } catch (e: Exception) {
@@ -54,7 +98,7 @@ class DB {
             try {
                 db = Database.connect(
                     "jdbc:${Config.database}",
-                    "org.postgresql.Driver",
+                    driverName,
                     Config.databaseID,
                     Config.databasePW
                 )
@@ -74,7 +118,7 @@ class DB {
 
                 db = Database.connect(
                     "jdbc:${Config.database}",
-                    "org.postgresql.Driver",
+                    driverName,
                     Config.databaseID,
                     Config.databasePW
                 )
