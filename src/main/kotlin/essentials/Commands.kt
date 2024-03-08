@@ -2842,8 +2842,8 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
     }
 
     object Exp {
-        private val baseXP = 1000
-        private val exponent = 1.12
+        private val baseXP = 750
+        private val exponent = 1.06
         private fun calcXpForLevel(level : Int) : Double {
             return baseXP + baseXP * level.toDouble().pow(exponent)
         }
