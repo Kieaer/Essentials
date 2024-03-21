@@ -155,6 +155,9 @@ object Event {
                 }
 
                 addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, checkValidBlock(it.tile.tile), it.tile.rotation, it.tile.team, it.value))
+                if (checkValidBlock(it.tile.tile).contains("message", true)) {
+                    addLog(TileLog(System.currentTimeMillis(), it.player.name, "message", it.tile.tile.x, it.tile.tile.y, checkValidBlock(it.tile.tile), it.tile.rotation, it.tile.team, it.value))
+                }
             }
         }
 
@@ -244,10 +247,15 @@ object Event {
                             "config" -> "[cyan]${bundle["event.log.config"]}[]"
                             "withdraw" -> "[green]${bundle["event.log.withdraw"]}[]"
                             "deposit" -> "[brown]${bundle["event.log.deposit"]}[]"
+                            "message" -> "[orange]${bundle["event.log.message"]}"
                             else -> ""
                         }
 
-                        str.append(bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle.getString("block.${two.tile}.name"), action]).append("\n")
+                        if (two.action == "message") {
+                            str.append(bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle.getString("block.${two.tile}.name"), two.value as String]).append("\n")
+                        } else {
+                            str.append(bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle.getString("block.${two.tile}.name"), action]).append("\n")
+                        }
                     }
 
                     Call.effect(it.player.con(), Fx.shockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
