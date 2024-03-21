@@ -1033,34 +1033,24 @@ object Event {
                             if (milsCount == 5) {
                                 database.players.forEach {
                                     if (it.showLevelEffects && it.player.unit() != null && it.player.unit().health > 0f) {
-                                        val color = if (it.effectColor != null) {
-                                            if (Colors.get(it.effectColor) != null) Colors.get(it.effectColor) else Color.valueOf(it.effectColor)
-                                        } else {
-                                            it.player.color()
-                                        }
-
                                         for(e in database.players) {
                                             if (e.player.unit().moving()) {
-                                                val randomNumber = (-2..2)
+                                                val color = if (e.effectColor != null) {
+                                                    if (Colors.get(e.effectColor) != null) Colors.get(e.effectColor) else Color.valueOf(e.effectColor)
+                                                } else {
+                                                    e.player.color()
+                                                }
+
                                                 fun runEffect(effect: Effect) {
-                                                    Call.effect(it.player.con(), effect, e.player.x, e.player.y, 0f, color)
+                                                    if (e.player.unit() != null) Call.effect(it.player.con(), effect, e.player.unit().x, e.player.unit().y, 0f, color)
                                                 }
                                                 fun runEffect(effect: Effect, size: Float) {
-                                                    Call.effect(it.player.con(), effect, e.player.x, e.player.y, size, color)
+                                                    if (e.player.unit() != null) Call.effect(it.player.con(), effect, e.player.unit().x, e.player.unit().y, size, color)
                                                 }
                                                 fun runEffectRandom(effect: Effect, range: IntRange) {
-                                                    Call.effect(it.player.con(), effect, e.player.x + range.random(), e.player.y + range.random(), 0f, color)
+                                                    if (e.player.unit() != null) Call.effect(it.player.con(), effect, e.player.unit().x + range.random(), e.player.unit().y + range.random(), 0f, color)
                                                 }
-                                                fun runEffectRandomRotate(effect: Effect) {
-                                                    Call.effect(it.player.con(), effect, e.player.x, e.player.y, kotlin.random.Random.nextFloat() * 360f, color)
-                                                }
-                                                fun runEffectAtRotate(effect: Effect, rotate: Float) {
-                                                    Call.effect(it.player.con(), effect, e.player.x, e.player.y, rotate, color)
-                                                }
-                                                fun runEffectAtRotateAndColor(effect: Effect, rotate: Float, customColor: Color) {
-                                                    Call.effect(it.player.con(), effect, e.player.x, e.player.y, rotate, customColor)
-                                                }
-                                                when (it.effectLevel ?: it.level) {
+                                                when (e.effectLevel ?: e.level) {
                                                     in 10..19 -> runEffect(Fx.freezing)
                                                     in 20..29 -> runEffect(Fx.overdriven)
                                                     in 30..39 -> {
@@ -1121,42 +1111,85 @@ object Event {
                                                         runEffect(f, 7f)
                                                         runEffect(f, 5f)
                                                         runEffect(f, 9f)
-                                                        runEffectRandom(Fx.hitLaserBlast, (-2..2))
-                                                        runEffectRandom(Fx.vapor, (-2..2))
+                                                        val xRandom = (-16..16).random()
+                                                        val yRandom = (-16..16).random()
+                                                        if (e.player.unit() != null) {
+                                                            Call.effect(it.player.con(), Fx.hitLaserBlast, e.player.unit().x + xRandom, e.player.unit().y + yRandom, 0f, color)
+                                                            Call.effect(it.player.con(), Fx.hitSquaresColor, e.player.unit().x + xRandom, e.player.unit().y + yRandom, 0f, color)
+                                                        }
+                                                        runEffectRandom(Fx.vapor, (-4..4))
                                                     }
                                                     in 210..219 -> {
                                                         runEffect(Fx.dynamicSpikes, 7f)
-                                                        runEffectRandom(Fx.hitSquaresColor, (-2..2))
-                                                        runEffectRandom(Fx.vapor, (-2..2))
+                                                        runEffectRandom(Fx.hitSquaresColor, (-4..4))
+                                                        runEffectRandom(Fx.vapor, (-4..4))
                                                     }
                                                     in 220..229 -> {
                                                         runEffect(Fx.dynamicSpikes, 7f)
-                                                        runEffectRandom(Fx.circleColorSpark, (-2..2))
-                                                        runEffectRandom(Fx.vapor, (-2..2))
+                                                        runEffectRandom(Fx.circleColorSpark, (-4..4))
+                                                        runEffectRandom(Fx.vapor, (-4..4))
                                                     }
                                                     in 230..239 -> {
                                                         runEffect(Fx.dynamicSpikes, 7f)
-                                                        runEffectRandom(Fx.circleColorSpark, (-2..2))
-                                                        runEffectRandom(Fx.hitLaserBlast, (-2..2))
-                                                        runEffectRandom(Fx.smokePuff, (-2..2))
+                                                        runEffectRandom(Fx.circleColorSpark, (-4..4))
+                                                        runEffectRandom(Fx.hitLaserBlast, (-4..4))
+                                                        runEffectRandom(Fx.smokePuff, (-4..4))
                                                     }
                                                     in 240..249 -> {
                                                         runEffect(Fx.dynamicExplosion, 0.8f)
-                                                        runEffectRandom(Fx.hitLaserBlast, (-4..4))
-                                                        runEffectRandom(Fx.vapor, (-4..4))
+                                                        runEffectRandom(Fx.hitLaserBlast, (-16..16))
+                                                        runEffectRandom(Fx.vapor, (-16..16))
                                                     }
                                                     in 250..259 -> {
                                                         runEffect(Fx.dynamicExplosion, 0.8f)
-                                                        runEffectRandom(Fx.hitLaserBlast, (-1..1))
-                                                        runEffectRandom(Fx.smokePuff, (-1..1))
+                                                        runEffectRandom(Fx.hitLaserBlast, (-4..4))
+                                                        runEffectRandom(Fx.smokePuff, (-4..4))
                                                     }
                                                     in 260..269 -> {
                                                         runEffect(Fx.dynamicExplosion, 0.8f)
-                                                        runEffectRandom(Fx.hitLaserBlast, (-1..1))
-                                                        runEffectRandom(Fx.hitLaserBlast, (-1..1))
-                                                        runEffectRandom(Fx.smokePuff, (-1..1))
-                                                        Call.effect(it.player.con(), Fx.shootSmokeSquareBig, e.player.x + (-1..1).random(), e.player.y + (-1..1).random(), listOf(0f, 90f, 180f, 270f).random(), Color.HSVtoRGB(252f, 164f, 0f, 0.22f))
+                                                        runEffectRandom(Fx.hitLaserBlast, (-4..4))
+                                                        runEffectRandom(Fx.hitLaserBlast, (-4..4))
+                                                        runEffectRandom(Fx.smokePuff, (-4..4))
+                                                        Call.effect(it.player.con(), Fx.shootSmokeSquareBig, e.player.unit().x + (-1..1).random(), e.player.unit().y + (-1..1).random(), listOf(0f, 90f, 180f, 270f).random(), Color.HSVtoRGB(252f, 164f, 0f, 0.22f))
                                                     }
+                                                    else -> {}
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                milsCount = 0
+                            } else {
+                                database.players.forEach {
+                                    if (it.showLevelEffects && it.player.unit() != null && it.player.unit().health > 0f) {
+                                        for (e in database.players) {
+                                            if (e.player.unit().moving()) {
+                                                val color = if (e.effectColor != null) {
+                                                    if (Colors.get(e.effectColor) != null) Colors.get(e.effectColor) else Color.valueOf(e.effectColor)
+                                                } else {
+                                                    e.player.color()
+                                                }
+
+                                                fun runEffect(effect: Effect) {
+                                                    if (e.player.unit() != null) Call.effect(it.player.con(), effect, e.player.unit().x, e.player.unit().y, 0f, color)
+                                                }
+
+                                                fun runEffect(effect: Effect, size: Float) {
+                                                    if (e.player.unit() != null) Call.effect(it.player.con(), effect, e.player.unit().x, e.player.unit().y, size, color)
+                                                }
+
+                                                fun runEffectRandomRotate(effect: Effect) {
+                                                    if (e.player.unit() != null) Call.effect(it.player.con(), effect, e.player.unit().x, e.player.unit().y, kotlin.random.Random.nextFloat() * 360f, color)
+                                                }
+
+                                                fun runEffectAtRotate(effect: Effect, rotate: Float) {
+                                                    if (e.player.unit() != null) Call.effect(it.player.con(), effect, e.player.unit().x, e.player.unit().y, rotate, color)
+                                                }
+
+                                                fun runEffectAtRotateAndColor(effect: Effect, rotate: Float, customColor: Color) {
+                                                    if (e.player.unit() != null) Call.effect(it.player.con(), effect, e.player.unit().x, e.player.unit().y, rotate, customColor)
+                                                }
+                                                when (e.effectLevel ?: e.level) {
                                                     in 270..279 -> {
                                                         runEffectRandomRotate(Fx.shootSmokeSquare)
                                                         runEffect(Fx.hitLaserBlast)
@@ -1176,7 +1209,7 @@ object Event {
                                                         runEffectAtRotate(Fx.shootSmokeSquare, 225f)
                                                         runEffectAtRotate(Fx.shootSmokeSquare, 270f)
                                                         runEffectAtRotate(Fx.shootSmokeSquare, 315f)
-                                                        runEffectAtRotate(Fx.breakProp, e.player.unit().rotation)
+                                                        runEffect(Fx.breakProp)
                                                         runEffect(Fx.vapor)
                                                     }
                                                     in 300..Int.MAX_VALUE -> {
@@ -1189,20 +1222,17 @@ object Event {
                                                         rot += 25f
                                                         runEffectAtRotateAndColor(Fx.colorSpark, rot, customColor)
                                                         rot -= 105f
-                                                        runEffectAtRotateAndColor(Fx.shootBigSmoke, rot, customColor)
+                                                        runEffectAtRotateAndColor(Fx.shootTitan, rot, customColor)
                                                         rot -= 25f
                                                         runEffectAtRotateAndColor(Fx.colorSpark, rot, customColor)
                                                         runEffect(Fx.mineHuge)
                                                     }
-
-                                                    else -> {}
                                                 }
                                             }
                                         }
                                     }
                                 }
-                                milsCount = 0
-                            } else {
+
                                 milsCount++
                             }
                         }
