@@ -904,28 +904,21 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
                         val name = data.name
                         val ip = netServer.admins.getInfo(data.uuid).lastIP
 
-                        if (!netServer.admins.unbanPlayerID(arg[0])) {
-                            if (!netServer.admins.unbanPlayerIP(arg[0])) {
+                        if (!netServer.admins.unbanPlayerID(data.uuid)) {
+                            if (!netServer.admins.unbanPlayerIP(ip)) {
                                 err("player.not.found")
                             } else {
-                                send("command.unban.ip", arg[0])
+                                send("command.unban.ip", ip)
                             }
                         } else {
-                            send("command.unban.id", arg[0])
+                            send("command.unban.id", data.uuid)
                         }
 
                         val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-                        json.forEachIndexed { index, jsonValue ->
-                            if (jsonValue.asObject().get("ip").asArray().contains(JsonValue.valueOf(ip))) {
-                                json.remove(index)
-                            }
+                        json.removeAll {
+                            it.asObject().get("ip").asArray().contains(JsonValue.valueOf(ip)) || it.asObject().get("id").asString() == data.uuid
                         }
 
-                        json.forEachIndexed { index, jsonValue ->
-                            if (jsonValue.asObject().get("id").asString() == data.uuid) {
-                                json.remove(index)
-                            }
-                        }
                         Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
                         Event.log(Event.LogType.Player, Bundle()["log.player.banned", name, ip])

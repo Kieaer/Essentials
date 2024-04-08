@@ -691,21 +691,20 @@ object Event {
         }
 
         Events.on(PlayerUnbanEvent::class.java) {
+            val ip = if (it.player != null) it.player.ip() else netServer.admins.getInfo(it.uuid).lastIP
+
             if (Config.blockIP) {
                 val os = System.getProperty("os.name").lowercase(Locale.getDefault())
                 if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                    val ip = if (it.player != null) it.player.ip() else netServer.admins.getInfo(it.uuid).lastIP
                     Runtime.getRuntime().exec(arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $ip -j DROP"))
                 }
             }
 
             val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-            json.forEachIndexed { index, jsonValue ->
-                if (jsonValue.asObject().get("id").asString() == it.uuid) {
-                    json.remove(index)
-                    return@forEachIndexed
-                }
+            json.removeAll { js ->
+                js.asObject().get("ip").asArray().contains(JsonValue.valueOf(ip)) || js.asObject().get("id").asString() == it.uuid
             }
+
             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
             Events.fire(PlayerUnbanned(netServer.admins.getInfo(it.uuid).lastName, currentTime()))
