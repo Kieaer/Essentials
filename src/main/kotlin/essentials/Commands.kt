@@ -114,7 +114,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             clientCommands.register("god", "[name]", "Set max player health") { a, p : Playerc -> Client(a, p).god() }
             clientCommands.register("help", "[page]", "Show command lists") { a, p : Playerc -> Client(a, p).help() }
             clientCommands.register("hub", "<set/zone/block/count/total/remove/reset> [ip] [parameters...]", "Create a server to server point.") { a, p : Playerc -> Client(a, p).hub() }
-            clientCommands.register("hud", "<health>", "Enable unit information.") { a, p : Playerc -> Client(a, p).hud() }
+            clientCommands.register("hud", "<health/apm>", "Enable unit information.") { a, p : Playerc -> Client(a, p).hud() }
             clientCommands.register("info", "[player...]", "Show your information") { a, p: Playerc -> Client(a, p).info() }
             clientCommands.register("js", "[code...]", "Execute JavaScript codes") { a, p : Playerc -> Client(a, p).js() }
             clientCommands.register("kickall", "All users except yourself and the administrator will be kicked") { a, p : Playerc -> Client(a, p).kickall() }
@@ -817,19 +817,36 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             }
 
             val status = if (data.hud != null) JsonObject.readJSON(data.hud).asArray() else JsonArray()
+
+            fun remove(text: String) {
+                var i = 0
+                while (i < status.size()) {
+                    if (status[i].asString() == text) {
+                        status.remove(i)
+                        break
+                    } else {
+                        i++
+                    }
+                }
+            }
+
             when (arg[0]) {
                 "health" -> {
                     if (status.contains("health")) {
-                        var i = 0
-                        while (i < status.size()) {
-                            if (status[i].asString() == "health") {
-                                status.remove(i)
-                            } else {
-                                i++
-                            }
-                        }
+                        remove("health")
+                        send("command.hud.health.disabled")
                     } else {
                         status.add("health")
+                        send("command.hud.health.enabled")
+                    }
+                }
+                "apm" -> {
+                    if (status.contains("apm")) {
+                        remove("apm")
+                        send("command.hud.apm.disabled")
+                    } else {
+                        status.add("apm")
+                        send("command.hud.apm.enabled")
                     }
                 }
 

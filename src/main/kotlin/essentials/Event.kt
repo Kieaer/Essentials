@@ -68,12 +68,12 @@ import kotlin.experimental.and
 import kotlin.io.path.Path
 import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.roundToInt
 
 
 object Event {
     var originalBlockMultiplier = 1f
     var originalUnitMultiplier = 1f
-    var enemyBuildingDestroyed = 0
 
     var voting = false
     var voteType : String? = null
@@ -108,6 +108,7 @@ object Event {
     var maxdps : Float? = null
     var unitLimitMessageCooldown = 0
     var offlinePlayers = Seq<DB.PlayerData>()
+    var apmRanking = ""
 
     private val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
     private val blockSelectRegex : Pattern = Pattern.compile("^build\\d{1,2}\$")
@@ -125,6 +126,10 @@ object Event {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(LogType.WithDraw, Bundle()["log.withdraw", it.player.plainName(), it.player.unit().item().name, it.amount, it.tile.block.name, it.tile.tileX(), it.tile.tileY()])
                 addLog(TileLog(System.currentTimeMillis(), it.player.name, "withdraw", it.tile.tile.x, it.tile.tile.y, checkValidBlock(it.tile.tile), it.tile.rotation, it.tile.team, it.tile.config()))
+                val p = findPlayerData(it.player.uuid())
+                if (p != null) {
+                    p.currentControlCount++
+                }
             }
         }
 
@@ -132,6 +137,10 @@ object Event {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(LogType.Deposit, Bundle()["log.deposit", it.player.plainName(), it.player.unit().item().name, it.amount, checkValidBlock(it.tile.tile), it.tile.tileX(), it.tile.tileY()])
                 addLog(TileLog(System.currentTimeMillis(), it.player.name, "deposit", it.tile.tile.x, it.tile.tile.y, checkValidBlock(it.tile.tile), it.tile.rotation, it.tile.team, it.tile.config()))
+                val p = findPlayerData(it.player.uuid())
+                if (p != null) {
+                    p.currentControlCount++
+                }
             }
         }
 
@@ -157,6 +166,11 @@ object Event {
                 addLog(TileLog(System.currentTimeMillis(), it.player.name, "config", it.tile.tile.x, it.tile.tile.y, checkValidBlock(it.tile.tile), it.tile.rotation, it.tile.team, it.value))
                 if (checkValidBlock(it.tile.tile).contains("message", true)) {
                     addLog(TileLog(System.currentTimeMillis(), it.player.name, "message", it.tile.tile.x, it.tile.tile.y, checkValidBlock(it.tile.tile), it.tile.rotation, it.tile.team, it.value))
+                }
+
+                val p = findPlayerData(it.player.uuid())
+                if (p != null) {
+                    p.currentControlCount++
                 }
             }
         }
@@ -307,15 +321,32 @@ object Event {
                         Call.effect(two.player.con(), Fx.bigShockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
                     }
                 }
+
+                data.currentControlCount++
             }
         }
 
         Events.on(PickupEvent::class.java) {
-
+            if(it.unit.isPlayer) {
+                val p = findPlayerData(it.unit.player.uuid())
+                if (p != null) {
+                    p.currentControlCount++
+                }
+            }
         }
 
         Events.on(UnitControlEvent::class.java) {
+            val p = findPlayerData(it.player.uuid())
+            if (p != null) {
+                p.currentControlCount++
+            }
+        }
 
+        Events.on(BuildingCommandEvent::class.java) {
+            val p = findPlayerData(it.player.uuid())
+            if (p != null) {
+                p.currentControlCount++
+            }
         }
 
         Events.on(WaveEvent::class.java) {
@@ -548,6 +579,8 @@ object Event {
                             target.currentExp -= blockExp[player.unit().buildPlan().block.name]
                         }
                     }
+
+                    target.currentControlCount++
                 }
             }
         }
@@ -556,6 +589,10 @@ object Event {
             if (it.builder is Playerc && it.builder.buildPlan() != null && it.tile.block() !== Blocks.air && it.breaking) {
                 log(LogType.Block, Bundle()["log.block.remove", (it.builder as Playerc).plainName(), checkValidBlock(it.tile), it.tile.x, it.tile.y])
                 addLog(TileLog(System.currentTimeMillis(), (it.builder as Playerc).plainName(), "select", it.tile.x, it.tile.y, checkValidBlock(player.unit().buildPlan().tile()), if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.tile.build.config()))
+                val p = findPlayerData((it.builder as Playerc).uuid())
+                if (p != null) {
+                    p.currentControlCount++
+                }
             }
         }
 
@@ -565,13 +602,25 @@ object Event {
                 Damage.damage(world.tile(it.tile.pos()).team(), it.tile.getX(), it.tile.getY(), state.rules.dropZoneRadius, 1.0E8f, true)
             }
 
-            if (state.rules.attackMode && it.tile.team() != state.rules.defaultTeam) {
-                enemyBuildingDestroyed++
+            if (state.rules.attackMode) {
+                for (a in database.players) {
+                    if (it.tile.team() != state.rules.defaultTeam) {
+                        a.currentBuildAttackCount++
+                    } else {
+                        a.currentBuildDestroyedCount++
+                    }
+                }
             }
         }
 
         Events.on(UnitDestroyEvent::class.java) {
-
+            if (!state.rules.pvp) {
+                for (a in database.players) {
+                    if (it.unit.team() != a.player.team()) {
+                        a.currentUnitDestroyedCount++
+                    }
+                }
+            }
         }
 
         Events.on(UnitCreateEvent::class.java) { u ->
@@ -588,7 +637,10 @@ object Event {
         }
 
         Events.on(UnitChangeEvent::class.java) {
-
+            val p = findPlayerData(it.player.uuid())
+            if (p != null) {
+                p.currentControlCount++
+            }
         }
 
         Events.on(PlayerJoin::class.java) {
@@ -757,6 +809,11 @@ object Event {
 
             for (data in database.players) {
                 data.currentPlayTime = 0
+                data.currentUnitDestroyedCount = 0
+                data.currentBuildDestroyedCount = 0
+                data.currentBuildAttackCount = 0
+                data.currentControlCount = 0
+                data.currentBuildDeconstructedCount = 0
             }
 
             resetVote()
@@ -1290,10 +1347,16 @@ object Event {
                                 it.totalPlayTime++
                                 it.currentPlayTime++
 
+                                if (it.apm.size >= 60) {
+                                    it.apm.poll()
+                                }
+                                it.apm.add(it.currentControlCount)
+                                it.currentControlCount = 0
+
                                 if (it.animatedName) {
                                     val name = it.name.replace("\\[(.*?)]".toRegex(), "")
                                     nickcolor(name, it.player)
-                                } else {
+                                } else if (!it.status.containsKey("router")){
                                     it.player.name(it.name)
                                 }
 
@@ -1620,6 +1683,36 @@ object Event {
                                 unitLimitMessageCooldown--
                             }
 
+                            apmRanking = "APM\n"
+                            val color = arrayOf("[scarlet]","[orange]","[yellow]","[green]","[white]","[gray]")
+                            val list = LinkedHashMap<String, Int>()
+                            database.players.forEach {
+                                val total = it.apm.sum()
+                                list[it.name] = (total.toDouble() / it.apm.size).roundToInt()
+                            }
+                            list.toList().sortedBy { (key, _) -> key }.forEach {
+                                val colored = when (it.second) {
+                                    in 31..Int.MAX_VALUE -> color[0]
+                                    in 21..30 -> color[1]
+                                    in 11..20 -> color[2]
+                                    in 6..10 -> color[3]
+                                    in 0..5 -> color[4]
+                                    else -> color[5]
+                                }
+                                apmRanking += "${it.first} [white] - $colored${it.second}[white]\n"
+                            }
+                            apmRanking = apmRanking.substring(0, apmRanking.length - 1)
+                            database.players.forEach {
+                                if (it.hud != null) {
+                                    val array = JsonArray.readJSON(it.hud).asArray()
+                                    array.forEach { value ->
+                                        if (value.asString() == "apm") {
+                                            Call.infoPopup(it.player.con(), apmRanking, Time.delta, Align.left, 0, 0, 0, 0)
+                                        }
+                                    }
+                                }
+                            }
+
                             secondCount = 0
                         } else {
                             secondCount++
@@ -1839,12 +1932,12 @@ object Event {
         val bundle = Bundle(target.languageTag)
 
         if (PluginData.playtime > 300L) {
-            val erekirAttack = if (state.planet == Planets.erekir) state.stats.enemyUnitsDestroyed else 0
+            val erekirAttack = if (state.planet == Planets.erekir) target.currentUnitDestroyedCount else 0
             val erekirPvP = if (state.planet == Planets.erekir) 5000 else 0
 
             val score = if (winner == p.team()) {
                 if (state.rules.attackMode) {
-                    time + (enemyBuildingDestroyed + erekirAttack) - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                    time + (target.currentBuildAttackCount + erekirAttack) - (target.currentBuildDeconstructedCount + target.currentBuildDestroyedCount)
                 } else if (state.rules.pvp) {
                     time + erekirPvP + 5000
                 } else {
@@ -1852,7 +1945,7 @@ object Event {
                 }
             } else if (p.team() != Team.derelict) {
                 if (state.rules.attackMode) {
-                    time - (state.stats.buildingsDeconstructed + state.stats.buildingsDestroyed)
+                    time - (target.currentBuildDeconstructedCount + target.currentBuildDestroyedCount)
                 } else if (state.rules.pvp) {
                     time + 5000
                 } else {
@@ -1885,9 +1978,9 @@ object Event {
             resultJson.add("erekirAttack", erekirAttack)
             resultJson.add("erekirPvP", erekirPvP)
             resultJson.add("time", time)
-            resultJson.add("enemyBuildingDestroyed", enemyBuildingDestroyed)
-            resultJson.add("buildingsDeconstructed", state.stats.buildingsDeconstructed)
-            resultJson.add("buildingsDestroyed", state.stats.buildingsDestroyed)
+            resultJson.add("enemyBuildingDestroyed", target.currentUnitDestroyedCount)
+            resultJson.add("buildingsDeconstructed", target.currentBuildDeconstructedCount)
+            resultJson.add("buildingsDestroyed", target.currentBuildDestroyedCount)
             resultJson.add("wave", state.wave)
             resultJson.add("multiplier", target.expMultiplier)
             resultJson.add("score", score)

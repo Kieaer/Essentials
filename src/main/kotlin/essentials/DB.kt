@@ -299,6 +299,12 @@ class DB {
         var lastLeaveDate : LocalDateTime? = null
         var showLevelEffects : Boolean = true
         var currentPlayTime : Long = 0L
+        var currentUnitDestroyedCount : Int = 0
+        var currentBuildDestroyedCount : Int = 0
+        var currentBuildAttackCount : Int = 0
+        var apm = LinkedList<Int>()
+        var currentControlCount : Int = 0
+        var currentBuildDeconstructedCount : Int = 0
         var isConnected : Boolean = false
         var lastPlayedWorldName : String? = null
         var lastPlayedWorldMode : String? = null
