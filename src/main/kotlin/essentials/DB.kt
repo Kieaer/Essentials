@@ -24,24 +24,27 @@ class DB {
     val players : Seq<PlayerData> = Seq()
     lateinit var db : Database
     var dbVersion = 3
+    val postgres = "org.postgresql.Driver"
+    val mysql = "com.mysql.cj.jdbc.Driver"
+    val mariaDB = "org.mariadb.jdbc.Driver"
 
     @Throws(SQLException::class)
     private fun getDriverName(): String {
         val urls = arrayOf("mysql://127.0.0.1:3306/essentials", "mariadb://127.0.0.1:3306/essentials", "postgresql://127.0.0.1:5432/essentials")
         var connection: Connection? = null
         try {
-            Class.forName("org.postgresql.Driver")
-            Class.forName("com.mysql.cj.jdbc.Driver")
-            Class.forName("org.mariadb.jdbc.Driver")
+            Class.forName(postgres)
+            Class.forName(mysql)
+            Class.forName(mariaDB)
             var result = ""
             for (url in urls) {
                 try {
                     connection = DriverManager.getConnection("jdbc:$url", Config.databaseID, Config.databasePW)
                     val actualDriverName = connection.metaData.driverName
                     result = when (actualDriverName) {
-                        "PostgreSQL JDBC Driver" -> "org.postgresql.Driver"
-                        "MySQL Connector/J" -> "com.mysql.cj.jdbc.Driver"
-                        "MariaDB Connector/J" -> "org.mariadb.jdbc.Driver"
+                        "PostgreSQL JDBC Driver" -> postgres
+                        "MySQL Connector/J" -> mysql
+                        "MariaDB Connector/J" -> mariaDB
                         else -> ""
                     }
                     if (result.isNotEmpty()) {
@@ -172,7 +175,7 @@ class DB {
                     }
 
                     if (!Data.selectAll().empty() && JsonObject.readJSON(String(Base64.getDecoder().decode(Data.selectAll().first()[Data.data]))).asObject().getBoolean("isDuplicateNameChecked", false)) {
-                        val duplicate = Player.slice(Player.name, Player.duplicateName).selectAll().groupBy(Player.name).having { Player.name.count() greater 1 }.map { it[Player.name] }
+                        val duplicate = Player.select(Player.name, Player.duplicateName).groupBy(Player.name).having { Player.name.count() greater 1 }.map { it[Player.name] }
                         for (value in duplicate) {
                             Player.update({ Player.name eq value }) {
                                 it[duplicateName] = value
@@ -371,8 +374,8 @@ class DB {
     }
 
     operator fun get(uuid : String) : PlayerData? {
-        val it = transaction { Player.select { Player.uuid.eq(uuid) }.firstOrNull() }
-        if (it != null) {
+        val it = transaction { Player.selectAll().where { Player.uuid.eq(uuid) }.firstOrNull() }
+        return if (it != null) {
             val data = PlayerData()
             data.name = it[Player.name]
             data.uuid = it[Player.uuid]
@@ -425,9 +428,9 @@ class DB {
                 obj.put(it.name, it.value.asString())
             }
             data.status = obj
-            return data
+            data
         } else {
-            return null
+            null
         }
     }
 
@@ -521,7 +524,7 @@ class DB {
 
     fun update(id : String, data : PlayerData) {
         transaction {
-            Player.update({ Player.uuid eq id }) { it ->
+            Player.update({ Player.uuid eq id }) {
                 it[name] = data.name
                 it[uuid] = data.uuid
                 it[languageTag] = data.languageTag
@@ -578,8 +581,8 @@ class DB {
     }
 
     fun search(id : String, pw : String) : PlayerData? {
-        transaction { Player.select { Player.accountID eq id }.firstOrNull() }.run {
-            if (this != null) {
+        transaction { Player.selectAll().where { Player.accountID eq id }.firstOrNull() }.run {
+            return if (this != null) {
                 val data = PlayerData()
                 data.name = this[Player.name]
                 data.uuid = this[Player.uuid]
@@ -633,9 +636,9 @@ class DB {
                 }
                 data.status = obj
 
-                return if (data.accountID == data.accountPW) data else if (BCrypt.checkpw(pw, data.accountPW)) data else null
+                if (data.accountID == data.accountPW) data else if (BCrypt.checkpw(pw, data.accountPW)) data else null
             } else {
-                return null
+                null
             }
         }
     }

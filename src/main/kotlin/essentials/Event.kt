@@ -44,7 +44,7 @@ import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.FileInputStream
@@ -276,10 +276,10 @@ object Event {
                     data.status.put("hub_second", "true")
                     data.player.sendMessage(Bundle(data.languageTag)["command.hub.zone.next", "${it.tile.x},${it.tile.y}"])
                 } else if (data.status.containsKey("hub_first") && data.status.containsKey("hub_second")) {
-                    val x = data.status.get("hub_first").split(",")[0].toInt()
-                    val y = data.status.get("hub_first").split(",")[1].toInt()
-                    val ip = data.status.get("hub_ip")
-                    val port = data.status.get("hub_port").toInt()
+                    val x = data.status["hub_first"].split(",")[0].toInt()
+                    val y = data.status["hub_first"].split(",")[1].toInt()
+                    val ip = data.status["hub_ip"]
+                    val port = data.status["hub_port"].toInt()
 
                     val bundle = Bundle(data.languageTag)
                     val options = arrayOf(arrayOf(bundle["command.hub.zone.yes"], bundle["command.hub.zone.no"]))
@@ -351,27 +351,29 @@ object Event {
             }
 
             val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-            if (!Config.blockIP && Config.database != Main.root.child("database").absolutePath() && PluginData["iptablesFirst"] != null) {
-                Log.warn(Bundle()["event.database.blockip.conflict"])
+            when {
+                !Config.blockIP && Config.database != Main.root.child("database").absolutePath() && PluginData["iptablesFirst"] != null -> {
+                    Log.warn(Bundle()["event.database.blockip.conflict"])
 
-                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                    Config.blockIP = true
-                    Log.info(Bundle()["config.blockIP.enabled"])
-                }
-            } else if (!Config.blockIP && PluginData["iptablesFirst"] != null) {
-                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                    netServer.admins.banned.forEach { data ->
-                        data.ips.forEach { ip ->
-                            val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $ip -j DROP")
-                            Runtime.getRuntime().exec(cmd)
-                        }
+                    if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                        Config.blockIP = true
+                        Log.info(Bundle()["config.blockIP.enabled"])
                     }
-                    PluginData.status.remove("iptablesFirst")
-                    Log.info(Bundle()["event.ban.iptables.remove"])
-                    PluginData.save(false)
                 }
-            } else if (Config.blockIP && PluginData["iptablesFirst"] == null) {
-                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                !Config.blockIP && PluginData["iptablesFirst"] != null -> {
+                    if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                        netServer.admins.banned.forEach { data ->
+                            data.ips.forEach { ip ->
+                                val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $ip -j DROP")
+                                Runtime.getRuntime().exec(cmd)
+                            }
+                        }
+                        PluginData.status.remove("iptablesFirst")
+                        Log.info(Bundle()["event.ban.iptables.remove"])
+                        PluginData.save(false)
+                    }
+                }
+                Config.blockIP && PluginData["iptablesFirst"] == null && (os.contains("nix") || os.contains("nux") || os.contains("aix")) -> {
                     netServer.admins.banned.forEach { data ->
                         data.ips.forEach { ip ->
                             val cmd = arrayOf("/bin/bash", "-c", "echo ${PluginData.sudoPassword}| sudo -S iptables -A INPUT -s $ip -j DROP")
@@ -388,7 +390,7 @@ object Event {
                 var isMute = false
 
                 log(LogType.Chat, "${player.plainName()}: $message")
-                if (!message.startsWith("/")) {
+                return@ChatFormatter if (!message.startsWith("/")) {
                     val data = findPlayerData(player.uuid())
                     if (data != null) {
                         if (!data.mute) {
@@ -441,7 +443,7 @@ object Event {
                                 }
                             }
                             val format = Permission[data].chatFormat.replace("%1", "[#${player.color}]${data.name}").replace("%2", message).replace("%3", "${data.level}")
-                            return@ChatFormatter if (isGlobalMute && Permission.check(data, "chat.admin") && !isMute) {
+                            if (isGlobalMute && Permission.check(data, "chat.admin") && !isMute) {
                                 format
                             } else if (!isGlobalMute && !(voting && message.contains("y", true) && !isMute)) {
                                 format
@@ -450,13 +452,13 @@ object Event {
                             }
                         } else {
                             player.sendMessage("${player.coloredName()} [orange] > [white]${message}")
-                            return@ChatFormatter null
+                            null
                         }
                     } else {
-                        return@ChatFormatter "[gray]${player.name} [orange] > [white]${message}"
+                        "[gray]${player.name} [orange] > [white]${message}"
                     }
                 } else {
-                    return@ChatFormatter null
+                    null
                 }
             }
         }
@@ -527,8 +529,8 @@ object Event {
 
                         if (!state.rules.infiniteResources && it.tile != null && it.tile.build != null && it.tile.build.maxHealth() == it.tile.block().health.toFloat()) {
                             target.blockPlaceCount++
-                            target.exp += blockExp.get(block.name)
-                            target.currentExp += blockExp.get(block.name)
+                            target.exp += blockExp[block.name]
+                            target.currentExp += blockExp[block.name]
                         }
 
                         addLog(TileLog(System.currentTimeMillis(), target.name, "place", it.tile.x, it.tile.y, checkValidBlock(it.tile), if (it.tile.build != null) it.tile.build.rotation else 0, if (it.tile.build != null) it.tile.build.team else state.rules.defaultTeam, it.config))
@@ -542,8 +544,8 @@ object Event {
 
                         if (!state.rules.infiniteResources) {
                             target.blockBreakCount++
-                            target.exp -= blockExp.get(player.unit().buildPlan().block.name)
-                            target.currentExp -= blockExp.get(player.unit().buildPlan().block.name)
+                            target.exp -= blockExp[player.unit().buildPlan().block.name]
+                            target.currentExp -= blockExp[player.unit().buildPlan().block.name]
                         }
                     }
                 }
@@ -594,44 +596,43 @@ object Event {
             it.player.admin(false)
 
             val data = database[it.player.uuid()]
-            if (Config.authType == Config.AuthType.Discord) {
-                if (data == null) {
+            when {
+                Config.authType == Config.AuthType.Discord -> {
+                    if (data == null) {
+                        Main.daemon.submit(Thread {
+                            transaction {
+                                if (DB.Player.select(DB.Player.name).where { DB.Player.name eq it.player.name }.empty()) {
+                                    Core.app.post { Trigger.createPlayer(it.player, null, null) }
+                                } else {
+                                    Core.app.post {
+                                        it.player.con.kick(Bundle(it.player.locale)["event.player.name.duplicate"], 0L)
+                                    }
+                                }
+                            }
+                        })
+                    } else {
+                        Trigger.loadPlayer(it.player, data, false)
+                    }
+                }
+                Config.authType == Config.AuthType.None && data != null -> {
+                    Trigger.loadPlayer(it.player, data, false)
+                }
+                Config.authType != Config.AuthType.None -> {
+                    it.player.sendMessage(Bundle(it.player.locale)["event.player.first.register"])
+                }
+                Config.authType == Config.AuthType.None -> {
                     Main.daemon.submit(Thread {
                         transaction {
-                            if (DB.Player.slice(DB.Player.name).select { DB.Player.name eq it.player.name }.empty()) {
+                            if (DB.Player.select(DB.Player.name).where { DB.Player.name eq it.player.name }.empty()) {
                                 Core.app.post { Trigger.createPlayer(it.player, null, null) }
                             } else {
                                 Core.app.post {
-                                    it.player.con.kick(
-                                        Bundle(it.player.locale)["event.player.name.duplicate"],
-                                        0L
-                                    )
+                                    it.player.con.kick(Bundle(it.player.locale)["event.player.name.duplicate"], 0L)
                                 }
                             }
                         }
                     })
-                } else {
-                    Trigger.loadPlayer(it.player, data, false)
                 }
-            } else if (Config.authType == Config.AuthType.None && data != null) {
-                Trigger.loadPlayer(it.player, data, false)
-            } else if (Config.authType != Config.AuthType.None) {
-                it.player.sendMessage(Bundle(it.player.locale)["event.player.first.register"])
-            } else if (Config.authType == Config.AuthType.None) {
-                Main.daemon.submit(Thread {
-                    transaction {
-                        if (DB.Player.slice(DB.Player.name).select { DB.Player.name eq it.player.name }.empty()) {
-                            Core.app.post { Trigger.createPlayer(it.player, null, null) }
-                        } else {
-                            Core.app.post {
-                                it.player.con.kick(
-                                    Bundle(it.player.locale)["event.player.name.duplicate"],
-                                    0L
-                                )
-                            }
-                        }
-                    }
-                })
             }
         }
 
@@ -702,7 +703,7 @@ object Event {
 
             val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
             json.removeAll { js ->
-                js.asObject().get("ip").asArray().contains(JsonValue.valueOf(ip)) || js.asObject().get("id").asString() == it.uuid
+                js.asObject()["ip"].asArray().contains(JsonValue.valueOf(ip)) || js.asObject()["id"].asString() == it.uuid
             }
 
             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
@@ -720,7 +721,7 @@ object Event {
 
             val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
             json.forEachIndexed { index, jsonValue ->
-                if (jsonValue.asObject().get("ip").asArray().contains(JsonValue.valueOf(it.ip))) {
+                if (jsonValue.asObject()["ip"].asArray().contains(JsonValue.valueOf(it.ip))) {
                     json.remove(index)
                     return@forEachIndexed
                 }
@@ -763,35 +764,44 @@ object Event {
 
         Events.on(ConnectPacketEvent::class.java) {
             var kickReason = ""
-            val isIPbanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("ip").asArray().find { b -> b.asString() == it.connection.address } != null }
+            val isIPbanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find {
+                a -> a.asObject()["ip"].asArray().find { b -> b.asString() == it.connection.address } != null
+            }
 
-            if (isIPbanned != null) {
-                it.connection.kick(Packets.KickReason.banned)
-                kickReason = "banned.ip"
-            } else if (!Config.allowMobile && it.connection.mobile) {
-                it.connection.kick(Bundle(it.packet.locale)["event.player.not.allow.mobile"], 0L)
-                kickReason = "mobile"
-            } else if (Config.minimalName && it.packet.name.length < 4) {
-                it.connection.kick(Bundle(it.packet.locale)["event.player.name.short"], 0L)
-                kickReason = "name.short"
-            } else if (Config.antiVPN) {
-                PluginData.vpnList.forEach { text ->
-                    val match = IpAddressMatcher(text)
-                    if (match.matches(it.connection.address)) {
-                        it.connection.kick(Bundle(it.packet.locale)["anti-grief.vpn"])
-                        kickReason = "vpn"
-                        return@forEach
+            when {
+                isIPbanned != null -> {
+                    it.connection.kick(Packets.KickReason.banned)
+                    kickReason = "banned.ip"
+                }
+                !Config.allowMobile && it.connection.mobile -> {
+                    it.connection.kick(Bundle(it.packet.locale)["event.player.not.allow.mobile"], 0L)
+                    kickReason = "mobile"
+                }
+                Config.minimalName && it.packet.name.length < 4 -> {
+                    it.connection.kick(Bundle(it.packet.locale)["event.player.name.short"], 0L)
+                    kickReason = "name.short"
+                }
+                Config.antiVPN -> {
+                    PluginData.vpnList.forEach { text ->
+                        val match = IpAddressMatcher(text)
+                        if (match.matches(it.connection.address)) {
+                            it.connection.kick(Bundle(it.packet.locale)["anti-grief.vpn"])
+                            kickReason = "vpn"
+                            return@forEach
+                        }
                     }
                 }
-            } else if (Config.antiGrief && Groups.player.find { p -> p.con.address == it.connection.address } != null) {
-                it.connection.kick(Packets.KickReason.idInUse)
-                kickReason = "ip"
-            } else {
-                PluginData.blacklist.forEach { pattern ->
-                    if (pattern.matcher(it.packet.name).matches()) {
-                        it.connection.kick(Bundle(it.packet.locale)["event.player.name.blacklisted"], 0L)
-                        kickReason = "blacklisted"
-                        return@forEach
+                Config.antiGrief && Groups.player.find { p -> p.con.address == it.connection.address } != null -> {
+                    it.connection.kick(Packets.KickReason.idInUse)
+                    kickReason = "ip"
+                }
+                else -> {
+                    PluginData.blacklist.forEach { pattern ->
+                        if (pattern.matcher(it.packet.name).matches()) {
+                            it.connection.kick(Bundle(it.packet.locale)["event.player.name.blacklisted"], 0L)
+                            kickReason = "blacklisted"
+                            return@forEach
+                        }
                     }
                 }
             }
@@ -803,17 +813,21 @@ object Event {
         }
 
         Events.on(PlayerConnect::class.java) {
-            val isIDBanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject().get("id").asString() == it.player.uuid() }
+            val isIDBanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a -> a.asObject()["id"].asString() == it.player.uuid() }
             var kickReason = ""
 
-            if (isIDBanned != null) {
-                it.player.kick(Packets.KickReason.banned)
-                kickReason = "banned.id"
-            } else if (findPlayerData(it.player.uuid()) != null) {
-                it.player.kick(Bundle(it.player.locale)["event.player.exists"])
-            } else if (Config.blockNewUser && database[it.player.uuid()] == null) {
-                it.player.kick(Bundle(it.player.locale)["event.player.new.blocked"], 0L)
-                kickReason = "newuser"
+            when {
+                isIDBanned != null -> {
+                    it.player.kick(Packets.KickReason.banned)
+                    kickReason = "banned.id"
+                }
+                findPlayerData(it.player.uuid()) != null -> {
+                    it.player.kick(Bundle(it.player.locale)["event.player.exists"])
+                }
+                Config.blockNewUser && database[it.player.uuid()] == null -> {
+                    it.player.kick(Bundle(it.player.locale)["event.player.new.blocked"], 0L)
+                    kickReason = "newuser"
+                }
             }
 
             if (kickReason.isNotEmpty()) {
@@ -826,20 +840,18 @@ object Event {
 
         Events.on(BuildingBulletDestroyEvent::class.java) {
             val cores = listOf(Blocks.coreAcropolis, Blocks.coreBastion, Blocks.coreCitadel, Blocks.coreFoundation, Blocks.coreAcropolis, Blocks.coreNucleus, Blocks.coreShard)
-            if (state.rules.pvp) {
-                if (it.build.closestCore() == null && cores.contains(it.build.block())) {
-                    for (data in database.players) {
-                        if (data.player.team() == it.bullet.team) {
-                            data.pvpEliminationTeamCount++
-                        }
-                        data.player.sendMessage(Bundle(data.languageTag)["event.bullet.kill", it.bullet.team.coloredName(), it.build.team.coloredName()])
+            if (state.rules.pvp && it.build.closestCore() == null && cores.contains(it.build.block())) {
+                for (data in database.players) {
+                    if (data.player.team() == it.bullet.team) {
+                        data.pvpEliminationTeamCount++
                     }
-                    if (netServer.isWaitingForPlayers) {
-                        for (t in state.teams.getActive()) {
-                            if (Groups.player.count { p : Player -> p.team() === t.team } > 0) {
-                                Events.fire(GameOverEvent(t.team))
-                                return@on
-                            }
+                    data.player.sendMessage(Bundle(data.languageTag)["event.bullet.kill", it.bullet.team.coloredName(), it.build.team.coloredName()])
+                }
+                if (netServer.isWaitingForPlayers) {
+                    for (t in state.teams.getActive()) {
+                        if (Groups.player.count { p: Player -> p.team() === t.team } > 0) {
+                            Events.fire(GameOverEvent(t.team))
+                            return@on
                         }
                     }
                 }
@@ -971,31 +983,29 @@ object Event {
                         }
 
                         for (it in database.players) {
-                            if (state.rules.pvp) {
-                                if (it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)) {
-                                    it.pvpDefeatCount++
-                                    if (Config.pvpSpector) {
-                                        it.player.team(Team.derelict)
-                                        pvpSpectors.add(it.uuid)
-                                    }
-                                    pvpPlayer.remove(it.uuid)
-
-                                    val time = it.currentPlayTime
-                                    val score = time + 5000
-                                    val bundle = Bundle(it.languageTag)
-                                    val message = bundle["event.exp.earn.defeat", it.currentExp + score]
-
-                                    it.exp += ((score * it.expMultiplier).toInt())
-                                    it.player.sendMessage(message)
+                            if (state.rules.pvp && it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)) {
+                                it.pvpDefeatCount++
+                                if (Config.pvpSpector) {
+                                    it.player.team(Team.derelict)
+                                    pvpSpectors.add(it.uuid)
                                 }
+                                pvpPlayer.remove(it.uuid)
+
+                                val time = it.currentPlayTime
+                                val score = time + 5000
+                                val bundle = Bundle(it.languageTag)
+                                val message = bundle["event.exp.earn.defeat", it.currentExp + score]
+
+                                it.exp += ((score * it.expMultiplier).toInt())
+                                it.player.sendMessage(message)
                             }
 
                             if (it.status.containsKey("freeze")) {
                                 val d = findPlayerData(it.uuid)
                                 if (d != null) {
                                     val player = d.player
-                                    val split = it.status.get("freeze").toString().split("/")
-                                    player.set(split[0].toFloat(), split[1].toFloat())
+                                    val split = it.status["freeze"].toString().split("/")
+                                    player[split[0].toFloat()] = split[1].toFloat()
                                     Call.setPosition(player.con(), split[0].toFloat(), split[1].toFloat())
                                     Call.setCameraPosition(player.con(), split[0].toFloat(), split[1].toFloat())
                                     player.x(split[0].toFloat())
@@ -1378,11 +1388,9 @@ object Event {
                                             Groups.player.forEach {
                                                 if (it.team() == voteTeam) {
                                                     val data = findPlayerData(it.uuid())
-                                                    if (data != null) {
-                                                        if (voteTargetUUID != data.uuid) {
-                                                            val bundle = Bundle(data.languageTag)
-                                                            it.sendMessage(bundle["command.vote.count", count.toString(), check() - voted.size])
-                                                        }
+                                                    if (data != null && voteTargetUUID != data.uuid) {
+                                                        val bundle = Bundle(data.languageTag)
+                                                        it.sendMessage(bundle["command.vote.count", count.toString(), check() - voted.size])
                                                     }
                                                 }
                                             }
@@ -1609,7 +1617,7 @@ object Event {
                             }
 
                             if (unitLimitMessageCooldown > 0) {
-                                unitLimitMessageCooldown = unitLimitMessageCooldown--
+                                unitLimitMessageCooldown--
                             }
 
                             secondCount = 0
@@ -1628,14 +1636,14 @@ object Event {
 
                             Main.daemon.submit(Thread {
                                 transaction {
-                                    DB.Player.select { DB.Player.banTime neq null }.forEach { data ->
+                                    DB.Player.selectAll().where { DB.Player.banTime neq null }.forEach { data ->
                                         val banTime = data[DB.Player.banTime]
                                         val uuid = data[DB.Player.uuid]
                                         val name = data[DB.Player.name]
 
                                         if (LocalDateTime.now().isAfter(LocalDateTime.parse(banTime))) {
                                             val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-                                            json.removeAll { a -> a.asObject().get("id").asString() == uuid }
+                                            json.removeAll { a -> a.asObject()["id"].asString() == uuid }
                                             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
                                             DB.Player.update({ DB.Player.uuid eq uuid }) {
@@ -1727,37 +1735,35 @@ object Event {
                     Files.move(new, old, StandardCopyOption.REPLACE_EXISTING)
                     val logFiles = root.child("log/old/$type").file().listFiles { file -> file.name.endsWith(".log") }
 
-                    if (logFiles != null) {
-                        if (logFiles.size >= maxLogFile) {
-                            val zipFileName = "$time.zip"
-                            val zipOutputStream = ZipOutputStream(FileOutputStream(zipFileName))
+                    if (logFiles != null && logFiles.size >= maxLogFile) {
+                        val zipFileName = "$time.zip"
+                        val zipOutputStream = ZipOutputStream(FileOutputStream(zipFileName))
 
-                            Thread {
-                                for (logFile in logFiles) {
-                                    val entryName = logFile.name
-                                    val zipEntry = ZipEntry(entryName)
-                                    zipOutputStream.putNextEntry(zipEntry)
+                        Thread {
+                            for (logFile in logFiles) {
+                                val entryName = logFile.name
+                                val zipEntry = ZipEntry(entryName)
+                                zipOutputStream.putNextEntry(zipEntry)
 
-                                    val fileInputStream = FileInputStream(logFile)
-                                    val buffer = ByteArray(1024)
-                                    var length : Int
-                                    while (fileInputStream.read(buffer).also { length = it } > 0) {
-                                        zipOutputStream.write(buffer, 0, length)
-                                    }
-
-                                    fileInputStream.close()
-                                    zipOutputStream.closeEntry()
+                                val fileInputStream = FileInputStream(logFile)
+                                val buffer = ByteArray(1024)
+                                var length: Int
+                                while (fileInputStream.read(buffer).also { length = it } > 0) {
+                                    zipOutputStream.write(buffer, 0, length)
                                 }
 
-                                zipOutputStream.close()
+                                fileInputStream.close()
+                                zipOutputStream.closeEntry()
+                            }
 
-                                logFiles.forEach {
-                                    it.delete()
-                                }
+                            zipOutputStream.close()
 
-                                Files.move(Path(Core.files.external(zipFileName).absolutePath()), Path(root.child("log/old/$type/$zipFileName").absolutePath()))
-                            }.start()
-                        }
+                            logFiles.forEach {
+                                it.delete()
+                            }
+
+                            Files.move(Path(Core.files.external(zipFileName).absolutePath()), Path(root.child("log/old/$type/$zipFileName").absolutePath()))
+                        }.start()
                     }
                 } catch (e : Exception) {
                     e.printStackTrace()
@@ -1862,12 +1868,10 @@ object Event {
             Commands.Exp[target]
             target.currentExp = 0
 
-            if (!isConnected) {
-                if (target.oldUUID != null) {
-                    target.uuid = target.oldUUID!!
-                    target.oldUUID = null
-                    database.queue(target)
-                }
+            if (!isConnected && target.oldUUID != null) {
+                target.uuid = target.oldUUID!!
+                target.oldUUID = null
+                database.queue(target)
             }
 
             if(!root.child("data/exp.json").exists()) {
@@ -1901,15 +1905,15 @@ object Event {
     }
 
     fun findPlayers(name : String) : Playerc? {
-        if (name.toIntOrNull() != null) {
+        return if (name.toIntOrNull() != null) {
             database.players.forEach {
                 if (it.entityid == name.toInt()) {
-                    return it.player
+                    it.player
                 }
             }
-            return Groups.player.find { p -> p.plainName().contains(name, true) }
+            Groups.player.find { p -> p.plainName().contains(name, true) }
         } else {
-            return Groups.player.find { p -> p.plainName().contains(name, true) }
+            Groups.player.find { p -> p.plainName().contains(name, true) }
         }
     }
 

@@ -24,46 +24,66 @@ repositories {
     maven(url = "https://www.jitpack.io")
 }
 
-val exposedVersion = "0.46.0"
 val mindustryVersion = "v146"
 val arcVersion = "v146"
 
 dependencies {
+    val hjsonVersion = "3.0.0-C11"
+    val jBCryptVersion = "0.4.3"
+    val mavenVersion = "4.0.0-alpha-3"
+    val h2Version = "2.2.220"
+    val exposedVersion = "0.46.0"
+    val slf4jVersion = "2.0.6"
+    val jfigletVersion = "0.0.9"
+    val postgresVersion = "42.7.2"
+    val mysqlConnectVersion = "8.3.0"
+    val mariadbConnectVersion = "3.3.3"
+
     compileOnly("com.github.anuken.arc:arc-core:$arcVersion")
     compileOnly("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
 
-    implementation("com.github.PersonTheCat:hjson-java:3.0.0-C11")
-    implementation("de.svenkubiak:jBCrypt:0.4.3")
+    implementation("com.github.PersonTheCat:hjson-java:$hjsonVersion")
+    implementation("de.svenkubiak:jBCrypt:$jBCryptVersion")
 
     //implementation("com.github.gimlet2:kottpd:0.2.1")
-    implementation("org.apache.maven:maven-artifact:4.0.0-alpha-3")
+    implementation("org.apache.maven:maven-artifact:$mavenVersion")
 
-    implementation("com.h2database:h2:2.2.220")
+    implementation("com.h2database:h2:$h2Version")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
     implementation(files("libs/lingua.jar"))
-    implementation("org.slf4j:slf4j-nop:2.0.6")
-    implementation("com.github.lalyos:jfiglet:0.0.9")
+    implementation("org.slf4j:slf4j-nop:$slf4jVersion")
+    implementation("com.github.lalyos:jfiglet:$jfigletVersion")
 
-    implementation("org.postgresql:postgresql:42.7.2")
-    implementation("com.mysql:mysql-connector-j:8.3.0")
-    implementation("org.mariadb.jdbc:mariadb-java-client:3.3.3")
+    implementation("org.postgresql:postgresql:$postgresVersion")
+    implementation("com.mysql:mysql-connector-j:$mysqlConnectVersion")
+    implementation("org.mariadb.jdbc:mariadb-java-client:$mariadbConnectVersion")
+}
 
-
+// 테스트용
+dependencies {
+    val rulesVersion = "1.19.0"
+    val dataFakerVersion = "1.8.1"
+    val mockitoVersion = "5.4.0"
+    val jtsVersion = "1.19.0"
 
     testImplementation("com.github.anuken.arc:arc-core:$arcVersion")
     testImplementation("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
     testImplementation("com.github.anuken.mindustryjitpack:server:$mindustryVersion")
     testImplementation("com.github.anuken.arc:backend-headless:$arcVersion")
-    testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
-    testImplementation("net.datafaker:datafaker:1.8.1")
-    testImplementation("org.mockito:mockito-core:5.4.0")
-    testImplementation("org.locationtech.jts:jts-core:1.19.0")
+    testImplementation("com.github.stefanbirkner:system-rules:$rulesVersion")
+    testImplementation("net.datafaker:datafaker:$dataFakerVersion")
+    testImplementation("org.mockito:mockito-core:$mockitoVersion")
+    testImplementation("org.locationtech.jts:jts-core:$jtsVersion")
 
-    val ktor = "2.3.6"
-    implementation("io.ktor:ktor-server-core-jvm:2.3.6")
-    implementation("io.ktor:ktor-server-netty-jvm:2.3.6")
+}
+
+// 웹 서버용
+dependencies {
+    val ktor = "2.3.10"
+    implementation("io.ktor:ktor-server-core-jvm:$ktor")
+    implementation("io.ktor:ktor-server-netty-jvm:$ktor")
     implementation("io.ktor:ktor-server-content-negotiation:$ktor")
     implementation("io.ktor:ktor-serialization-jackson:$ktor")
     implementation("io.ktor:ktor-server-rate-limit:$ktor")
@@ -85,6 +105,8 @@ tasks.jar {
 }
 
 tasks.register("compression") {
+    description = "jar 압축"
+    group = JavaBasePlugin.BUILD_TASK_NAME
     dependsOn(tasks.jar)
     dependsOn(tasks.shadowJar)
 }
@@ -95,14 +117,20 @@ node {
 }
 
 val nodeBuild = tasks.register<NpmTask>("nodeBuild") {
+    description = "node.js 빌드"
+    group = JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME
     args.set(listOf("run", "build"))
 }
 
 val nodeInstall = tasks.register<NpmTask>("nodeInstall") {
+    description = "node.js 복사"
+    group = JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME
     args.set(listOf("install"))
 }
 
 tasks.register("web") {
+    description = "웹 파일 빌드"
+    group = JavaBasePlugin.BUILD_TASK_NAME
     val build = tasks["nodeBuild"]
     val install = tasks["nodeInstall"]
     if (!file("./src/www/node_modules").exists()) {

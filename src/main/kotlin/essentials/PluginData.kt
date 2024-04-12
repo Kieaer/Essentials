@@ -149,7 +149,7 @@ object PluginData {
     }
 
     operator fun get(key : String) : String? {
-        return status.get(key)
+        return status[key]
     }
 
     fun load() {
@@ -171,29 +171,29 @@ object PluginData {
 
                         data["warpZones"].asArray().forEach {
                             val obj = it.asObject()
-                            warpZones.add(WarpZone(obj.get("mapName").asString(), obj.get("start").asInt(), obj.get("finish").asInt(), obj.get("touch").asBoolean(), obj.get("ip").asString(), obj.get("port").asInt()))
+                            warpZones.add(WarpZone(obj["mapName"].asString(), obj["start"].asInt(), obj["finish"].asInt(), obj["touch"].asBoolean(), obj["ip"].asString(), obj["port"].asInt()))
                         }
 
                         data["warpBlocks"].asArray().forEach {
                             val obj = it.asObject()
-                            warpBlocks.add(WarpBlock(obj.get("mapName").asString(), obj.get("x").asInt(), obj.get("y").asInt(), obj.get("tileName").asString(), obj.get("size").asInt(), obj.get("ip").asString(), obj.get("port").asInt(), obj.get("description").asString()))
+                            warpBlocks.add(WarpBlock(obj["mapName"].asString(), obj["x"].asInt(), obj["y"].asInt(), obj["tileName"].asString(), obj["size"].asInt(), obj["ip"].asString(), obj["port"].asInt(), obj["description"].asString()))
                         }
 
                         data["warpCounts"].asArray().forEach {
                             val obj = it.asObject()
-                            warpCounts.add(WarpCount(obj.get("mapName").asString(), obj.get("pos").asInt(), obj.get("ip").asString(), obj.get("port").asInt(), obj.get("players").asInt(), obj.get("numbersize").asInt()))
+                            warpCounts.add(WarpCount(obj["mapName"].asString(), obj["pos"].asInt(), obj["ip"].asString(), obj["port"].asInt(), obj["players"].asInt(), obj["numbersize"].asInt()))
                         }
 
                         data["warpTotals"].asArray().forEach {
                             val obj = it.asObject()
-                            warpTotals.add(WarpTotal(obj.get("mapName").asString(), obj.get("pos").asInt(), obj.get("totalplayers").asInt(), obj.get("numbersize").asInt()))
+                            warpTotals.add(WarpTotal(obj["mapName"].asString(), obj["pos"].asInt(), obj["totalplayers"].asInt(), obj["numbersize"].asInt()))
                         }
 
                         data["blacklist"].asArray().forEach { blacklist.add(Pattern.compile(it.asString())) }
 
                         data["banned"].asArray().forEach {
                             val obj = it.asObject()
-                            banned.add(Banned(obj.get("time").asLong(), obj.get("name").asString(), obj.get("uuid").asString(), obj.get("reason").asString()))
+                            banned.add(Banned(obj["time"].asLong(), obj["name"].asString(), obj["uuid"].asString(), obj["reason"].asString()))
                         }
 
                         JsonArray.readJSON(data["status"].asString().replace("\\", "")).asObject().forEach {

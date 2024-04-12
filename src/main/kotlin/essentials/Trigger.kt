@@ -46,12 +46,10 @@ object Trigger {
             if (data.lastLoginDate != null) {
                 if ((LocalDate.now().toEpochDay() - data.lastLoginDate!!.toEpochDay()) == 1L) {
                     data.joinStacks++
-                    if (data.joinStacks % 3 == 0) {
-                        data.expMultiplier = 1.2
-                    } else if (data.joinStacks % 7 == 0) {
-                        data.expMultiplier = 1.5
-                    } else if (data.joinStacks % 30 == 0) {
-                        data.expMultiplier = 2.5
+                    when {
+                        data.joinStacks % 3 == 0 -> data.expMultiplier = 1.2
+                        data.joinStacks % 7 == 0 -> data.expMultiplier = 1.5
+                        data.joinStacks % 30 == 0 -> data.expMultiplier = 2.5
                     }
                 } else {
                     data.joinStacks = 0
@@ -116,37 +114,41 @@ object Trigger {
             }
 
             if (state.rules.pvp) {
-                if (Event.pvpPlayer.containsKey(data.uuid)) {
-                    player.team(Event.pvpPlayer.get(data.uuid))
-                } else if ((Config.pvpSpector && Event.pvpSpectors.contains(data.uuid)) || Permission.check(data, "pvp.spector")) {
-                    player.team(Team.derelict)
-                } else if (Config.pvpAutoTeam) {
-                    fun winPercentage(team : Team) : Double {
-                        var players = arrayOf<Pair<Team, Double>>()
-                        database.players.forEach {
-                            val rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
-                            players += Pair(it.player.team(), if (rate.equals(Double.NaN)) 0.0 else rate)
+                when {
+                    Event.pvpPlayer.containsKey(data.uuid) -> {
+                        player.team(Event.pvpPlayer[data.uuid])
+                    }
+                    Config.pvpSpector && Event.pvpSpectors.contains(data.uuid) || Permission.check(data, "pvp.spector") -> {
+                        player.team(Team.derelict)
+                    }
+                    Config.pvpAutoTeam -> {
+                        fun winPercentage(team : Team) : Double {
+                            var players = arrayOf<Pair<Team, Double>>()
+                            database.players.forEach {
+                                val rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
+                                players += Pair(it.player.team(), if (rate.isNaN()) 0.0 else rate)
+                            }
+
+                            val targetTeam = players.filter { it.first == team }
+                            val rate = targetTeam.map { it.second }
+                            return rate.average()
                         }
 
-                        val targetTeam = players.filter { it.first == team }
-                        val rate = targetTeam.map { it.second }
-                        return rate.average()
-                    }
+                        val teamRate = mutableMapOf<Team, Double>()
+                        var teams = arrayOf<Pair<Team, Int>>()
+                        for (a in state.teams.active) {
+                            val rate = winPercentage(a.team)
+                            teamRate[a.team] = rate
+                            teams += Pair(a.team, a.players.size)
+                        }
 
-                    val teamRate = mutableMapOf<Team, Double>()
-                    var teams = arrayOf<Pair<Team, Int>>()
-                    for (a in state.teams.active) {
-                        val rate = winPercentage(a.team)
-                        teamRate[a.team] = rate
-                        teams += Pair(a.team, a.players.size)
-                    }
-
-                    val teamSorted = teams.toList().sortedByDescending { it.second }
-                    val rateSorted = teamRate.toList().sortedWith(compareBy { it.second })
-                    if ((teamSorted.first().second - teamSorted.last().second) >= 2) {
-                        player.team(teamSorted.last().first)
-                    } else {
-                        player.team(rateSorted.last().first)
+                        val teamSorted = teams.toList().sortedByDescending { it.second }
+                        val rateSorted = teamRate.toList().sortedWith(compareBy { it.second })
+                        if ((teamSorted.first().second - teamSorted.last().second) >= 2) {
+                            player.team(teamSorted.last().first)
+                        } else {
+                            player.team(rateSorted.last().first)
+                        }
                     }
                 }
             }

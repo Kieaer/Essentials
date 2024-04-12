@@ -182,14 +182,14 @@ object Config {
 
     fun load() {
         val config = JsonObject.readHjson(root.readString("utf-8")).asObject()
-        val plugin = config.get("plugin").asObject()
-        val features = config.get("features").asObject()
-        val discord = config.get("discord").asObject()
-        val security = config.get("security").asObject()
+        val plugin = config["plugin"].asObject()
+        val features = config["features"].asObject()
+        val discord = config["discord"].asObject()
+        val security = config["security"].asObject()
 
         update = plugin.getBoolean("update", update)
         report = plugin.getBoolean("report", report)
-        authType = AuthType.valueOf(plugin.get("authType").asString().replaceFirstChar { it.uppercase() })
+        authType = AuthType.valueOf(plugin["authType"].asString().replaceFirstChar { it.uppercase() })
         database = plugin.getString("database", database)
         databaseID = plugin.getString("databaseID", databaseID)
         databasePW = plugin.getString("databasePW", databasePW)
@@ -238,10 +238,8 @@ object Config {
 
         discordURL = discord.getString("discordURL", discordURL)
 
-        if (chatlimit) {
-            if (!allowLanguageRegex.matcher(chatlanguage).matches()) {
-                chatlimit = false
-            }
+        if (chatlimit && !allowLanguageRegex.matcher(chatlanguage).matches()) {
+            chatlimit = false
         }
     }
 

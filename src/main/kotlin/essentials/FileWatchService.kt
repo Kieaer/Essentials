@@ -46,8 +46,8 @@ object FileWatchService: Runnable {
                                 Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
                                 for (bans in JsonArray.readHjson(Fi(Config.banList).readString()).asArray()) {
                                     val data = bans.asObject()
-                                    val id = data.get("id").asString()
-                                    val ips = data.get("ip").asArray()
+                                    val id = data["id"].asString()
+                                    val ips = data["ip"].asArray()
                                     Vars.netServer.admins.playerInfo.values().find { a -> a.id == id }?.banned = true
                                     for (ip in ips) {
                                         Vars.netServer.admins.playerInfo.values().find { a -> a.lastIP == ip.asString() }?.banned = true

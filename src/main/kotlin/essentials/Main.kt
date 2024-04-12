@@ -79,37 +79,32 @@ class Main: Plugin() {
             }
         }
 
-        if (Config.antiVPN) {
-            if (!root.child("data/ipv4.txt").exists()) {
-                root.child("data").mkdirs()
-                var isUpdate = false
+        if (Config.antiVPN && !root.child("data/ipv4.txt").exists()) {
+            root.child("data").mkdirs()
+            var isUpdate = false
 
-                if (PluginData["vpnListDate"] == null) {
-                    PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
-                    isUpdate = true
-                } else if ((PluginData["vpnListDate"]!!.toLong() + 8.64e+7) < System.currentTimeMillis()) {
-                    PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
-                    isUpdate = true
-                }
-                PluginData.save(false)
+            if (PluginData["vpnListDate"] == null || (PluginData["vpnListDate"]!!.toLong() + 8.64e+7) < System.currentTimeMillis()) {
+                PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
+                isUpdate = true
+            }
+            PluginData.save(false)
 
-                if (isUpdate) {
-                    Fi("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").read().use { b ->
-                        BufferedInputStream(b).use { bis ->
-                            FileOutputStream(root.child("data/ipv4.txt").absolutePath()).use { fos ->
-                                val data = ByteArray(1024)
-                                var count : Int
-                                while (bis.read(data, 0, 1024).also { count = it } != -1) {
-                                    fos.write(data, 0, count)
-                                }
+            if (isUpdate) {
+                Fi("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").read().use { b ->
+                    BufferedInputStream(b).use { bis ->
+                        FileOutputStream(root.child("data/ipv4.txt").absolutePath()).use { fos ->
+                            val data = ByteArray(1024)
+                            var count: Int
+                            while (bis.read(data, 0, 1024).also { count = it } != -1) {
+                                fos.write(data, 0, count)
                             }
                         }
                     }
                 }
+            }
 
-                root.child("data/ipv4.txt").file().forEachLine {
-                    PluginData.vpnList.add(it)
-                }
+            root.child("data/ipv4.txt").file().forEachLine {
+                PluginData.vpnList.add(it)
             }
         }
         Event.register()
@@ -144,7 +139,7 @@ class Main: Plugin() {
                     val current = DefaultArtifactVersion(PluginData.pluginVersion)
 
                     when {
-                        latest > current -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject().get("browser_download_url").asString(), json.get("body").asString()])
+                        latest > current -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject()["browser_download_url"].asString(), json["body"].asString()])
                         latest.compareTo(current) == 0 -> Log.info(bundle["config.update.current"])
                         latest < current -> Log.info(bundle["config.update.devel"])
                     }
@@ -164,10 +159,8 @@ class Main: Plugin() {
             val data = database.players.find { it.uuid == e.player.uuid() }
             val isHub = PluginData["hubMode"]
             for (it in PluginData.warpBlocks) {
-                if (e.tile != null) {
-                    if (it.mapName == state.map.name() && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
-                        return@addActionFilter false
-                    }
+                if (e.tile != null && it.mapName == state.map.name() && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
+                    return@addActionFilter false
                 }
             }
 
@@ -176,15 +169,20 @@ class Main: Plugin() {
             }
 
             if (data != null) {
-                if (isHub != null && isHub == state.map.name()) {
-                    return@addActionFilter Permission.check(data, "hub.build")
-                } else if (data.strict) {
-                    return@addActionFilter false
-                } else if (Config.authType == Config.AuthType.Discord && data.discord.isNullOrEmpty()) {
-                    e.player.sendMessage(Bundle(e.player.locale)["event.discord.not.registered"])
-                    return@addActionFilter false
-                } else {
-                    return@addActionFilter true
+                when {
+                    isHub != null && isHub == state.map.name() -> {
+                        return@addActionFilter Permission.check(data, "hub.build")
+                    }
+                    data.strict -> {
+                        return@addActionFilter false
+                    }
+                    Config.authType == Config.AuthType.Discord && data.discord.isNullOrEmpty() -> {
+                        e.player.sendMessage(Bundle(e.player.locale)["event.discord.not.registered"])
+                        return@addActionFilter false
+                    }
+                    else -> {
+                        return@addActionFilter true
+                    }
                 }
             }
             return@addActionFilter false
@@ -253,8 +251,8 @@ class Main: Plugin() {
             netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
             for (bans in JsonArray.readHjson(Fi(Config.banList).readString()).asArray()) {
                 val data = bans.asObject()
-                val id = data.get("id").asString()
-                val ips = data.get("ip").asArray()
+                val id = data["id"].asString()
+                val ips = data["ip"].asArray()
                 netServer.admins.playerInfo.values().find { a -> a.id == id }?.banned = true
                 for (ip in ips) {
                     netServer.admins.playerInfo.values().find { a -> a.lastIP == ip.asString() }?.banned = true

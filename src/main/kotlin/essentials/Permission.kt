@@ -174,19 +174,19 @@ object Permission {
 
         main.forEach {
             val name = it.name
-            if (Config.authType == Config.AuthType.None && main.get(name).asObject().has("default")) {
+            if (Config.authType == Config.AuthType.None && main[name].asObject().has("default")) {
                 default = name
             }
 
-            if (main.get(name).asObject().has("inheritance")) {
-                var inheritance = main.get(name).asObject().getString("inheritance", null)
+            if (main[name].asObject().has("inheritance")) {
+                var inheritance = main[name].asObject().getString("inheritance", null)
                 while (inheritance != null) {
-                    for (value in main.get(inheritance).asObject()["permission"].asArray()) {
+                    for (value in main[inheritance].asObject()["permission"].asArray()) {
                         if (!value.asString().contains("*")) {
-                            main.get(name).asObject().get("permission").asArray().add(value.asString())
+                            main[name].asObject()["permission"].asArray().add(value.asString())
                         }
                     }
-                    inheritance = main.get(inheritance).asObject().getString("inheritance", null)
+                    inheritance = main[inheritance].asObject().getString("inheritance", null)
                 }
             }
         }
@@ -197,11 +197,11 @@ object Permission {
     fun apply() {
         JsonValue.readHjson(userFile.reader()).asArray().forEach {
             val b = it.asObject()
-            val c = database.players.find { e -> e.uuid == b.get("uuid").asString() }
+            val c = database.players.find { e -> e.uuid == b["uuid"].asString() }
             if (c == null) {
-                val data = database[b.get("uuid").asString()]
+                val data = database[b["uuid"].asString()]
                 if (data != null && b.has("group")) {
-                    data.permission = b.get("group").asString()
+                    data.permission = b["group"].asString()
                     data.name = b.getString("name", data.name)
                     database.queue(data)
                 }
@@ -218,7 +218,7 @@ object Permission {
 
     operator fun get(data : DB.PlayerData) : PermissionData {
         val result = PermissionData()
-        val u = user.find { it.asObject().has("uuid") && it.asObject().get("uuid").asString() == data.uuid }
+        val u = user.find { it.asObject().has("uuid") && it.asObject()["uuid"].asString() == data.uuid }
         if (u != null) {
             result.uuid = u.asObject().getString("uuid", data.uuid)
             result.name = u.asObject().getString("name", data.player.name())
@@ -240,7 +240,7 @@ object Permission {
     }
 
     fun check(data : DB.PlayerData, command : String) : Boolean {
-        main[get(data).group].asObject()["permission"].asArray().forEach {
+        main[this[data].group].asObject()["permission"].asArray().forEach {
             if (it.asString() == command || it.asString().equals("all", true)) {
                 return true
             }
