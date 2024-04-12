@@ -2288,14 +2288,24 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
                 return
             }
 
+            fun removeJson() {
+                val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
+                json.removeAll { js ->
+                    js.asObject().get("ip").asArray().contains(JsonValue.valueOf(arg[0])) || js.asObject().get("id").asString() == arg[0]
+                }
+                Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
+            }
+
             if (!netServer.admins.unbanPlayerID(arg[0])) {
                 if (!netServer.admins.unbanPlayerIP(arg[0])) {
                     err("player.not.found")
                 } else {
                     send("command.unban.ip", arg[0])
+                    removeJson()
                 }
             } else {
                 send("command.unban.id", arg[0])
+                removeJson()
             }
         }
 
