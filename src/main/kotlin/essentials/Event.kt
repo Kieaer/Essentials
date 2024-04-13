@@ -68,7 +68,6 @@ import kotlin.experimental.and
 import kotlin.io.path.Path
 import kotlin.math.abs
 import kotlin.math.floor
-import kotlin.math.roundToInt
 
 
 object Event {
@@ -327,7 +326,7 @@ object Event {
         }
 
         Events.on(PickupEvent::class.java) {
-            if(it.unit.isPlayer) {
+            if(it.unit != null && it.unit.isPlayer) {
                 val p = findPlayerData(it.unit.player.uuid())
                 if (p != null) {
                     p.currentControlCount++
@@ -426,15 +425,15 @@ object Event {
                     if (data != null) {
                         if (!data.mute) {
                             val isAdmin = Permission.check(data, "vote.pass")
-                            if (voting && message.equals("y", true) && voteStarter != data && !voted.contains(player.uuid())) {
-                                if (isAdmin) {
-                                    isAdminVote = true
-                                } else {
+                            if (voting && message.equals("y", true) && !voted.contains(player.uuid())) {
+                                if (voteStarter != data) {
                                     if (state.rules.pvp && voteTeam == player.team()) {
                                         voted.add(player.uuid())
                                     } else if (!state.rules.pvp) {
                                         voted.add(player.uuid())
                                     }
+                                } else if (isAdmin) {
+                                    isAdminVote = true
                                 }
                                 player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
                             } else if (voting && message.equals("n", true) && isAdmin) {
@@ -990,7 +989,7 @@ object Event {
         }
 
         var colorOffset = 0
-        fun nickcolor(name : String, player : Playerc) {
+        fun nickcolor(name : String) : String {
             val stringBuilder = StringBuilder()
             val colors = arrayOfNulls<String>(11)
             colors[0] = "[#ff0000]"
@@ -1018,7 +1017,7 @@ object Event {
             newName.forEach {
                 stringBuilder.append(it)
             }
-            player.name(stringBuilder.toString())
+            return stringBuilder.toString()
         }
 
         var milsCount = 0
@@ -1355,7 +1354,7 @@ object Event {
 
                                 if (it.animatedName) {
                                     val name = it.name.replace("\\[(.*?)]".toRegex(), "")
-                                    nickcolor(name, it.player)
+                                    it.player.name(nickcolor(name))
                                 } else if (!it.status.containsKey("router")){
                                     it.player.name(it.name)
                                 }
@@ -1687,19 +1686,20 @@ object Event {
                             val color = arrayOf("[scarlet]","[orange]","[yellow]","[green]","[white]","[gray]")
                             val list = LinkedHashMap<String, Int>()
                             database.players.forEach {
-                                val total = it.apm.sum()
-                                list[it.name] = (total.toDouble() / it.apm.size).roundToInt()
+                                val total = it.apm.max()
+                                list[it.player.plainName()] = total
                             }
                             list.toList().sortedBy { (key, _) -> key }.forEach {
                                 val colored = when (it.second) {
-                                    in 31..Int.MAX_VALUE -> color[0]
-                                    in 21..30 -> color[1]
+                                    in 41..Int.MAX_VALUE -> color[0]
+                                    in 21..40 -> color[1]
                                     in 11..20 -> color[2]
                                     in 6..10 -> color[3]
-                                    in 0..5 -> color[4]
+                                    in 1..5 -> color[4]
                                     else -> color[5]
                                 }
-                                apmRanking += "${it.first} [white] - $colored${it.second}[white]\n"
+                                val coloredName = if (it.second >= 41) nickcolor(it.first) else it.first
+                                apmRanking += "$coloredName[orange] > $colored${it.second}[white]\n"
                             }
                             apmRanking = apmRanking.substring(0, apmRanking.length - 1)
                             database.players.forEach {
@@ -1710,6 +1710,7 @@ object Event {
                                             Call.infoPopup(it.player.con(), apmRanking, Time.delta, Align.left, 0, 0, 0, 0)
                                         }
                                     }
+                                    it.player.team().rules().unitBuildSpeedMultiplier
                                 }
                             }
 
