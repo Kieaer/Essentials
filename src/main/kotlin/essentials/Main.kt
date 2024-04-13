@@ -169,6 +169,10 @@ class Main: Plugin() {
             }
 
             if (data != null) {
+                if (e.type == Administration.ActionType.commandUnits) {
+                    data.currentControlCount += e.unitIDs.size
+                }
+
                 when {
                     isHub != null && isHub == state.map.name() -> {
                         return@addActionFilter Permission.check(data, "hub.build")
