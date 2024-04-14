@@ -36,6 +36,7 @@ jobs:
         run: ./gradlew jacocoTestReport
 
       - name: SonarCloud Scan
+        if: always()
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
