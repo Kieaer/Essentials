@@ -39,10 +39,6 @@ import java.lang.Thread.sleep
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.sql.Connection
-import java.sql.DriverManager
-import java.sql.ResultSet
-import java.sql.Statement
 import java.text.MessageFormat
 import java.util.*
 import java.util.zip.ZipFile
@@ -311,7 +307,7 @@ class PluginTest {
 
         // Copy Essentials 14.1 database
         val file = Paths.get("src", "test", "resources", "database-v0.db").toFile()
-        val desc = File(Config.database + ".mv.db")
+        val desc = File("database.mv.db")
         file.copyRecursively(desc, true)
         println(Config.database)
 

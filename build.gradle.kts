@@ -5,6 +5,7 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("com.github.node-gradle.node") version "5.0.0"
     id("maven-publish")
+    id("jacoco")
 }
 
 java {
@@ -184,5 +185,13 @@ publishing {
             version = "v18"
             from(components["java"])
         }
+    }
+}
+
+tasks.jacocoTestReport {
+    dependsOn("test")
+    reports {
+        xml.required.set(true)
+        xml.outputLocation.set(file("build/reports/jacoco/test/jacoco.xml"))
     }
 }

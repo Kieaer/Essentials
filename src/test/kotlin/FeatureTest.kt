@@ -1,3 +1,4 @@
+import ClientCommandTest.Companion.playerData
 import PluginTest.Companion.clientCommand
 import PluginTest.Companion.loadGame
 import PluginTest.Companion.loadPlugin
@@ -14,23 +15,28 @@ import org.junit.Test
 
 
 class FeatureTest {
-    private var done = false
     lateinit var playerData: DB.PlayerData
 
-    @BeforeClass
-    fun setup() {
-        if (!done) {
-            loadGame()
-            loadPlugin()
+    companion object {
+        var done = false
 
-            val p = newPlayer()
-            Vars.player = p.first.self()
-            player = p.first.self()
-            playerData = p.second
+        @BeforeClass
+        @JvmStatic fun setup() {
+            if (!done) {
+                loadGame()
+                loadPlugin()
 
-            done = true
+                val p = newPlayer()
+                Vars.player = p.first.self()
+                player = p.first.self()
+                playerData = p.second
+
+                done = true
+            }
         }
     }
+
+
 
     @Test
     fun pvpBalanceTest() {
