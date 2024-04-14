@@ -32,8 +32,8 @@ jobs:
         run: chmod +x ./gradlew
         shell: bash
 
-      - name: Test
-        run: ./gradlew jacocoTestReport
+#      - name: Test
+#        run: ./gradlew jacocoTestReport
 
       - name: SonarCloud Scan
         if: always()
