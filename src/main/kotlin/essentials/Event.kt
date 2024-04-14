@@ -1938,7 +1938,7 @@ object Event {
 
             val score = if (winner == p.team()) {
                 if (state.rules.attackMode) {
-                    time + (target.currentBuildAttackCount + erekirAttack) - (target.currentBuildDeconstructedCount + target.currentBuildDestroyedCount)
+                    time + (target.currentBuildAttackCount + erekirAttack)
                 } else if (state.rules.pvp) {
                     time + erekirPvP + 5000
                 } else {

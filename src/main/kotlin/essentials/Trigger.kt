@@ -26,6 +26,7 @@ import java.net.*
 import java.nio.ByteBuffer
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
@@ -44,14 +45,14 @@ object Trigger {
             }
 
             if (data.lastLoginDate != null) {
-                if ((LocalDate.now().toEpochDay() - data.lastLoginDate!!.toEpochDay()) == 1L) {
+                if ((LocalDate.now(ZoneOffset.UTC).toEpochDay() - data.lastLoginDate!!.toEpochDay()) == 1L) {
                     data.joinStacks++
                     when {
-                        data.joinStacks % 3 == 0 -> data.expMultiplier = 1.2
-                        data.joinStacks % 7 == 0 -> data.expMultiplier = 1.5
-                        data.joinStacks % 30 == 0 -> data.expMultiplier = 2.5
+                        data.joinStacks <= 3 -> data.expMultiplier = 1.5
+                        data.joinStacks <= 7 -> data.expMultiplier = 2.5
+                        data.joinStacks <= 15 -> data.expMultiplier = 5.0
                     }
-                } else {
+                } else if ((LocalDate.now(ZoneOffset.UTC).toEpochDay() - data.lastLoginDate!!.toEpochDay()) >= 2L) {
                     data.joinStacks = 0
                 }
             }
