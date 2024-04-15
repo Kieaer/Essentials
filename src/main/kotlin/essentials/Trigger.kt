@@ -48,9 +48,9 @@ object Trigger {
                 if ((LocalDate.now(ZoneOffset.UTC).toEpochDay() - data.lastLoginDate!!.toEpochDay()) == 1L) {
                     data.joinStacks++
                     when {
-                        data.joinStacks <= 3 -> data.expMultiplier = 1.5
-                        data.joinStacks <= 7 -> data.expMultiplier = 2.5
-                        data.joinStacks <= 15 -> data.expMultiplier = 5.0
+                        data.joinStacks >= 15 -> data.expMultiplier = 5.0
+                        data.joinStacks >= 7 -> data.expMultiplier = 2.5
+                        data.joinStacks >= 3 -> data.expMultiplier = 1.5
                     }
                 } else if ((LocalDate.now(ZoneOffset.UTC).toEpochDay() - data.lastLoginDate!!.toEpochDay()) >= 2L) {
                     data.joinStacks = 0
