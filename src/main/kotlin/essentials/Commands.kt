@@ -523,20 +523,10 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             }
             when (arg[0]) {
                 "set" -> {
-                    if (!Permission.check(data, "exp.admin")) {
-                        err(NO_PERMISSION)
-                        return
-                    }
-
                     set(arg[1].toIntOrNull(), "set")
                 }
 
                 "hide" -> {
-                    if (!Permission.check(data, "exp.admin")) {
-                        err(NO_PERMISSION)
-                        return
-                    }
-
                     if (arg.size == 2) {
                         val target = findPlayers(arg[1])
                         if (target != null) {
@@ -561,20 +551,10 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
                 }
 
                 "add" -> {
-                    if (!Permission.check(data, "exp.admin")) {
-                        err(NO_PERMISSION)
-                        return
-                    }
-
                     set(arg[1].toIntOrNull(), "add")
                 }
 
                 "remove" -> {
-                    if (!Permission.check(data, "exp.admin")) {
-                        err(NO_PERMISSION)
-                        return
-                    }
-
                     set(arg[1].toIntOrNull(), "remove")
                 }
 
