@@ -45,7 +45,7 @@ object Trigger {
 
             if (data.lastLoginDate != null) {
                 if ((LocalDate.now().toEpochDay() - data.lastLoginDate!!.toEpochDay()) == 1L) {
-                    data.joinStacks++
+                    data.joinStacks += 1
                     when {
                         data.joinStacks >= 15 -> data.expMultiplier = 5.0
                         data.joinStacks >= 7 -> data.expMultiplier = 2.5
