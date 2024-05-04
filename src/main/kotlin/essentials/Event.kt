@@ -753,8 +753,10 @@ object Event {
             }
 
             val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-            json.removeAll { js ->
-                js.asObject()["ip"].asArray().contains(JsonValue.valueOf(ip)) || js.asObject()["id"].asString() == it.uuid
+            json.forEachIndexed { index, jsonValue ->
+                if(jsonValue.asObject()["ip"].asArray().contains(JsonValue.valueOf(ip)) || jsonValue.asObject()["id"].asString() == it.uuid) {
+                    json.remove(index)
+                }
             }
 
             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
@@ -774,7 +776,6 @@ object Event {
             json.forEachIndexed { index, jsonValue ->
                 if (jsonValue.asObject()["ip"].asArray().contains(JsonValue.valueOf(it.ip))) {
                     json.remove(index)
-                    return@forEachIndexed
                 }
             }
             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
