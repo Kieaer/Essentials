@@ -753,9 +753,11 @@ object Event {
             }
 
             val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-            json.forEachIndexed { index, jsonValue ->
+            val ir = json.iterator()
+            while (ir.hasNext()) {
+                val jsonValue = ir.next()
                 if(jsonValue.asObject()["ip"].asArray().contains(JsonValue.valueOf(ip)) || jsonValue.asObject()["id"].asString() == it.uuid) {
-                    json.remove(index)
+                    ir.remove()
                 }
             }
 
@@ -773,9 +775,11 @@ object Event {
             }
 
             val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-            json.forEachIndexed { index, jsonValue ->
+            val ir = json.iterator()
+            while (ir.hasNext()) {
+                val jsonValue = ir.next()
                 if (jsonValue.asObject()["ip"].asArray().contains(JsonValue.valueOf(it.ip))) {
-                    json.remove(index)
+                    ir.remove()
                 }
             }
             Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
@@ -959,8 +963,7 @@ object Event {
                     saveDirectory.child("rollback.msav")
                 }
 
-                if (savePath != null) {
-
+                if (savePath.exists()) {
                     try {
                         val mode = state.rules.mode()
                         val reloader = WorldReloader()
@@ -984,7 +987,7 @@ object Event {
                     }
                     if (map == null) send("command.vote.back.done")
                 } else {
-                    send("command.vote.back.fail")
+                    send("command.vote.failed")
                 }
             }
         }
