@@ -178,7 +178,13 @@ configurations.all {
     }
 }
 
+tasks.test {
+    useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
 tasks.jacocoTestReport {
+    dependsOn("test")
     reports {
         xml.required.set(true)
         xml.outputLocation.set(file("build/reports/jacoco/test/jacoco.xml"))
