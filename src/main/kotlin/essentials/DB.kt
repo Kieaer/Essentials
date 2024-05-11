@@ -1,5 +1,6 @@
 package essentials
 
+import arc.Core
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
@@ -17,8 +18,6 @@ import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.system.exitProcess
-
 
 class DB {
     val players : Seq<PlayerData> = Seq()
@@ -81,11 +80,15 @@ class DB {
                 try {
                     DriverManager.getConnection("jdbc:h2:${Config.database}", "sa", "").use { conn ->
                         conn.createStatement().use { stmt ->
-                            stmt.execute("ALTER TABLE PLAYER ADD strict bool default false")
+                            stmt.execute("ALTER TABLE player ADD strict bool default false")
                             stmt.executeUpdate("UPDATE player SET \"lastLoginDate\" = NULL WHERE \"lastLoginDate\" = 'null'")
                             stmt.executeUpdate("UPDATE player SET \"lastLeaveDate\" = NULL WHERE \"lastLeaveDate\" = 'null'")
                             stmt.executeUpdate("UPDATE player SET \"duplicateName\" = NULL WHERE \"duplicateName\" = 'null'")
                             stmt.executeUpdate("UPDATE player SET status='{}'")
+                            val lowerCases = arrayOf("name", "level", "exp")
+                            for(i in lowerCases) {
+                                stmt.execute("ALTER TABLE player ALTER COLUMN ${i.uppercase()} RENAME TO \"$i\"")
+                            }
 
                             val old = Database.connect("jdbc:h2:${Config.database}", "org.h2.Driver", "sa", "")
                             migrateData = getAll()
@@ -185,7 +188,7 @@ class DB {
                     }
                 } else {
                     Log.err(Bundle()["event.plugin.db.wrong"])
-                    exitProcess(1)
+                    Core.app.exit()
                 }
             }
         } catch (e : PSQLException) {
@@ -195,10 +198,10 @@ class DB {
                 e.printStackTrace()
                 Log.err(Bundle()["event.plugin.db.account.wrong"])
             }
-            exitProcess(1)
+            Core.app.exit()
         } catch (e : Exception) {
             e.printStackTrace()
-            exitProcess(1)
+            Core.app.exit()
         }
     }
 
