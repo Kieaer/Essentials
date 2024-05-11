@@ -61,6 +61,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.random.RandomGenerator
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -93,7 +94,7 @@ object Event {
     var worldHistory = Seq<TileLog>()
     var voterCooltime = ObjectMap<String, Int>()
 
-    private var random = Random()
+    private var random = RandomGenerator.of("random")
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     var blockExp = ObjectMap<String, Int>()
     var dosBlacklist = ObjectSet<String>()
@@ -557,7 +558,7 @@ object Event {
                             }
                         }
 
-                        if (!state.rules.infiniteResources && it.tile != null && it.tile.build != null && it.tile.build.maxHealth() == it.tile.block().health.toFloat()) {
+                        if (!state.rules.infiniteResources && it.tile != null && it.tile.build != null && it.tile.build.maxHealth() == it.tile.block().health.toFloat() && (!buf.isEmpty && buf.last().tile != it.tile.block().name)) {
                             target.blockPlaceCount++
                             target.exp += blockExp[block.name]
                             target.currentExp += blockExp[block.name]
@@ -963,32 +964,28 @@ object Event {
                     saveDirectory.child("rollback.msav")
                 }
 
-                if (savePath.exists()) {
-                    try {
-                        val mode = state.rules.mode()
-                        val reloader = WorldReloader()
+                try {
+                    val mode = state.rules.mode()
+                    val reloader = WorldReloader()
 
-                        reloader.begin()
+                    reloader.begin()
 
-                        if (map != null) {
-                            world.loadMap(map, map.applyRules(mode))
-                        } else {
-                            SaveIO.load(savePath)
-                        }
-
-                        state.rules = state.map.applyRules(mode)
-
-                        logic.play()
-                        reloader.end()
-
-                        savePath.delete()
-                    } catch (t: Exception) {
-                        t.printStackTrace()
+                    if (map != null) {
+                        world.loadMap(map, map.applyRules(mode))
+                    } else {
+                        SaveIO.load(savePath)
                     }
-                    if (map == null) send("command.vote.back.done")
-                } else {
-                    send("command.vote.failed")
+
+                    state.rules = state.map.applyRules(mode)
+
+                    logic.play()
+                    reloader.end()
+
+                    savePath.delete()
+                } catch (t: Exception) {
+                    t.printStackTrace()
                 }
+                if (map == null) send("command.vote.back.done")
             }
         }
 
@@ -1543,7 +1540,6 @@ object Event {
                                                     send("command.vote.random.done")
                                                     Thread {
                                                         var map: Map
-                                                        val random = Random()
                                                         send("command.vote.random.is")
                                                         sleep(3000)
                                                         when (random.nextInt(7)) {
@@ -1590,7 +1586,7 @@ object Event {
                                                                             state.teams.cores(voteStarter!!.player.team())
                                                                                 .first().items.add(
                                                                                 it,
-                                                                                Random().nextInt(2000)
+                                                                                random.nextInt(2000)
                                                                             )
                                                                         }
                                                                     }
@@ -1600,7 +1596,7 @@ object Event {
                                                                             state.teams.cores(Team.sharded)
                                                                                 .first().items.add(
                                                                                 it,
-                                                                                Random().nextInt(2000)
+                                                                                random.nextInt(2000)
                                                                             )
                                                                         }
                                                                     }

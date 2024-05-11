@@ -6,7 +6,6 @@ import PluginTest.Companion.loadGame
 import PluginTest.Companion.loadPlugin
 import PluginTest.Companion.log
 import PluginTest.Companion.newPlayer
-import PluginTest.Companion.path
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
@@ -23,7 +22,7 @@ import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
-import org.junit.AfterClass
+import net.datafaker.Faker
 import org.junit.BeforeClass
 import org.junit.Test
 import org.mindrot.jbcrypt.BCrypt
@@ -89,8 +88,10 @@ class ClientCommandTest {
 
         // Change other player name
         val registeredUser = newPlayer()
-        clientCommand.handleMessage("/changename dummy ${registeredUser.first.name()}", player)
-        assertEquals("dummy", registeredUser.first.name())
+        val randomName = Faker().name().lastName()
+        clientCommand.handleMessage("/changename $randomName ${registeredUser.first.name()}", player)
+        sleep(100)
+        assertEquals(randomName, database.players.find { p -> p.uuid == registeredUser.second.uuid }.name)
         leavePlayer(registeredUser.first)
 
         // If target player not found
@@ -312,7 +313,7 @@ class ClientCommandTest {
         next = true
 
         // Un-hide other players' rankings in the ranking list
-        clientCommand.handleMessage("/exp hide ${dummy.second.entityid}", player)
+        clientCommand.handleMessage("/exp hide ${dummy.second.name}", player)
         database.update(dummy.first.uuid(), dummy.second)
         assertEquals(Bundle()["command.exp.ranking.unhide"], playerData.lastSentMessage)
         while (next) {

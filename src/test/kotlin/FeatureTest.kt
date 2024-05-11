@@ -59,7 +59,6 @@ class FeatureTest {
          }*/
 
         clientCommand.handleMessage("/status", player)
-        println(playerData.lastSentMessage)
 
         println("core 개수: " + Vars.state.teams.active.size)
 
@@ -70,7 +69,7 @@ class FeatureTest {
         println("활성화된 팀 : $s")
 
         var players = mutableListOf<Pair<Team, Double>>()
-        database.players.forEach { it ->
+        database.players.forEach {
             val rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
             players += Pair(it.player.team(), if (rate.equals(Double.NaN)) 0.0 else rate)
         }
@@ -88,6 +87,6 @@ class FeatureTest {
         }
 
         println("플레이어 인원 : " + Groups.player.size())
-        println("플레이어 비율 : ${players.toString()}")
+        println("플레이어 비율 : $players")
     }
 }

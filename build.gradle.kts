@@ -6,6 +6,7 @@ plugins {
     id("com.github.node-gradle.node") version "5.0.0"
     id("maven-publish")
     id("jacoco")
+    id("org.sonarqube") version "4.4.1.3373"
 }
 
 java {
@@ -177,21 +178,18 @@ configurations.all {
     }
 }
 
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = "com.github.kieaer"
-            artifactId = "Essentials"
-            version = "v18"
-            from(components["java"])
-        }
-    }
-}
-
 tasks.jacocoTestReport {
-    dependsOn("test")
     reports {
         xml.required.set(true)
         xml.outputLocation.set(file("build/reports/jacoco/test/jacoco.xml"))
+    }
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "Kieaer_Essentials")
+        property("sonar.organization", "kieaer")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacoco.xml")
     }
 }

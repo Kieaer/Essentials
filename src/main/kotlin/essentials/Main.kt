@@ -173,19 +173,19 @@ class Main: Plugin() {
                     data.currentControlCount += e.unitIDs.size
                 }
 
-                when {
+                return@addActionFilter when {
                     isHub != null && isHub == state.map.name() -> {
-                        return@addActionFilter Permission.check(data, "hub.build")
+                        Permission.check(data, "hub.build")
                     }
                     data.strict -> {
-                        return@addActionFilter false
+                        false
                     }
                     Config.authType == Config.AuthType.Discord && data.discord.isNullOrEmpty() -> {
                         e.player.sendMessage(Bundle(e.player.locale)["event.discord.not.registered"])
-                        return@addActionFilter false
+                        false
                     }
                     else -> {
-                        return@addActionFilter true
+                        true
                     }
                 }
             }

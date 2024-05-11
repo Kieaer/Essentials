@@ -59,6 +59,7 @@ import java.text.MessageFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
+import java.util.random.RandomGenerator
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
@@ -261,7 +262,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
 
             fun change(data: DB.PlayerData) {
                 transaction {
-                    if (DB.Player.select(DB.Player.name).where(DB.Player.name eq(arg[0])).fetchSize!! > 0) {
+                    if (DB.Player.select(DB.Player.name).where(DB.Player.name eq (arg[0])).toList().isNotEmpty()) {
                         err("command.changename.exists", arg[0])
                     } else {
                         Events.fire(PlayerNameChanged(data.name, arg[0], data.uuid))
@@ -2228,7 +2229,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             }
             try {
                 val duration = arg[1].toInt()
-                Call.createWeather(weather, (Math.random() * 100).toFloat(), (duration * 8).toFloat(), 10f, 10f)
+                Call.createWeather(weather, (RandomGenerator.of("random").nextDouble() * 100).toFloat(), (duration * 8).toFloat(), 10f, 10f)
             } catch (e : NumberFormatException) {
                 err("command.weather.not.number")
             }
