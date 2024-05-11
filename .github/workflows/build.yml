@@ -33,4 +33,8 @@ jobs:
         shell: bash
 
       - name: Test
+        run: ./gradlew test
+
+      - name: Upload SonarCloud
+        if: always()
         run: ./gradlew jacocoTestReport sonar -Dsonar.token=${{ secrets.SONAR_TOKEN }}
