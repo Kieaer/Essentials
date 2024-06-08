@@ -1,0 +1,7 @@
+{
+  "name": "EssentialChat",
+  "author": "Kieaer",
+  "main": "essentials.chat.Main",
+  "description": "Add chat feature in Essential plugin.",
+  "version": "v20"
+}

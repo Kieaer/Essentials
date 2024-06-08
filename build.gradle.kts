@@ -2,6 +2,7 @@ import com.github.gradle.node.npm.task.NpmTask
 
 plugins {
     kotlin("jvm") version "1.9.20-RC2"
+    id("java")
     id("com.github.johnrengelman.shadow") version "8.1.1"
     id("com.github.node-gradle.node") version "5.0.0"
     id("maven-publish")
@@ -55,6 +56,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
 
     implementation(files("libs/lingua.jar"))
+    implementation("org.slf4j:slf4j-api:2.0.13")
     implementation("org.slf4j:slf4j-nop:$slf4jVersion")
     implementation("com.github.lalyos:jfiglet:$jfigletVersion")
 

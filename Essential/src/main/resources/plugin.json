@@ -1,0 +1,7 @@
+{
+  "name": "Essential",
+  "author": "Kieaer",
+  "main": "essential.core.Essential",
+  "description": "More commands and features.",
+  "version": "v20"
+}

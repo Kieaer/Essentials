@@ -1,0 +1,8 @@
+{
+  "name": "EssentialAntiCheat",
+  "author": "Kieaer",
+  "main": "essential.anti.EssentialAntiCheat",
+  "description": "Add anti-cheat feature in Essential plugin.",
+  "version": "v20",
+  "dependencies": [ "Essential" ]
+}
