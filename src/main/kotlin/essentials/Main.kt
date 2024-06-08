@@ -20,6 +20,8 @@ import org.hjson.Stringify
 import java.io.*
 import java.net.ServerSocket
 import java.net.SocketException
+import java.net.URI
+import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
@@ -83,24 +85,14 @@ class Main: Plugin() {
             root.child("data").mkdirs()
             var isUpdate = false
 
-            if (PluginData["vpnListDate"] == null || (PluginData["vpnListDate"]!!.toLong() + 8.64e+7) < System.currentTimeMillis()) {
+            if (!root.child("data/ipv4.txt").exists() || PluginData["vpnListDate"] == null || (PluginData["vpnListDate"]!!.toLong() + 8.64e+7) <= System.currentTimeMillis()) {
                 PluginData.status.put("vpnListDate", System.currentTimeMillis().toString())
                 isUpdate = true
             }
             PluginData.save(false)
 
             if (isUpdate) {
-                Fi("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").read().use { b ->
-                    BufferedInputStream(b).use { bis ->
-                        FileOutputStream(root.child("data/ipv4.txt").absolutePath()).use { fos ->
-                            val data = ByteArray(1024)
-                            var count: Int
-                            while (bis.read(data, 0, 1024).also { count = it } != -1) {
-                                fos.write(data, 0, count)
-                            }
-                        }
-                    }
-                }
+                root.child("data/ipv4.txt").writeString(URI("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt").toURL().readText())
             }
 
             root.child("data/ipv4.txt").file().forEachLine {

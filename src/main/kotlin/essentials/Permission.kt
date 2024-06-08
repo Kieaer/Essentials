@@ -207,10 +207,15 @@ object Permission {
                 }
             } else {
                 c.permission = b.getString("group", default)
-                // todo 멀티스레드 netserver iterator 오류
-                c.name = b.getString("name", netServer.admins.findByName(c.player.uuid()).first().lastName)
-                c.player.admin(b.getBoolean("admin", false))
-                c.player.name(b.getString("name", netServer.admins.findByName(c.player.uuid()).first().lastName))
+                if (!netServer.admins.findByName(c.player.uuid()).isEmpty) {
+                    c.name = b.getString("name", netServer.admins.findByName(c.player.uuid()).first().lastName)
+                    c.player.admin(b.getBoolean("admin", false))
+                    c.player.name(b.getString("name", netServer.admins.findByName(c.player.uuid()).first().lastName))
+                } else {
+                    c.name = b.getString("name", c.name)
+                    c.player.admin(b.getBoolean("admin", false))
+                    c.player.name(b.getString("name", c.name))
+                }
                 database.queue(c)
             }
         }

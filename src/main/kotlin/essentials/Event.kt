@@ -94,7 +94,7 @@ object Event {
     var worldHistory = Seq<TileLog>()
     var voterCooltime = ObjectMap<String, Int>()
 
-    private var random = RandomGenerator.of("random")
+    private var random = RandomGenerator.of("Random")
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     var blockExp = ObjectMap<String, Int>()
     var dosBlacklist = ObjectSet<String>()

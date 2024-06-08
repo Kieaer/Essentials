@@ -28,6 +28,7 @@ import mindustry.world.Tile
 import net.datafaker.Faker
 import org.hjson.JsonArray
 import org.hjson.JsonObject
+import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any
@@ -184,6 +185,10 @@ class PluginTest {
             Events.fire(ServerLoadEvent())
         }
 
+        fun stopPlugin() {
+            Core.app.dispose()
+        }
+
         fun runPost() {
             MockitoAnnotations.openMocks(this)
             Core.app = mockApplication
@@ -299,6 +304,7 @@ class PluginTest {
     fun startPlugin() {
         loadGame()
         loadPlugin()
+        stopPlugin()
     }
 
     @Test
@@ -312,6 +318,7 @@ class PluginTest {
         println(Config.database)
 
         loadPlugin()
+        stopPlugin()
     }
 
     @Test
@@ -326,5 +333,6 @@ class PluginTest {
         println(Config.database)
 
         loadPlugin()
+        stopPlugin()
     }
 }

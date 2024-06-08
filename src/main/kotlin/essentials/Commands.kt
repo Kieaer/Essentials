@@ -2229,7 +2229,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             }
             try {
                 val duration = arg[1].toInt()
-                Call.createWeather(weather, (RandomGenerator.of("random").nextDouble() * 100).toFloat(), (duration * 8).toFloat(), 10f, 10f)
+                Call.createWeather(weather, (RandomGenerator.of("Random").nextDouble() * 100).toFloat(), (duration * 8).toFloat(), 10f, 10f)
             } catch (e : NumberFormatException) {
                 err("command.weather.not.number")
             }
