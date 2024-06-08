@@ -13,11 +13,13 @@ import org.hjson.JsonValue
 import java.util.*
 
 
-class Essential : Plugin() {
+class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
-
         lateinit var conf: Config
+
+        @JvmField
+        val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         val bundle = Bundle()
     }
 
@@ -26,13 +28,12 @@ class Essential : Plugin() {
         bundle.prefix = "[Essential]"
     }
 
-    val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-
     override fun init() {
-        Log.debug(bundle["event.plugin.starting"])
+        Log.info(bundle["event.plugin.starting"])
+
         // 플러그인 설정
         if (!root.child(CONFIG_PATH).exists()) {
-            root.child(CONFIG_PATH).write(Essential::class.java.getResourceAsStream("/config.yaml")!!, false)
+            root.child(CONFIG_PATH).write(this::class.java.getResourceAsStream("/config.yaml")!!, false)
         }
 
         conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())
@@ -48,17 +49,27 @@ class Essential : Plugin() {
         PluginData.load()
 
         // 업데이트 확인
+        checkUpdate()
+
+        Log.info(bundle["event.plugin.loaded"])
+    }
+
+    override fun registerServerCommands(handler: CommandHandler?) {
+        super.registerServerCommands(handler)
+    }
+
+    override fun registerClientCommands(handler: CommandHandler?) {
+        super.registerClientCommands(handler)
+    }
+
+    private fun checkUpdate() {
         if (conf.plugin.autoUpdate) {
-            Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest").timeout(1000).error { _ -> Log.warn(
-                bundle["event.plugin.update.check.failed"]) }.block {
+            Http.get("https://api.github.com/repos/kieaer/Essentials/releases/latest").timeout(1000)
+                .error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }
+                .block {
                 if (it.status == Http.HttpStatus.OK) {
                     val json = JsonValue.readJSON(it.resultAsString).asObject()
-                    Vars.mods.list().forEach { mod ->
-                        if (mod.meta.name == "Essentials") {
-                            PluginData.pluginVersion = mod.meta.version
-                            return@forEach
-                        }
-                    }
+                    PluginData.pluginVersion = JsonValue.readJSON(this::class.java.getResourceAsStream("/plugin.json")!!.reader().readText()).asObject()["version"].asString()
                     val latest = DefaultArtifactVersion(json.getString("tag_name", PluginData.pluginVersion))
                     val current = DefaultArtifactVersion(PluginData.pluginVersion)
 
@@ -77,14 +88,5 @@ class Essential : Plugin() {
                 }
             }
         }
-        Log.debug(bundle["event.plugin.loaded"])
-    }
-
-    override fun registerServerCommands(handler: CommandHandler?) {
-        super.registerServerCommands(handler)
-    }
-
-    override fun registerClientCommands(handler: CommandHandler?) {
-        super.registerClientCommands(handler)
     }
 }

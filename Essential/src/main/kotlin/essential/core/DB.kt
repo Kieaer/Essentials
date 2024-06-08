@@ -5,7 +5,7 @@ import arc.files.Fi
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
-import essential.core.Essential.Companion.conf
+import essential.core.Main.Companion.conf
 import essential.core.exception.DatabaseNotSupportedException
 import mindustry.gen.Playerc
 import org.hjson.JsonObject

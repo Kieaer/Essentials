@@ -1,0 +1,15 @@
+pvp:
+  peace:
+    # Sets it so that no damage can be inflicted for a certain period of time immediately after starting PvP. (default: false)
+    enabled: false
+    # Time unit is seconds (default: 300)
+    time: 300
+  border:
+    # If a unit leaves the world border, it is destroyed.
+    enabled: false
+
+account:
+  # If this feature is enabled, players will need to log in to account using the auth-type value to play. (default: false)
+  enabled: false
+  # Available method: password, discord
+  auth-type: "password"

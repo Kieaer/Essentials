@@ -5,9 +5,10 @@ plugins {
 sequenceOf(
     "",
     "AntiCheat",
-    "Chat"
+    "Chat",
+    "Protect",
+    "Bridge"
 ).forEach {
     include(":Essential$it")
     project(":Essential$it").projectDir = file("Essential$it")
 }
-include("EssentialChat")

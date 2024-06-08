@@ -7,7 +7,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import arc.util.Log.LogLevel
 import essential.core.Bundle
-import essential.core.Essential
+import essential.core.Main
 import junit.framework.TestCase.assertNotNull
 import mindustry.Vars
 import mindustry.content.UnitTypes
@@ -39,7 +39,7 @@ import kotlin.test.Test
 
 class PluginTest {
     companion object {
-        private lateinit var essential : Essential
+        private lateinit var essential : Main
         private val r = Random()
         lateinit var player : Player
         lateinit var path : Fi
@@ -148,7 +148,7 @@ class PluginTest {
         fun loadPlugin() {
             path.child("mods/Essentials").deleteDirectory()
 
-            essential = Essential()
+            essential = Main()
 
             essential.init()
             essential.registerClientCommands(clientCommand)

@@ -1,0 +1,19 @@
+# Use unix iptables command instead in-game embedded ban function
+# Only unix/linux supported.
+iptables: false
+
+# Block IP bands for known databases or VPNs.
+vpn: false
+
+# Block foo's client
+foo: true
+
+# Prevent players from changing their nicknames.
+# This is useful for catching people who change their nicknames frequently and are grieving.
+fixed-name: true
+
+# Allow mobile users to access the server.
+mobile: true
+
+# Blocks access to all users except Steam users.
+steam-only: false
