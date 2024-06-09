@@ -20,6 +20,14 @@ class Main : Plugin() {
 
         @JvmField
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+        @JvmField
+        val players : ArrayList<DB.PlayerData> = arrayListOf()
+
+        @JvmStatic
+        fun findPlayerByUuid(uuid: String): DB.PlayerData? {
+            return players.find { e -> e.uuid == uuid }
+        }
+
         val bundle = Bundle()
     }
 

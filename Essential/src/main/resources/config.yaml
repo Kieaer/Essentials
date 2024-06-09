@@ -1,10 +1,8 @@
 plugin:
   # Plugin language (default: en)
   lang: en
-
   # Check for plugin update from GitHub (default: true)
   autoUpdate: true
-
   # Database URL
   # Example) postgresql://127.0.0.1:5432/essentials
   database:

@@ -29,6 +29,7 @@ import java.util.*
 class DB {
     lateinit var db: Database
     val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+    val players : List<PlayerData> = listOf()
 
     fun load() {
         val cacheDir = File(System.getProperty("java.io.tmpdir"))

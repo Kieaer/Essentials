@@ -5,11 +5,18 @@ pvp:
     # Time unit is seconds (default: 300)
     time: 300
   border:
-    # If a unit leaves the world border, it is destroyed.
+    # If a unit leaves the world border, it is destroyed. (default: false)
     enabled: false
+  # If the team loses, all buildings are destroyed. (default: false)
+  destroy-core: false
+  # Ensures the core is never destroyed. (default: false)
+  # This is useful in certain game modes or lobby servers.
+  unbreakable-core: false
 
 account:
   # If this feature is enabled, players will need to log in to account using the auth-type value to play. (default: false)
   enabled: false
   # Available method: password, discord
   auth-type: "password"
+  # If you set auth-type to discord, you can enter the discord invite link below to be directed to this discord address.
+  discord-url: ""
