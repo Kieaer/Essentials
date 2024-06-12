@@ -6,11 +6,19 @@ import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
 import com.charleskorn.kaml.Yaml
+import essential.core.Event.findPlayerData
+import essential.core.annotation.ClientCommand
+import essential.core.annotation.ServerCommand
+import inside.commands.CommandManager
 import mindustry.Vars
+import mindustry.gen.Call
+import mindustry.gen.Playerc
 import mindustry.mod.Plugin
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
 import java.util.*
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.functions
 
 
 class Main : Plugin() {
@@ -22,11 +30,15 @@ class Main : Plugin() {
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         @JvmField
         val players : ArrayList<DB.PlayerData> = arrayListOf()
+        @JvmField
+        val database = DB()
 
         @JvmStatic
         fun findPlayerByUuid(uuid: String): DB.PlayerData? {
             return players.find { e -> e.uuid == uuid }
         }
+
+        val commandManager = CommandManager()
 
         val bundle = Bundle()
     }
@@ -48,7 +60,6 @@ class Main : Plugin() {
         bundle.locale = Locale(conf.plugin.lang)
 
         // DB 설정
-        val database = DB()
         database.load()
         database.connect()
         database.create()
@@ -62,12 +73,34 @@ class Main : Plugin() {
         Log.info(bundle["event.plugin.loaded"])
     }
 
-    override fun registerServerCommands(handler: CommandHandler?) {
-        super.registerServerCommands(handler)
+    override fun registerServerCommands(handler: CommandHandler) {
+        Commands::class.functions.forEach { function ->
+            function.findAnnotation<ServerCommand>()?.let { annotation ->
+                handler.register(annotation.name, annotation.parameter, annotation.description) { args ->
+                    function.call(Commands::class, *args)
+                }
+            }
+        }
     }
 
-    override fun registerClientCommands(handler: CommandHandler?) {
-        super.registerClientCommands(handler)
+
+    override fun registerClientCommands(handler: CommandHandler) {
+        Commands::class.functions.forEach { function ->
+            function.findAnnotation<ClientCommand>()?.let { annotation ->
+                handler.register(annotation.name, annotation.parameter, annotation.description) { args, player : Playerc ->
+                    val data = findPlayerData(player.uuid()) ?: DB.PlayerData()
+                    if (checkPermission(data, annotation.name)) {
+                        function.call(Commands::class, player, data, *args)
+                    } else {
+                        if (annotation.name == "js") {
+                            Call.kick(player.con(), "js no permission")
+                        } else {
+                            player.sendMessage("no permission 4 u")
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun checkUpdate() {
@@ -95,6 +128,15 @@ class Main : Plugin() {
                     return@forEach
                 }
             }
+        }
+    }
+
+    fun checkPermission(data: DB.PlayerData, command: String) : Boolean {
+        if (!Permission.check(data, command)) {
+            Log.err("command.permission.false")
+            return false
+        } else {
+            return true
         }
     }
 }

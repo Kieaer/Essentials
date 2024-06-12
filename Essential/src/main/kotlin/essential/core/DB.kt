@@ -21,9 +21,12 @@ import java.net.URL
 import java.net.URLClassLoader
 import java.sql.Driver
 import java.sql.DriverManager
+import java.text.MessageFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 
 class DB {
@@ -200,7 +203,7 @@ class DB {
         var mute: Boolean = false
         var accountID: String = "none"
         var accountPW: String = "none"
-        var status: ObjectMap<String, String> = ObjectMap()
+        var status = HashMap<String, String>()
         var discord: String? = null
         var effectLevel: Int? = -1
         var effectColor: String? = null
@@ -244,6 +247,24 @@ class DB {
 
         // Use plugin test only
         var lastSentMessage: String = ""
+
+        /**
+         * Bundle 파일에서 [message] 값을 경고 메세지로 플레이어에게 보냄
+         */
+        fun err(message: String, vararg parameters: Any) {
+            val text = "[scarlet]" + Bundle(languageTag).get(message, *parameters)
+            player.sendMessage(text)
+            lastSentMessage = text
+        }
+
+        /**
+         * Bundle 파일에서 [message] 값을 플레이어에게 보냄
+         */
+        fun send(message: String, vararg parameters: Any) {
+            val text = Bundle(languageTag).get(message, *parameters)
+            player.sendMessage(text)
+            lastSentMessage = text
+        }
     }
 
     fun createData(data: PlayerData) {

@@ -30,6 +30,7 @@ public class Main extends Plugin {
             root.child(CONFIG_PATH).write(this.getClass().getResourceAsStream("/config_protect.yaml"), false);
         }
 
+        // 설정 파일 읽기
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
             conf = mapper.readValue(root.child("config/config_protect.yaml").file(), Config.class);
@@ -45,8 +46,11 @@ public class Main extends Plugin {
                 if (action.type == Administration.ActionType.commandUnits) {
                     data.setCurrentControlCount(data.getCurrentControlCount() + 1);
                 }
+                // 계정 기능이 켜져있는 경우
                 if (conf.getAccount().isEnabled()) {
+                    // Discord 인증을 사용할 경우
                     if (Objects.requireNonNull(conf.getAccount().getAuthType()) == Config.Account.AuthType.Discord) {
+                        // 계정에 Discord 인증이 안되어 있는 경우
                         if (data.getDiscord() == null) {
                             action.player.sendMessage(new Bundle(action.player.locale).get("event.discord.not.registered"));
                             return false;

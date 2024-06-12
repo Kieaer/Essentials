@@ -1,5 +1,6 @@
 package essential.core
 
+import arc.struct.ArrayMap
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import mindustry.Vars
@@ -18,13 +19,13 @@ object PluginData {
     var playtime = 0L
     var pluginVersion = ""
 
-    var warpZones = Seq<WarpZone>()
-    var warpBlocks = Seq<WarpBlock>()
-    var warpCounts = Seq<WarpCount>()
-    var warpTotals = Seq<WarpTotal>()
-    var blacklist = Seq<Pattern>()
-    var banned = Seq<Banned>()
-    var status = ObjectMap<String, String>()
+    var warpZones : ArrayList<WarpZone> = arrayListOf()
+    var warpBlocks : ArrayList<WarpBlock> = arrayListOf()
+    var warpCounts : ArrayList<WarpCount> = arrayListOf()
+    var warpTotals : ArrayList<WarpTotal> = arrayListOf()
+    var blacklist : ArrayList<Pattern> = arrayListOf()
+    var banned : ArrayList<Banned> = arrayListOf()
+    var status : ArrayList<Pair<String, String>> = arrayListOf()
 
     var sudoPassword = ""
 
@@ -150,7 +151,7 @@ object PluginData {
 
         val json = JsonObject()
         status.forEach {
-            json.add(it.key, it.value)
+            json.add(it.first, it.second)
         }
         data.add("status", json.toString())
 
@@ -170,7 +171,7 @@ object PluginData {
     }
 
     operator fun get(key: String): String? {
-        return status[key]
+        return status.find { e -> e.first == key }?.second
     }
 
     fun load() {
@@ -179,13 +180,13 @@ object PluginData {
                 if (DB.Data.selectAll().firstOrNull() == null) {
                     save(true)
                 } else {
-                    warpZones = Seq<WarpZone>()
-                    warpBlocks = Seq<WarpBlock>()
-                    warpCounts = Seq<WarpCount>()
-                    warpTotals = Seq<WarpTotal>()
-                    blacklist = Seq<Pattern>()
-                    banned = Seq<Banned>()
-                    status = ObjectMap<String, String>()
+                    warpZones = arrayListOf()
+                    warpBlocks = arrayListOf()
+                    warpCounts = arrayListOf()
+                    warpTotals = arrayListOf()
+                    blacklist = arrayListOf()
+                    banned = arrayListOf()
+                    status = arrayListOf()
 
                     DB.Data.selectAll().first().run {
                         val data = JsonObject.readJSON(this[DB.Data.data]).asObject()
@@ -261,7 +262,7 @@ object PluginData {
                         }
 
                         JsonArray.readJSON(data["status"].asString().replace("\\", "")).asObject().forEach {
-                            status.put(it.name, it.value.asString())
+                            status.add(Pair(it.name, it.value.asString()))
                         }
                     }
                 }
