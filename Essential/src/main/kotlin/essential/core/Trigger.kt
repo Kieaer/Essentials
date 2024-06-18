@@ -1,13 +1,15 @@
-package essentials
+package essential.core
 
 import arc.Core
+import arc.Events
 import arc.func.Prov
 import arc.struct.Seq
 import arc.util.Log
 import arc.util.Time
-import essentials.Main.Companion.database
-import essentials.Main.Companion.root
-import mindustry.Vars.*
+import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.database
+import essential.core.Main.Companion.root
+import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -20,8 +22,6 @@ import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.mindrot.jbcrypt.BCrypt
 import java.io.*
-import java.lang.Thread.currentThread
-import java.lang.Thread.sleep
 import java.net.*
 import java.nio.ByteBuffer
 import java.time.LocalDate
@@ -58,7 +58,7 @@ object Trigger {
             data.lastLoginDate = LocalDate.now()
 
             if (data.lastLeaveDate != null && data.lastLeaveDate!!.plusMinutes(30).isBefore(LocalDateTime.now())) {
-                if (data.lastPlayedWorldId == port && (data.lastPlayedWorldName != state.map.name() || data.lastPlayedWorldMode != state.rules.modeName)) {
+                if (data.lastPlayedWorldId == Vars.port && (data.lastPlayedWorldName != Vars.state.map.name() || data.lastPlayedWorldMode != Vars.state.rules.modeName)) {
                     data.currentPlayTime = 0L
                 }
             } else {
@@ -66,14 +66,7 @@ object Trigger {
             }
 
             val bundle = Bundle(data.languageTag)
-            if (Config.fixedName) {
-                if (player.name() != data.name) {
-                    database.players.forEach {
-                        it.player.sendMessage(Bundle(it.languageTag)["event.player.name.changed", player.plainName(), data.name])
-                    }
-                }
-                player.name(data.name)
-            }
+            Events.fire(CustomEvents.PlayerDataLoaded(data.name, player.name(), player.uuid()))
             data.lastLoginTime = System.currentTimeMillis()
             data.totalJoinCount++
             data.player = player
@@ -113,15 +106,15 @@ object Trigger {
                 }
             }
 
-            if (state.rules.pvp) {
+            if (Vars.state.rules.pvp) {
                 when {
                     Event.pvpPlayer.containsKey(data.uuid) -> {
                         player.team(Event.pvpPlayer[data.uuid])
                     }
-                    Config.pvpSpector && Event.pvpSpectors.contains(data.uuid) || Permission.check(data, "pvp.spector") -> {
+                    conf.feature.pvp.spector && Event.pvpSpectors.contains(data.uuid) || Permission.check(data, "pvp.spector") -> {
                         player.team(Team.derelict)
                     }
-                    Config.pvpAutoTeam -> {
+                    conf.feature.pvp.autoTeam -> {
                         fun winPercentage(team : Team) : Double {
                             var players = arrayOf<Pair<Team, Double>>()
                             database.players.forEach {
@@ -136,7 +129,7 @@ object Trigger {
 
                         val teamRate = mutableMapOf<Team, Double>()
                         var teams = arrayOf<Pair<Team, Int>>()
-                        for (a in state.teams.active) {
+                        for (a in Vars.state.teams.active) {
                             val rate = winPercentage(a.team)
                             teamRate[a.team] = rate
                             teams += Pair(a.team, a.players.size)
@@ -174,10 +167,6 @@ object Trigger {
             data.isConnected = true
             database.players.add(data)
             player.sendMessage(message.toString())
-
-            if (Config.authType == Config.AuthType.Discord && data.discord.isNullOrEmpty()) {
-                player.sendMessage(bundle["event.discord.not.registered"])
-            }
         }
     }
 
@@ -256,7 +245,7 @@ object Trigger {
         }
 
         override fun run() {
-            while (!currentThread().isInterrupted) {
+            while (!java.lang.Thread.currentThread().isInterrupted) {
                 try {
                     PluginData.load()
 
@@ -266,9 +255,9 @@ object Trigger {
                         total += a.players
                     }
 
-                    if (state.isPlaying) {
+                    if (Vars.state.isPlaying) {
                         for (i in 0 until PluginData.warpCounts.size) {
-                            if (state.map.name() == PluginData.warpCounts[i].mapName) {
+                            if (Vars.state.map.name() == PluginData.warpCounts[i].mapName) {
                                 val value = PluginData.warpCounts[i]
                                 val info = serverInfo.find { a -> a.address == value.ip && a.port == value.port }
                                 if (info != null) {
@@ -280,7 +269,12 @@ object Trigger {
                                         Core.app.post {
                                             for (px in 0..2) {
                                                 for (py in 0..4) {
-                                                    Call.deconstructFinish(world.tile(tile.x + 4 + px, tile.y + py), Blocks.air, dummy.unit())
+                                                    Call.deconstructFinish(
+                                                        Vars.world.tile(
+                                                            tile.x + 4 + px,
+                                                            tile.y + py
+                                                        ), Blocks.air, dummy.unit()
+                                                    )
                                                 }
                                             }
                                         }
@@ -288,13 +282,13 @@ object Trigger {
                                     dummy.x = tile.getX()
                                     dummy.y = tile.getY()
 
-                                    Core.app.post { Commands.Client(arrayOf(str), dummy).chars(tile) }
-                                    PluginData.warpCounts[i] = PluginData.WarpCount(state.map.name(), value.tile.pos(), value.ip, value.port, info.players, digits.size)
+                                    //Core.app.post { Commands.Client(arrayOf(str), dummy).chars(tile) }
+                                    PluginData.warpCounts[i] = PluginData.WarpCount(Vars.state.map.name(), value.tile.pos(), value.ip, value.port, info.players, digits.size)
                                 } else {
                                     dummy.x = value.tile.getX()
                                     dummy.y = value.tile.getY()
                                     Core.app.post {
-                                        Commands.Client(arrayOf("no"), dummy).chars(value.tile)
+                                        //Commands.Client(arrayOf("no"), dummy).chars(value.tile)
                                     }
                                 }
                             }
@@ -302,8 +296,8 @@ object Trigger {
 
                         val memory = mutableListOf<Pair<Playerc, Triple<String, Float, Float>>>()
                         for (value in PluginData.warpBlocks) {
-                            if (state.map.name() == value.mapName) {
-                                val tile = world.tile(value.x, value.y)
+                            if (Vars.state.map.name() == value.mapName) {
+                                val tile = Vars.world.tile(value.x, value.y)
                                 if (tile.block() == Blocks.air) {
                                     PluginData.warpBlocks.remove(value)
                                 } else {
@@ -366,7 +360,7 @@ object Trigger {
                         }
 
                         for (value in PluginData.warpZones) {
-                            if (state.map.name() == value.mapName) {
+                            if (Vars.state.map.name() == value.mapName) {
                                 val center = caculateCenter(value.startTile, value.finishTile)
 
                                 var alive = false
@@ -392,20 +386,31 @@ object Trigger {
                         }
                         for (m in memory) {
                             Core.app.post {
-                                Call.label(m.first.con(), m.second.first, ping.toFloat() + 3f, m.second.second, m.second.third)
+                                Call.label(
+                                    m.first.con(),
+                                    m.second.first,
+                                    ping.toFloat() + 3f,
+                                    m.second.second,
+                                    m.second.third
+                                )
                             }
                         }
 
                         for (i in 0 until PluginData.warpTotals.size) {
                             val value = PluginData.warpTotals[i]
-                            if (state.map.name() == value.mapName) {
+                            if (Vars.state.map.name() == value.mapName) {
                                 if (value.totalplayers != total) {
                                     when (total) {
                                         0, 1, 2, 3, 4, 5, 6, 7, 8, 9 -> {
                                             for (px in 0..2) {
                                                 for (py in 0..4) {
                                                     Core.app.post {
-                                                        Call.setTile(world.tile(value.tile.x + px, value.tile.y + py), Blocks.air, Team.sharded, 0)
+                                                        Call.setTile(
+                                                            Vars.world.tile(
+                                                                value.tile.x + px,
+                                                                value.tile.y + py
+                                                            ), Blocks.air, Team.sharded, 0
+                                                        )
                                                     }
                                                 }
                                             }
@@ -415,7 +420,12 @@ object Trigger {
                                             for (px in 0..5) {
                                                 for (py in 0..4) {
                                                     Core.app.post {
-                                                        Call.setTile(world.tile(value.tile.x + 4 + px, value.tile.y + py), Blocks.air, Team.sharded, 0)
+                                                        Call.setTile(
+                                                            Vars.world.tile(
+                                                                value.tile.x + 4 + px,
+                                                                value.tile.y + py
+                                                            ), Blocks.air, Team.sharded, 0
+                                                        )
                                                     }
                                                 }
                                             }
@@ -426,21 +436,21 @@ object Trigger {
                                 dummy.x = value.tile.getX()
                                 dummy.y = value.tile.getY()
                                 Core.app.post {
-                                    Commands.Client(arrayOf(getServerInfo().toString()), dummy).chars(value.tile)
+                                    //Commands.Client(arrayOf(getServerInfo().toString()), dummy).chars(value.tile)
                                 }
                             }
                         }
                     }
 
-                    if (Config.countAllServers) {
+                    /*if (Config.countAllServers) {
                         Core.settings.put("totalPlayers", total + Groups.player.size())
                         Core.settings.saveValues()
-                    }
+                    }*/
 
                     ping = 0.000
                     TimeUnit.SECONDS.sleep(3)
                 } catch (e : InterruptedException) {
-                    currentThread().interrupt()
+                    java.lang.Thread.currentThread().interrupt()
                 } catch (e : Exception) {
                     e.printStackTrace()
                     Core.app.exit()
@@ -460,7 +470,8 @@ object Trigger {
                     val packet : DatagramPacket = packetSupplier.get()
                     socket.receive(packet)
                     val buffer = ByteBuffer.wrap(packet.data)
-                    val host = NetworkIO.readServerData(Time.timeSinceMillis(s).toInt(), packet.address.hostAddress, buffer)
+                    val host =
+                        NetworkIO.readServerData(Time.timeSinceMillis(s).toInt(), packet.address.hostAddress, buffer)
                     host.port = port
                     listener.accept(host)
                 }
@@ -498,12 +509,12 @@ object Trigger {
         val queue = Seq<DB.PlayerData>()
 
         override fun run() {
-            while (!currentThread().isInterrupted) {
+            while (!java.lang.Thread.currentThread().isInterrupted) {
                 for (a in queue) {
                     database.update(a.uuid, a)
                     queue.remove(a)
                 }
-                sleep(200)
+                java.lang.Thread.sleep(200)
             }
         }
     }
@@ -516,7 +527,7 @@ object Trigger {
             try {
                 server = ServerSocket(6000)
                 server.use { s ->
-                    while (!currentThread().isInterrupted) {
+                    while (!java.lang.Thread.currentThread().isInterrupted) {
                         val socket = s.accept()
                         Log.info(Bundle()["network.server.connected", socket.inetAddress.hostAddress])
                         clients.add(socket)
@@ -531,7 +542,7 @@ object Trigger {
         }
 
         fun shutdown() {
-            currentThread().interrupt()
+            java.lang.Thread.currentThread().interrupt()
             server.close()
         }
 
@@ -590,7 +601,8 @@ object Trigger {
     }
 
     object Client: Runnable {
-        private val address = Config.shareBanListServer
+        // todo ban 공유 서버 ip
+        private val address = ""
         private val port = 6000
         private val socket = Socket()
         private lateinit var reader : BufferedReader
@@ -605,7 +617,7 @@ object Trigger {
                 reader = BufferedReader(InputStreamReader(socket.getInputStream()))
                 writer = BufferedWriter(OutputStreamWriter(socket.getOutputStream()))
 
-                while (!currentThread().isInterrupted) {
+                while (!java.lang.Thread.currentThread().isInterrupted) {
                     try {
                         when (val d = reader.readLine()) {
                             "message" -> {
@@ -618,17 +630,17 @@ object Trigger {
                                 writer.close()
                                 reader.close()
                                 socket.close()
-                                currentThread().interrupt()
+                                java.lang.Thread.currentThread().interrupt()
                             }
 
                             else -> {
                                 try {
                                     for (a in JsonArray.readJSON(d).asArray()) {
-                                        netServer.admins.getInfo(a.asString()).banned = true
-                                        netServer.admins.save()
+                                        Vars.netServer.admins.getInfo(a.asString()).banned = true
+                                        Vars.netServer.admins.save()
                                     }
                                     val json = JsonArray()
-                                    for (a in netServer.admins.banned) json.add(a.id)
+                                    for (a in Vars.netServer.admins.banned) json.add(a.id)
                                     write(json.toString())
                                 } catch (_ : Exception) {
 
@@ -636,7 +648,7 @@ object Trigger {
                             }
                         }
                     } catch (e : Exception) {
-                        currentThread().interrupt()
+                        java.lang.Thread.currentThread().interrupt()
                     }
                 }
             } catch (_ : SocketTimeoutException) {

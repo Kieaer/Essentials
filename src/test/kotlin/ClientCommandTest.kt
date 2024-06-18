@@ -10,8 +10,6 @@ import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
 import essentials.*
-import essentials.Main.Companion.connectType
-import essentials.Main.Companion.database
 import junit.framework.TestCase.*
 import mindustry.Vars
 import mindustry.content.Blocks

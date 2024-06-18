@@ -13,13 +13,16 @@ import arc.util.Align
 import arc.util.Log
 import arc.util.Strings
 import arc.util.Time
+import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.currentTime
 import essential.core.Main.Companion.database
+import essential.core.Main.Companion.root
 import mindustry.Vars
 import mindustry.content.*
 import mindustry.core.NetServer
-import mindustry.entities.Damage
 import mindustry.entities.Effect
 import mindustry.game.EventType
+import mindustry.game.EventType.PlayerJoin
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
@@ -35,9 +38,9 @@ import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
 import org.hjson.JsonArray
 import org.hjson.JsonObject
-import org.hjson.JsonValue
-import org.hjson.Stringify
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.InetAddress
@@ -49,6 +52,7 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.random.RandomGenerator
@@ -57,7 +61,6 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.experimental.and
 import kotlin.io.path.Path
-import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.random.Random
 
@@ -84,11 +87,10 @@ object Event {
     var worldHistory = Seq<TileLog>()
     var voterCooltime = ObjectMap<String, Int>()
 
-    private var random = RandomGenerator.of("random")
+    private var random = RandomGenerator.of("Random")
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     var blockExp = ObjectMap<String, Int>()
     var dosBlacklist = ObjectSet<String>()
-    var pvpCount = Config.pvpPeaceTime
     var count = 60
     var pvpSpectors = Seq<String>()
     var pvpPlayer = ObjectMap<String, Team>()
@@ -168,32 +170,6 @@ object Event {
 
         Events.on(EventType.ConfigEvent::class.java) {
             if (it.tile != null && it.tile.block() != null && it.player != null) {
-                if (Config.antiGrief && it.value is Int) {
-                    val entity = it.tile
-                    val other = Vars.world.tile(it.value as Int)
-                    val valid =
-                        other != null && entity.power != null && other.block().hasPower && other.block().outputsPayload && other.block() != Blocks.massDriver && other.block() == Blocks.payloadMassDriver && other.block() == Blocks.largePayloadMassDriver
-                    if (valid) {
-                        val oldGraph = entity.power.graph
-                        val newGraph = other.build.power.graph
-                        val oldGraphCount = oldGraph.toString()
-                            .substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], graph"))
-                            .replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
-                        val newGraphCount = newGraph.toString()
-                            .substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], graph"))
-                            .replaceFirst("all=\\[".toRegex(), "").split(",").toTypedArray().size
-                        if (abs(oldGraphCount - newGraphCount) > 10) {
-                            database.players.forEach { a ->
-                                a.player.sendMessage(
-                                    Bundle(a.languageTag)["event.antigrief.node", it.player.name, oldGraphCount.coerceAtLeast(
-                                        newGraphCount
-                                    ), oldGraphCount.coerceAtMost(newGraphCount), "${it.tile.x}, ${it.tile.y}"]
-                                )
-                            }
-                        }
-                    }
-                }
-
                 addLog(
                     TileLog(
                         System.currentTimeMillis(),
@@ -367,14 +343,14 @@ object Event {
                 }
 
                 if (data.status.containsKey("hub_first") && !data.status.containsKey("hub_second")) {
-                    data.status.put("hub_first", "${it.tile.x},${it.tile.y}")
-                    data.status.put("hub_second", "true")
+                    data.status["hub_first"] = "${it.tile.x},${it.tile.y}"
+                    data.status["hub_second"] = "true"
                     data.player.sendMessage(Bundle(data.languageTag)["command.hub.zone.next", "${it.tile.x},${it.tile.y}"])
                 } else if (data.status.containsKey("hub_first") && data.status.containsKey("hub_second")) {
-                    val x = data.status["hub_first"].split(",")[0].toInt()
-                    val y = data.status["hub_first"].split(",")[1].toInt()
-                    val ip = data.status["hub_ip"]
-                    val port = data.status["hub_port"].toInt()
+                    val x = data.status["hub_first"]!!.split(",")[0].toInt()
+                    val y = data.status["hub_first"]!!.split(",")[1].toInt()
+                    val ip = data.status["hub_ip"]!!
+                    val port = data.status["hub_port"]!!.toInt()
 
                     val bundle = Bundle(data.languageTag)
                     val options = arrayOf(arrayOf(bundle["command.hub.zone.yes"], bundle["command.hub.zone.no"]))
@@ -450,9 +426,9 @@ object Event {
                 data.exp += 500
             }
 
-            if (Config.waveskip > 1) {
+            if (conf.feature.game.wave.autoSkip > 1) {
                 var loop = 1
-                while (Config.waveskip != loop) {
+                while (conf.feature.game.wave.autoSkip != loop) {
                     loop++
                     Vars.spawner.spawnEnemies()
                     Vars.state.wave++
@@ -472,65 +448,48 @@ object Event {
 
             dosBlacklist = Vars.netServer.admins.dosBlacklist
 
-            if (Config.countAllServers) {
-                Core.settings.put("totalPlayers", 0)
-                Core.settings.saveValues()
-            }
-
-            val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-            when {
-                !Config.blockIP && Config.database != Main.root.child("database")
-                    .absolutePath() && PluginData["iptablesFirst"] != null -> {
-                    Log.warn(Bundle()["event.database.blockip.conflict"])
-
-                    if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                        Config.blockIP = true
-                        Log.info(Bundle()["config.blockIP.enabled"])
-                    }
-                }
-
-                !Config.blockIP && PluginData["iptablesFirst"] != null -> {
-                    if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                        Vars.netServer.admins.banned.forEach { data ->
-                            data.ips.forEach { ip ->
-                                val cmd = arrayOf(
-                                    "/bin/bash",
-                                    "-c",
-                                    "echo ${PluginData.sudoPassword}| sudo -S iptables -D INPUT -s $ip -j DROP"
-                                )
-                                Runtime.getRuntime().exec(cmd)
+            // todo playerchatevent 으로 이동
+            NetServer.ChatFormatter { player, message ->
+                val data = findPlayerData(player.uuid())
+                return@ChatFormatter if (data != null) {
+                    if(!data.mute) {
+                        if (conf.feature.vote.enabled) {
+                            val isAdmin = Permission.check(data, "vote.pass")
+                            if (voting) {
+                                if (message.equals("y", true) && !voted.contains(player.uuid())) {
+                                    if (voteStarter != data) {
+                                        if (Vars.state.rules.pvp && voteTeam == player.team()) {
+                                            voted.add(player.uuid())
+                                        } else if (!Vars.state.rules.pvp) {
+                                            voted.add(player.uuid())
+                                        }
+                                    } else if (isAdmin) {
+                                        isAdminVote = true
+                                    }
+                                    player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
+                                } else if ( message.equals("n", true) && isAdmin) {
+                                    isCanceled = true
+                                }
                             }
                         }
-                        PluginData.status.remove("iptablesFirst")
-                        Log.info(Bundle()["event.ban.iptables.remove"])
-                        PluginData.save(false)
-                    }
-                }
 
-                Config.blockIP && PluginData["iptablesFirst"] == null && (os.contains("nix") || os.contains("nux") || os.contains(
-                    "aix"
-                )) -> {
-                    Vars.netServer.admins.banned.forEach { data ->
-                        data.ips.forEach { ip ->
-                            val cmd = arrayOf(
-                                "/bin/bash",
-                                "-c",
-                                "echo ${PluginData.sudoPassword}| sudo -S iptables -A INPUT -s $ip -j DROP"
-                            )
-                            Runtime.getRuntime().exec(cmd)
-                            Log.info(Bundle()["event.ban.iptables.exists", ip, data.lastName])
+                        if (isGlobalMute && Permission.check(data, "chat.admin")) {
+                            message
+                        } else if (!isGlobalMute && !(voting && message.contains("y", true))) {
+                            message
+                        } else {
+                            null
                         }
+                    } else {
+                        null
                     }
-                    PluginData.status.put("iptablesFirst", "none")
-                    PluginData.save(false)
+                } else {
+                    null
                 }
             }
-
-            Vars.netServer.chatFormatter = NetServer.ChatFormatter { player: Player, message: String ->
-                var isMute = false
-
+            Vars.netServer.admins.addChatFilter(Administration.ChatFilter { player, message ->
                 log(LogType.Chat, "${player.plainName()}: $message")
-                return@ChatFormatter if (!message.startsWith("/")) {
+                return@ChatFilter if (!message.startsWith("/")) {
                     val data = findPlayerData(player.uuid())
                     if (data != null) {
                         if (!data.mute) {
@@ -550,62 +509,48 @@ object Event {
                                 isCanceled = true
                             }
 
-                            if (Config.chatlimit) {
-                                val configs = Config.chatlanguage.split(",")
-                                val languages = ArrayList<Language>()
-                                configs.forEach { a -> languages.add(Language.getByIsoCode639_1(IsoCode639_1.valueOf(a.uppercase()))) }
-
-                                val d: LanguageDetector =
-                                    LanguageDetectorBuilder.fromLanguages(*languages.toTypedArray()).build()
-                                val e: Language = d.detectLanguageOf(message)
-
-                                if (e.name == "UNKNOWN" && !specificTextRegex.matcher(message.substring(0, 1))
-                                        .matches() && !(voting && message.equals(
-                                        "y",
-                                        true
-                                    ) && !voted.contains(player.uuid()))
-                                ) {
-                                    player.sendMessage(Bundle(data.languageTag)["event.chat.language.not.allow"])
-                                    isMute = true
-                                }
-                            }
-
-                            if (Config.chatBlacklist) {
-                                val file = root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
-                                if (file.isNotEmpty()) {
-                                    file.forEach { text ->
-                                        if (Config.chatBlacklistRegex) {
-                                            if (message.contains(Regex(text))) {
-                                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
-                                                isMute = true
-                                            }
-                                        } else {
-                                            if (message.contains(text)) {
-                                                player.sendMessage(Bundle(findPlayerData(player.uuid())!!.languageTag)["event.chat.blacklisted"])
-                                                isMute = true
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            val format = Permission[data].chatFormat.replace("%1", "[#${player.color}]${data.name}")
-                                .replace("%2", message).replace("%3", "${data.level}")
-                            if (isGlobalMute && Permission.check(data, "chat.admin") && !isMute) {
-                                format
-                            } else if (!isGlobalMute && !(voting && message.contains("y", true) && !isMute)) {
-                                format
+                            if (isGlobalMute && Permission.check(data, "chat.admin")) {
+                                message
+                            } else if (!isGlobalMute && !(voting && message.contains("y", true))) {
+                                message
                             } else {
                                 null
                             }
                         } else {
-                            player.sendMessage("${player.coloredName()} [orange] > [white]${message}")
-                            null
+                            message
                         }
                     } else {
-                        "[gray]${player.name} [orange] > [white]${message}"
+                        message
                     }
                 } else {
                     null
+                }
+            })
+
+            if (!Vars.mods.list().contains { mod -> mod.name == "essential-protect" }) {
+                Events.on(PlayerJoin::class.java) {
+                    it.player.admin(false)
+
+                    val data = database[it.player.uuid()]
+                    if (data == null) {
+                        Main.daemon.submit(Thread {
+                            transaction {
+                                if (DB.Player.select(DB.Player.name).where { DB.Player.name eq it.player.name }
+                                        .empty()) {
+                                    Core.app.post { Trigger.createPlayer(it.player, null, null) }
+                                } else {
+                                    Core.app.post {
+                                        it.player.con.kick(
+                                            Bundle(it.player.locale)["event.player.name.duplicate"],
+                                            0L
+                                        )
+                                    }
+                                }
+                            }
+                        })
+                    } else {
+                        Trigger.loadPlayer(it.player, data, false)
+                    }
                 }
             }
         }
@@ -760,18 +705,6 @@ object Event {
         }
 
         Events.on(EventType.BlockDestroyEvent::class.java) {
-            if (Config.destroyCore && Vars.state.rules.coreCapture) {
-                Fx.spawnShockwave.at(it.tile.getX(), it.tile.getY(), Vars.state.rules.dropZoneRadius)
-                Damage.damage(
-                    Vars.world.tile(it.tile.pos()).team(),
-                    it.tile.getX(),
-                    it.tile.getY(),
-                    Vars.state.rules.dropZoneRadius,
-                    1.0E8f,
-                    true
-                )
-            }
-
             if (Vars.state.rules.attackMode) {
                 for (a in database.players) {
                     if (it.tile.team() != Vars.state.rules.defaultTeam) {
@@ -794,12 +727,12 @@ object Event {
         }
 
         Events.on(EventType.UnitCreateEvent::class.java) { u ->
-            if (Groups.unit.size() > Config.spawnLimit) {
+            if (conf.feature.unit.enabled && Groups.unit.size() > conf.feature.unit.limit) {
                 u.unit.kill()
 
                 if (unitLimitMessageCooldown == 0) {
                     database.players.forEach {
-                        it.player.sendMessage(Bundle(it.languageTag)["config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${Config.spawnLimit}"])
+                        it.player.sendMessage(Bundle(it.languageTag)["config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${conf.feature.unit.limit}"])
                     }
                     unitLimitMessageCooldown = 60
                 }
@@ -813,53 +746,8 @@ object Event {
             }
         }
 
-        Events.on(EventType.PlayerJoin::class.java) {
+        Events.on(PlayerJoin::class.java) {
             log(LogType.Player, Bundle()["log.joined", it.player.plainName(), it.player.uuid(), it.player.con.address])
-            it.player.admin(false)
-
-            val data = database[it.player.uuid()]
-            when {
-                Config.authType == Config.AuthType.Discord -> {
-                    if (data == null) {
-                        Main.daemon.submit(Thread {
-                            transaction {
-                                if (DB.Player.select(DB.Player.name).where { DB.Player.name eq it.player.name }
-                                        .empty()) {
-                                    Core.app.post { Trigger.createPlayer(it.player, null, null) }
-                                } else {
-                                    Core.app.post {
-                                        it.player.con.kick(Bundle(it.player.locale)["event.player.name.duplicate"], 0L)
-                                    }
-                                }
-                            }
-                        })
-                    } else {
-                        Trigger.loadPlayer(it.player, data, false)
-                    }
-                }
-
-                Config.authType == Config.AuthType.None && data != null -> {
-                    Trigger.loadPlayer(it.player, data, false)
-                }
-
-                Config.authType != Config.AuthType.None -> {
-                    it.player.sendMessage(Bundle(it.player.locale)["event.player.first.register"])
-                }
-
-                Config.authType == Config.AuthType.None -> {
-                    Main.daemon.submit(Thread {
-                        transaction {
-                            if (DB.Player.select(DB.Player.name).where { DB.Player.name eq it.player.name }.empty()) {
-                                Core.app.post { Trigger.createPlayer(it.player, null, null) }
-                            } else {
-                                Core.app.post {
-                                    it.player.con.kick(Bundle(it.player.locale)["event.player.name.duplicate"], 0L)
-                                }
-                            }
-                        }
-                    })
-                }
-            }
         }
 
         Events.on(EventType.PlayerLeave::class.java) {
@@ -887,110 +775,15 @@ object Event {
         }
 
         Events.on(EventType.PlayerBanEvent::class.java) {
-            if (Config.blockIP) {
-                val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                    val ip = if (it.player != null) it.player.ip() else Vars.netServer.admins.getInfo(it.uuid).lastIP
-                    Runtime.getRuntime().exec(
-                        arrayOf(
-                            "/bin/bash",
-                            "-c",
-                            "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $ip -j DROP"
-                        )
-                    )
-                    Runtime.getRuntime().exec(
-                        arrayOf(
-                            "/bin/bash",
-                            "-c",
-                            "echo ${PluginData.sudoPassword} | sudo -S iptables -A INPUT -s $ip -j DROP"
-                        )
-                    )
-                    Log.info(Bundle()["event.ban.iptables", ip])
-                }
-            }
-
-            val json = JsonObject()
-            json.add("id", it.uuid)
-
-            val ips = JsonArray()
-            for (a in Vars.netServer.admins.getInfo(it.uuid).ips) {
-                ips.add(a)
-            }
-            json.add("ip", ips)
-
-            val names = JsonArray()
-            for (a in Vars.netServer.admins.getInfo(it.uuid).names) {
-                names.add(a)
-            }
-
-            json.add("name", names)
-
-            Fi(Config.banList).writeString(
-                JsonArray.readHjson(Fi(Config.banList).readString()).asArray().add(json).toString(Stringify.HJSON)
-            )
-
-            if (!ips.isEmpty && !names.isEmpty) {
-                log(LogType.Player, Bundle()["log.player.banned", names.first(), ips.first()])
-            }
+            log(LogType.Player, Bundle()["log.player.banned", Vars.netServer.admins.getInfo(it.uuid).ips.first(), Vars.netServer.admins.getInfo(it.uuid).names.first()])
         }
 
         Events.on(EventType.PlayerUnbanEvent::class.java) {
-            val ip = if (it.player != null) it.player.ip() else Vars.netServer.admins.getInfo(it.uuid).lastIP
-
-            if (Config.blockIP) {
-                val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                    Runtime.getRuntime().exec(
-                        arrayOf(
-                            "/bin/bash",
-                            "-c",
-                            "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s $ip -j DROP"
-                        )
-                    )
-                }
-            }
-
-            val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-            val ir = json.iterator()
-            while (ir.hasNext()) {
-                val jsonValue = ir.next()
-                if (jsonValue.asObject()["ip"].asArray()
-                        .contains(JsonValue.valueOf(ip)) || jsonValue.asObject()["id"].asString() == it.uuid
-                ) {
-                    ir.remove()
-                }
-            }
-
-            Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
-
-            Events.fire(PlayerUnbanned(Vars.netServer.admins.getInfo(it.uuid).lastName, currentTime()))
+            Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.getInfo(it.uuid).lastName, currentTime()))
         }
 
         Events.on(EventType.PlayerIpUnbanEvent::class.java) {
-            if (Config.blockIP) {
-                val os = System.getProperty("os.name").lowercase(Locale.getDefault())
-                if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-                    Runtime.getRuntime().exec(
-                        arrayOf(
-                            "/bin/bash",
-                            "-c",
-                            "echo ${PluginData.sudoPassword} | sudo -S iptables -D INPUT -s ${it.ip} -j DROP"
-                        )
-                    )
-                }
-            }
-
-            val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-            val ir = json.iterator()
-            while (ir.hasNext()) {
-                val jsonValue = ir.next()
-                if (jsonValue.asObject()["ip"].asArray().contains(JsonValue.valueOf(it.ip))) {
-                    ir.remove()
-                }
-            }
-            Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
-
-            Events.fire(PlayerUnbanned(Vars.netServer.admins.findByIP(it.ip).lastName, currentTime()))
+            Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.findByIP(it.ip).lastName, currentTime()))
         }
 
         Events.on(EventType.WorldLoadEvent::class.java) {
@@ -1001,13 +794,6 @@ object Event {
             if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
 
             if (Vars.state.rules.pvp) {
-                if (Config.pvpPeace) {
-                    originalBlockMultiplier = Vars.state.rules.blockDamageMultiplier
-                    originalUnitMultiplier = Vars.state.rules.unitDamageMultiplier
-                    Vars.state.rules.blockDamageMultiplier = 0f
-                    Vars.state.rules.unitDamageMultiplier = 0f
-                    pvpCount = Config.pvpPeaceTime
-                }
                 pvpSpectors = Seq<String>()
 
                 for (data in database.players) {
@@ -1030,101 +816,28 @@ object Event {
         }
 
         Events.on(EventType.ConnectPacketEvent::class.java) {
-            var kickReason = ""
-            val isIPbanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().find { a ->
-                a.asObject()["ip"].asArray().find { b -> b.asString() == it.connection.address } != null
-            }
-
-            when {
-                isIPbanned != null -> {
-                    it.connection.kick(Packets.KickReason.banned)
-                    kickReason = "banned.ip"
-                }
-
-                !Config.allowMobile && it.connection.mobile -> {
-                    it.connection.kick(Bundle(it.packet.locale)["event.player.not.allow.mobile"], 0L)
-                    kickReason = "mobile"
-                }
-
-                Config.minimalName && it.packet.name.length < 4 -> {
-                    it.connection.kick(Bundle(it.packet.locale)["event.player.name.short"], 0L)
-                    kickReason = "name.short"
-                }
-
-                Config.antiVPN -> {
-                    PluginData.vpnList.forEach { text ->
-                        val match = IpAddressMatcher(text)
-                        if (match.matches(it.connection.address)) {
-                            it.connection.kick(Bundle(it.packet.locale)["anti-grief.vpn"])
-                            kickReason = "vpn"
-                            return@forEach
-                        }
+            if (conf.feature.blacklist.enabled) {
+                PluginData.blacklist.forEach { text ->
+                    val pattern = Regex(text)
+                    if ((conf.feature.blacklist.regex && pattern.matches(it.packet.name)) ||
+                        !conf.feature.blacklist.regex && it.packet.name.contains(text)) {
+                        it.connection.kick(Bundle(it.packet.locale)["event.player.name.blacklisted"], 0L)
+                        log(
+                            LogType.Player,
+                            Bundle()["event.player.kick", it.packet.name, it.packet.uuid, it.connection.address, Bundle()["event.player.kick.reason.blacklisted"]]
+                        )
+                        Events.fire(CustomEvents.PlayerConnectKicked(it.packet.name, Bundle()["event.player.kick.reason.blacklisted"]))
+                        return@forEach
                     }
                 }
-
-                Config.antiGrief && Groups.player.find { p -> p.con.address == it.connection.address } != null -> {
-                    it.connection.kick(Packets.KickReason.idInUse)
-                    kickReason = "ip"
-                }
-
-                else -> {
-                    PluginData.blacklist.forEach { pattern ->
-                        if (pattern.matcher(it.packet.name).matches()) {
-                            it.connection.kick(Bundle(it.packet.locale)["event.player.name.blacklisted"], 0L)
-                            kickReason = "blacklisted"
-                            return@forEach
-                        }
-                    }
-                }
-            }
-
-            if (kickReason.isNotEmpty()) {
-                log(
-                    LogType.Player,
-                    Bundle()["event.player.kick", it.packet.name, it.packet.uuid, it.connection.address, Bundle()["event.player.kick.reason.$kickReason"]]
-                )
-                Events.fire(PlayerConnectKicked(it.packet.name, Bundle()["event.player.kick.reason.$kickReason"]))
             }
         }
 
         Events.on(EventType.PlayerConnect::class.java) {
-            val isIDBanned = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-                .find { a -> a.asObject()["id"].asString() == it.player.uuid() }
-            var kickReason = ""
-
-            when {
-                isIDBanned != null -> {
-                    it.player.kick(Packets.KickReason.banned)
-                    kickReason = "banned.id"
-                }
-
-                findPlayerData(it.player.uuid()) != null -> {
-                    it.player.kick(Bundle(it.player.locale)["event.player.exists"])
-                }
-
-                Config.blockNewUser && database[it.player.uuid()] == null -> {
-                    it.player.kick(Bundle(it.player.locale)["event.player.new.blocked"], 0L)
-                    kickReason = "newuser"
-                }
-            }
-
-            if (kickReason.isNotEmpty()) {
-                log(
-                    LogType.Player,
-                    Bundle()["event.player.kick", it.player.plainName(), it.player.uuid(), it.player.con.address, Bundle()["event.player.kick.reason.$kickReason"]]
-                )
-                Events.fire(
-                    PlayerConnectKicked(
-                        it.player.plainName(),
-                        Bundle()["event.player.kick.reason.$kickReason"]
-                    )
-                )
-            } else {
-                log(
-                    LogType.Player,
-                    Bundle()["event.player.connected", it.player.plainName(), it.player.uuid(), it.player.con.address]
-                )
-            }
+            log(
+                LogType.Player,
+                Bundle()["event.player.connected", it.player.plainName(), it.player.uuid(), it.player.con.address]
+            )
         }
 
         Events.on(EventType.BuildingBulletDestroyEvent::class.java) {
@@ -1260,24 +973,19 @@ object Event {
         var secondCount = 0
         var minuteCount = 0
 
-        var rollbackCount = Config.rollbackTime
-        var messageCount = Config.messageTime
+        // 맵 백업 시간
+        var rollbackCount = conf.command.rollback.time
+        var messageCount = conf.feature.motd.time
         var messageOrder = 0
 
         Core.app.addListener(object: ApplicationListener {
             override fun update() {
                 try {
                     if (Vars.state.isPlaying) {
-                        if (Config.unbreakableCore) {
-                            Vars.state.rules.defaultTeam.cores().forEach {
-                                it.health(1.0E8f)
-                            }
-                        }
-
                         for (it in database.players) {
                             if (Vars.state.rules.pvp && it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)) {
                                 it.pvpDefeatCount++
-                                if (Config.pvpSpector) {
+                                if (conf.feature.pvp.spector) {
                                     it.player.team(Team.derelict)
                                     pvpSpectors.add(it.uuid)
                                 }
@@ -1336,15 +1044,7 @@ object Event {
                             }
                         }
 
-                        if (Config.border) {
-                            Groups.unit.forEach {
-                                if (it.x < 0 || it.y < 0 || it.x > (Vars.world.width() * 8) || it.y > (Vars.world.height() * 8)) {
-                                    it.kill()
-                                }
-                            }
-                        }
-
-                        if (Config.moveEffects) {
+                        if (conf.feature.level.effect.enabled && conf.feature.level.effect.moving) {
                             if (milsCount == 5) {
                                 database.players.forEach {
                                     if (it.showLevelEffects && it.player.unit() != null && it.player.unit().health > 0f) {
@@ -1685,16 +1385,16 @@ object Event {
                                 // 잠수 플레이어 카운트
                                 if (it.player.unit() != null && !it.player.unit().moving() && !it.player.unit().mining() && !Permission.check(it, "afk.admin") && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()) {
                                     it.afkTime++
-                                    if (it.afkTime == Config.afkTime) {
+                                    if (it.afkTime == conf.feature.afk.time) {
                                         it.afk = true
-                                        if (Config.afk) {
-                                            if (Config.afkServer.isEmpty()) {
+                                        if (conf.feature.afk.enabled) {
+                                            if (conf.feature.afk.server.isEmpty()) {
                                                 it.player.kick(Bundle(it.languageTag)["event.player.afk"])
                                                 database.players.forEach { data ->
                                                     data.player.sendMessage(Bundle(data.languageTag)["event.player.afk.other", it.player.plainName()])
                                                 }
                                             } else {
-                                                val server = Config.afkServer.split(":")
+                                                val server = conf.feature.afk.server.split(":")
                                                 val port = if (server.size == 1) {
                                                     6567
                                                 } else {
@@ -1715,7 +1415,7 @@ object Event {
                                 it.currentExp += randomResult
                                 Commands.Exp[it]
 
-                                if (Config.expDisplay) {
+                                if (conf.feature.level.display) {
                                     val message = "${it.exp}/${floor(Commands.Exp.calculateFullTargetXp(it.level)).toInt()}"
                                     Call.infoPopup(it.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                                 }
@@ -1816,7 +1516,7 @@ object Event {
                                                     Vars.netServer.admins.banPlayerID(voteTargetUUID)
                                                     send("command.vote.kick.target.banned", name)
                                                     Events.fire(
-                                                        PlayerVoteBanned(
+                                                        CustomEvents.PlayerVoteBanned(
                                                             voteStarter!!.name,
                                                             name,
                                                             voteReason!!,
@@ -1827,7 +1527,7 @@ object Event {
                                                     voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
                                                     send("command.vote.kick.target.kicked", name)
                                                     Events.fire(
-                                                        PlayerVoteKicked(
+                                                        CustomEvents.PlayerVoteKicked(
                                                             voteStarter!!.name,
                                                             name,
                                                             voteReason!!,
@@ -2033,16 +1733,6 @@ object Event {
                                 }
                             }
 
-                            if (Config.pvpPeace) {
-                                if (pvpCount != 0) {
-                                    pvpCount--
-                                } else {
-                                    Vars.state.rules.blockDamageMultiplier = originalBlockMultiplier
-                                    Vars.state.rules.unitDamageMultiplier = originalUnitMultiplier
-                                    send("event.pvp.peace.end")
-                                }
-                            }
-
                             if (unitLimitMessageCooldown > 0) {
                                 unitLimitMessageCooldown--
                             }
@@ -2109,15 +1799,12 @@ object Event {
                                         val uuid = data[DB.Player.uuid]
                                         val name = data[DB.Player.name]
 
-                                        if (LocalDateTime.now().isAfter(LocalDateTime.parse(banTime))) {
-                                            val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-                                            json.removeAll { a -> a.asObject()["id"].asString() == uuid }
-                                            Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
-
+                                        // todo datetime 을 모두 zoneddatetime 으로 바꾸기
+                                        if (ZonedDateTime.now().isAfter(ZonedDateTime.parse(banTime))) {
                                             DB.Player.update({ DB.Player.uuid eq uuid }) {
                                                 it[DB.Player.banTime] = null
                                             }
-                                            Events.fire(PlayerTempUnbanned(name))
+                                            Events.fire(CustomEvents.PlayerTempUnbanned(name))
                                         }
                                     }
                                 }
@@ -2125,18 +1812,18 @@ object Event {
 
                             if (rollbackCount == 0) {
                                 SaveIO.save(Vars.saveDirectory.child("rollback.msav"))
-                                rollbackCount = Config.rollbackTime
+                                rollbackCount = conf.command.rollback.time
                             } else {
                                 rollbackCount--
                             }
 
-                            if (Config.message) {
-                                if (messageCount == Config.messageTime) {
+                            if (conf.feature.motd.enabled) {
+                                if (messageCount == conf.feature.motd.time) {
                                     database.players.forEach {
-                                        val message = if (Main.root.child("messages/${it.languageTag}.txt").exists()) {
-                                            Main.root.child("messages/${it.languageTag}.txt").readString()
-                                        } else if (Main.root.child("messages").list().isNotEmpty()) {
-                                            val file = Main.root.child("messages/en.txt")
+                                        val message = if (root.child("messages/${it.languageTag}.txt").exists()) {
+                                            root.child("messages/${it.languageTag}.txt").readString()
+                                        } else if (root.child("messages").list().isNotEmpty()) {
+                                            val file = root.child("messages/en.txt")
                                             if (file.exists()) file.readString() else null
                                         } else {
                                             null
@@ -2167,8 +1854,8 @@ object Event {
                             milsCount = 0
                             secondCount = 0
                             minuteCount = 0
-                            rollbackCount = Config.rollbackTime
-                            messageCount = Config.messageTime
+                            rollbackCount = conf.command.rollback.time
+                            messageCount = conf.feature.motd.time
                             messageOrder = 0
                             maxdps = null
                             resetVote()
@@ -2183,6 +1870,7 @@ object Event {
         })
     }
 
+    @JvmStatic
     fun log(type : LogType, text : String, vararg name : String) {
         val maxLogFile = 20
         val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
@@ -2253,7 +1941,7 @@ object Event {
         Player, Tap, WithDraw, Block, Deposit, Chat, Report
     }
 
-    private class IpAddressMatcher(ipAddress : String) {
+    class IpAddressMatcher(ipAddress : String) {
         private var nMaskBits = 0
         private val requiredAddress : InetAddress
         fun matches(address : String) : Boolean {
@@ -2368,13 +2056,14 @@ object Event {
             root.child("data/exp.json").writeString(resultArray.toString())
         }
 
-        if (isConnected && Config.expAlert) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
+        if (isConnected && conf.feature.level.levelNotify) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
     }
 
     fun findPlayerData(uuid : String) : DB.PlayerData? {
         return database.players.find { data -> (data.oldUUID != null && data.oldUUID == uuid) || data.uuid == uuid }
     }
 
+    @JvmStatic
     fun findPlayers(name : String) : Playerc? {
         return if (name.toIntOrNull() != null) {
             database.players.forEach {

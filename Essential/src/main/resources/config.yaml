@@ -6,7 +6,7 @@ plugin:
   # Database URL
   # Example) postgresql://127.0.0.1:5432/essentials
   database:
-    url: sqlite:essential_database.db
+    url: sqlite:config/mods/Essentials/data/database.db
     username: sa
     password: 123
 
@@ -26,7 +26,7 @@ feature:
     enabled: true
     # If you use this feature, players can be start voting from player list.
     # A modded client may start voting for random players and then watch them griefing.
-    enable-votekick: false
+    enableVotekick: false
 
   # Setting for unit features
   unit:
@@ -35,7 +35,7 @@ feature:
     enabled: false
     limit: 3000
 
-  # Setting for motd features
+  # Setting for message of the day features
   motd:
     # A message is output to the server for each set time value. (default: false)
     # This is useful for advertising notices or discord server addresses, etc.
@@ -46,17 +46,36 @@ feature:
   # Setting for PvP features
   pvp:
     # Automatically sets PvP teams based on a player's PvP win rate. (default: false)
-    auto-team: false
+    autoTeam: false
+    # If a PvP team loses, all affected players will become spectators.
+    spector: false
 
   # Setting for Particle effect features
-  effects:
+  level:
     # Activates movement effects according to the player's level. (default: false)
+    effect:
+      enabled: false
+      # If this value is disabled, the effect will occur even if the player is not moving.
+      moving: false
+    # When the player levels up, a level up message is displayed as a message.
+    levelNotify: false
+    # Displays the current level status on the screen.
+    display: false
+  game:
+    wave:
+      # Starts the wave n times at a time. (default: 1)
+      autoSkip: 1
+  blacklist:
+    # Set the word ban function.
     enabled: false
-    # If this value is disabled, the effect will occur even if the player is not moving.
-    moving: false
+    # When enabling this function, a blacklist of words is read as a regular expression.
+    regex: false
 
 command:
   skip:
     # Set the maximum wave skip limit by voting. (default: true)
     enabled: true
     limit: 10
+  rollback:
+    enabled: true
+    time: 10

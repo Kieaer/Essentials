@@ -32,7 +32,7 @@ import kotlin.collections.HashMap
 class DB {
     lateinit var db: Database
     val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-    val players : List<PlayerData> = listOf()
+    val players : MutableList<PlayerData> = mutableListOf()
 
     fun load() {
         val cacheDir = File(System.getProperty("java.io.tmpdir"))
@@ -78,7 +78,7 @@ class DB {
                 }
             }
 
-            val type = "^[^:]*".toRegex().find(conf.plugin.database.url!!)
+            val type = "^[^:]*".toRegex().find(conf.plugin.database.url)
             if (type != null) {
                 load(type.value)
             } else {
@@ -92,14 +92,12 @@ class DB {
     fun connect() {
         fun connectDefaultDatabase(): Database {
             return Database.connect({
-                DriverManager.getConnection("jdbc:sqlite:essential_database.db", "sa", "123")
+                DriverManager.getConnection("jdbc:sqlite:config/mods/Essentials/data/database.db", "sa", "123")
             })
         }
 
-        db = if (conf.plugin.database.url == null) {
-            connectDefaultDatabase()
-        } else {
-            val type = "^[^:]*".toRegex().find(conf.plugin.database.url!!)
+        db = run {
+            val type = "^[^:]*".toRegex().find(conf.plugin.database.url)
             if (type != null) {
                 Database.connect({
                     DriverManager.getConnection(
@@ -109,9 +107,6 @@ class DB {
                     )
                 })
             } else {
-                if (conf.plugin.database.url == null) {
-                    Log.err("Invalid database url! using default database.")
-                }
                 connectDefaultDatabase()
             }
         }
@@ -181,6 +176,7 @@ class DB {
         val pvpEliminationTeamCount = integer("pvpEliminationTeamCount")
         val strict = bool("strict")
     }
+
 
     class PlayerData {
         var name: String = "none"
@@ -372,9 +368,9 @@ class DB {
             data.pvpEliminationTeamCount = it[Player.pvpEliminationTeamCount]
             data.strict = it[Player.strict]
 
-            val obj = ObjectMap<String, String>()
+            val obj = HashMap<String, String>()
             JsonObject.readHjson(it[Player.status]).asObject().forEach {
-                obj.put(it.name, it.value.asString())
+                obj[it.name] = it.value.asString()
             }
             data.status = obj
             data
@@ -383,8 +379,8 @@ class DB {
         }
     }
 
-    fun getAll(): Seq<PlayerData> {
-        val d = Seq<PlayerData>()
+    fun getAll(): ArrayList<PlayerData> {
+        val d = ArrayList<PlayerData>()
 
         transaction {
             Player.selectAll().map {
@@ -437,9 +433,9 @@ class DB {
                 data.pvpEliminationTeamCount = it[Player.pvpEliminationTeamCount]
                 data.strict = it[Player.strict]
 
-                val obj = ObjectMap<String, String>()
+                val obj = HashMap<String, String>()
                 JsonObject.readHjson(it[Player.status]).asObject().forEach { member ->
-                    obj.put(member.name, member.value.asString())
+                    obj[member.name] = member.value.asString()
                 }
                 data.status = obj
                 d.add(data)
@@ -583,9 +579,9 @@ class DB {
                 data.pvpEliminationTeamCount = this[Player.pvpEliminationTeamCount]
                 data.strict = this[Player.strict]
 
-                val obj = ObjectMap<String, String>()
+                val obj = HashMap<String, String>()
                 JsonObject.readHjson(this[Player.status]).asObject().forEach {
-                    obj.put(it.name, it.value.asString())
+                    obj[it.name] = it.value.asString()
                 }
                 data.status = obj
 

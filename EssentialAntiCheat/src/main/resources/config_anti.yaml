@@ -1,7 +1,3 @@
-# Use unix iptables command instead in-game embedded ban function
-# Only unix/linux supported.
-iptables: false
-
 # Block IP bands for known databases or VPNs.
 vpn: false
 
@@ -17,3 +13,15 @@ mobile: true
 
 # Blocks access to all users except Steam users.
 steam-only: false
+
+# Set nickname minimal length
+minimalName:
+  enabled: false
+  length: 4
+
+# If the nickname and IP you are using do not match, the connection to the server will not be allowed.
+# If mobile users allowed, problems will arise if mobile carrier distributes the same IP when using this option.
+strict: false
+
+# When attacked by an external program or modded client, you can protect the server and existing users by activating this setting.
+block-new-user: false

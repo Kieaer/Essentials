@@ -5,13 +5,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import essential.core.Bundle;
 import essential.core.DB;
+import essential.core.Permission;
 import mindustry.mod.Plugin;
 import mindustry.net.Administration;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Optional;
 
-import static essential.core.Main.findPlayerByUuid;
+import static essential.core.Main.players;
 import static essential.core.Main.root;
 import static mindustry.Vars.netServer;
 
@@ -65,6 +67,18 @@ public class Main extends Plugin {
             }
         });
 
+        // 계정 설정 유무에 따라 기본 권한 변경
+        if (conf.getAccount().getAuthType() != Config.Account.AuthType.None) {
+            Permission.INSTANCE.setDefault("user");
+        } else {
+            Permission.INSTANCE.setDefault("visitor");
+        }
+
         Log.info(bundle.get("event.plugin.loaded"));
+    }
+
+    DB.PlayerData findPlayerByUuid(String uuid) {
+        Optional<DB.PlayerData> data =  players.stream().filter( e -> e.getUuid().equals(uuid)).findFirst();
+        return data.orElse(null);
     }
 }

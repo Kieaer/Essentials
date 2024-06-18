@@ -23,7 +23,7 @@ object PluginData {
     var warpBlocks : ArrayList<WarpBlock> = arrayListOf()
     var warpCounts : ArrayList<WarpCount> = arrayListOf()
     var warpTotals : ArrayList<WarpTotal> = arrayListOf()
-    var blacklist : ArrayList<Pattern> = arrayListOf()
+    var blacklist : ArrayList<String> = arrayListOf()
     var banned : ArrayList<Banned> = arrayListOf()
     var status : ArrayList<Pair<String, String>> = arrayListOf()
 
@@ -134,7 +134,7 @@ object PluginData {
         buffer = JsonArray()
 
         blacklist.forEach {
-            buffer.add(it.pattern())
+            buffer.add(it)
         }
         data.add("blacklist", buffer)
         buffer = JsonArray()
@@ -247,7 +247,7 @@ object PluginData {
                             )
                         }
 
-                        data["blacklist"].asArray().forEach { blacklist.add(Pattern.compile(it.asString())) }
+                        data["blacklist"].asArray().forEach { blacklist.add(it.asString()) }
 
                         data["banned"].asArray().forEach {
                             val obj = it.asObject()

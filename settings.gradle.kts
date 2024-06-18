@@ -12,3 +12,4 @@ sequenceOf(
     include(":Essential$it")
     project(":Essential$it").projectDir = file("Essential$it")
 }
+include("EssentialDiscord")

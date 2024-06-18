@@ -6,12 +6,12 @@ import arc.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import essential.core.Bundle;
-import essential.core.PluginData;
 import kotlin.Pair;
 import mindustry.mod.Plugin;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.Objects;
 
 import static essential.core.Main.root;
@@ -19,11 +19,11 @@ import static essential.core.Main.root;
 public class Main extends Plugin {
     static final String CONFIG_PATH = "config/config_anti.yaml";
     static final Bundle bundle = new Bundle();
+    static final PluginData pluginData = new PluginData();
     static Config conf;
 
     @Override
     public void init() {
-        Thread.currentThread().setName("EssentialAntiCheat");
         bundle.setPrefix("[EssentialAntiCheat]");
 
         Log.debug(bundle.get("event.plugin.starting"));
@@ -36,17 +36,16 @@ public class Main extends Plugin {
         // 설정 파일 읽기
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
-            conf = mapper.readValue(root.child("config/config_protect.yaml").file(), Config.class);
+            conf = mapper.readValue(root.child(CONFIG_PATH).file(), Config.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         // VPN 확인
         if (conf.isVpn()) {
-            PluginData pluginData = PluginData.INSTANCE;
             boolean isUpdate = false;
-            if (pluginData.get("vpnListDate") == null || Long.parseLong(Objects.requireNonNull(pluginData.get("vpnListDate"))) + 8.64e7 < System.currentTimeMillis()) {
-                pluginData.getStatus().add(new Pair<>("vpnListDate", String.valueOf(System.currentTimeMillis())));
+            if (essential.core.PluginData.INSTANCE.get("vpnListDate") == null || Long.parseLong(Objects.requireNonNull(essential.core.PluginData.INSTANCE.get("vpnListDate"))) + 8.64e7 < System.currentTimeMillis()) {
+                essential.core.PluginData.INSTANCE.getStatus().add(new Pair<>("vpnListDate", String.valueOf(System.currentTimeMillis())));
                 isUpdate = true;
             }
 
@@ -59,10 +58,11 @@ public class Main extends Plugin {
                         });
             }
 
-            root.child("data/ipv4.txt").readString().lines().forEach(e -> pluginData.getVpnList().add(e));
+            String file = root.child("data/ipv4.txt").readString();
+            pluginData.vpnList = new String[(int) file.lines().count()];
         }
 
-
+        new Event().load();
 
         Log.info(bundle.get("event.plugin.loaded"));
     }

@@ -9,10 +9,6 @@ pvp:
     enabled: false
   # If the team loses, all buildings are destroyed. (default: false)
   destroy-core: false
-  # Ensures the core is never destroyed. (default: false)
-  # This is useful in certain game modes or lobby servers.
-  unbreakable-core: false
-
 account:
   # If this feature is enabled, players will need to log in to account using the auth-type value to play. (default: false)
   enabled: false
@@ -20,3 +16,11 @@ account:
   auth-type: "password"
   # If you set auth-type to discord, you can enter the discord invite link below to be directed to this discord address.
   discord-url: ""
+  # Prevent players from changing their nicknames. (default: false)
+  strict: false
+protect:
+  # Ensures the core is never destroyed. (default: false)
+  # This is useful in certain game modes or lobby servers.
+  unbreakable-core: false
+  # If a large amount of power supply is lost due to power node disconnection, a message is notified. (default: true)
+  power-detect: true

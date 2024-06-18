@@ -2,190 +2,89 @@ package essential.core
 
 import arc.Core
 import arc.files.Fi
+import com.charleskorn.kaml.*
+import com.fasterxml.jackson.databind.DeserializationFeature
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.module.kotlin.readValue
+import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import essential.core.Main.Companion.database
 import mindustry.Vars
 import org.hjson.*
 import java.util.*
 
 object Permission {
-    private var main = JsonObject()
-    var user = JsonArray()
-    var default = if (Config.authType == Config.AuthType.None) "user" else "visitor"
-    val mainFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.txt")
-    val userFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt")
+    private var main : Map<String, RoleConfig> = mapOf()
+    var user : Map<String, UserPermissionConfig> = mapOf()
+    var default = "user"
+    val mainFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.yaml")
+    val userFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.yaml")
 
     val bundle = Bundle(Locale.getDefault().toLanguageTag())
 
     val comment = """
-        ${bundle["permission.wiki"]}
-        ${bundle["permission.sort"]}
-        ${bundle["permission.notice"]}
-        ${bundle["permission.usage"]}
-        {
-            uuid: ${bundle["permission.usage.uuid"]}
-            name: ${bundle["permission.usage.name"]}
-            group: ${bundle["permission.usage.group"]}
-            chatFormat: ${bundle["permission.usage.chatformat"]}
-            admin: ${bundle["permission.usage.admin"]}
-            isAlert: ${bundle["permission.usage.isAlert"]}
-            alertMessage: ${bundle["permission.usage.alertMessage"]}
-        }
+        #${bundle["permission.wiki"]}
+        #${bundle["permission.sort"]}
+        #${bundle["permission.notice"]}
+        #${bundle["permission.usage"]}
+        # name:${bundle["permission.usage.name"]}
+        # group:${bundle["permission.usage.group"]}
+        # admin:${bundle["permission.usage.admin"]}
+        # isAlert:${bundle["permission.usage.isAlert"]}
+        # alertMessage:${bundle["permission.usage.alertMessage"]}
         
-        ${bundle["permission.example"]}
-        [
-            {
-                uuid: uuids
-                name: "my fun name"
-            },
-            {
-                uuid: uuida
-                chatFormat: "%1: %2"
-            },
-            {
-                uuid: uuid123
-                name: asdfg
-                group: admin
-                chatFormat: "[blue][ADMIN] []%1[orange] > [white] %2"
-                admin: true
-                isAlert: true
-                alertMessage: Player asdfg has entered the server!
-            }
-        ]""".trimIndent()
+        #${bundle["permission.example"]}
+        # uuid123:
+        #     name: my fun name
+        # uuids:
+        #     name: asdfg
+        #     group: admin
+        #     admin: true
+        #     isAlert: true
+        #     alertMessage: Player asdfg has entered the server!
+        exampleuuid:
+            name: it is test name
+        """.trimIndent()
 
     init {
         if (!mainFile.exists()) {
-            val json = JsonObject()
-
-            val owner = JsonObject()
-            owner.add("admin", true)
-            owner.add("chatFormat", "[sky][Owner] %1[orange] > [white]%2")
-            owner.add("permission", JsonArray().add("all"))
-
-            val admin = JsonObject()
-            val adminPerm = JsonArray()
-            adminPerm.add("afk.admin")
-            adminPerm.add("changemap")
-            adminPerm.add("chars")
-            adminPerm.add("chat")
-            adminPerm.add("chat.admin")
-            adminPerm.add("color")
-            adminPerm.add("dps")
-            adminPerm.add("fillitems")
-            adminPerm.add("freeze")
-            adminPerm.add("gg")
-            adminPerm.add("god")
-            adminPerm.add("hud.enemy")
-            adminPerm.add("info.other")
-            adminPerm.add("kick.admin")
-            adminPerm.add("kill")
-            adminPerm.add("kill.other")
-            adminPerm.add("meme")
-            adminPerm.add("mute")
-            adminPerm.add("pause")
-            adminPerm.add("pm.other")
-            adminPerm.add("pvp.spector")
-            adminPerm.add("rollback")
-            adminPerm.add("search")
-            adminPerm.add("skip")
-            adminPerm.add("spawn")
-            adminPerm.add("strict")
-            adminPerm.add("team")
-            adminPerm.add("team.other")
-            adminPerm.add("tempban")
-            adminPerm.add("tpp")
-            adminPerm.add("unmute")
-            adminPerm.add("vote.pass")
-            adminPerm.add("vote.reset")
-            adminPerm.add("weather")
-
-            admin.add("inheritance", "user")
-            admin.add("admin", true)
-            admin.add("chatFormat", "[yellow][Admin] %1[orange] > [white]%2")
-            admin.add("permission", adminPerm)
-
-            val user = JsonObject()
-            val userPerm = JsonArray()
-            userPerm.add("*login")
-            userPerm.add("*reg")
-            userPerm.add("changepw")
-            userPerm.add("discord")
-            userPerm.add("effect")
-            userPerm.add("hud")
-            userPerm.add("info")
-            userPerm.add("lang")
-            userPerm.add("maps")
-            userPerm.add("me")
-            userPerm.add("motd")
-            userPerm.add("players")
-            userPerm.add("pm")
-            userPerm.add("ranking")
-            userPerm.add("report")
-            userPerm.add("status")
-            userPerm.add("time")
-            userPerm.add("tp")
-            userPerm.add("track")
-            userPerm.add("url")
-            userPerm.add("vote")
-            userPerm.add("vote.back")
-            userPerm.add("vote.gg")
-            userPerm.add("vote.kick")
-            userPerm.add("vote.map")
-            userPerm.add("vote.random")
-            userPerm.add("vote.skip")
-
-            user.add("inheritance", "visitor")
-            user.add("chatFormat", "%1[orange] > [white]%2")
-            user.add("permission", userPerm)
-
-            val visitor = JsonObject()
-            val visitorPerm = JsonArray()
-            visitorPerm.add("help")
-            visitorPerm.add("login")
-            visitorPerm.add("reg")
-
-            visitor.add("chatFormat", "%1[scarlet] > [white]%2")
-            visitor.add("default", true)
-            visitor.add("permission", visitorPerm)
-
-            json.add("owner", owner)
-            json.add("admin", admin)
-            json.add("user", user)
-            json.add("visitor", visitor)
-
-            mainFile.writeString(json.toString(Stringify.HJSON))
+            mainFile.write(this::class.java.getResourceAsStream("/permission_default.yaml")!!, false)
         }
 
         if (!userFile.exists()) {
-            val obj = JsonArray()
-            obj.setComment(comment)
-            userFile.writeString(obj.toString(Stringify.HJSON_COMMENTS))
+            userFile.writeString(comment)
         }
-    }
-
-    fun sort() {
-        userFile.writeString(user.setComment(comment).toString(Stringify.HJSON_COMMENTS))
-        mainFile.writeString(JsonValue.readHjson(mainFile.reader()).toString(Stringify.HJSON))
     }
 
     @Throws(ParseException::class)
     fun load() {
-        main = JsonValue.readHjson(mainFile.reader()).asObject()
-        user = JsonValue.readHjson(userFile.reader()).asArray()
+        val mapper = ObjectMapper(YAMLFactory()).apply {
+            registerKotlinModule()
+            configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        }
 
-        main.forEach {
-            val name = it.name
-            if (Config.authType == Config.AuthType.None && main[name].asObject().has("default")) {
-                default = name
-            }
+        user = mapper.readValue(userFile.reader())
+        main = mapper.readValue(mainFile.reader())
 
-            if (main[name].asObject().has("inheritance")) {
-                var inheritance = main[name].asObject().getString("inheritance", null)
+        main.forEach { (name, roleConfig) ->
+            roleConfig.let {
+                if (default == "user" && roleConfig.default == true) {
+                    default = name
+                }
+
+                var inheritance: String? = roleConfig.inheritance
                 while (inheritance != null) {
-                    for (value in main[inheritance].asObject()["permission"].asArray()) {
-                        if (!value.asString().contains("*")) {
-                            main[name].asObject()["permission"].asArray().add(value.asString())
+                    val inheritedRoleConfig = main[inheritance]
+                    inheritedRoleConfig?.let { inheritedRole ->
+                        for (permission in inheritedRole.permissions) {
+                            if (!permission.contains("*") && !roleConfig.permissions.contains(permission)) {
+                                roleConfig.permissions.add(permission)
+                            }
                         }
+                        inheritance = inheritedRole.inheritance
+                    } ?: run {
+                        inheritance = null
                     }
-                    inheritance = main[inheritance].asObject().getString("inheritance", null)
                 }
             }
         }
@@ -194,22 +93,20 @@ object Permission {
     }
 
     fun apply() {
-        JsonValue.readHjson(userFile.reader()).asArray().forEach {
-            val b = it.asObject()
-            val c = database.players.find { e -> e.uuid == b["uuid"].asString() }
+        user.forEach { (uuid, config) ->
+            val c = database.players.find { e -> e.uuid == uuid }
             if (c == null) {
-                val data = database[b["uuid"].asString()]
-                if (data != null && b.has("group")) {
-                    data.permission = b["group"].asString()
-                    data.name = b.getString("name", data.name)
+                val data = database[uuid]
+                if (data != null && config.group != null) {
+                    data.permission = config.group
+                    data.name = config.name ?: data.name
                     database.queue(data)
                 }
             } else {
-                c.permission = b.getString("group", default)
-                // todo 멀티스레드 netserver iterator 오류
-                c.name = b.getString("name", Vars.netServer.admins.findByName(c.player.uuid()).first().lastName)
-                c.player.admin(b.getBoolean("admin", false))
-                c.player.name(b.getString("name", Vars.netServer.admins.findByName(c.player.uuid()).first().lastName))
+                c.permission = config.group ?: default
+                c.name = config.name ?: Vars.netServer.admins.findByName(c.player.uuid()).first().lastName
+                c.player.admin(config.admin ?: false)
+                c.player.name(config.name ?: Vars.netServer.admins.findByName(c.player.uuid()).first().lastName)
                 database.queue(c)
             }
         }
@@ -217,17 +114,15 @@ object Permission {
 
     operator fun get(data : DB.PlayerData) : PermissionData {
         val result = PermissionData()
-        val u = user.find { it.asObject().has("uuid") && it.asObject()["uuid"].asString() == data.uuid }
+
+        val u = user[data.uuid]
         if (u != null) {
-            result.uuid = u.asObject().getString("uuid", data.uuid)
-            result.name = u.asObject().getString("name", data.player.name())
-            result.group = u.asObject().getString("group", data.permission)
-            result.chatFormat = u.asObject().getString("chatFormat", Config.chatFormat)
-            result.admin = u.asObject().getBoolean("admin", false)
-            result.isAlert = u.asObject().getBoolean("isAlert", false)
-            result.alertMessage = u.asObject().getString("alertMessage", "")
+            result.name = u.name ?: data.player.name()
+            result.group = u.group ?: data.permission
+            result.admin = u.admin ?: false
+            result.isAlert = u.isAlert ?: false
+            result.alertMessage = u.alertMessage ?: ""
         } else {
-            result.uuid = data.uuid
             result.name = data.player.name()
             result.group = data.permission
             result.admin = false
@@ -239,21 +134,35 @@ object Permission {
     }
 
     fun check(data : DB.PlayerData, command : String) : Boolean {
-        main[this[data].group].asObject()["permission"].asArray().forEach {
-            if (it.asString() == command || it.asString().equals("all", true)) {
-                return true
-            }
+        val group = main[this[data].group]
+        return if (group != null) {
+            group.permissions.contains(command) || group.permissions.contains("*")
+        } else {
+            false
         }
-        return false
     }
 
     class PermissionData {
         var name = ""
         var uuid = ""
         var group = default
-        var chatFormat = Config.chatFormat
         var admin = false
         var isAlert = false
         var alertMessage = ""
     }
+
+    data class RoleConfig(
+        val admin: Boolean? = null,
+        val inheritance: String? = null,
+        val permissions: MutableList<String> = mutableListOf(),
+        val default: Boolean? = null
+    )
+
+    data class UserPermissionConfig(
+        val name: String? = null,
+        val group: String? = null,
+        val admin: Boolean? = null,
+        val isAlert: Boolean? = null,
+        val alertMessage: String? = null
+    )
 }

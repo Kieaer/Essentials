@@ -10,13 +10,15 @@ import arc.struct.ArrayMap
 import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.*
+import com.charleskorn.kaml.Yaml
 import com.github.lalyos.jfiglet.FigletFont
 import essential.core.Event.findPlayerData
 import essential.core.Event.findPlayers
 import essential.core.Event.findPlayersByName
 import essential.core.Event.resetVote
 import essential.core.Event.worldHistory
-import essential.core.Main.Companion.commandManager
+import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.currentTime
 import essential.core.Main.Companion.database
 import essential.core.Main.Companion.root
 import essential.core.annotation.ClientCommand
@@ -42,6 +44,7 @@ import org.hjson.JsonObject
 import org.hjson.JsonValue
 import org.hjson.Stringify
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
@@ -49,7 +52,9 @@ import java.lang.reflect.Field
 import java.sql.Timestamp
 import java.text.MessageFormat
 import java.time.LocalDateTime
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.*
 import java.util.random.RandomGenerator
 import kotlin.math.abs
@@ -61,122 +66,10 @@ import kotlin.reflect.full.findAnnotation
 
 class Commands(var handler: CommandHandler, isClient: Boolean) {
     companion object {
-        var clientCommands = CommandHandler("/")
-        var serverCommands = CommandHandler("")
-
         // 다중 사용 함수
         const val PLAYER_NOT_FOUND = "player.not.found"
         const val PLAYER_NOT_REGISTERED = "player.not.registered"
         const val STANDARD_DATE = "YYYY-MM-dd HH:mm:ss"
-        const val NO_PERMISSION = "command.permission.false"
-    }
-
-    val bannedCommandFile = "bannedCommands.txt"
-
-    init {
-        if (isClient) {
-            clientCommands.removeCommand("help")
-            if (Config.vote) {
-                clientCommands.removeCommand("vote")
-                clientCommands.register("vote", "<kick/map/gg/skip/back/random> [player/amount/world_name] [reason]", "Start voting") { a, p : Playerc -> Client(a, p).vote(p, a) }
-
-                clientCommands.removeCommand("votekick")
-                if (Config.votekick) {
-                    clientCommands.register("votekick", "<name...>", "Start kick voting") { a, p : Playerc -> Client(a, p).votekick() }
-                }
-            }
-
-            // todo clear ban list
-            /*Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
-            Vars.netServer.admins.save()
-            */
-            clientCommands.register("broadcast", "<text...>", "Broadcast message to all servers") { a, p : Playerc -> Client(a, p).broadcast() }
-            clientCommands.register("changemap", "<name> [gamemode]", "Change the world or gamemode immediately.") { a, p : Playerc -> Client(a, p).changemap() }
-            clientCommands.register("changename", "<new_name> [player]", "Change player name.") { a, p : Playerc -> Client(a, p).changename() }
-            clientCommands.register("changepw", "<new_password> <password_repeat>", "Change account password.") { a, p : Playerc -> Client(a, p).changepw() }
-            clientCommands.register("chat", "<on/off>", "Mute all players without admins.") { a, p : Playerc -> Client(a, p).chat() }
-            clientCommands.register("chars", "<text...>", "Make pixel texts") { a, p : Playerc -> Client(a, p).chars(null) }
-            clientCommands.register("color", "Enable color nickname") { a, p : Playerc -> Client(a, p).color() }
-            clientCommands.register("discord", "Authenticate your Discord account to the server.") { a, p : Playerc -> Client(a, p).discord() }
-            clientCommands.register("dps", "Create damage per seconds meter block") { a, p : Playerc -> Client(a, p).dps() }
-            clientCommands.register("effect", "<on/off/level> [color]", "Turn other players' effects on or off, or set effects and colors for each level.") { a, p : Playerc -> Client(a, p).effect() }
-            clientCommands.register("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account EXP values") { a, p : Playerc -> Client(a, p).exp() }
-            clientCommands.register("fillitems", "[team]", "Fill the core with items.") { a, p : Playerc -> Client(a, p).fillitems() }
-            clientCommands.register("freeze", "<player>", "Stop player unit movement") { a, p : Playerc -> Client(a, p).freeze() }
-            clientCommands.register("gg", "[team]", "Force gameover") { a, p : Playerc -> Client(a, p).gg() }
-            clientCommands.register("god", "[name]", "Set max player health") { a, p : Playerc -> Client(a, p).god() }
-            clientCommands.register("help", "[page]", "Show command lists") { a, p : Playerc -> Client(a, p).help() }
-            clientCommands.register("hub", "<set/zone/block/count/total/remove/reset> [ip] [parameters...]", "Create a server to server point.") { a, p : Playerc -> Client(a, p).hub() }
-            clientCommands.register("hud", "<health/apm>", "Enable unit information.") { a, p : Playerc -> Client(a, p).hud() }
-            clientCommands.register("info", "[player...]", "Show your information") { a, p: Playerc -> Client(a, p).info() }
-            clientCommands.register("js", "[code...]", "Execute JavaScript codes") { a, p : Playerc -> Client(a, p).js() }
-            clientCommands.register("kickall", "All users except yourself and the administrator will be kicked") { a, p : Playerc -> Client(a, p).kickall() }
-            clientCommands.register("kill", "[player]", "Kill player.") { a, p : Playerc -> Client(a, p).kill() }
-            clientCommands.register("killall", "[team]", "Kill all enemy units") { a, p : Playerc -> Client(a, p).killall() }
-            clientCommands.register("killunit", "<name> [amount] [team]", "Destroys specific units only.") { a, p : Playerc -> Client(a, p).killunit() }
-            clientCommands.register("lang", "<language_tag>", "Set the language for your account.") { a, p : Playerc -> Client(a, p).lang() }
-            clientCommands.register("log", "Enable block log") { a, p : Playerc -> Client(a, p).log() }
-            clientCommands.register("login", "<id> <password>", "Access your account") { a, p : Playerc -> Client(a, p).login() }
-            clientCommands.register("maps", "[page]", "Show server maps") { a, p : Playerc -> Client(a, p).maps() }
-            clientCommands.register("me", "<text...>", "broadcast * message") { a, p : Playerc -> Client(a, p).me() }
-            clientCommands.register("meme", "<type>", "Enjoy meme features!") { a, p : Playerc -> Client(a, p).meme() }
-            clientCommands.register("motd", "Show server motd.") { a, p : Playerc -> Client(a, p).motd() }
-            clientCommands.register("mute", "<player>", "Mute player") { a, p : Playerc -> Client(a, p).mute() }
-            clientCommands.register("pause", "Pause server") { a, p : Playerc -> Client(a, p).pause() }
-            clientCommands.register("players", "[page]", "Show players list") { a, p : Playerc -> Client(a, p).players() }
-            clientCommands.register("pm", "<player> [message...]", "Send private messgae") { a, p : Playerc -> Client(a, p).pm() }
-            clientCommands.register("ranking", "<time/exp/attack/place/break/pvp> [page]", "Show players ranking") { a, p : Playerc -> Client(a, p).ranking() }
-            clientCommands.register("reg", "<id> <password> <password_repeat>", "Register account") { a, p : Playerc -> Client(a, p).register() }
-            clientCommands.register("report", "<player> <reason...>", "Report player") { a, p : Playerc -> Client(a, p).report() }
-            clientCommands.register("rollback", "<player>", "Undo all actions taken by the player.") { a, p : Playerc -> Client(a, p).rollback() }
-            clientCommands.register("search", "[value]", "Search player data") { a, p : Playerc -> Client(a, p).search() }
-            clientCommands.register("setitem", "<item> <amount> [team]", "Set team core item amount") { a, p : Playerc -> Client(a, p).setitem() }
-            clientCommands.register("setperm", "<player> <group>", "Set the player's permission group.") { a, p : Playerc -> Client(a, p).setperm() }
-            clientCommands.register("skip", "Start n wave immediately.") { a, p : Playerc -> Client(a, p).skip() }
-            clientCommands.register("spawn", "<unit/block> <name> [amount/rotate]", "Spawns units at the player's location.") { a, p : Playerc -> Client(a, p).spawn() }
-            clientCommands.register("status", "Show server status") { a, p : Playerc -> Client(a, p).status() }
-            clientCommands.register("strict", "<player>", "Set whether the target player can build or not.") { a, p : Playerc -> Client(a, p).strict() }
-            clientCommands.register("t", "<message...>", "Send a message only to your teammates.") { a, p : Playerc -> Client(a, p).t() }
-            clientCommands.register("team", "<team_name> [name]", "Change team") { a, p : Playerc -> Client(a, p).team() }
-            clientCommands.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a, p : Playerc -> Client(a, p).tempban() }
-            clientCommands.register("time", "Show server time") { a, p : Playerc -> Client(a, p).time() }
-            clientCommands.register("tp", "<player>", "Teleport to other players") { a, p : Playerc -> Client(a, p).tp() }
-            clientCommands.register("tpp", "[player]", "Lock on camera the target player.") { a, p : Playerc -> Client(a, p).tpp() }
-            clientCommands.register("track", "Displays the mouse positions of players.") { a, p : Playerc -> Client(a, p).track() }
-            clientCommands.register("unban", "<uuid/ip>", "Unban player") { a, p : Playerc -> Client(a, p).unban() }
-            clientCommands.register("unmute", "<player>", "Unmute player") { a, p : Playerc -> Client(a, p).unmute() }
-            clientCommands.register("url", "<command>", "Opens a URL contained in a specific command.") { a, p : Playerc -> Client(a, p).url() }
-            clientCommands.register("weather", "<rain/snow/sandstorm/sporestorm> <seconds>", "Adds a weather effect to the map.") { a, p : Playerc -> Client(a, p).weather() }
-
-            if (root.child(bannedCommandFile).exists()) {
-                val json = JsonArray.readHjson(root.child(bannedCommandFile).readString())
-                for (command in json.asArray()) {
-                    clientCommands.removeCommand(command.asString())
-                }
-            } else {
-                root.child(bannedCommandFile).writeString("[]")
-            }
-
-            for(a in clientCommands.commandList) {
-                val f: Field = CommandHandler.Command::class.java.getDeclaredField("runner")
-                f.setAccessible(true)
-                val value = f[a]
-                handler.register(a.text, a.paramText, a.description, value as CommandHandler.CommandRunner<*>)
-            }
-        } else {
-            serverCommands.register("debug", "[bool]", "Show plugin internal informations") { a -> Server(a).debug() }
-            serverCommands.register("gen", "Generate README.md texts") { a -> Server(a).genDocs() }
-            serverCommands.register("reload", "Reload permission and config files.") { a -> Server(a).reload() }
-            serverCommands.register("setperm", "<player> <group>", "Set the player's permission group.") { a -> Server(a).setperm() }
-            serverCommands.register("tempban", "<player> <time> [reason]", "Ban the player for a certain period of time.") { a -> Server(a).tempban() }
-
-            for(a in serverCommands.commandList) {
-                val f: Field = CommandHandler.Command::class.java.getDeclaredField("runner")
-                f.setAccessible(true)
-                val value = f[a]
-                handler.register(a.text, a.paramText, a.description, value as CommandHandler.CommandRunner<*>)
-            }
-        }
     }
 
     @ClientCommand("changemap", "<name> [gamemode]", "Change the world or gamemode immediately.")
@@ -326,26 +219,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
         playerData.animatedName = !playerData.animatedName
     }
 
-    // todo network
-    fun broadcast() {
-        
-        if (Main.connectType) {
-            Trigger.Server.sendAll("message", arg[0])
-            Trigger.Server.lastSentMessage = arg[0]
-            Call.sendMessage(arg[0])
-        } else {
-            Trigger.Client.message(arg[0])
-        }
-    }
-
-    // todo discord
-    fun discord() {
-        
-        if (Config.discordURL.isNotEmpty()) Call.openURI(player.con(), Config.discordURL)
-        Events.fire(CustomEvents.DiscordURLOpen(data))
-    }
-
-    @ClientCommand("dps", "Create damage per seconds meter block")
+    @ClientCommand("dps", description = "Create damage per seconds meter block")
     fun dps(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
         if (Event.dpsTile == null) {
             Call.constructFinish(
@@ -757,6 +631,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             }
         }
 
+        // todo 코드 정리
         fun show(target : DB.PlayerData) : String {
             return """
                         ${bundle["command.info.name"]}: ${target.name}[white]
@@ -791,24 +666,10 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
 
             fun banPlayer(data : DB.PlayerData?) {
                 if (data != null) {
-                    val name = data.name
                     val ip = Vars.netServer.admins.getInfo(data.uuid).lastIP
+                    Vars.netServer.admins.banPlayer(data.uuid)
 
-                    val ipBanList = JsonArray()
-                    for (a in Vars.netServer.admins.getInfo(data.uuid).ips) {
-                        ipBanList.add(a)
-                    }
-
-                    val json = JsonObject()
-                    json.add("id", data.uuid)
-                    json.add("ip", ipBanList)
-                    json.add("name", Vars.netServer.admins.getInfo(data.uuid).names.toString())
-                    Fi(Config.banList).writeString(
-                        JsonArray.readHjson(Fi(Config.banList).readString()).asArray().add(json).toString(
-                            Stringify.HJSON
-                        ))
-
-                    Event.log(Event.LogType.Player, Bundle()["log.player.banned", name, ip])
+                    Event.log(Event.LogType.Player, Bundle()["log.player.banned", data.name, ip])
                     database.players.forEach {
                         it.player.sendMessage(Bundle(it.languageTag)["info.banned.message", player.plainName(), data.name])
                     }
@@ -829,17 +690,6 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
                     } else {
                         playerData.send("command.unban.id", data.uuid)
                     }
-
-                    val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-                    val ir = json.iterator()
-                    while (ir.hasNext()) {
-                        val jsonValue = ir.next()
-                        if(jsonValue.asObject()["ip"].asArray().contains(JsonValue.valueOf(ip)) || jsonValue.asObject()["id"].asString() == data.uuid) {
-                            ir.remove()
-                        }
-                    }
-
-                    Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
 
                     Event.log(Event.LogType.Player, Bundle()["log.player.unbanned", name, ip])
                 }
@@ -1218,7 +1068,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
         player.sendMessage(Bundle(arg[0])["command.language.preview", Locale(arg[0]).toLanguageTag()])
     }
 
-    @ClientCommand("log", "Enable block history view mode")
+    @ClientCommand("log", description = "Enable block history view mode")
     fun log(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
         playerData.log = !playerData.log
         val msg = if (playerData.log) {
@@ -1227,35 +1077,6 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             "disabled"
         }
         playerData.send("command.log.$msg")
-    }
-
-    @ClientCommand("login", "<id> <password>", "Log-in to account.")
-    fun login(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
-        val bundle = Bundle(player.locale())
-        if (arg[0] == arg[1]) {
-            player.sendMessage(bundle["command.login.same.password"])
-            return
-        }
-
-        val result = database.search(arg[0], arg[1])
-        if (result != null) {
-            if (result.accountID == result.accountPW) {
-                player.sendMessage(bundle["command.login.default.password"])
-            } else if (result.isConnected) {
-                player.sendMessage(bundle["command.login.already"])
-            } else {
-                if (findPlayerData(result.uuid) == null) {
-                    database.players.remove { a -> a.uuid == player.uuid() }
-                    result.oldUUID = result.uuid
-                    result.uuid = player.uuid()
-                    Trigger.loadPlayer(player, result, true)
-                } else {
-                    player.sendMessage(bundle["command.login.already"])
-                }
-            }
-        } else {
-            playerData.err("command.login.not.found")
-        }
     }
 
     @ClientCommand("maps", "[page]", "Show server map lists")
@@ -1310,23 +1131,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
         Call.menu(player.con(), mainMenu, title, prebuilt[0].first, prebuilt[0].second)
     }
 
-    @ClientCommand("me", "<text...>", "Chat with special prefix")
-    fun me(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
-        // todo chat 모듈로 이동
-        if (playerData.mute) return
-        if (Config.chatBlacklist) {
-            val file = root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
-            if (file.isNotEmpty()) {
-                file.forEach {
-                    if ((Config.chatBlacklistRegex && arg[0].contains(Regex(it))) || (!Config.chatBlacklistRegex && arg[0].contains(it))) {
-                        playerData.err("event.chat.blacklisted")
-                        return
-                    }
-                }
-                Call.sendMessage("[brown]== [sky]${player.plainName()}[white] - [tan]${arg[0]}")
-            }
-        }
-    }
+
 
     @ClientCommand("meme", "<type>", "Enjoy mindustry meme features!")
     fun meme(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
@@ -1606,31 +1411,15 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
         Call.menu(player.con(), mainMenu, title, prebuilt[0].first, prebuilt[0].second)
     }
 
-    // todo chat 으로 이동
-    fun pm() {
-        if (!Permission.check(data, "pm") || data.mute) return
-        val target = findPlayers(arg[0])
-        if (target == null) {
-            playerData.err(PLAYER_NOT_FOUND)
-        } else if (arg.size > 1) {
-            player.sendMessage("[green][PM] ${target.plainName()}[yellow] => [white] ${arg[1]}")
-            target.sendMessage("[blue][PM] [gray][${data.entityid}][]${player.plainName()}[yellow] => [white] ${arg[1]}")
-            database.players.forEach {
-                if (Permission.check(it, "pm.other") && it.uuid != player.uuid() && target.uuid() != it.player.uuid()) {
-                    it.player.sendMessage("[sky]${player.plainName()}[][yellow] => [pink]${target.plainName()} [white]: ${arg[1]}")
-                }
-            }
-        } else {
-            playerData.err("command.pm.message")
-        }
-    }
-
     @ClientCommand("ranking", "<time/exp/attack/place/break/pvp> [page]", "Show player ranking")
     fun ranking(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
-        val bundle: Bundle(player.locale())
+        val bundle = Bundle(player.locale())
         if (PluginData.isRankingWorking) {
             playerData.err("command.ranking.working")
             return
+        }
+        Core.app.post {
+
         }
         Main.daemon.submit(Thread {
             try {
@@ -1796,32 +1585,6 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             }
             PluginData.isRankingWorking = false
         })
-    }
-
-    @ClientCommand("reg", "<id> <password> <password_repeat>", "Register account")
-    fun register(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
-        // todo protect 으로 이동
-        if (Config.authType != Config.AuthType.None) {
-            if (arg.size != 3) {
-                playerData.send("command.reg.usage")
-            } else if (arg[1] != arg[2]) {
-                playerData.err("command.reg.incorrect")
-            } else {
-                if (transaction {
-                        DB.Player.selectAll().where {
-                            DB.Player.accountID.eq(arg[0]).and(DB.Player.uuid.eq(player.uuid()))
-                                .and(DB.Player.oldUUID.eq(player.uuid()))
-                        }.firstOrNull()
-                    } == null) {
-                    Trigger.createPlayer(player, arg[0], arg[1])
-                    Log.info(Bundle()["log.data_created", player.plainName()])
-                } else {
-                    playerData.err("command.reg.exists")
-                }
-            }
-        } else {
-            playerData.err("command.reg.unavailable")
-        }
     }
 
     @ClientCommand("report", description = "<player> <reason...>")
@@ -2027,8 +1790,6 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             val days = hour / 24
             return String.format("%d:%02d:%02d:%02d", days % 365, hour % 24, min % 60, seconds % 60)
         }
-        
-        val bans = JsonArray.readHjson(Fi(Config.banList).readString()).asArray().size()
 
         val message = StringBuilder()
         message.append("""
@@ -2036,7 +1797,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
                 [#2B60DE]========================================[]
                 ${bundle["command.status.name"]}: ${Vars.state.map.name()}[white]
                 TPS: ${Core.graphics.framesPerSecond}/60
-                ${bundle["command.status.banned", bans]}
+                ${bundle["command.status.banned", Vars.netServer.admins.banned.size]}
                 ${bundle["command.status.playtime"]}: ${longToTime(PluginData.playtime)}
                 ${bundle["command.status.uptime"]}: ${longToTime(PluginData.uptime)}
             """.trimIndent())
@@ -2138,7 +1899,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
 
         if (arg.size == 1) {
             player.team(team)
-        } else if (Permission.check(data, "team.other")) {
+        } else if (Permission.check(playerData, "team.other")) {
             val other = findPlayers(arg[1])
             if (other != null) {
                 other.team(team)
@@ -2190,11 +1951,11 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
         }
     }
 
-    @ClientCommand("time", "Show current server time")
+    @ClientCommand("time", description = "Show current server time")
     fun time(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
         val now = LocalDateTime.now()
         // todo time format 통합
-        val dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss").withLocale(Locale.of(data.languageTag))
+        val dateTimeFormatter = DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss").withLocale(Locale(playerData.languageTag))
         playerData.send("command.time", now.format(dateTimeFormatter))
     }
 
@@ -2249,24 +2010,14 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
 
     @ClientCommand("unban", "<player>", "Unban player")
     fun unban(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
-        fun removeJson() {
-            val json = JsonArray.readHjson(Fi(Config.banList).readString()).asArray()
-            json.removeAll { js ->
-                js.asObject()["ip"].asArray().contains(JsonValue.valueOf(arg[0])) || js.asObject()["id"].asString() == arg[0]
-            }
-            Fi(Config.banList).writeString(json.toString(Stringify.HJSON))
-        }
-
         if (!Vars.netServer.admins.unbanPlayerID(arg[0])) {
             if (!Vars.netServer.admins.unbanPlayerIP(arg[0])) {
                 playerData.err(PLAYER_NOT_FOUND)
             } else {
                 playerData.send("command.unban.ip", arg[0])
-                removeJson()
             }
         } else {
             playerData.send("command.unban.id", arg[0])
-            removeJson()
         }
     }
 
@@ -2507,7 +2258,7 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
                     if (arg.size == 1) {
                         playerData.send("command.vote.skip.wrong")
                     } else if (arg[1].toIntOrNull() != null) {
-                        if (arg[1].toInt() > Config.skiplimit) {
+                        if (arg[1].toInt() > conf.command.skip.limit) {
                             playerData.send("command.vote.skip.toomany")
                         } else {
                             if (Event.voteCooltime == 0) {
@@ -2570,12 +2321,98 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
     fun votekick(player: Playerc, playerData: DB.PlayerData, vararg arg: String) {
         if (arg[0].contains("#")) {
             val target = database.players.find { e -> e.uuid == Groups.player.find { p -> p.id() == arg[0].substring(1).toInt() }.uuid() }
-            if (target != null && Permission.check(target, "kick.admin")) {
-                playerData.err("command.vote.kick.target.admin")
+            if (target != null) {
+                if (Permission.check(target, "kick.admin")) {
+                    playerData.err("command.vote.kick.target.admin")
+                } else {
+                    val array = arrayOf("kick", target.name, "Kick")
+                    vote(player, playerData, *array)
+                }
+            }
+        }
+    }
+
+    @ServerCommand("gen", description = "Generate wiki docs")
+    fun genDocs() {
+        if (System.getenv("DEBUG_KEY") != null) {
+            var clientCommands = CommandHandler("/")
+            var serverCommands = CommandHandler("")
+
+            class StringUtils {
+                // Source from https://howtodoinjava.com/java/string/escape-html-encode-string/
+                private val htmlEncodeChars = ObjectMap<Char, String>()
+                fun encodeHtml(source : String?) : String? {
+                    return encode(source)
+                }
+
+                private fun encode(source : String?) : String? {
+                    if (null == source) return null
+                    var encode : StringBuilder? = null
+                    val encodeArray = source.toCharArray()
+                    var match = -1
+                    var difference : Int
+                    for (i in encodeArray.indices) {
+                        val charEncode = encodeArray[i]
+                        if (htmlEncodeChars.containsKey(charEncode)) {
+                            if (null == encode) encode = StringBuilder(source.length)
+                            difference = i - (match + 1)
+                            if (difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
+                            encode.append(htmlEncodeChars[charEncode])
+                            match = i
+                        }
+                    }
+                    return if (null == encode) {
+                        source
+                    } else {
+                        difference = encodeArray.size - (match + 1)
+                        if (difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
+                        encode.toString()
+                    }
+                }
+
+                init {
+                    htmlEncodeChars.put('\u0026', "&amp;")
+                    htmlEncodeChars.put('\u003C', "&lt;")
+                    htmlEncodeChars.put('\u003E', "&gt;")
+                    htmlEncodeChars.put('\u0022', "&quot;")
+                    htmlEncodeChars.put('\u00A0', "&nbsp;")
+                }
             }
 
-            val array = arrayOf("kick", target.name, "Kick")
-            vote(player, array)
+
+            val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+            val client = "## Client commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
+            val time = "README.md Generated time: ${
+                DateTimeFormatter.ofPattern(STANDARD_DATE).format(LocalDateTime.now())}"
+
+            val result = StringBuilder()
+
+            clientCommands.commandList.forEach {
+                val temp = "| ${it.text} | ${StringUtils().encodeHtml(it.paramText)} | ${it.description} |\n"
+                result.append(temp)
+            }
+
+            val tmp = "$client$result\n\n"
+
+            result.clear()
+            serverCommands.commandList.forEach {
+                val temp = "| ${it.text} | ${StringUtils().encodeHtml(it.paramText)} | ${it.description} |\n"
+                result.append(temp)
+            }
+
+            println("$tmp$server$result\n\n\n$time")
+        }
+    }
+
+    @ServerCommand("reload", description = "Reload essential plugin configs.")
+    fun reload() {
+        try {
+            Permission.load()
+            Log.info(Bundle()["config.permission.updated"])
+            conf = Yaml.default.decodeFromString(Config.serializer(), root.child(Main.CONFIG_PATH).readString())
+            Log.info(Bundle()["config.reloaded"])
+        } catch (e : Exception) {
+            e.printStackTrace()
         }
     }
 
@@ -2594,120 +2431,6 @@ class Commands(var handler: CommandHandler, isClient: Boolean) {
             "malis".contains(arg[0], true) -> Team.malis
             "blue".contains(arg[0], true) -> Team.blue
             else -> Vars.state.rules.defaultTeam
-        }
-    }
-}
-
-class Server(val arg : Array<String>) {
-    private inner class StringUtils {
-        // Source from https://howtodoinjava.com/java/string/escape-html-encode-string/
-        private val htmlEncodeChars = ObjectMap<Char, String>()
-        fun encodeHtml(source : String?) : String? {
-            return encode(source)
-        }
-
-        private fun encode(source : String?) : String? {
-            if (null == source) return null
-            var encode : StringBuilder? = null
-            val encodeArray = source.toCharArray()
-            var match = -1
-            var difference : Int
-            for (i in encodeArray.indices) {
-                val charEncode = encodeArray[i]
-                if (htmlEncodeChars.containsKey(charEncode)) {
-                    if (null == encode) encode = StringBuilder(source.length)
-                    difference = i - (match + 1)
-                    if (difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
-                    encode.append(htmlEncodeChars[charEncode])
-                    match = i
-                }
-            }
-            return if (null == encode) {
-                source
-            } else {
-                difference = encodeArray.size - (match + 1)
-                if (difference > 0) encode.appendRange(encodeArray, match + 1, match + 1 + difference)
-                encode.toString()
-            }
-        }
-
-        init {
-            htmlEncodeChars.put('\u0026', "&amp;")
-            htmlEncodeChars.put('\u003C', "&lt;")
-            htmlEncodeChars.put('\u003E', "&gt;")
-            htmlEncodeChars.put('\u0022', "&quot;")
-            htmlEncodeChars.put('\u00A0', "&nbsp;")
-        }
-    }
-
-    fun genDocs() {
-        if (System.getenv("DEBUG_KEY") != null) {
-            val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-            val client = "## Client commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
-            val time = "README.md Generated time: ${
-                DateTimeFormatter.ofPattern(Commands.STANDARD_DATE).format(LocalDateTime.now())}"
-
-            val result = StringBuilder()
-
-            Commands.clientCommands.commandList.forEach {
-                val temp = "| ${it.text} | ${StringUtils().encodeHtml(it.paramText)} | ${it.description} |\n"
-                result.append(temp)
-            }
-
-            val tmp = "$client$result\n\n"
-
-            result.clear()
-            Commands.serverCommands.commandList.forEach {
-                val temp = "| ${it.text} | ${StringUtils().encodeHtml(it.paramText)} | ${it.description} |\n"
-                result.append(temp)
-            }
-
-            println("$tmp$server$result\n\n\n$time")
-        }
-    }
-
-    fun reload() {
-        try {
-            Permission.load()
-            Log.info(Bundle()["config.permission.updated"])
-            Config.load()
-            Log.info(Bundle()["config.reloaded"])
-        } catch (e : Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    fun debug() {
-        when (arg[0]) {
-            "info" -> {
-                println("""
-                    == PluginData class
-                    uptime: ${PluginData.uptime}
-                    playtime: ${PluginData.playtime}
-                    pluginVersion: ${PluginData.pluginVersion}
-                    
-                    warpZones: ${PluginData.warpZones}
-                    warpBlocks: ${PluginData.warpBlocks}
-                    warpCounts: ${PluginData.warpCounts}
-                    warpTotals: ${PluginData.warpTotals}
-                    blacklist: ${PluginData.blacklist}
-                    banned: ${PluginData.banned}
-                    status: ${PluginData.status}
-                    
-                    == DB class
-                    """.trimIndent())
-                database.players.forEach { println(it.toString()) }
-            }
-
-            "debug" -> {
-                if (arg.isNotEmpty()) {
-                    if (arg[0].toBoolean()) {
-                        Core.settings.put("debugMode", true)
-                    } else {
-                        Core.settings.put("debugMode", false)
-                    }
-                }
-            }
         }
     }
 
@@ -2740,9 +2463,5 @@ class Server(val arg : Array<String>) {
             target.level = level
             return "$xp (${floor(levelXp.toDouble()).toInt()}) / ${floor(max.toDouble()).toInt()}"
         }
-    }
-
-    private fun stripColors(string : String) : String {
-        return string.replace(" *\\(.+?\\)".toRegex(), "")
     }
 }

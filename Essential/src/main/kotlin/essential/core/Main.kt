@@ -1,5 +1,6 @@
 package essential.core
 
+import arc.ApplicationListener
 import arc.Core
 import arc.files.Fi
 import arc.util.CommandHandler
@@ -9,14 +10,26 @@ import com.charleskorn.kaml.Yaml
 import essential.core.Event.findPlayerData
 import essential.core.annotation.ClientCommand
 import essential.core.annotation.ServerCommand
-import inside.commands.CommandManager
 import mindustry.Vars
+import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Playerc
 import mindustry.mod.Plugin
+import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
+import org.hjson.JsonArray
+import org.hjson.JsonObject
 import org.hjson.JsonValue
+import org.hjson.Stringify
+import java.io.BufferedWriter
+import java.io.OutputStreamWriter
+import java.net.SocketException
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.functions
 
@@ -29,19 +42,18 @@ class Main : Plugin() {
         @JvmField
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         @JvmField
-        val players : ArrayList<DB.PlayerData> = arrayListOf()
+        val players : MutableList<DB.PlayerData> = mutableListOf()
         @JvmField
         val database = DB()
+        @JvmField
+        val daemon: ExecutorService = Executors.newFixedThreadPool(2)
 
-        @JvmStatic
-        fun findPlayerByUuid(uuid: String): DB.PlayerData? {
-            return players.find { e -> e.uuid == uuid }
+        fun currentTime() : String {
+            return ZonedDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withLocale(Locale.getDefault()))
         }
-
-        val commandManager = CommandManager()
-
-        val bundle = Bundle()
     }
+
+    val bundle = Bundle()
 
     init {
         Thread.currentThread().name = "Essential"
@@ -59,6 +71,15 @@ class Main : Plugin() {
         conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())
         bundle.locale = Locale(conf.plugin.lang)
 
+        if (!root.child("data").exists()) {
+            root.child("data").mkdirs()
+        }
+
+        // 채팅 금지어 추가
+        if (!root.child("chat_blacklist.txt").exists()) {
+            root.child("chat_blacklist.txt").writeString("않")
+        }
+
         // DB 설정
         database.load()
         database.connect()
@@ -69,6 +90,110 @@ class Main : Plugin() {
 
         // 업데이트 확인
         checkUpdate()
+
+        // 권한 기능 설정
+        Permission.load()
+
+        Vars.netServer.admins.addActionFilter { e ->
+            if (e.player == null) return@addActionFilter true
+            val data = database.players.find { it.uuid == e.player.uuid() }
+            val isHub = PluginData["hubMode"]
+            for (it in PluginData.warpBlocks) {
+                if (it != null && e.tile != null && it.mapName == Vars.state.map.name() && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
+                    return@addActionFilter false
+                }
+            }
+
+            if (Vars.state.rules.pvp && conf.feature.pvp.autoTeam && e.player.team() == Team.derelict) {
+                return@addActionFilter false
+            }
+
+            if (data != null) {
+                if (e.type == Administration.ActionType.commandUnits) {
+                    data.currentControlCount += e.unitIDs.size
+                }
+
+                return@addActionFilter when {
+                    isHub != null && isHub == Vars.state.map.name() -> {
+                        Permission.check(data, "hub.build")
+                    }
+                    data.strict -> {
+                        false
+                    }
+                    Config.authType == Config.AuthType.Discord && data.discord.isNullOrEmpty() -> {
+                        e.player.sendMessage(Bundle(e.player.locale)["event.discord.not.registered"])
+                        false
+                    }
+                    else -> {
+                        true
+                    }
+                }
+            }
+            return@addActionFilter false
+        }
+
+        Core.app.addListener(object: ApplicationListener {
+            override fun dispose() {
+                if (connectType) {
+                    Trigger.clients.forEach {
+                        val writer = BufferedWriter(OutputStreamWriter(it.getOutputStream()))
+                        try {
+                            writer.write("exit")
+                            writer.newLine()
+                            writer.flush()
+                            it.close()
+                        } catch (e : SocketException) {
+                            it.close()
+                            Trigger.clients.remove(it)
+                        }
+                    }
+                    Trigger.Server.shutdown()
+                } else {
+                    Trigger.Client.send("exit")
+                }
+                daemon.shutdownNow()
+                Permission.sort()
+                Config.save()
+                webServer.stop()
+                if (Config.webServer) webServer.stop()
+            }
+        })
+
+        if (!Fi(Config.banList).exists()) {
+            val data = JsonArray()
+            Vars.netServer.admins.banned.forEach {
+                val json = JsonObject()
+                json.add("id", it.id)
+
+                val ips = JsonArray()
+                for (a in it.ips) {
+                    ips.add(a)
+                }
+                json.add("ip", ips)
+
+                val names = JsonArray()
+                for (a in it.names) {
+                    names.add(a)
+                }
+
+                json.add("name", names)
+            }
+
+            Fi(Config.banList).writeString(data.toString(Stringify.HJSON))
+        } else {
+            Vars.netServer.admins.playerInfo.values().forEach(Consumer { info : Administration.PlayerInfo -> info.banned = false })
+            for (bans in JsonArray.readHjson(Fi(Config.banList).readString()).asArray()) {
+                val data = bans.asObject()
+                val id = data["id"].asString()
+                val ips = data["ip"].asArray()
+                Vars.netServer.admins.playerInfo.values().find { a -> a.id == id }?.banned = true
+                for (ip in ips) {
+                    Vars.netServer.admins.playerInfo.values().find { a -> a.lastIP == ip.asString() }?.banned = true
+                }
+            }
+
+            Vars.netServer.admins.save()
+        }
 
         Log.info(bundle["event.plugin.loaded"])
     }

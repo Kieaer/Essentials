@@ -11,4 +11,5 @@ class CustomEvents {
     class DiscordURLOpen(val data : DB.PlayerData)
     class PlayerConnectKicked(val name : String, val reason : String)
     class PlayerReported(val reporter : String, val name : String, val reason : String)
+    class PlayerDataLoaded(val oldName: String, val currentName: String, val uuid: String)
 }

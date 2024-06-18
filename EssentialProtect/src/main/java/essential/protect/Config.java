@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Config {
     private Pvp pvp;
     private Account account;
+    private Protect protect;
 
     public Pvp getPvp() {
         return pvp;
@@ -14,15 +15,16 @@ public class Config {
         return account;
     }
 
+    public Protect getProtect() {
+        return protect;
+    }
+
     public static class Pvp {
         private Peace peace;
         private Border border;
 
         @JsonProperty("destroy-core")
         private boolean destroyCore;
-
-        @JsonProperty("unbreakable-core")
-        private boolean unbreakableCore;
 
         public Peace getPeace() {
             return peace;
@@ -34,10 +36,6 @@ public class Config {
 
         public boolean isDestroyCore() {
             return destroyCore;
-        }
-
-        public boolean isUnbreakableCore() {
-            return unbreakableCore;
         }
 
         public static class Peace {
@@ -63,7 +61,7 @@ public class Config {
     }
 
     public static class Account {
-        public static enum AuthType {
+        public enum AuthType {
             None, Password, Discord
         }
 
@@ -72,12 +70,41 @@ public class Config {
         @JsonProperty("auth-type")
         private AuthType authType;
 
+        @JsonProperty("discord-url")
+        private String discordURL;
+
+        private Boolean strict;
+
         public boolean isEnabled() {
             return enabled;
         }
 
         public AuthType getAuthType() {
             return authType;
+        }
+
+        public String getDiscordURL() {
+            return discordURL;
+        }
+
+        public Boolean getStrict() {
+            return strict;
+        }
+    }
+
+    public static class Protect {
+        @JsonProperty("unbreakable-core")
+        private boolean unbreakableCore;
+
+        @JsonProperty("power-detect")
+        private boolean powerDetect;
+
+        public boolean isUnbreakableCore() {
+            return unbreakableCore;
+        }
+
+        public boolean isPowerDetect() {
+            return powerDetect;
         }
     }
 }

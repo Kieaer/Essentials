@@ -25,7 +25,8 @@ dependencies {
     implementation("com.github.PersonTheCat:hjson-java:3.0.0-C11")
     implementation("de.svenkubiak:jBCrypt:0.4.3")
     implementation("org.apache.maven:maven-artifact:4.0.0-alpha-3")
-    implementation("com.github.MindustryInside:CommandsLib:f6a8d78")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.3")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
     implementation("io.github.classgraph:classgraph:4.8.173")
     implementation("com.github.lalyos:jfiglet:0.0.9")
 

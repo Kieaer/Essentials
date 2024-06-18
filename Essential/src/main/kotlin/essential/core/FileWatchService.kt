@@ -1,4 +1,4 @@
-package essentials
+package essential.core
 
 import arc.Core
 import arc.files.Fi
@@ -9,7 +9,6 @@ import org.hjson.JsonArray
 import org.hjson.ParseException
 import java.io.IOException
 import java.nio.file.*
-import java.util.function.Consumer
 
 object FileWatchService: Runnable {
     private val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
