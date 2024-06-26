@@ -18,8 +18,8 @@ import static essential.core.Main.root;
 import static mindustry.Vars.netServer;
 
 public class Main extends Plugin {
-    static final String CONFIG_PATH = "config/config_protect.yaml";
-    static final Bundle bundle = new Bundle();
+    static String CONFIG_PATH = "config/config_protect.yaml";
+    static Bundle bundle = new Bundle();
     static Config conf;
 
     @Override

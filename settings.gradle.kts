@@ -7,9 +7,10 @@ sequenceOf(
     "AntiCheat",
     "Chat",
     "Protect",
-    "Bridge"
+    "Bridge",
+    "Discord",
+    "Web"
 ).forEach {
     include(":Essential$it")
     project(":Essential$it").projectDir = file("Essential$it")
 }
-include("EssentialDiscord")

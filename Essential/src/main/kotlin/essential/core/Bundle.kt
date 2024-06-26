@@ -25,10 +25,18 @@ class Bundle {
     }
 
     operator fun get(key: String): String {
-        return "$prefix " + MessageFormat.format(resource.getString(key))
+        return if (prefix.isEmpty()) {
+            MessageFormat.format(resource.getString(key))
+        } else {
+            "$prefix " + MessageFormat.format(resource.getString(key))
+        }
     }
 
     operator fun get(key: String, vararg parameter: Any): String {
-        return "$prefix " + MessageFormat.format(resource.getString(key), *parameter)
+        return if (prefix.isEmpty()) {
+            MessageFormat.format(resource.getString(key), *parameter)
+        } else {
+            "$prefix " + MessageFormat.format(resource.getString(key), *parameter)
+        }
     }
 }

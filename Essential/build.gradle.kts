@@ -1,10 +1,11 @@
 plugins {
-    kotlin("jvm")
+    kotlin("jvm") version "1.9.20-RC2"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven(url = "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository")
     maven(url = "https://www.jitpack.io")
@@ -14,11 +15,13 @@ val mindustryVersion = "v146"
 
 dependencies {
     compileOnly("com.github.anuken.arc:arc-core:$mindustryVersion")
-    compileOnly("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
+    compileOnly("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
+    compileOnly("com.github.Anuken.mindustryjitpack:server:$mindustryVersion")
 
     implementation("com.charleskorn.kaml:kaml-jvm:0.59.0")
     implementation("org.jetbrains.exposed:exposed-core:0.51.0")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.51.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.51.1")
 
     runtimeOnly("org.slf4j:slf4j-nop:2.0.13")
 
@@ -38,8 +41,8 @@ dependencies {
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("com.github.anuken.arc:arc-core:$mindustryVersion")
-    testImplementation("com.github.anuken.mindustryjitpack:core:$mindustryVersion")
-    testImplementation("com.github.anuken.mindustryjitpack:server:$mindustryVersion")
+    testCompileOnly("com.github.Anuken.mindustryjitpack:server:$mindustryVersion")
+    testImplementation("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
     testImplementation("com.github.anuken.arc:backend-headless:$mindustryVersion")
     testImplementation("com.github.stefanbirkner:system-rules:$rulesVersion")
     testImplementation("net.datafaker:datafaker:$dataFakerVersion")

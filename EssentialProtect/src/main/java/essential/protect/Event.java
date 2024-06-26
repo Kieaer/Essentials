@@ -5,6 +5,7 @@ import arc.Events;
 import essential.core.Bundle;
 import essential.core.CustomEvents;
 import essential.core.DB;
+import essential.core.Trigger;
 import mindustry.Vars;
 import mindustry.content.Blocks;
 import mindustry.content.Fx;
@@ -16,6 +17,8 @@ import mindustry.world.Build;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.PowerGraph;
 import mindustry.world.modules.PowerModule;
+import org.jetbrains.exposed.sql.Op;
+import org.jetbrains.exposed.sql.SqlExpressionBuilder;
 import org.jetbrains.exposed.sql.Transaction;
 
 import java.util.Arrays;
@@ -64,9 +67,7 @@ public class Event {
             }
 
             if (conf.getProtect().isUnbreakableCore()) {
-                Vars.state.rules.defaultTeam.cores().forEach ( core -> {
-                    core.health(1.0E8f);
-                });
+                Vars.state.rules.defaultTeam.cores().forEach ( core -> core.health(1.0E8f));
             }
         });
 
@@ -94,36 +95,41 @@ public class Event {
         });
 
         Events.on(EventType.PlayerJoin.class, e -> {
+            Trigger trigger = new Trigger();
             e.player.admin(false);
 
             DB.PlayerData data = database.get(e.player.uuid());
             if (conf.getAccount().getAuthType() == Config.Account.AuthType.Discord) {
                 if (data == null) {
                     daemon.submit(() -> {
-                        try (Transaction transaction = new Transaction()) {
-                            if (DB.Player.INSTANCE.select(DB.Player.INSTANCE.getName()).where(DB.Player.INSTANCE.getName() eq (e.player.name)).isEmpty()) {
-                                Core.app.post(() -> Trigger.createPlayer(e.player, null, null));
-                            } else {
+                        database.executeInTransaction(() -> {
+                            if (trigger.checkUserNameExists(e.player.name)) {
                                 Core.app.post(() -> e.player.con.kick(new Bundle(e.player.locale).get("event.player.name.duplicate"), 0L));
+                            } else {
+                                Core.app.post(() -> trigger.createPlayer(e.player, null, null));
                             }
-                        }
+
+                            return null;
+                        });
                     });
                 } else {
-                    Trigger.loadPlayer(e.player, data, false);
+                    trigger.loadPlayer(e.player, data, false);
                 }
             } else if (conf.getAccount().getAuthType() == Config.Account.AuthType.None && data != null) {
-                Trigger.loadPlayer(e.player, data, false);
+                trigger.loadPlayer(e.player, data, false);
             } else if (conf.getAccount().getAuthType() != Config.Account.AuthType.None) {
                 e.player.sendMessage(new Bundle(e.player.locale).get("event.player.first.register"));
             } else if (conf.getAccount().getAuthType() == Config.Account.AuthType.None) {
                 daemon.submit(() -> {
-                    try (Transaction transaction = new Transaction()) {
-                        if (DB.Player.select(DB.Player.INSTANCE.getName()).where(DB.Player.INSTANCE.getName().eq(e.player.name)).isEmpty()) {
-                            Core.app.post(() -> Trigger.createPlayer(e.player, null, null));
+                    database.executeInTransaction(() -> {
+                        if (trigger.checkUserNameExists(e.player.name)) {
+                            Core.app.post(() -> trigger.createPlayer(e.player, null, null));
                         } else {
                             Core.app.post(() -> e.player.con.kick(new Bundle(e.player.locale).get("event.player.name.duplicate"), 0L));
                         }
-                    }
+
+                        return null;
+                    });
                 });
             }
         });

@@ -14,11 +14,11 @@ import org.hjson.*
 import java.util.*
 
 object Permission {
-    private var main : Map<String, RoleConfig> = mapOf()
-    var user : Map<String, UserPermissionConfig> = mapOf()
+    private var main: Map<String, RoleConfig> = mapOf()
+    var user: Map<String, UserPermissionConfig> = mapOf()
     var default = "user"
-    val mainFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.yaml")
-    val userFile : Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.yaml")
+    val mainFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.yaml")
+    val userFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.yaml")
 
     val bundle = Bundle(Locale.getDefault().toLanguageTag())
 
@@ -112,7 +112,7 @@ object Permission {
         }
     }
 
-    operator fun get(data : DB.PlayerData) : PermissionData {
+    operator fun get(data: DB.PlayerData): PermissionData {
         val result = PermissionData()
 
         val u = user[data.uuid]
@@ -122,18 +122,20 @@ object Permission {
             result.admin = u.admin ?: false
             result.isAlert = u.isAlert ?: false
             result.alertMessage = u.alertMessage ?: ""
+            result.chatFormat = u.chatFormat ?: ""
         } else {
             result.name = data.player.name()
             result.group = data.permission
             result.admin = false
             result.isAlert = false
             result.alertMessage = ""
+            result.chatFormat = ""
         }
 
         return result
     }
 
-    fun check(data : DB.PlayerData, command : String) : Boolean {
+    fun check(data: DB.PlayerData, command: String): Boolean {
         val group = main[this[data].group]
         return if (group != null) {
             group.permissions.contains(command) || group.permissions.contains("*")
@@ -149,20 +151,22 @@ object Permission {
         var admin = false
         var isAlert = false
         var alertMessage = ""
+        var chatFormat = ""
     }
 
-    data class RoleConfig(
-        val admin: Boolean? = null,
-        val inheritance: String? = null,
-        val permissions: MutableList<String> = mutableListOf(),
+    class RoleConfig {
+        val admin: Boolean? = null
+        val inheritance: String? = null
+        val permissions: MutableList<String> = mutableListOf()
         val default: Boolean? = null
-    )
+    }
 
-    data class UserPermissionConfig(
-        val name: String? = null,
-        val group: String? = null,
-        val admin: Boolean? = null,
-        val isAlert: Boolean? = null,
+    class UserPermissionConfig {
+        val name: String? = null
+        val group: String? = null
+        val admin: Boolean? = null
+        val isAlert: Boolean? = null
         val alertMessage: String? = null
-    )
+        val chatFormat: String? = null
+    }
 }

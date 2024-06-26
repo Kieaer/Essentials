@@ -4,11 +4,11 @@ import arc.Core
 import arc.Events
 import arc.func.Prov
 import arc.struct.Seq
-import arc.util.Log
 import arc.util.Time
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.database
 import essential.core.Main.Companion.root
+import essential.core.PluginData.entityOrder
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.Team
@@ -19,22 +19,22 @@ import mindustry.gen.Playerc
 import mindustry.net.Host
 import mindustry.net.NetworkIO
 import mindustry.world.Tile
-import org.hjson.JsonArray
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
-import java.io.*
-import java.net.*
+import java.io.IOException
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetAddress
+import java.net.SocketException
 import java.nio.ByteBuffer
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
 
-object Trigger {
-    private var order = 0
-    val clients = Seq<Socket>()
-
-    fun loadPlayer(player : Playerc, data : DB.PlayerData, login : Boolean) {
+class Trigger {
+    fun loadPlayer(player: Playerc, data: DB.PlayerData, login: Boolean) {
         if (data.duplicateName != null && data.duplicateName == player.name()) {
             player.kick(Bundle(player.locale())["event.player.duplicate.name"])
         } else {
@@ -78,8 +78,8 @@ object Trigger {
             player.admin(Permission[data].admin)
             message.appendLine(bundle[if (login) "event.player.logged" else "event.player.loaded"])
 
-            data.entityid = order
-            order++
+            data.entityid = entityOrder
+            entityOrder += 1
 
             if (!login) {
                 val motd = if (root.child("motd/${data.languageTag}.txt").exists()) {
@@ -111,14 +111,20 @@ object Trigger {
                     Event.pvpPlayer.containsKey(data.uuid) -> {
                         player.team(Event.pvpPlayer[data.uuid])
                     }
-                    conf.feature.pvp.spector && Event.pvpSpectors.contains(data.uuid) || Permission.check(data, "pvp.spector") -> {
+
+                    conf.feature.pvp.spector && Event.pvpSpectors.contains(data.uuid) || Permission.check(
+                        data,
+                        "pvp.spector"
+                    ) -> {
                         player.team(Team.derelict)
                     }
+
                     conf.feature.pvp.autoTeam -> {
-                        fun winPercentage(team : Team) : Double {
+                        fun winPercentage(team: Team): Double {
                             var players = arrayOf<Pair<Team, Double>>()
                             database.players.forEach {
-                                val rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
+                                val rate =
+                                    it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
                                 players += Pair(it.player.team(), if (rate.isNaN()) 0.0 else rate)
                             }
 
@@ -148,15 +154,17 @@ object Trigger {
 
             if (Event.voting) {
                 if (Event.voteStarter != null) message.appendLine(bundle["command.vote.starter", Event.voteStarter!!.player.plainName()])
-                message.appendLine(when (Event.voteType) {
-                    "kick" -> bundle["command.vote.kick.start", Event.voteTarget!!.plainName(), Event.voteReason!!]
-                    "map" -> bundle["command.vote.map.start", Event.voteMap!!.name(), Event.voteReason!!]
-                    "gg" -> bundle["command.vote.gg.start"]
-                    "skip" -> bundle["command.vote.skip.start", Event.voteWave!!]
-                    "back" -> bundle["command.vote.back.start", Event.voteReason!!]
-                    "random" -> bundle["command.vote.random.start"]
-                    else -> ""
-                })
+                message.appendLine(
+                    when (Event.voteType) {
+                        "kick" -> bundle["command.vote.kick.start", Event.voteTarget!!.plainName(), Event.voteReason!!]
+                        "map" -> bundle["command.vote.map.start", Event.voteMap!!.name(), Event.voteReason!!]
+                        "gg" -> bundle["command.vote.gg.start"]
+                        "skip" -> bundle["command.vote.skip.start", Event.voteWave!!]
+                        "back" -> bundle["command.vote.back.start", Event.voteReason!!]
+                        "random" -> bundle["command.vote.random.start"]
+                        else -> ""
+                    }
+                )
                 message.appendLine(bundle["command.vote.how"])
             }
 
@@ -170,7 +178,7 @@ object Trigger {
         }
     }
 
-    fun createPlayer(player : Playerc, id : String?, password : String?) {
+    fun createPlayer(player: Playerc, id: String?, password: String?) {
         val data = DB.PlayerData()
         data.name = player.name()
         data.uuid = player.uuid()
@@ -188,22 +196,27 @@ object Trigger {
         loadPlayer(player, data, false)
     }
 
-    class Thread: Runnable {
+    class Thread : Runnable {
         private var ping = 0.000
         private val dummy = Player.create()
 
-        fun caculateCenter(startTile : Tile, endTile : Tile) : Pair<Int, Int> {
-            data class Point(val x : Int, val y : Int)
+        fun caculateCenter(startTile: Tile, endTile: Tile): Pair<Int, Int> {
+            data class Point(val x: Int, val y: Int)
 
-            data class Tile(val coordinates : Point, val areaValue : Float)
+            data class Tile(val coordinates: Point, val areaValue: Float)
 
-            fun calculateAreaValue(x : Int, y : Int) : Double {
+            fun calculateAreaValue(x: Int, y: Int): Double {
                 return (x + y) / 2.0
             }
 
-            fun findMedianCoordinates(startPoint : mindustry.world.Tile, endPoint : mindustry.world.Tile) : Pair<Int, Int> {
-                val regionWidth = if (endPoint.x > startPoint.x) endPoint.x - startPoint.x else startPoint.x - endPoint.x
-                val regionHeight = if (endPoint.y > startPoint.y) endPoint.y - startPoint.y else startPoint.y - endPoint.y
+            fun findMedianCoordinates(
+                startPoint: mindustry.world.Tile,
+                endPoint: mindustry.world.Tile
+            ): Pair<Int, Int> {
+                val regionWidth =
+                    if (endPoint.x > startPoint.x) endPoint.x - startPoint.x else startPoint.x - endPoint.x
+                val regionHeight =
+                    if (endPoint.y > startPoint.y) endPoint.y - startPoint.y else startPoint.y - endPoint.y
                 val totalTiles = regionWidth * regionHeight
                 val tiles = mutableListOf<Tile>()
 
@@ -283,7 +296,14 @@ object Trigger {
                                     dummy.y = tile.getY()
 
                                     //Core.app.post { Commands.Client(arrayOf(str), dummy).chars(tile) }
-                                    PluginData.warpCounts[i] = PluginData.WarpCount(Vars.state.map.name(), value.tile.pos(), value.ip, value.port, info.players, digits.size)
+                                    PluginData.warpCounts[i] = PluginData.WarpCount(
+                                        Vars.state.map.name(),
+                                        value.tile.pos(),
+                                        value.ip,
+                                        value.port,
+                                        info.players,
+                                        digits.size
+                                    )
                                 } else {
                                     dummy.x = value.tile.getX()
                                     dummy.y = value.tile.getY()
@@ -340,19 +360,25 @@ object Trigger {
 
                                     if (alive) {
                                         if (isDup) y += 4
-                                        for (a in Groups.player) {
-                                            memory.add(a to Triple("[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}", x, y))
+                                        Groups.player.forEach { a ->
+                                            memory.add(
+                                                a to Triple(
+                                                    "[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
+                                                    x,
+                                                    y
+                                                )
+                                            )
                                         }
                                         value.online = true
                                     } else {
-                                        for (a in Groups.player) {
+                                        Groups.player.forEach { a ->
                                             memory.add(a to Triple(Bundle(a.locale)["event.server.warp.offline"], x, y))
                                         }
                                         value.online = false
                                     }
 
                                     if (isDup) margin -= 4
-                                    for (a in Groups.player) {
+                                    Groups.player.forEach { a ->
                                         memory.add(a to Triple(value.description, x, tile.build.getY() - margin))
                                     }
                                 }
@@ -375,11 +401,23 @@ object Trigger {
                                 // todo 중앙 정렬 안됨
                                 if (alive) {
                                     for (a in Groups.player) {
-                                        memory.add(a to Triple("[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}", (center.first * 8).toFloat(), (center.second * 8).toFloat()))
+                                        memory.add(
+                                            a to Triple(
+                                                "[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
+                                                (center.first * 8).toFloat(),
+                                                (center.second * 8).toFloat()
+                                            )
+                                        )
                                     }
                                 } else {
                                     for (a in Groups.player) {
-                                        memory.add(a to Triple(Bundle(a.locale)["event.server.warp.offline"], (center.first * 8).toFloat(), (center.second * 8).toFloat()))
+                                        memory.add(
+                                            a to Triple(
+                                                Bundle(a.locale)["event.server.warp.offline"],
+                                                (center.first * 8).toFloat(),
+                                                (center.second * 8).toFloat()
+                                            )
+                                        )
                                     }
                                 }
                             }
@@ -449,9 +487,9 @@ object Trigger {
 
                     ping = 0.000
                     TimeUnit.SECONDS.sleep(3)
-                } catch (e : InterruptedException) {
+                } catch (e: InterruptedException) {
                     java.lang.Thread.currentThread().interrupt()
-                } catch (e : Exception) {
+                } catch (e: Exception) {
                     e.printStackTrace()
                     Core.app.exit()
                 }
@@ -459,15 +497,15 @@ object Trigger {
         }
 
         @Throws(IOException::class, SocketException::class)
-        private fun pingHostImpl(address : String, port : Int, listener : Consumer<Host>) {
-            val packetSupplier : Prov<DatagramPacket> = Prov<DatagramPacket> { DatagramPacket(ByteArray(512), 512) }
+        private fun pingHostImpl(address: String, port: Int, listener: Consumer<Host>) {
+            val packetSupplier: Prov<DatagramPacket> = Prov<DatagramPacket> { DatagramPacket(ByteArray(512), 512) }
 
             try {
                 DatagramSocket().use { socket ->
-                    val s : Long = Time.millis()
+                    val s: Long = Time.millis()
                     socket.send(DatagramPacket(byteArrayOf(-2, 1), 2, InetAddress.getByName(address), port))
                     socket.soTimeout = 1000
-                    val packet : DatagramPacket = packetSupplier.get()
+                    val packet: DatagramPacket = packetSupplier.get()
                     socket.receive(packet)
                     val buffer = ByteBuffer.wrap(packet.data)
                     val host =
@@ -475,12 +513,12 @@ object Trigger {
                     host.port = port
                     listener.accept(host)
                 }
-            } catch (e : Exception) {
+            } catch (e: Exception) {
                 listener.accept(Host(0, null, null, null, 0, 0, 0, null, null, 0, null, null))
             }
         }
 
-        private fun getServerInfo() : Seq<Host> {
+        private fun getServerInfo(): Seq<Host> {
             val total = Seq<Host>()
             var buf = arrayOf<Pair<String, Int>>()
 
@@ -505,7 +543,7 @@ object Trigger {
         }
     }
 
-    object UpdateThread: Runnable {
+    object UpdateThread : Runnable {
         val queue = Seq<DB.PlayerData>()
 
         override fun run() {
@@ -519,187 +557,18 @@ object Trigger {
         }
     }
 
-    object Server: Runnable {
-        lateinit var server : ServerSocket
-        var lastSentMessage = ""
-
-        override fun run() {
-            try {
-                server = ServerSocket(6000)
-                server.use { s ->
-                    while (!java.lang.Thread.currentThread().isInterrupted) {
-                        val socket = s.accept()
-                        Log.info(Bundle()["network.server.connected", socket.inetAddress.hostAddress])
-                        clients.add(socket)
-                        val handler = Handler(socket)
-                        handler.start()
-                    }
-                }
-            } catch (_ : SocketException) {
-            } catch (e : Exception) {
-                e.printStackTrace()
-            }
-        }
-
-        fun shutdown() {
-            java.lang.Thread.currentThread().interrupt()
-            server.close()
-        }
-
-        fun sendAll(type : String, msg : String) {
-            for (a in clients) {
-                val b = BufferedWriter(OutputStreamWriter(a.getOutputStream()))
-                try {
-                    b.write(type)
-                    b.newLine()
-                    b.flush()
-                    b.write(msg)
-                    b.newLine()
-                    b.flush()
-                } catch (e : SocketException) {
-                    a.close()
-                    clients.remove(a)
-                }
-            }
-        }
-
-        class Handler(private val socket : Socket): java.lang.Thread() {
-            override fun run() {
-                try {
-                    val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                    val writer = BufferedWriter(OutputStreamWriter(socket.getOutputStream()))
-
-                    while (!currentThread().isInterrupted) {
-                        val d = reader.readLine()
-                        if (d == null) interrupt()
-                        when (d) {
-                            "exit" -> interrupt()
-
-                            "message" -> {
-                                val msg = reader.readLine()
-                                sendAll("message", msg)
-                            }
-
-                            "crash" -> {
-                                val stacktrace = StringBuilder()
-                                while (reader.readLine() !== "null") {
-                                    stacktrace.append(reader.readLine() + "\n")
-                                }
-                                root.child("report/${LocalDateTime.now().withNano(0)}.txt").writeString(stacktrace.toString())
-                                Log.info("Crash log received from ${socket.inetAddress.hostAddress}")
-                            }
-                        }
-                    }
-                } catch (_ : SocketException) {
-                } catch (e : Exception) {
-                    e.printStackTrace()
-                }
-                clients.remove(socket)
-                Log.info(Bundle()["network.server.disconnected", socket.inetAddress.hostAddress])
-            }
+    fun checkUserExistsInDatabase(name: String, uuid: String): Boolean {
+        return transaction {
+            DB.Player.select(DB.Player.name).where {
+                DB.Player.accountID.eq(name).and(DB.Player.uuid.eq(uuid))
+                    .and(DB.Player.oldUUID.eq(uuid))
+            }.firstOrNull() != null
         }
     }
 
-    object Client: Runnable {
-        // todo ban 공유 서버 ip
-        private val address = ""
-        private val port = 6000
-        private val socket = Socket()
-        private lateinit var reader : BufferedReader
-        private lateinit var writer : BufferedWriter
-        var lastReceivedMessage = ""
-
-        override fun run() {
-            try {
-                socket.connect(InetSocketAddress(address, port), 5000)
-                Log.info(Bundle()["network.client.connected", "$address:$port"])
-
-                reader = BufferedReader(InputStreamReader(socket.getInputStream()))
-                writer = BufferedWriter(OutputStreamWriter(socket.getOutputStream()))
-
-                while (!java.lang.Thread.currentThread().isInterrupted) {
-                    try {
-                        when (val d = reader.readLine()) {
-                            "message" -> {
-                                val msg = reader.readLine()
-                                lastReceivedMessage = msg
-                                Call.sendMessage(msg)
-                            }
-
-                            "exit" -> {
-                                writer.close()
-                                reader.close()
-                                socket.close()
-                                java.lang.Thread.currentThread().interrupt()
-                            }
-
-                            else -> {
-                                try {
-                                    for (a in JsonArray.readJSON(d).asArray()) {
-                                        Vars.netServer.admins.getInfo(a.asString()).banned = true
-                                        Vars.netServer.admins.save()
-                                    }
-                                    val json = JsonArray()
-                                    for (a in Vars.netServer.admins.banned) json.add(a.id)
-                                    write(json.toString())
-                                } catch (_ : Exception) {
-
-                                }
-                            }
-                        }
-                    } catch (e : Exception) {
-                        java.lang.Thread.currentThread().interrupt()
-                    }
-                }
-            } catch (_ : SocketTimeoutException) {
-                Log.info(Bundle()["network.client.timeout"])
-            } catch (e : java.lang.Exception) {
-                e.printStackTrace()
-            }
-        }
-
-        private fun write(msg : String) {
-            writer.write(msg)
-            writer.newLine()
-            writer.flush()
-        }
-
-        fun message(message : String) {
-            write("message")
-            write(message)
-        }
-
-        fun send(command : String, vararg parameter : String) {
-            when (command) {
-                "crash" -> {
-                    try {
-                        Socket("mindustry.kr", 6000).use {
-                            it.soTimeout = 5000
-                            BufferedWriter(OutputStreamWriter(socket.getOutputStream())).use { out ->
-                                out.write("crash\n")
-                                Scanner(socket.getInputStream()).use { sc ->
-                                    sc.nextLine() // ok
-                                    out.write("${parameter[0]}\n")
-                                    out.write("null")
-                                    sc.nextLine()
-                                    Log.info("Crash log reported!")
-                                }
-                            }
-                        }
-                    } catch (e : SocketTimeoutException) {
-                        Log.info("Connection timed out. crash report server may be closed.")
-                    }
-                }
-
-                "exit" -> {
-                    if (::reader.isInitialized) {
-                        write("exit")
-                        writer.close()
-                        reader.close()
-                        socket.close()
-                    }
-                }
-            }
-        }
+    fun checkUserNameExists(name: String): Boolean {
+        return transaction {
+            DB.Player.select(DB.Player.name).where { DB.Player.name.eq(name) }.firstOrNull()
+        } != null
     }
 }

@@ -1,5 +1,2 @@
-strict:
-  # Enabling this feature will only allow specific languages.
-  enabled: false
-  # Set the langauges you want to allow. (default: en)
-  language: "en"
+# Set your discord server url
+url: ""

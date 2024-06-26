@@ -4,25 +4,21 @@ import arc.ApplicationListener
 import arc.Core
 import arc.Events
 import arc.files.Fi
+import arc.func.Cons
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.struct.ObjectMap
 import arc.struct.ObjectSet
 import arc.struct.Seq
-import arc.util.Align
-import arc.util.Log
-import arc.util.Strings
-import arc.util.Time
+import arc.util.*
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.currentTime
 import essential.core.Main.Companion.database
 import essential.core.Main.Companion.root
 import mindustry.Vars
 import mindustry.content.*
-import mindustry.core.NetServer
 import mindustry.entities.Effect
-import mindustry.game.EventType
-import mindustry.game.EventType.PlayerJoin
+import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
@@ -64,23 +60,24 @@ import kotlin.io.path.Path
 import kotlin.math.floor
 import kotlin.random.Random
 
+
 object Event {
     var originalBlockMultiplier = 1f
     var originalUnitMultiplier = 1f
 
     var voting = false
-    var voteType : String? = null
-    var voteTarget : Playerc? = null
-    var voteTargetUUID : String? = null
-    var voteReason : String? = null
-    var voteMap : Map? = null
-    var voteWave : Int? = null
-    var voteStarter : DB.PlayerData? = null
-    var isPvP : Boolean = false
-    var voteTeam : Team = Vars.state.rules.defaultTeam
-    var voteCooltime : Int = 0
+    var voteType: String? = null
+    var voteTarget: Playerc? = null
+    var voteTargetUUID: String? = null
+    var voteReason: String? = null
+    var voteMap: Map? = null
+    var voteWave: Int? = null
+    var voteStarter: DB.PlayerData? = null
+    var isPvP: Boolean = false
+    var voteTeam: Team = Vars.state.rules.defaultTeam
+    var voteCooltime: Int = 0
     var voted = Seq<String>()
-    var lastVoted : LocalTime? = LocalTime.now()
+    var lastVoted: LocalTime? = LocalTime.now()
     var isAdminVote = false
     var isCanceled = false
 
@@ -96,17 +93,20 @@ object Event {
     var pvpPlayer = ObjectMap<String, Team>()
     var isGlobalMute = false
     var dpsBlocks = 0f
-    var dpsTile : Tile? = null
-    var maxdps : Float? = null
+    var dpsTile: Tile? = null
+    var maxdps: Float? = null
     var unitLimitMessageCooldown = 0
     var offlinePlayers = Seq<DB.PlayerData>()
     var apmRanking = ""
 
-    private val specificTextRegex : Pattern = Pattern.compile("[!@#\$%&*()_+=|<>?{}\\[\\]~-]")
-    private val blockSelectRegex : Pattern = Pattern.compile("^build\\d{1,2}\$")
+    val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
+    val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
+    lateinit var actionFilter: Administration.ActionFilter
+
+    private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}\$")
 
     fun register() {
-        fun checkValidBlock(tile : Tile) : String {
+        fun checkValidBlock(tile: Tile): String {
             return if (tile.build != null && blockSelectRegex.matcher(tile.block().name).matches()) {
                 (tile.build as ConstructBlock.ConstructBuild).current.name
             } else {
@@ -114,7 +114,7 @@ object Event {
             }
         }
 
-        Events.on(EventType.WithdrawEvent::class.java) {
+        Events.on(WithdrawEvent::class.java, Cons<WithdrawEvent> {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(
                     LogType.WithDraw,
@@ -139,9 +139,9 @@ object Event {
                     p.currentControlCount++
                 }
             }
-        }
+        }.also { listener -> eventListeners[WithdrawEvent::class.java] = listener })
 
-        Events.on(EventType.DepositEvent::class.java) {
+        Events.on(DepositEvent::class.java, Cons<DepositEvent> {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(
                     LogType.Deposit,
@@ -166,9 +166,9 @@ object Event {
                     p.currentControlCount++
                 }
             }
-        }
+        }.also { listener -> eventListeners[DepositEvent::class.java] = listener })
 
-        Events.on(EventType.ConfigEvent::class.java) {
+        Events.on(ConfigEvent::class.java, Cons<ConfigEvent> {
             if (it.tile != null && it.tile.block() != null && it.player != null) {
                 addLog(
                     TileLog(
@@ -204,9 +204,9 @@ object Event {
                     p.currentControlCount++
                 }
             }
-        }
+        }.also { listener -> eventListeners[ConfigEvent::class.java] = listener })
 
-        Events.on(EventType.TapEvent::class.java) {
+        Events.on(TapEvent::class.java, Cons<TapEvent> {
             log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), checkValidBlock(it.tile)])
             addLog(
                 TileLog(
@@ -291,16 +291,8 @@ object Event {
                     }
                     val str = StringBuilder()
                     val bundle = Bundle(data.languageTag)
-                    val coreBundle = ResourceBundle.getBundle(
-                        "bundle_block", try {
-                            when (data.languageTag) {
-                                "ko" -> Locale.KOREA
-                                else -> Locale.ENGLISH
-                            }
-                        } catch (e: Exception) {
-                            Locale.ENGLISH
-                        }
-                    )
+                    val handle = Core.files.internal("bundles/bundle")
+                    val coreBundle = I18NBundle.createBundle(handle, Locale(data.languageTag))
 
                     buf.forEach { two ->
                         val action = when (two.action) {
@@ -316,13 +308,13 @@ object Event {
 
                         if (two.action == "message") {
                             str.append(
-                                bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle.getString(
+                                bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle.get(
                                     "block.${two.tile}.name"
                                 ), two.value as String]
                             ).append("\n")
                         } else {
                             str.append(
-                                bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle.getString(
+                                bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle.get(
                                     "block.${two.tile}.name"
                                 ), action]
                             ).append("\n")
@@ -396,32 +388,32 @@ object Event {
 
                 data.currentControlCount++
             }
-        }
+        }.also { listener -> eventListeners[TapEvent::class.java] = listener })
 
-        Events.on(EventType.PickupEvent::class.java) {
+        Events.on(PickupEvent::class.java, Cons<PickupEvent> {
             if (it.unit != null && it.unit.isPlayer) {
                 val p = findPlayerData(it.unit.player.uuid())
                 if (p != null) {
                     p.currentControlCount++
                 }
             }
-        }
+        }.also { listener -> eventListeners[PickupEvent::class.java] = listener })
 
-        Events.on(EventType.UnitControlEvent::class.java) {
+        Events.on(UnitControlEvent::class.java, Cons<UnitControlEvent> {
             val p = findPlayerData(it.player.uuid())
             if (p != null) {
                 p.currentControlCount++
             }
-        }
+        }.also { listener -> eventListeners[UnitControlEvent::class.java] = listener })
 
-        Events.on(EventType.BuildingCommandEvent::class.java) {
+        Events.on(BuildingCommandEvent::class.java, Cons<BuildingCommandEvent> {
             val p = findPlayerData(it.player.uuid())
             if (p != null) {
                 p.currentControlCount++
             }
-        }
+        }.also { listener -> eventListeners[BuildingCommandEvent::class.java] = listener })
 
-        Events.on(EventType.WaveEvent::class.java) {
+        Events.on(WaveEvent::class.java, Cons<WaveEvent> {
             for (data in database.players) {
                 data.exp += 500
             }
@@ -435,9 +427,9 @@ object Event {
                     Vars.state.wavetime = Vars.state.rules.waveSpacing
                 }
             }
-        }
+        }.also { listener -> eventListeners[WaveEvent::class.java] = listener })
 
-        Events.on(EventType.ServerLoadEvent::class.java) {
+        Events.on(ServerLoadEvent::class.java, Cons<ServerLoadEvent> {
             Vars.content.blocks().each { two ->
                 var buf = 0
                 two.requirements.forEach { item ->
@@ -448,45 +440,6 @@ object Event {
 
             dosBlacklist = Vars.netServer.admins.dosBlacklist
 
-            // todo playerchatevent 으로 이동
-            NetServer.ChatFormatter { player, message ->
-                val data = findPlayerData(player.uuid())
-                return@ChatFormatter if (data != null) {
-                    if(!data.mute) {
-                        if (conf.feature.vote.enabled) {
-                            val isAdmin = Permission.check(data, "vote.pass")
-                            if (voting) {
-                                if (message.equals("y", true) && !voted.contains(player.uuid())) {
-                                    if (voteStarter != data) {
-                                        if (Vars.state.rules.pvp && voteTeam == player.team()) {
-                                            voted.add(player.uuid())
-                                        } else if (!Vars.state.rules.pvp) {
-                                            voted.add(player.uuid())
-                                        }
-                                    } else if (isAdmin) {
-                                        isAdminVote = true
-                                    }
-                                    player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
-                                } else if ( message.equals("n", true) && isAdmin) {
-                                    isCanceled = true
-                                }
-                            }
-                        }
-
-                        if (isGlobalMute && Permission.check(data, "chat.admin")) {
-                            message
-                        } else if (!isGlobalMute && !(voting && message.contains("y", true))) {
-                            message
-                        } else {
-                            null
-                        }
-                    } else {
-                        null
-                    }
-                } else {
-                    null
-                }
-            }
             Vars.netServer.admins.addChatFilter(Administration.ChatFilter { player, message ->
                 log(LogType.Chat, "${player.plainName()}: $message")
                 return@ChatFilter if (!message.startsWith("/")) {
@@ -528,16 +481,17 @@ object Event {
             })
 
             if (!Vars.mods.list().contains { mod -> mod.name == "essential-protect" }) {
-                Events.on(PlayerJoin::class.java) {
+                Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
                     it.player.admin(false)
 
                     val data = database[it.player.uuid()]
+                    val trigger = Trigger()
                     if (data == null) {
                         Main.daemon.submit(Thread {
                             transaction {
                                 if (DB.Player.select(DB.Player.name).where { DB.Player.name eq it.player.name }
                                         .empty()) {
-                                    Core.app.post { Trigger.createPlayer(it.player, null, null) }
+                                    Core.app.post { trigger.createPlayer(it.player, null, null) }
                                 } else {
                                     Core.app.post {
                                         it.player.con.kick(
@@ -549,17 +503,17 @@ object Event {
                             }
                         })
                     } else {
-                        Trigger.loadPlayer(it.player, data, false)
+                        trigger.loadPlayer(it.player, data, false)
                     }
-                }
+                }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
             }
-        }
+        }.also { listener -> eventListeners[ServerLoadEvent::class.java] = listener })
 
-        Events.on(EventType.PlayerChatEvent::class.java) {
+        Events.on(PlayerChatEvent::class.java, Cons<PlayerChatEvent> {
 
-        }
+        }.also { listener -> eventListeners[PlayerChatEvent::class.java] = listener })
 
-        Events.on(EventType.GameOverEvent::class.java) {
+        Events.on(GameOverEvent::class.java, Cons<GameOverEvent> {
             if (voting) {
                 database.players.forEach { a ->
                     if (voteTargetUUID != a.uuid) a.player.sendMessage(Bundle(a.languageTag)["command.vote.canceled"])
@@ -594,13 +548,13 @@ object Event {
             pvpSpectors = Seq()
             pvpPlayer = ObjectMap()
             dpsTile = null
-        }
+        }.also { listener -> eventListeners[GameOverEvent::class.java] = listener })
 
-        Events.on(EventType.BlockBuildBeginEvent::class.java) {
+        Events.on(BlockBuildBeginEvent::class.java, Cons<BlockBuildBeginEvent> {
 
-        }
+        }.also { listener -> eventListeners[BlockBuildEndEvent::class.java] = listener })
 
-        Events.on(EventType.BlockBuildEndEvent::class.java) {
+        Events.on(BlockBuildEndEvent::class.java, Cons<BlockBuildEndEvent> {
             val isDebug = Core.settings.getBool("debugMode")
 
             if (it.unit.isPlayer) {
@@ -676,9 +630,9 @@ object Event {
                     target.currentControlCount++
                 }
             }
-        }
+        }.also { listener -> eventListeners[BlockBuildEndEvent::class.java] = listener })
 
-        Events.on(EventType.BuildSelectEvent::class.java) {
+        Events.on(BuildSelectEvent::class.java, Cons<BuildSelectEvent> {
             if (it.builder is Playerc && it.builder.buildPlan() != null && it.tile.block() !== Blocks.air && it.breaking) {
                 log(
                     LogType.Block,
@@ -702,9 +656,9 @@ object Event {
                     p.currentControlCount++
                 }
             }
-        }
+        }.also { listener -> eventListeners[BuildSelectEvent::class.java] = listener })
 
-        Events.on(EventType.BlockDestroyEvent::class.java) {
+        Events.on(BlockDestroyEvent::class.java, Cons<BlockDestroyEvent> {
             if (Vars.state.rules.attackMode) {
                 for (a in database.players) {
                     if (it.tile.team() != Vars.state.rules.defaultTeam) {
@@ -714,9 +668,9 @@ object Event {
                     }
                 }
             }
-        }
+        }.also { listener -> eventListeners[BlockDestroyEvent::class.java] = listener })
 
-        Events.on(EventType.UnitDestroyEvent::class.java) {
+        Events.on(UnitDestroyEvent::class.java, Cons<UnitDestroyEvent> {
             if (!Vars.state.rules.pvp) {
                 for (a in database.players) {
                     if (it.unit.team() != a.player.team()) {
@@ -724,9 +678,9 @@ object Event {
                     }
                 }
             }
-        }
+        }.also { listener -> eventListeners[UnitDestroyEvent::class.java] = listener })
 
-        Events.on(EventType.UnitCreateEvent::class.java) { u ->
+        Events.on(UnitCreateEvent::class.java, Cons<UnitCreateEvent> { u ->
             if (conf.feature.unit.enabled && Groups.unit.size() > conf.feature.unit.limit) {
                 u.unit.kill()
 
@@ -737,20 +691,20 @@ object Event {
                     unitLimitMessageCooldown = 60
                 }
             }
-        }
+        }.also { listener -> eventListeners[UnitCreateEvent::class.java] = listener })
 
-        Events.on(EventType.UnitChangeEvent::class.java) {
+        Events.on(UnitChangeEvent::class.java, Cons<UnitChangeEvent> {
             val p = findPlayerData(it.player.uuid())
             if (p != null) {
                 p.currentControlCount++
             }
-        }
+        }.also { listener -> eventListeners[UnitChangeEvent::class.java] = listener })
 
-        Events.on(PlayerJoin::class.java) {
+        Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
             log(LogType.Player, Bundle()["log.joined", it.player.plainName(), it.player.uuid(), it.player.con.address])
-        }
+        }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
 
-        Events.on(EventType.PlayerLeave::class.java) {
+        Events.on(PlayerLeave::class.java, Cons<PlayerLeave> {
             log(
                 LogType.Player,
                 Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address]
@@ -772,21 +726,26 @@ object Event {
                 offlinePlayers.add(data)
                 database.players.removeAll { e -> e.uuid == data.uuid }
             }
-        }
+        }.also { listener -> eventListeners[PlayerLeave::class.java] = listener })
 
-        Events.on(EventType.PlayerBanEvent::class.java) {
-            log(LogType.Player, Bundle()["log.player.banned", Vars.netServer.admins.getInfo(it.uuid).ips.first(), Vars.netServer.admins.getInfo(it.uuid).names.first()])
-        }
+        Events.on(PlayerBanEvent::class.java, Cons<PlayerBanEvent> {
+            log(
+                LogType.Player,
+                Bundle()["log.player.banned", Vars.netServer.admins.getInfo(it.uuid).ips.first(), Vars.netServer.admins.getInfo(
+                    it.uuid
+                ).names.first()]
+            )
+        }.also { listener -> eventListeners[PlayerBanEvent::class.java] = listener })
 
-        Events.on(EventType.PlayerUnbanEvent::class.java) {
+        Events.on(PlayerUnbanEvent::class.java, Cons<PlayerUnbanEvent> {
             Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.getInfo(it.uuid).lastName, currentTime()))
-        }
+        }.also { listener -> eventListeners[PlayerUnbanEvent::class.java] = listener })
 
-        Events.on(EventType.PlayerIpUnbanEvent::class.java) {
+        Events.on(PlayerIpUnbanEvent::class.java, Cons<PlayerIpUnbanEvent> {
             Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.findByIP(it.ip).lastName, currentTime()))
-        }
+        }.also { listener -> eventListeners[PlayerIpUnbanEvent::class.java] = listener })
 
-        Events.on(EventType.WorldLoadEvent::class.java) {
+        Events.on(WorldLoadEvent::class.java, Cons<WorldLoadEvent> {
             PluginData.playtime = 0L
             PluginData.isSurrender = false
             PluginData.isCheated = false
@@ -813,34 +772,40 @@ object Event {
             }
 
             resetVote()
-        }
+        }.also { listener -> eventListeners[WorldLoadEvent::class.java] = listener })
 
-        Events.on(EventType.ConnectPacketEvent::class.java) {
+        Events.on(ConnectPacketEvent::class.java, Cons<ConnectPacketEvent> {
             if (conf.feature.blacklist.enabled) {
                 PluginData.blacklist.forEach { text ->
                     val pattern = Regex(text)
                     if ((conf.feature.blacklist.regex && pattern.matches(it.packet.name)) ||
-                        !conf.feature.blacklist.regex && it.packet.name.contains(text)) {
+                        !conf.feature.blacklist.regex && it.packet.name.contains(text)
+                    ) {
                         it.connection.kick(Bundle(it.packet.locale)["event.player.name.blacklisted"], 0L)
                         log(
                             LogType.Player,
                             Bundle()["event.player.kick", it.packet.name, it.packet.uuid, it.connection.address, Bundle()["event.player.kick.reason.blacklisted"]]
                         )
-                        Events.fire(CustomEvents.PlayerConnectKicked(it.packet.name, Bundle()["event.player.kick.reason.blacklisted"]))
+                        Events.fire(
+                            CustomEvents.PlayerConnectKicked(
+                                it.packet.name,
+                                Bundle()["event.player.kick.reason.blacklisted"]
+                            )
+                        )
                         return@forEach
                     }
                 }
             }
-        }
+        }.also { listener -> eventListeners[ConnectPacketEvent::class.java] = listener })
 
-        Events.on(EventType.PlayerConnect::class.java) {
+        Events.on(PlayerConnect::class.java, Cons<PlayerConnect> {
             log(
                 LogType.Player,
                 Bundle()["event.player.connected", it.player.plainName(), it.player.uuid(), it.player.con.address]
             )
-        }
+        }.also { listener -> eventListeners[PlayerConnect::class.java] = listener })
 
-        Events.on(EventType.BuildingBulletDestroyEvent::class.java) {
+        Events.on(BuildingBulletDestroyEvent::class.java, Cons<BuildingBulletDestroyEvent> {
             val cores = listOf(
                 Blocks.coreAcropolis,
                 Blocks.coreBastion,
@@ -860,15 +825,15 @@ object Event {
                 if (Vars.netServer.isWaitingForPlayers) {
                     for (t in Vars.state.teams.getActive()) {
                         if (Groups.player.count { p: Player -> p.team() === t.team } > 0) {
-                            Events.fire(EventType.GameOverEvent(t.team))
-                            return@on
+                            Events.fire(GameOverEvent(t.team))
+                            break
                         }
                     }
                 }
             }
-        }
+        }.also { listener -> eventListeners[BuildingBulletDestroyEvent::class.java] = listener })
 
-        fun send(message : String, vararg parameter : Any) {
+        fun send(message: String, vararg parameter: Any) {
             database.players.forEach {
                 if (voteTargetUUID != it.uuid) {
                     Core.app.post { it.player.sendMessage(Bundle(it.languageTag).get(message, *parameter)) }
@@ -876,7 +841,7 @@ object Event {
             }
         }
 
-        fun check() : Int {
+        fun check(): Int {
             return if (!isPvP) {
                 when (database.players.filterNot { it.afk }.size) {
                     1 -> 1
@@ -902,7 +867,7 @@ object Event {
             }
         }
 
-        fun back(map : Map?) {
+        fun back(map: Map?) {
             Core.app.post {
                 val savePath: Fi = if (Core.settings.getBool("autosave")) {
                     Vars.saveDirectory.findAll { f: Fi ->
@@ -938,7 +903,7 @@ object Event {
         }
 
         var colorOffset = 0
-        fun nickcolor(name : String) : String {
+        fun nickcolor(name: String): String {
             val stringBuilder = StringBuilder()
             val colors = arrayOfNulls<String>(11)
             colors[0] = "[#ff0000]"
@@ -978,12 +943,14 @@ object Event {
         var messageCount = conf.feature.motd.time
         var messageOrder = 0
 
-        Core.app.addListener(object: ApplicationListener {
+        val coreListener = object : ApplicationListener {
             override fun update() {
                 try {
                     if (Vars.state.isPlaying) {
                         for (it in database.players) {
-                            if (Vars.state.rules.pvp && it.player.unit() != null && it.player.team().cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)) {
+                            if (Vars.state.rules.pvp && it.player.unit() != null && it.player.team()
+                                    .cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)
+                            ) {
                                 it.pvpDefeatCount++
                                 if (conf.feature.pvp.spector) {
                                     it.player.team(Team.derelict)
@@ -1036,7 +1003,11 @@ object Event {
                             }
 
                             for (two in PluginData.warpZones) {
-                                if (two != null && two.mapName == Vars.state.map.name() && !two.click && it.player.unit().tileX() > two.startTile.x && it.player.unit().tileX() < two.finishTile.x && it.player.unit().tileY() > two.startTile.y && it.player.unit().tileY() < two.finishTile.y) {
+                                if (two != null && two.mapName == Vars.state.map.name() && !two.click && it.player.unit()
+                                        .tileX() > two.startTile.x && it.player.unit()
+                                        .tileX() < two.finishTile.x && it.player.unit()
+                                        .tileY() > two.startTile.y && it.player.unit().tileY() < two.finishTile.y
+                                ) {
                                     Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
                                     Call.connect(it.player.con(), two.ip, two.port)
                                     continue
@@ -1048,7 +1019,7 @@ object Event {
                             if (milsCount == 5) {
                                 database.players.forEach {
                                     if (it.showLevelEffects && it.player.unit() != null && it.player.unit().health > 0f) {
-                                        for(e in database.players) {
+                                        for (e in database.players) {
                                             if (e.player.unit().moving()) {
                                                 val color = if (e.effectColor != null) {
                                                     if (Colors.get(e.effectColor) != null) Colors.get(e.effectColor) else Color.valueOf(
@@ -1068,6 +1039,7 @@ object Event {
                                                         color
                                                     )
                                                 }
+
                                                 fun runEffect(effect: Effect, size: Float) {
                                                     if (e.player.unit() != null) Call.effect(
                                                         it.player.con(),
@@ -1078,6 +1050,7 @@ object Event {
                                                         color
                                                     )
                                                 }
+
                                                 fun runEffectRandom(effect: Effect, range: IntRange) {
                                                     if (e.player.unit() != null) Call.effect(
                                                         it.player.con(),
@@ -1095,6 +1068,7 @@ object Event {
                                                         runEffect(Fx.burning)
                                                         runEffect(Fx.melting)
                                                     }
+
                                                     in 40..49 -> runEffect(Fx.steam)
                                                     in 50..59 -> runEffect(Fx.shootSmallSmoke)
                                                     in 60..69 -> runEffect(Fx.mine)
@@ -1106,42 +1080,51 @@ object Event {
                                                         runEffect(Fx.vapor)
                                                         runEffect(Fx.hitBulletColor)
                                                     }
+
                                                     in 120..129 -> {
                                                         runEffect(Fx.vapor)
                                                         runEffect(Fx.hitBulletColor)
                                                         runEffect(Fx.hitSquaresColor)
                                                     }
+
                                                     in 130..139 -> {
                                                         runEffect(Fx.vapor)
                                                         runEffect(Fx.hitLaserBlast)
                                                     }
+
                                                     in 140..149 -> {
                                                         runEffect(Fx.smokePuff)
                                                         runEffect(Fx.hitBulletColor)
                                                     }
+
                                                     in 150..159 -> {
                                                         runEffect(Fx.smokePuff)
                                                         runEffect(Fx.hitBulletColor)
                                                         runEffect(Fx.hitSquaresColor)
                                                     }
+
                                                     in 160..169 -> {
                                                         runEffect(Fx.smokePuff)
                                                         runEffect(Fx.hitLaserBlast)
                                                     }
+
                                                     in 170..179 -> {
                                                         runEffect(Fx.placeBlock, 1.8f)
                                                         runEffect(Fx.spawn)
                                                     }
+
                                                     in 180..189 -> {
                                                         runEffect(Fx.placeBlock, 1.8f)
                                                         runEffect(Fx.spawn)
                                                         runEffect(Fx.hitLaserBlast)
                                                     }
+
                                                     in 190..199 -> {
                                                         runEffect(Fx.placeBlock, 1.8f)
                                                         runEffect(Fx.spawn)
                                                         runEffect(Fx.circleColorSpark)
                                                     }
+
                                                     in 200..209 -> {
                                                         val f = Fx.dynamicWave
                                                         runEffect(f, 0.5f)
@@ -1171,32 +1154,38 @@ object Event {
                                                         }
                                                         runEffectRandom(Fx.vapor, (-4..4))
                                                     }
+
                                                     in 210..219 -> {
                                                         runEffect(Fx.dynamicSpikes, 7f)
                                                         runEffectRandom(Fx.hitSquaresColor, (-4..4))
                                                         runEffectRandom(Fx.vapor, (-4..4))
                                                     }
+
                                                     in 220..229 -> {
                                                         runEffect(Fx.dynamicSpikes, 7f)
                                                         runEffectRandom(Fx.circleColorSpark, (-4..4))
                                                         runEffectRandom(Fx.vapor, (-4..4))
                                                     }
+
                                                     in 230..239 -> {
                                                         runEffect(Fx.dynamicSpikes, 7f)
                                                         runEffectRandom(Fx.circleColorSpark, (-4..4))
                                                         runEffectRandom(Fx.hitLaserBlast, (-4..4))
                                                         runEffectRandom(Fx.smokePuff, (-4..4))
                                                     }
+
                                                     in 240..249 -> {
                                                         runEffect(Fx.dynamicExplosion, 0.8f)
                                                         runEffectRandom(Fx.hitLaserBlast, (-16..16))
                                                         runEffectRandom(Fx.vapor, (-16..16))
                                                     }
+
                                                     in 250..259 -> {
                                                         runEffect(Fx.dynamicExplosion, 0.8f)
                                                         runEffectRandom(Fx.hitLaserBlast, (-4..4))
                                                         runEffectRandom(Fx.smokePuff, (-4..4))
                                                     }
+
                                                     in 260..269 -> {
                                                         runEffect(Fx.dynamicExplosion, 0.8f)
                                                         runEffectRandom(Fx.hitLaserBlast, (-4..4))
@@ -1211,6 +1200,7 @@ object Event {
                                                             Color.HSVtoRGB(252f, 164f, 0f, 0.22f)
                                                         )
                                                     }
+
                                                     else -> {}
                                                 }
                                             }
@@ -1275,7 +1265,11 @@ object Event {
                                                     )
                                                 }
 
-                                                fun runEffectAtRotateAndColor(effect: Effect, rotate: Float, customColor: Color) {
+                                                fun runEffectAtRotateAndColor(
+                                                    effect: Effect,
+                                                    rotate: Float,
+                                                    customColor: Color
+                                                ) {
                                                     if (e.player.unit() != null) Call.effect(
                                                         it.player.con(),
                                                         effect,
@@ -1291,11 +1285,13 @@ object Event {
                                                         runEffect(Fx.hitLaserBlast)
                                                         runEffect(Fx.colorTrail, 4f)
                                                     }
+
                                                     in 280..289 -> {
                                                         runEffectRandomRotate(Fx.shootSmokeSquare)
                                                         runEffect(Fx.hitLaserBlast)
                                                         runEffect(Fx.dynamicWave, 2f)
                                                     }
+
                                                     in 290..299 -> {
                                                         runEffectAtRotate(Fx.shootSmokeSquare, 0f)
                                                         runEffectAtRotate(Fx.shootSmokeSquare, 45f)
@@ -1308,11 +1304,16 @@ object Event {
                                                         runEffect(Fx.breakProp)
                                                         runEffect(Fx.vapor)
                                                     }
+
                                                     in 300..Int.MAX_VALUE -> {
                                                         var rot = e.player.unit().rotation
                                                         val customColor = Color.HSVtoRGB(252f, 164f, 0f, 0.22f)
                                                         rot += 180f
-                                                        runEffectAtRotateAndColor(Fx.shootSmokeSquareBig, rot, customColor)
+                                                        runEffectAtRotateAndColor(
+                                                            Fx.shootSmokeSquareBig,
+                                                            rot,
+                                                            customColor
+                                                        )
                                                         rot += 40f
                                                         runEffectAtRotateAndColor(Fx.shootTitan, rot, customColor)
                                                         rot += 25f
@@ -1378,12 +1379,17 @@ object Event {
                                 if (it.animatedName) {
                                     val name = it.name.replace("\\[(.*?)]".toRegex(), "")
                                     it.player.name(nickcolor(name))
-                                } else if (!it.status.containsKey("router")){
+                                } else if (!it.status.containsKey("router")) {
                                     it.player.name(it.name)
                                 }
 
                                 // 잠수 플레이어 카운트
-                                if (it.player.unit() != null && !it.player.unit().moving() && !it.player.unit().mining() && !Permission.check(it, "afk.admin") && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()) {
+                                if (it.player.unit() != null && !it.player.unit().moving() && !it.player.unit()
+                                        .mining() && !Permission.check(
+                                        it,
+                                        "afk.admin"
+                                    ) && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()
+                                ) {
                                     it.afkTime++
                                     if (it.afkTime == conf.feature.afk.time) {
                                         it.afk = true
@@ -1416,14 +1422,15 @@ object Event {
                                 Commands.Exp[it]
 
                                 if (conf.feature.level.display) {
-                                    val message = "${it.exp}/${floor(Commands.Exp.calculateFullTargetXp(it.level)).toInt()}"
+                                    val message =
+                                        "${it.exp}/${floor(Commands.Exp.calculateFullTargetXp(it.level)).toInt()}"
                                     Call.infoPopup(it.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                                 }
 
                                 if (it.hud != null) {
                                     val array = JsonArray.readJSON(it.hud).asArray()
 
-                                    fun color(current : Float, max : Float) : String {
+                                    fun color(current: Float, max: Float): String {
                                         return when (current / max * 100.0) {
                                             in 50.0..100.0 -> "[green]"
                                             in 20.0..49.9 -> "[yellow]"
@@ -1431,7 +1438,7 @@ object Event {
                                         }
                                     }
 
-                                    fun shieldColor(current : Float, max : Float) : String {
+                                    fun shieldColor(current: Float, max: Float): String {
                                         return when (current / max * 100.0) {
                                             in 50.0..100.0 -> "[#ffffe0]"
                                             in 20.0..49.9 -> "[orange]"
@@ -1451,7 +1458,11 @@ object Event {
                                                     }
                                                     msg.append("$color${floor(unit.health.toDouble())}")
 
-                                                    if (unit.team != it.player.team() && Permission.check(it, "hud.enemy")) {
+                                                    if (unit.team != it.player.team() && Permission.check(
+                                                            it,
+                                                            "hud.enemy"
+                                                        )
+                                                    ) {
                                                         Call.label(
                                                             it.player.con(),
                                                             msg.toString(),
@@ -1546,7 +1557,11 @@ object Event {
                                             }
 
                                             "gg" -> {
-                                                if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) voterCooltime.put(voteStarter!!.uuid, 180)
+                                                if (voteStarter != null && !Permission.check(
+                                                        voteStarter!!,
+                                                        "vote.pass"
+                                                    )
+                                                ) voterCooltime.put(voteStarter!!.uuid, 180)
                                                 if (isPvP) {
                                                     Vars.world.tiles.forEach {
                                                         if (it.build != null && it.build.team != null && it.build.team == voteTeam) {
@@ -1555,7 +1570,7 @@ object Event {
                                                     }
                                                 } else {
                                                     PluginData.isSurrender = true
-                                                    Events.fire(EventType.GameOverEvent(Vars.state.rules.waveTeam))
+                                                    Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                                                 }
                                             }
 
@@ -1633,9 +1648,9 @@ object Event {
                                                                         if (!it.isHidden) {
                                                                             Vars.state.teams.cores(voteStarter!!.player.team())
                                                                                 .first().items.add(
-                                                                                it,
-                                                                                random.nextInt(2000)
-                                                                            )
+                                                                                    it,
+                                                                                    random.nextInt(2000)
+                                                                                )
                                                                         }
                                                                     }
                                                                 } else {
@@ -1643,9 +1658,9 @@ object Event {
                                                                         if (!it.isHidden) {
                                                                             Vars.state.teams.cores(Team.sharded)
                                                                                 .first().items.add(
-                                                                                it,
-                                                                                random.nextInt(2000)
-                                                                            )
+                                                                                    it,
+                                                                                    random.nextInt(2000)
+                                                                                )
                                                                         }
                                                                     }
                                                                 }
@@ -1694,14 +1709,21 @@ object Event {
                                                                         send("command.vote.random.supply")
                                                                         repeat(2) {
                                                                             if (voteStarter != null) {
-                                                                                UnitTypes.oct.spawn(voteStarter!!.player.team(), voteStarter!!.player.x, voteStarter!!.player.y)
+                                                                                UnitTypes.oct.spawn(
+                                                                                    voteStarter!!.player.team(),
+                                                                                    voteStarter!!.player.x,
+                                                                                    voteStarter!!.player.y
+                                                                                )
                                                                             } else {
                                                                                 UnitTypes.oct.spawn(
-                                                                                    Team.sharded, Vars.state.teams.cores(
+                                                                                    Team.sharded,
+                                                                                    Vars.state.teams.cores(
                                                                                         Team.sharded
-                                                                                    ).first().x, Vars.state.teams.cores(
+                                                                                    ).first().x,
+                                                                                    Vars.state.teams.cores(
                                                                                         Team.sharded
-                                                                                    ).first().y)
+                                                                                    ).first().y
+                                                                                )
                                                                             }
                                                                         }
                                                                     }
@@ -1738,7 +1760,7 @@ object Event {
                             }
 
                             apmRanking = "APM\n"
-                            val color = arrayOf("[scarlet]","[orange]","[yellow]","[green]","[white]","[gray]")
+                            val color = arrayOf("[scarlet]", "[orange]", "[yellow]", "[green]", "[white]", "[gray]")
                             val list = LinkedHashMap<String, Int>()
                             database.players.forEach {
                                 val total = it.apm.max()
@@ -1863,17 +1885,19 @@ object Event {
                             secondCount++
                         }
                     }
-                } catch (e : Exception) {
+                } catch (e: Exception) {
                     e.printStackTrace()
                 }
             }
-        })
+        }
+        Core.app.addListener(coreListener)
+        coreListeners.add(coreListener)
     }
 
     @JvmStatic
-    fun log(type : LogType, text : String, vararg name : String) {
+    fun log(type: LogType, text: String, vararg name: String) {
         val maxLogFile = 20
-        val root : Fi = Core.settings.dataDirectory.child("mods/Essentials/")
+        val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         val time = DateTimeFormatter.ofPattern("YYYY-MM-dd HH_mm_ss").format(LocalDateTime.now())
 
         if (type != LogType.Report) {
@@ -1924,7 +1948,7 @@ object Event {
                             )
                         }.start()
                     }
-                } catch (e : Exception) {
+                } catch (e: Exception) {
                     e.printStackTrace()
                 }
                 main = null
@@ -1941,10 +1965,10 @@ object Event {
         Player, Tap, WithDraw, Block, Deposit, Chat, Report
     }
 
-    class IpAddressMatcher(ipAddress : String) {
+    class IpAddressMatcher(ipAddress: String) {
         private var nMaskBits = 0
-        private val requiredAddress : InetAddress
-        fun matches(address : String) : Boolean {
+        private val requiredAddress: InetAddress
+        fun matches(address: String): Boolean {
             val remoteAddress = parseAddress(address)
             if (requiredAddress.javaClass != remoteAddress.javaClass) {
                 return false
@@ -1966,10 +1990,10 @@ object Event {
             } else true
         }
 
-        private fun parseAddress(address : String) : InetAddress {
+        private fun parseAddress(address: String): InetAddress {
             return try {
                 InetAddress.getByName(address)
-            } catch (e : UnknownHostException) {
+            } catch (e: UnknownHostException) {
                 throw IllegalArgumentException("Failed to parse address$address", e)
             }
         }
@@ -1990,9 +2014,9 @@ object Event {
         }
     }
 
-    private fun earnEXP(winner : Team, p : Playerc, target : DB.PlayerData, isConnected : Boolean) {
+    private fun earnEXP(winner: Team, p: Playerc, target: DB.PlayerData, isConnected: Boolean) {
         val oldLevel = target.level
-        var result : Int = target.currentExp
+        var result: Int = target.currentExp
         val time = target.currentPlayTime.toInt()
 
         val bundle = Bundle(target.languageTag)
@@ -2033,7 +2057,7 @@ object Event {
                 database.queue(target)
             }
 
-            if(!root.child("data/exp.json").exists()) {
+            if (!root.child("data/exp.json").exists()) {
                 root.child("data/exp.json").writeString("[]")
             }
             val resultArray = JsonArray.readJSON(root.child("data/exp.json").readString("UTF-8")).asArray()
@@ -2059,12 +2083,12 @@ object Event {
         if (isConnected && conf.feature.level.levelNotify) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
     }
 
-    fun findPlayerData(uuid : String) : DB.PlayerData? {
+    fun findPlayerData(uuid: String): DB.PlayerData? {
         return database.players.find { data -> (data.oldUUID != null && data.oldUUID == uuid) || data.uuid == uuid }
     }
 
     @JvmStatic
-    fun findPlayers(name : String) : Playerc? {
+    fun findPlayers(name: String): Playerc? {
         return if (name.toIntOrNull() != null) {
             database.players.forEach {
                 if (it.entityid == name.toInt()) {
@@ -2077,7 +2101,7 @@ object Event {
         }
     }
 
-    fun findPlayersByName(name : String) : Administration.PlayerInfo? {
+    fun findPlayersByName(name: String): Administration.PlayerInfo? {
         return if (!Vars.netServer.admins.findByName(name).isEmpty) {
             Vars.netServer.admins.findByName(name).first()
         } else {
@@ -2102,9 +2126,19 @@ object Event {
         count = 60
     }
 
-    private fun addLog(log : TileLog) {
+    private fun addLog(log: TileLog) {
         worldHistory.add(log)
     }
 
-    class TileLog(val time : Long, val player : String, val action : String, val x : Short, val y : Short, val tile : String, val rotate : Int, val team : Team, val value : Any?)
+    class TileLog(
+        val time: Long,
+        val player: String,
+        val action: String,
+        val x: Short,
+        val y: Short,
+        val tile: String,
+        val rotate: Int,
+        val team: Team,
+        val value: Any?
+    )
 }

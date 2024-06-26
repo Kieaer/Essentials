@@ -1,0 +1,9 @@
+{
+  "displayName": "EssentialWeb",
+  "name": "essential-web",
+  "author": "Gureumi",
+  "main": "essential.web.Main",
+  "description": "Add web server feature in Essential plugin.",
+  "version": "v20",
+  "dependencies": [ "essential" ]
+}

@@ -2,7 +2,6 @@ package essential.core
 
 import arc.Core
 import arc.files.Fi
-import arc.struct.ObjectMap
 import arc.struct.Seq
 import arc.util.Log
 import essential.core.Main.Companion.conf
@@ -11,6 +10,8 @@ import mindustry.gen.Playerc
 import org.hjson.JsonObject
 import org.hjson.Stringify
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.javatime.date
+import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
@@ -21,29 +22,27 @@ import java.net.URL
 import java.net.URLClassLoader
 import java.sql.Driver
 import java.sql.DriverManager
-import java.text.MessageFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 
 class DB {
     lateinit var db: Database
     val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-    val players : MutableList<PlayerData> = mutableListOf()
+    val players: MutableList<PlayerData> = mutableListOf()
 
     fun load() {
         val cacheDir = File(System.getProperty("java.io.tmpdir"))
 
         // DB 라이브러리 다운로드
-        val postgresql = "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.3/postgresql-42.7.3.jar"
-        val mysql = "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar"
-        val mariadb = "https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/3.4.0/mariadb-java-client-3.4.0.jar"
-        val sqlite = "https://repo1.maven.org/maven2/org/xerial/sqlite-jdbc/3.46.0.0/sqlite-jdbc-3.46.0.0.jar"
-        val h2 = "https://repo1.maven.org/maven2/com/h2database/h2/2.2.224/h2-2.2.224.jar"
-        val sqlserver = "https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/12.6.2.jre11/mssql-jdbc-12.6.2.jre11.jar"
+        val mavenRepository = "https://repo1.maven.org/maven2"
+        val postgresql = "$mavenRepository/org/postgresql/postgresql/42.7.3/postgresql-42.7.3.jar"
+        val mysql = "$mavenRepository/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar"
+        val mariadb = "$mavenRepository/org/mariadb/jdbc/mariadb-java-client/3.4.0/mariadb-java-client-3.4.0.jar"
+        val sqlite = "$mavenRepository/org/xerial/sqlite-jdbc/3.46.0.0/sqlite-jdbc-3.46.0.0.jar"
+        val h2 = "$mavenRepository/com/h2database/h2/2.2.224/h2-2.2.224.jar"
+        val sqlserver = "$mavenRepository/com/microsoft/sqlserver/mssql-jdbc/12.6.2.jre11/mssql-jdbc-12.6.2.jre11.jar"
         val drivers = arrayOf(
             Triple(postgresql, "postgresql", "org.postgresql.Driver"),
             Triple(mysql, "mysql", "com.mysql.cj.jdbc.Driver"),
@@ -70,7 +69,8 @@ class DB {
                 val driver = drivers.find { driver -> driver.second == type }
                 if (driver != null) {
                     val f = File(cacheDir, driver.first.substring(driver.first.lastIndexOf('/') + 1)).toURI().toURL()
-                    val d = Class.forName(driver.third, true, URLClassLoader(arrayOf(f), this.javaClass.classLoader)).getDeclaredConstructor()
+                    val d = Class.forName(driver.third, true, URLClassLoader(arrayOf(f), this.javaClass.classLoader))
+                        .getDeclaredConstructor()
                         .newInstance() as Driver
                     DriverManager.registerDriver(DriverLoader(d))
                 } else {
@@ -164,8 +164,8 @@ class DB {
         val duplicateName = text("duplicateName").nullable()
         val tracking = bool("tracking")
         val joinStacks = integer("joinStacks")
-        val lastLoginDate = text("lastLoginDate").nullable()
-        val lastLeaveDate = text("lastLeaveDate").nullable()
+        val lastLoginDate = date("lastLoginDate").nullable()
+        val lastLeaveDate = datetime("lastLeaveDate").nullable()
         val showLevelEffects = bool("showLevelEffects")
         val currentPlayTime = long("currentPlayTime")
         val isConnected = bool("isConnected")
@@ -355,9 +355,9 @@ class DB {
             data.tracking = it[Player.tracking]
             data.joinStacks = it[Player.joinStacks]
             data.lastLoginDate =
-                if (it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate])
+                if (it[Player.lastLoginDate] == null) null else it[Player.lastLoginDate]
             data.lastLeaveDate =
-                if (it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate])
+                if (it[Player.lastLeaveDate] == null) null else it[Player.lastLeaveDate]
             data.showLevelEffects = it[Player.showLevelEffects]
             data.currentPlayTime = it[Player.currentPlayTime]
             data.isConnected = it[Player.isConnected]
@@ -419,10 +419,8 @@ class DB {
                 data.duplicateName = it[Player.duplicateName]
                 data.tracking = it[Player.tracking]
                 data.joinStacks = it[Player.joinStacks]
-                data.lastLoginDate =
-                    if (it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate])
-                data.lastLeaveDate =
-                    if (it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate])
+                data.lastLoginDate = if (it[Player.lastLoginDate] == null) null else it[Player.lastLoginDate]
+                data.lastLeaveDate = if (it[Player.lastLeaveDate] == null) null else it[Player.lastLeaveDate]
                 data.showLevelEffects = it[Player.showLevelEffects]
                 data.currentPlayTime = it[Player.currentPlayTime]
                 data.isConnected = it[Player.isConnected]
@@ -506,8 +504,8 @@ class DB {
                 it[duplicateName] = data.duplicateName
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
-                it[lastLoginDate] = if (data.lastLoginDate == null) null else data.lastLoginDate.toString()
-                it[lastLeaveDate] = if (data.lastLeaveDate == null) null else data.lastLeaveDate.toString()
+                it[lastLoginDate] = if (data.lastLoginDate == null) null else data.lastLoginDate
+                it[lastLeaveDate] = if (data.lastLeaveDate == null) null else data.lastLeaveDate
                 it[showLevelEffects] = data.showLevelEffects
                 it[currentPlayTime] = data.currentPlayTime
                 it[isConnected] = data.isConnected
@@ -565,10 +563,8 @@ class DB {
                 data.duplicateName = this[Player.duplicateName]
                 data.tracking = this[Player.tracking]
                 data.joinStacks = this[Player.joinStacks]
-                data.lastLoginDate =
-                    if (data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate])
-                data.lastLeaveDate =
-                    if (data.lastLeaveDate == null) null else LocalDateTime.parse(this[Player.lastLeaveDate])
+                data.lastLoginDate = if (data.lastLoginDate == null) null else this[Player.lastLoginDate]
+                data.lastLeaveDate = if (data.lastLeaveDate == null) null else this[Player.lastLeaveDate]
                 data.showLevelEffects = this[Player.showLevelEffects]
                 data.currentPlayTime = this[Player.currentPlayTime]
                 data.isConnected = this[Player.isConnected]
@@ -589,6 +585,12 @@ class DB {
             } else {
                 null
             }
+        }
+    }
+
+    fun <T> executeInTransaction(block: () -> T): T {
+        return transaction {
+            block()
         }
     }
 

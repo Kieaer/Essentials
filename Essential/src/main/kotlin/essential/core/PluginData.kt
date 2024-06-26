@@ -1,7 +1,5 @@
 package essential.core
 
-import arc.struct.ArrayMap
-import arc.struct.ObjectMap
 import arc.struct.Seq
 import mindustry.Vars
 import mindustry.world.Tile
@@ -12,20 +10,20 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.IOException
-import java.util.regex.Pattern
+import java.net.Socket
 
 object PluginData {
     var uptime = 0L
     var playtime = 0L
     var pluginVersion = ""
 
-    var warpZones : ArrayList<WarpZone> = arrayListOf()
-    var warpBlocks : ArrayList<WarpBlock> = arrayListOf()
-    var warpCounts : ArrayList<WarpCount> = arrayListOf()
-    var warpTotals : ArrayList<WarpTotal> = arrayListOf()
-    var blacklist : ArrayList<String> = arrayListOf()
-    var banned : ArrayList<Banned> = arrayListOf()
-    var status : ArrayList<Pair<String, String>> = arrayListOf()
+    var warpZones: ArrayList<WarpZone> = arrayListOf()
+    var warpBlocks: ArrayList<WarpBlock> = arrayListOf()
+    var warpCounts: ArrayList<WarpCount> = arrayListOf()
+    var warpTotals: ArrayList<WarpTotal> = arrayListOf()
+    var blacklist: ArrayList<String> = arrayListOf()
+    var banned: ArrayList<Banned> = arrayListOf()
+    var status: ArrayList<Pair<String, String>> = arrayListOf()
 
     var sudoPassword = ""
 
@@ -34,6 +32,9 @@ object PluginData {
     var isSurrender = false
 
     var isCheated = false
+
+    var entityOrder = 0
+    val clients = Seq<Socket>()
 
     data class WarpZone(
         val mapName: String,

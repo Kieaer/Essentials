@@ -1,8 +1,0 @@
-language: java
-os: linux
-dist: xenial
-
-script:
-  - ./gradlew jar
-git:
-  depth: false

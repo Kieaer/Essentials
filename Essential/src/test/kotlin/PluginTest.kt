@@ -5,29 +5,42 @@ import arc.graphics.Camera
 import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Log
-import arc.util.Log.LogLevel
-import essential.core.Bundle
+import essential.core.Config
+import essential.core.DB
 import essential.core.Main
+import essential.core.Main.Companion.daemon
+import essential.core.Trigger
+import essential.core.*
+import essential.core.Main.Companion.root
 import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.fail
 import mindustry.Vars
+import mindustry.Vars.*
 import mindustry.content.UnitTypes
 import mindustry.core.*
 import mindustry.game.EventType
+import mindustry.game.EventType.ServerLoadEvent
 import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
+import mindustry.gen.Playerc
 import mindustry.maps.Map
 import mindustry.mod.Mod
 import mindustry.net.Net
 import mindustry.net.NetConnection
 import mindustry.world.Tile
 import net.datafaker.Faker
+import org.hjson.JsonArray
+import org.hjson.JsonObject
+import org.junit.AfterClass
 import org.junit.Assert
+import org.junit.Test
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import java.io.File
+import java.lang.Thread.sleep
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -35,11 +48,10 @@ import java.text.MessageFormat
 import java.util.*
 import java.util.zip.ZipFile
 import kotlin.io.path.Path
-import kotlin.test.Test
 
 class PluginTest {
     companion object {
-        private lateinit var essential : Main
+        private lateinit var main : Main
         private val r = Random()
         lateinit var player : Player
         lateinit var path : Fi
@@ -50,11 +62,18 @@ class PluginTest {
         lateinit var mockApplication : Application
 
         fun loadGame() {
+            if (System.getProperty("os.name").contains("Windows")) {
+                val pathToBeDeleted : Path = Path("${System.getenv("AppData")}\\app").resolve("mods")
+                if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
+                    Files.walk(pathToBeDeleted).sorted(Comparator.reverseOrder()).map { obj : Path -> obj.toFile() }.forEach { obj : File -> obj.delete() }
+                }
+            }
+
             Core.settings = Settings()
             Core.settings.dataDirectory = Fi("")
-            Log.level = LogLevel.debug
-
             path = Core.settings.dataDirectory
+
+            path.child("maps").deleteDirectory()
 
             path.child("locales").writeString("en")
             path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=7\nbuild=custom build")
@@ -84,24 +103,24 @@ class PluginTest {
                 Log.useColors = false
                 val core : ApplicationCore = object: ApplicationCore() {
                     override fun setup() {
-                        Vars.headless = true
-                        Vars.net = Net(null)
-                        Vars.tree = FileTree()
+                        headless = true
+                        net = Net(null)
+                        tree = FileTree()
                         Vars.init()
-                        Vars.world = object: World() {
+                        world = object: World() {
                             override fun getDarkness(x : Int, y : Int) : Float {
                                 return 0F
                             }
                         }
-                        Vars.content.createBaseContent()
-                        Vars.mods.loadScripts()
-                        Vars.content.createModContent()
-                        add(Logic().also { Vars.logic = it })
-                        add(NetServer().also { Vars.netServer = it })
-                        Vars.content.init()
-                        Vars.mods.eachClass(Mod::init)
-                        if (Vars.mods.hasContentErrors()) {
-                            for (mod in Vars.mods.list()) {
+                        content.createBaseContent()
+                        mods.loadScripts()
+                        content.createModContent()
+                        add(Logic().also { logic = it })
+                        add(NetServer().also { netServer = it })
+                        content.init()
+                        mods.eachClass(Mod::init)
+                        if (mods.hasContentErrors()) {
+                            for (mod in mods.list()) {
                                 if (mod.hasContentErrors()) {
                                     for (cont in mod.erroredContent) {
                                         throw RuntimeException("error in file: " + cont.minfo.sourceFile.path(), cont.minfo.baseError)
@@ -114,31 +133,33 @@ class PluginTest {
                     override fun init() {
                         super.init()
                         begins[0] = true
-                        testMap = Vars.maps.loadInternalMap("groundZero")
+                        testMap = maps.loadInternalMap("groundZero")
                     }
                 }
-                HeadlessApplication(core) { throwable: Throwable? -> exceptionThrown[0] = throwable }
+                HeadlessApplication(core) { throwable : Throwable? -> exceptionThrown[0] = throwable }
                 while (!begins[0]) {
                     if (exceptionThrown[0] != null) {
                         Assert.fail(exceptionThrown[0]!!.stackTraceToString())
                     }
-                    Thread.sleep(10)
+                    sleep(10)
                 }
 
                 Groups.init()
                 // wait for map load
                 while (testMap == null) {
-                    Thread.sleep(10)
+                    sleep(10)
                 }
-                Vars.world.loadMap(testMap!!)
-                Vars.state.set(GameState.State.playing)
+                world.loadMap(testMap!!)
+                state.set(GameState.State.playing)
                 Version.build = 145
                 Version.revision = 1
 
                 path.child("locales").delete()
                 path.child("version.properties").delete()
 
-                Vars.netClient = NetClient()
+                Core.settings.put("debugMode", true)
+
+                netClient = NetClient()
                 Core.camera = Camera()
             } catch (r : Throwable) {
                 Assert.fail(r.stackTraceToString())
@@ -148,26 +169,29 @@ class PluginTest {
         fun loadPlugin() {
             path.child("mods/Essentials").deleteDirectory()
 
-            essential = Main()
+            // todo 설정 바꿔서 테스트 하기
+            //Config.databasePW = "pk1450"
+            main = Main()
 
-            essential.init()
-            essential.registerClientCommands(clientCommand)
-            essential.registerServerCommands(serverCommand)
+            /*Config.border = true
+            Config.antiVPN = true
+            Config.antiGrief = true
+            Config.chatlimit = true
+            Config.chatBlacklist = true
+            Config.blockfooclient = true
+            Config.webServer = true*/
 
-            Events.fire(EventType.ServerLoadEvent())
+            main.init()
+            main.registerClientCommands(clientCommand)
+            main.registerServerCommands(serverCommand)
+
+            //daemon.submit(Trigger.Client)
+
+            Events.fire(ServerLoadEvent())
         }
 
-        fun cleanTest() {
-            if (System.getProperty("os.name").contains("Windows")) {
-                val pathToBeDeleted : Path = Path("${System.getenv("AppData")}\\app").resolve("mods")
-                if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
-                    Files.walk(pathToBeDeleted)
-                        .sorted(Comparator.reverseOrder()).map { obj : Path -> obj.toFile() }.forEach { obj : File -> obj.delete() }
-                }
-            }
-
-            path.child("maps").deleteDirectory()
-            path.child("essential_database.db").delete()
+        fun stopPlugin() {
+            Core.app.dispose()
         }
 
         fun runPost() {
@@ -217,8 +241,8 @@ class PluginTest {
             player.team(Team.sharded)
             player.unit(UnitTypes.dagger.spawn(r.nextInt(300).toFloat(), r.nextInt(500).toFloat()))
             player.add()
-            Vars.netServer.admins.getInfo(player.uuid())
-            Vars.netServer.admins.updatePlayerJoined(player.uuid(), player.con.address, player.name)
+            netServer.admins.getInfo(player.uuid())
+            netServer.admins.updatePlayerJoined(player.uuid(), player.con.address, player.name)
             Groups.player.update()
 
             assertNotNull(player)
@@ -227,7 +251,50 @@ class PluginTest {
 
         fun randomTile() : Tile {
             val random = Random()
-            return Vars.world.tile(random.nextInt(100), random.nextInt(100))
+            return world.tile(random.nextInt(100), random.nextInt(100))
+        }
+
+
+        fun newPlayer() : Pair<Player, DB.PlayerData> {
+            val player = createPlayer()
+            Events.fire(EventType.PlayerJoin(player))
+
+            // Wait for database add time
+            var time = 0
+            while (Main.database.players.find { data -> data.uuid == player.uuid() } == null) {
+                sleep(16)
+                ++time
+                if (time == 500) {
+                    fail()
+                }
+            }
+            // todo 항상 데이터가 있는지 확인
+            return Pair(player, Main.database.players.find { data -> data.uuid == player.uuid() }!!)
+        }
+
+        fun leavePlayer(player : Playerc) {
+            Events.fire(EventType.PlayerLeave(player.self()))
+            player.remove()
+            Groups.player.update()
+
+            // Wait for database save time
+            while (Groups.player.find { a -> a.uuid() == player.uuid() } != null) {
+                sleep(10)
+            }
+            sleep(500)
+        }
+
+        fun setPermission(group : String, admin : Boolean) {
+            val json = JsonArray()
+            val obj = JsonObject()
+            obj.add("name", player.name())
+            obj.add("uuid", player.uuid())
+            obj.add("group", group)
+            obj.add("admin", admin)
+            json.add(obj)
+
+            Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt").writeString(json.toString())
+            Permission.load()
         }
 
         fun err(key : String, vararg parameters : Any) : String {
@@ -242,12 +309,36 @@ class PluginTest {
     @Test
     fun startPlugin() {
         loadGame()
-        try {
-            loadPlugin()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            cleanTest()
-        }
+        loadPlugin()
+        stopPlugin()
+    }
+
+    @Test
+    fun dbUpgradeTest_14() {
+        loadGame()
+
+        // Copy Essentials 14.1 database
+        val file = Paths.get("src", "test", "resources", "database-v0.db").toFile()
+        val desc = File("database.mv.db")
+        file.copyRecursively(desc, true)
+
+        loadPlugin()
+        stopPlugin()
+    }
+
+    @Test
+    fun dbUpgradeTest_18() {
+        loadGame()
+
+        // Copy Essentials 18.2 database
+        val file = Paths.get("src", "test", "resources", "database-v1.db").toFile()
+        val desc = root.child("database.mv.db").file()
+        file.copyRecursively(desc, true)
+        // todo db 업글 확인
+        /*Config.database = "C:/Users/cloud/AppData/Roaming/app/mods/Essentials/database"
+        println(Config.database)*/
+
+        loadPlugin()
+        stopPlugin()
     }
 }

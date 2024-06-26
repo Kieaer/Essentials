@@ -17,9 +17,9 @@ import java.util.Objects;
 import static essential.core.Main.root;
 
 public class Main extends Plugin {
-    static final String CONFIG_PATH = "config/config_anti.yaml";
-    static final Bundle bundle = new Bundle();
-    static final PluginData pluginData = new PluginData();
+    static String CONFIG_PATH = "config/config_anti.yaml";
+    static Bundle bundle = new Bundle();
+    static PluginData pluginData = new PluginData();
     static Config conf;
 
     @Override

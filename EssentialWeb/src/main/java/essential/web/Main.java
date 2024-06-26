@@ -1,47 +1,38 @@
-package essential.chat;
+package essential.web;
 
 import arc.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import essential.core.Bundle;
-import essential.core.DB;
 import mindustry.mod.Plugin;
 
 import java.io.IOException;
-import java.util.Optional;
 
-import static essential.core.Main.players;
 import static essential.core.Main.root;
 
 public class Main extends Plugin {
-    static String CONFIG_PATH = "config/config_chat.yaml";
+    static String CONFIG_PATH = "config/config_web.yaml";
     static Bundle bundle = new Bundle();
     static Config conf;
 
     @Override
     public void init() {
-        bundle.setPrefix("[EssentialChat]");
+        bundle.setPrefix("[EssentialWeb]");
 
         Log.debug(bundle.get("event.plugin.starting"));
 
-        // 플러그인 설정
         if (!root.child(CONFIG_PATH).exists()) {
-            root.child(CONFIG_PATH).write(this.getClass().getResourceAsStream("/config_chat.yaml"), false);
+            root.child(CONFIG_PATH).write(this.getClass().getResourceAsStream("/config_web.yaml"), false);
         }
 
         // 설정 파일 읽기
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
-            conf = mapper.readValue(root.child(CONFIG_PATH).file(), Config.class);
+            conf = mapper.readValue(root.child("config/config_protect.yaml").file(), Config.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         Log.info(bundle.get("event.plugin.loaded"));
-    }
-
-    DB.PlayerData findPlayerByUuid(String uuid) {
-        Optional<DB.PlayerData> data =  players.stream().filter(e -> e.getUuid().equals(uuid)).findFirst();
-        return data.orElse(null);
     }
 }
