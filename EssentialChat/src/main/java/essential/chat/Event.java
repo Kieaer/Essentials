@@ -35,7 +35,7 @@ public class Event {
 
     void load() {
         Vars.netServer.admins.addChatFilter(new Administration.ChatFilter() {
-            private Pattern specificTextRegex = Pattern.compile("[!@#$%&*()_+=|<>?{}\\[\\]~-]");
+            private final Pattern specificTextRegex = Pattern.compile("[!@#$%&*()_+=|<>?{}\\[\\]~-]");
 
             @Override
             public String filter(Player player, String message) {

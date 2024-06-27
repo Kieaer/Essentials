@@ -5,11 +5,8 @@ import arc.graphics.Camera
 import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Log
-import essential.core.Config
 import essential.core.DB
 import essential.core.Main
-import essential.core.Main.Companion.daemon
-import essential.core.Trigger
 import essential.core.*
 import essential.core.Main.Companion.root
 import junit.framework.TestCase.assertNotNull
@@ -32,7 +29,6 @@ import mindustry.world.Tile
 import net.datafaker.Faker
 import org.hjson.JsonArray
 import org.hjson.JsonObject
-import org.junit.AfterClass
 import org.junit.Assert
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any

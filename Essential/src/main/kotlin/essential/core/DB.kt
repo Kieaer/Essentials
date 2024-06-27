@@ -517,8 +517,8 @@ class DB {
                 it[strict] = data.strict
 
                 val json = JsonObject()
-                data.status.forEach {
-                    json.add(it.key, it.value)
+                data.status.forEach { entry ->
+                    json.add(entry.key, entry.value)
                 }
                 it[status] = json.toString()
             }

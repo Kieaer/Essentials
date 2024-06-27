@@ -23,7 +23,7 @@ public class Main extends Plugin {
 
         // 플러그인 설정
         if (!root.child(CONFIG_PATH).exists()) {
-            root.child(CONFIG_PATH).write(this.getClass().getResourceAsStream("/config_chat.yaml"), false);
+            root.child(CONFIG_PATH).write(this.getClass().getResourceAsStream("/config_discord.yaml"), false);
         }
 
         // 설정 파일 읽기

@@ -22,7 +22,7 @@ public class Server implements Runnable {
     @Override
     public void run() {
         try {
-            server = new ServerSocket(6000);
+            server = new ServerSocket(57293);
             while (!Thread.currentThread().isInterrupted()) {
                 Socket socket = server.accept();
                 Log.info(bundle.get("network.server.connected", socket.getInetAddress().getHostAddress()));

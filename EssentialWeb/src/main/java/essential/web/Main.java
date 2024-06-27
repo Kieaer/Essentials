@@ -28,7 +28,7 @@ public class Main extends Plugin {
         // 설정 파일 읽기
         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         try {
-            conf = mapper.readValue(root.child("config/config_protect.yaml").file(), Config.class);
+            conf = mapper.readValue(root.child("config/config_web.yaml").file(), Config.class);
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -55,7 +55,7 @@ tasks.test {
 }
 
 configurations.all {
-    resolutionStrategy.eachDependency { ->
+    resolutionStrategy.eachDependency {
         if (this.requested.group == "com.github.Anuken.Arc") {
             this.useVersion(mindustryVersion)
         }

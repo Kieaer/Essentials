@@ -406,7 +406,7 @@ class Commands {
             if (data != null) {
                 data.freeze = !data.freeze
                 val msg = if (data.freeze) {
-                    data.status.put("freeze", "${target.x}/${target.y}")
+                    data.status["freeze"] = "${target.x}/${target.y}"
                     "done"
                 } else {
                     data.status.remove("freeze")
@@ -421,8 +421,7 @@ class Commands {
         }
     }
 
-    // todo change description
-    @ClientCommand("gg", "[team]", "Force gameover")
+    @ClientCommand("gg", "[team]", "Make game over immediately.")
     fun gg(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
             Events.fire(EventType.GameOverEvent(Vars.state.rules.waveTeam))
@@ -524,9 +523,9 @@ class Commands {
 
             "zone" -> {
                 if (!playerData.status.containsKey("hub_first") && !playerData.status.containsKey("hub_second")) {
-                    playerData.status.put("hub_ip", ip)
-                    playerData.status.put("hub_port", port.toString())
-                    playerData.status.put("hub_first", "true")
+                    playerData.status["hub_ip"] = ip
+                    playerData.status["hub_port"] = port.toString()
+                    playerData.status["hub_first"] = "true"
                     playerData.send("command.hub.zone.first")
                 } else {
                     playerData.send("command.hub.zone.process")
@@ -652,31 +651,28 @@ class Commands {
         // todo 코드 정리
         fun show(target: DB.PlayerData): String {
             return """
-                        ${bundle["command.info.name"]}: ${target.name}[white]
-                        ${bundle["command.info.placecount"]}: ${target.blockPlaceCount}
-                        ${bundle["command.info.breakcount"]}: ${target.blockBreakCount}
-                        ${bundle["command.info.level"]}: ${target.level}
-                        ${bundle["command.info.exp"]}: ${Exp[target]}
-                        ${bundle["command.info.joindate"]}: ${
+                ${bundle["command.info.name"]}: ${target.name}[white]
+                ${bundle["command.info.placecount"]}: ${target.blockPlaceCount}
+                ${bundle["command.info.breakcount"]}: ${target.blockBreakCount}
+                ${bundle["command.info.level"]}: ${target.level}
+                ${bundle["command.info.exp"]}: ${Exp[target]}
+                ${bundle["command.info.joindate"]}: ${
                 Timestamp(target.firstPlayDate).toLocalDateTime().format(
                     DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss")
-                )
-            }
-                        ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, timeBundleFormat)}
-                        ${bundle["command.info.playtime.current"]}: ${
+                )}
+                ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, timeBundleFormat)}
+                ${bundle["command.info.playtime.current"]}: ${
                 timeFormat(
                     target.currentPlayTime,
                     "$timeBundleFormat.minimal"
-                )
-            }
-                        ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
-                        ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${
+                )}
+                ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
+                ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${
                 if (target.pvpVictoriesCount + target.pvpDefeatCount != 0) round(
                     target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100
-                ) else 0
-            }%[white])
-                        ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
-                        """.trimIndent()
+                ) else 0}%[white])
+                ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
+                """.trimIndent()
         }
 
         val lineBreak = "\n"
@@ -746,7 +742,7 @@ class Commands {
                 arrayOf(bundle[close])
             )
 
-            val mainMenu = Menus.registerMenu { player, select ->
+            val mainMenu = Menus.registerMenu { p, select ->
                 when {
                     select == 1 && !isBanned -> {
                         val innerMenu = Menus.registerMenu { _, s ->
@@ -783,7 +779,7 @@ class Commands {
                                             Events.fire(
                                                 CustomEvents.PlayerTempBanned(
                                                     targetData!!.name,
-                                                    player.plainName(),
+                                                    p.plainName(),
                                                     LocalDateTime.now().plusMinutes(time.toLong())
                                                         .format(DateTimeFormatter.ofPattern(STANDARD_DATE))
                                                 )
@@ -792,7 +788,7 @@ class Commands {
                                         }
                                     } // 임시 차단
                                     Call.menu(
-                                        player.con(),
+                                        p.con(),
                                         tempBanConfirmMenu,
                                         bundle["info.tempban.title"],
                                         bundle["info.tempban.confirm", timeText] + lineBreak,
@@ -817,7 +813,7 @@ class Commands {
                                         }
                                     } // 영구 차단
                                     Call.menu(
-                                        player.con(),
+                                        p.con(),
                                         banConfirmMenu,
                                         bundle["info.ban.title"],
                                         bundle["info.ban.confirm"] + lineBreak,
@@ -828,7 +824,7 @@ class Commands {
                             }
                         }
                         Call.menu(
-                            player.con(),
+                            p.con(),
                             innerMenu,
                             bundle["info.tempban.title"],
                             bundle["info.tempban.confirm"] + lineBreak,
@@ -847,7 +843,7 @@ class Commands {
                             }
                         }
                         Call.menu(
-                            player.con(),
+                            p.con(),
                             unbanConfirmMenu,
                             bundle["info.unban.title"],
                             bundle["info.unban.confirm", targetData!!.name] + lineBreak,
@@ -956,26 +952,34 @@ class Commands {
         Groups.player.forEach {
             if (!it.admin) Call.kick(it.con, Packets.KickReason.kick)
         }
-        // todo 완료 메세지
-        Log.info("it's done")
+        Log.info(Bundle()["command.kickall.done"])
     }
 
     @ClientCommand("kill", "[player]", "Kill player's unit.")
     fun kill(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        // todo kill 완료 메세지
         if (arg.isEmpty()) {
             player.unit().kill()
+            playerData.send("command.kill.self")
         } else {
             val other = findPlayers(arg[0])
-            if (other == null) playerData.err(PLAYER_NOT_FOUND) else other.unit().kill()
+            if (other == null) {
+                playerData.err(PLAYER_NOT_FOUND)
+            } else {
+                other.unit().kill()
+                playerData.send("command.kill.done", other.plainName())
+            }
         }
     }
 
     @ServerCommand("kill", "<player>", "Kill player's unit")
     fun kill(arg: Array<out String>) {
-        // todo kill 완료 메세지
         val other = findPlayers(arg[0])
-        if (other == null) Log.err(Bundle()[PLAYER_NOT_FOUND]) else other.unit().kill()
+        if (other == null) {
+            Log.err(Bundle()[PLAYER_NOT_FOUND])
+        } else {
+            other.unit().kill()
+            Log.info(Bundle()["command.kill.done", other.plainName()])
+        }
     }
 
     @ClientCommand("killall", "[team]", "Kill all enemy units")
@@ -1295,7 +1299,7 @@ class Commands {
                             Threads.sleep(500)
                         }
 
-                        playerData.status.put("router", "true")
+                        playerData.status["router"] = "true"
                         while (!player.isNull) {
                             loop.forEach {
                                 change(it)
@@ -1358,7 +1362,6 @@ class Commands {
 
     @ServerCommand("mute", "<player>", "Mute player")
     fun mute(arg: Array<out String>) {
-        // todo server command added
         val other = findPlayers(arg[0])
         val bundle = Bundle()
         if (other != null) {
@@ -1623,28 +1626,6 @@ class Commands {
             }
             PluginData.isRankingWorking = false
         })
-    }
-
-    @ClientCommand("report", description = "<player> <reason...>")
-    fun report(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        // todo protect 으로 이동
-        val target = Vars.netServer.admins.findByName(arg[0])
-        if (target != null) {
-            val reason = arg[1]
-            val infos = Vars.netServer.admins.findByName(target.first().plainLastName()).first()
-            val date = LocalDateTime.now().format(DateTimeFormatter.ofPattern(STANDARD_DATE))
-            val text = Bundle()["command.report.texts", target.first()
-                .plainLastName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
-
-            Event.log(Event.LogType.Report, date + text, target.first().plainLastName())
-            Log.info(
-                Bundle()["command.report.received", player.plainName(), target.first().plainLastName(), reason]
-            )
-            playerData.send("command.report.done", target.first().plainLastName())
-            Events.fire(CustomEvents.PlayerReported(player.plainName(), target.first().plainLastName(), reason))
-        } else {
-            playerData.err(PLAYER_NOT_FOUND)
-        }
     }
 
     @ClientCommand("rollback", "<player>", "Undo all actions taken by the player.")
@@ -2416,8 +2397,8 @@ class Commands {
     @ServerCommand("gen", description = "Generate wiki docs")
     fun genDocs(arg: Array<out String>) {
         if (System.getenv("DEBUG_KEY") != null) {
-            var clientCommands = CommandHandler("/")
-            var serverCommands = CommandHandler("")
+            val clientCommands = CommandHandler("/")
+            val serverCommands = CommandHandler("")
 
             class StringUtils {
                 // Source from https://howtodoinjava.com/java/string/escape-html-encode-string/
@@ -2502,9 +2483,6 @@ class Commands {
     fun unload(arg: Array<out String>) {
         // todo unload 만들기
         Core.app.post {
-            // 스레드 종료
-            daemon.shutdown()
-
             Log.info("unloading")
             // 스레드 종료
             daemon.shutdownNow()
@@ -2568,10 +2546,10 @@ class Commands {
     }
 
     object Exp {
-        private val baseXP = 750
-        private val exponent = 1.06
+        private const val BASE_XP = 750
+        private const val EXPONENT = 1.06
         private fun calcXpForLevel(level: Int): Double {
-            return baseXP + baseXP * level.toDouble().pow(exponent)
+            return BASE_XP + BASE_XP * level.toDouble().pow(EXPONENT)
         }
 
         fun calculateFullTargetXp(level: Int): Double {

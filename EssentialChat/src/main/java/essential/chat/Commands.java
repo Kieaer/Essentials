@@ -34,7 +34,6 @@ public class Commands {
         }
     }
 
-    // todo chat 으로 이동
     @ClientCommand(name = "pm", parameter = "<player> <message...>", description = "Send a private message")
     void pm(Playerc player, DB.PlayerData playerData, String[] arg) {
         if (playerData.getMute()) return;

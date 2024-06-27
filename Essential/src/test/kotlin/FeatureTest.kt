@@ -18,7 +18,7 @@ class FeatureTest {
     lateinit var playerData: DB.PlayerData
 
     companion object {
-        var done = false
+        private var done = false
 
         @BeforeClass
         @JvmStatic fun setup() {

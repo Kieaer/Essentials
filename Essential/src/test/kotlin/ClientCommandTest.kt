@@ -16,7 +16,6 @@ import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.content.Liquids
-import mindustry.game.EventType
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team

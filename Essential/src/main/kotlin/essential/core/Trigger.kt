@@ -200,7 +200,7 @@ class Trigger {
         private var ping = 0.000
         private val dummy = Player.create()
 
-        fun caculateCenter(startTile: Tile, endTile: Tile): Pair<Int, Int> {
+        private fun caculateCenter(startTile: Tile, endTile: Tile): Pair<Int, Int> {
             data class Point(val x: Int, val y: Int)
 
             data class Tile(val coordinates: Point, val areaValue: Float)
@@ -544,7 +544,7 @@ class Trigger {
     }
 
     object UpdateThread : Runnable {
-        val queue = Seq<DB.PlayerData>()
+        private val queue = Seq<DB.PlayerData>()
 
         override fun run() {
             while (!java.lang.Thread.currentThread().isInterrupted) {

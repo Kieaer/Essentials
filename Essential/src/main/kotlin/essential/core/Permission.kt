@@ -15,14 +15,14 @@ import java.util.*
 
 object Permission {
     private var main: Map<String, RoleConfig> = mapOf()
-    var user: Map<String, UserPermissionConfig> = mapOf()
+    private var user: Map<String, UserPermissionConfig> = mapOf()
     var default = "user"
-    val mainFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.yaml")
-    val userFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.yaml")
+    private val mainFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.yaml")
+    private val userFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.yaml")
 
-    val bundle = Bundle(Locale.getDefault().toLanguageTag())
+    private val bundle = Bundle(Locale.getDefault().toLanguageTag())
 
-    val comment = """
+    private val comment = """
         #${bundle["permission.wiki"]}
         #${bundle["permission.sort"]}
         #${bundle["permission.notice"]}

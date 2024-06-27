@@ -68,7 +68,7 @@ public class Config {
         private boolean enabled;
 
         @JsonProperty("auth-type")
-        private AuthType authType;
+        private String authType;
 
         @JsonProperty("discord-url")
         private String discordURL;
@@ -80,7 +80,7 @@ public class Config {
         }
 
         public AuthType getAuthType() {
-            return authType;
+            return AuthType.valueOf(authType.substring(0, 1).toUpperCase() + authType.substring(1));
         }
 
         public String getDiscordURL() {

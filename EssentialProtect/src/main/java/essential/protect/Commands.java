@@ -1,14 +1,21 @@
 package essential.protect;
 
+import arc.Events;
+import arc.struct.ObjectSet;
 import arc.util.Log;
-import essential.core.Bundle;
-import essential.core.DB;
-import essential.core.Trigger;
+import essential.core.*;
+import essential.core.Event;
 import essential.core.annotation.ClientCommand;
+import mindustry.Vars;
 import mindustry.gen.Playerc;
+import mindustry.net.Administration;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
+import static essential.core.Commands.PLAYER_NOT_FOUND;
+import static essential.core.Commands.STANDARD_DATE;
 import static essential.core.Main.database;
 import static essential.protect.Main.bundle;
 import static essential.protect.Main.conf;
@@ -45,7 +52,6 @@ public class Commands {
 
     @ClientCommand(name = "reg", parameter = "<id> <password> <password_repeat>", description = "Register account")
     void register(Playerc player, DB.PlayerData playerData, String[] arg) {
-        // todo protect 으로 이동
         if (conf.getAccount().getAuthType() != Config.Account.AuthType.None) {
             if (arg.length != 3) {
                 player.sendMessage(new Bundle(player.locale()).get("command.reg.usage"));
@@ -62,6 +68,24 @@ public class Commands {
             }
         } else {
             player.sendMessage(new Bundle(player.locale()).get("command.reg.unavailable"));
+        }
+    }
+
+    @ClientCommand(name = "report", parameter = "<player> <reason...>", description = "Report a player")
+    void report(Playerc player, DB.PlayerData playerData, String[] arg) {
+        ObjectSet<Administration.PlayerInfo> target = Vars.netServer.admins.findByName(arg[0]);
+        if (target != null) {
+            String reason = arg[1];
+            Administration.PlayerInfo infos = Vars.netServer.admins.findByName(target.first().plainLastName()).first();
+            String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern(STANDARD_DATE));
+            String text = new Bundle().get("command.report.texts", target.first()
+                    .plainLastName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips);
+            essential.core.Event.log(Event.LogType.Report, date + text, target.first().plainLastName());
+            Log.info(new Bundle().get("command.report.received", player.plainName(), target.first().plainLastName(), reason));
+            playerData.send("command.report.done", target.first().plainLastName());
+            Events.fire(new CustomEvents.PlayerReported(player.plainName(), target.first().plainLastName(), reason));
+        } else {
+            playerData.err(PLAYER_NOT_FOUND);
         }
     }
 
