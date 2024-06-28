@@ -7,9 +7,6 @@ import arc.files.Fi
 import arc.func.Cons
 import arc.graphics.Color
 import arc.graphics.Colors
-import arc.struct.ObjectMap
-import arc.struct.ObjectSet
-import arc.struct.Seq
 import arc.util.*
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.currentTime
@@ -55,6 +52,8 @@ import java.util.random.RandomGenerator
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.experimental.and
 import kotlin.io.path.Path
 import kotlin.math.floor
@@ -76,27 +75,27 @@ object Event {
     var isPvP: Boolean = false
     var voteTeam: Team = Vars.state.rules.defaultTeam
     var voteCooltime: Int = 0
-    var voted = Seq<String>()
+    var voted = ArrayList<String>()
     var lastVoted: LocalTime? = LocalTime.now()
     var isAdminVote = false
     var isCanceled = false
 
-    var worldHistory = Seq<TileLog>()
-    var voterCooltime = ObjectMap<String, Int>()
+    var worldHistory = ArrayList<TileLog>()
+    var voterCooltime = HashMap<String, Int>()
 
     private var random = RandomGenerator.of("Random")
     private var dateformat = SimpleDateFormat("HH:mm:ss")
-    var blockExp = ObjectMap<String, Int>()
-    var dosBlacklist = ObjectSet<String>()
+    var blockExp = HashMap<String, Int>()
+    var dosBlacklist : List<String> = listOf()
     var count = 60
-    var pvpSpectors = Seq<String>()
-    var pvpPlayer = ObjectMap<String, Team>()
+    var pvpSpectors = ArrayList<String>()
+    var pvpPlayer = HashMap<String, Team>()
     var isGlobalMute = false
     var dpsBlocks = 0f
     var dpsTile: Tile? = null
     var maxdps: Float? = null
     var unitLimitMessageCooldown = 0
-    var offlinePlayers = Seq<DB.PlayerData>()
+    var offlinePlayers = ArrayList<DB.PlayerData>()
     var apmRanking = ""
 
     val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
@@ -283,7 +282,7 @@ object Event {
                 }
 
                 if (data.log) {
-                    val buf = Seq<TileLog>()
+                    val buf = ArrayList<TileLog>()
                     worldHistory.forEach { two ->
                         if (two.x == it.tile.x && two.y == it.tile.y) {
                             buf.add(two)
@@ -438,7 +437,7 @@ object Event {
                 blockExp.put(two.name, buf)
             }
 
-            dosBlacklist = Vars.netServer.admins.dosBlacklist
+            dosBlacklist = Vars.netServer.admins.dosBlacklist.toList()
 
             Vars.netServer.admins.addChatFilter(Administration.ChatFilter { player, message ->
                 log(LogType.Chat, "${player.plainName()}: $message")
@@ -543,10 +542,10 @@ object Event {
                 }
             }
             if (voting) resetVote()
-            offlinePlayers = Seq()
-            worldHistory = Seq()
-            pvpSpectors = Seq()
-            pvpPlayer = ObjectMap()
+            offlinePlayers.clear()
+            worldHistory.clear()
+            pvpSpectors.clear()
+            pvpPlayer.clear()
             dpsTile = null
         }.also { listener -> eventListeners[GameOverEvent::class.java] = listener })
 
@@ -571,17 +570,17 @@ object Event {
                             Bundle()["log.block.place", target.name, checkValidBlock(it.tile), it.tile.x, it.tile.y]
                         )
 
-                        val buf = Seq<TileLog>()
+                        val buf = ArrayList<TileLog>()
                         worldHistory.forEach { two ->
                             if (two.x == it.tile.x && two.y == it.tile.y) {
                                 buf.add(two)
                             }
                         }
 
-                        if (!Vars.state.rules.infiniteResources && it.tile != null && it.tile.build != null && it.tile.build.maxHealth() == it.tile.block().health.toFloat() && (!buf.isEmpty && buf.last().tile != it.tile.block().name)) {
+                        if (!Vars.state.rules.infiniteResources && it.tile != null && it.tile.build != null && it.tile.build.maxHealth() == it.tile.block().health.toFloat() && (!buf.isEmpty() && buf.last().tile != it.tile.block().name)) {
                             target.blockPlaceCount++
-                            target.exp += blockExp[block.name]
-                            target.currentExp += blockExp[block.name]
+                            target.exp += blockExp[block.name]!!
+                            target.currentExp += blockExp[block.name]!!
                         }
 
                         addLog(
@@ -622,8 +621,8 @@ object Event {
 
                         if (!Vars.state.rules.infiniteResources) {
                             target.blockBreakCount++
-                            target.exp -= blockExp[player.unit().buildPlan().block.name]
-                            target.currentExp -= blockExp[player.unit().buildPlan().block.name]
+                            target.exp -= blockExp[player.unit().buildPlan().block.name]!!
+                            target.currentExp -= blockExp[player.unit().buildPlan().block.name]!!
                         }
                     }
 
@@ -753,7 +752,7 @@ object Event {
             if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
 
             if (Vars.state.rules.pvp) {
-                pvpSpectors = Seq<String>()
+                pvpSpectors.clear()
 
                 for (data in database.players) {
                     if (Permission.check(data, "pvp.spector")) {
@@ -1349,7 +1348,7 @@ object Event {
 
                             if (voteCooltime > 0) voteCooltime--
                             voterCooltime.forEach {
-                                voterCooltime.put(it.key, it.value--)
+                                voterCooltime[it.key] = it.value - 1
                                 if (it.value == 0) voterCooltime.remove(it.key)
                             }
 

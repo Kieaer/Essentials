@@ -6,9 +6,6 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.math.Mathf
-import arc.struct.ArrayMap
-import arc.struct.ObjectMap
-import arc.struct.Seq
 import arc.util.*
 import com.charleskorn.kaml.Yaml
 import com.github.lalyos.jfiglet.FigletFont
@@ -52,6 +49,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.random.RandomGenerator
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
@@ -69,9 +68,9 @@ class Commands {
 
     @ClientCommand("changemap", "<name> [gamemode]", "Change the world or gamemode immediately.")
     fun changemap(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        val arr = ObjectMap<Int, Map>()
+        val arr = HashMap<Int, Map>()
         Vars.maps.all().sortedBy { a -> a.name() }.forEachIndexed { index, map ->
-            arr.put(index, map)
+            arr[index] = map
         }
 
         val map: Map? = if (arg[0].toIntOrNull() != null) {
@@ -447,7 +446,7 @@ class Commands {
             return
         }
 
-        val temp = Seq<String>()
+        val temp = ArrayList<String>()
         val bundle = Bundle(playerData.languageTag)
         for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
             val command = Vars.netServer.clientCommands.commandList[a]
@@ -1122,7 +1121,7 @@ class Commands {
     fun maps(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         val list = Vars.maps.all().sortedBy { a -> a.name() }
         val bundle = Bundle(player.locale())
-        val prebuilt = Seq<Pair<String, Array<Array<String>>>>()
+        val prebuilt = ArrayList<Pair<String, Array<Array<String>>>>()
         val buffer = Mathf.ceil(list.size.toFloat() / 6)
         val pages = if (buffer > 1.0) buffer - 1 else 0
         val title = bundle["command.page.server"]
@@ -1404,7 +1403,7 @@ class Commands {
     @ClientCommand("players", "[page]", "Show current players list")
     fun players(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         val bundle = Bundle(player.locale())
-        val prebuilt = Seq<Pair<String, Array<Array<String>>>>()
+        val prebuilt = ArrayList<Pair<String, Array<Array<String>>>>()
         val buffer = Mathf.ceil(database.players.size.toFloat() / 6)
         val pages = if (buffer > 1.0) buffer - 1 else 0
         val title = bundle["command.page.server"]
@@ -1595,13 +1594,13 @@ class Commands {
                     string.append("[purple]=======================================[]\n")
                     for (a in d.indices) {
                         if (d[a].first.second == player.uuid()) {
-                            if (d[a].second is ArrayMap<*, *>) {
-                                val rank = d[a].second as ArrayMap<*, *>
+                            if (d[a].second is HashMap<*, *>) {
+                                val rank = d[a].second as HashMap<*, *>
                                 val rate = round(
-                                    (rank.firstKey().toString().toFloat() / (rank.firstKey().toString()
-                                        .toFloat() + rank.firstValue().toString().toFloat())) * 100
+                                    (rank.keys.first().toString().toFloat() / (rank.keys.first().toString()
+                                        .toFloat() + rank.keys.first().toString().toFloat())) * 100
                                 )
-                                string.append("[white]${a + 1}[] ${d[a].first.first}[white] [yellow]-[] [green]${rank.firstKey()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.firstValue()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
+                                string.append("[white]${a + 1}[] ${d[a].first.first}[white] [yellow]-[] [green]${rank.keys.first()}${bundle["command.ranking.pvp.win"]}[] / [scarlet]${rank.values.first()}${bundle["command.ranking.pvp.lose"]}[] ($rate%)")
                             } else {
                                 val text = if (arg[0].lowercase() == "time") {
                                     timeFormat(d[a].second.toString().toLong())
@@ -1631,32 +1630,35 @@ class Commands {
     @ClientCommand("rollback", "<player>", "Undo all actions taken by the player.")
     fun rollback(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         // todo rollback 느림 해결
-        worldHistory.forEach {
-            val buf = Seq<Event.TileLog>()
+        val buffer = worldHistory.toTypedArray()
+
+        buffer.forEach {
+            val buf = ArrayList<Event.TileLog>()
             if (it.player.contains(arg[0])) {
-                worldHistory.forEach { two ->
+                buffer.forEach { two ->
                     if (two.x == it.x && two.y == it.y) {
                         buf.add(two)
                     }
                 }
 
                 val last = buf.last()
+                val targetTile = Vars.world.tile(last.x.toInt(), last.y.toInt())
                 if (last.action == "place") {
-                    Call.removeTile(Vars.world.tile(last.x.toInt(), last.y.toInt()))
+                    targetTile.remove()
                 } else if (last.action == "break") {
-                    Call.setTile(
-                        Vars.world.tile(last.x.toInt(), last.y.toInt()),
-                        Vars.content.block(last.tile),
-                        last.team,
-                        last.rotate
-                    )
+                    targetTile.setBlock(Vars.content.block(last.tile), last.team, last.rotate)
 
-                    for (tile in buf.reverse()) {
+                    for (tile in buf.reversed()) {
                         if (tile.value != null) {
-                            Call.tileConfig(null, Vars.world.tile(last.x.toInt(), last.y.toInt()).build, tile.value)
+                            targetTile.build.configure(tile.value)
                             break
                         }
                     }
+                }
+
+                for (p in Groups.player) {
+                    Call.worldDataBegin(p.con)
+                    Vars.netServer.sendWorldData(p)
                 }
             }
         }
@@ -2261,9 +2263,9 @@ class Commands {
                         try {
                             var target: Map? = null
                             val list = Vars.maps.all().sortedBy { a -> a.name() }
-                            val arr = ObjectMap<Map, Int>()
+                            val arr = HashMap<Map, Int>()
                             list.forEachIndexed { index, map ->
-                                arr.put(map, index)
+                                arr[map] = index
                             }
                             arr.forEach {
                                 if (it.value == arg[1].toInt()) {
@@ -2402,7 +2404,7 @@ class Commands {
 
             class StringUtils {
                 // Source from https://howtodoinjava.com/java/string/escape-html-encode-string/
-                private val htmlEncodeChars = ObjectMap<Char, String>()
+                private val htmlEncodeChars = HashMap<Char, String>()
                 fun encodeHtml(source: String?): String? {
                     return encode(source)
                 }

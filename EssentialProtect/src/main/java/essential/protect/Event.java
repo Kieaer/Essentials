@@ -12,6 +12,7 @@ import mindustry.content.Fx;
 import mindustry.entities.Damage;
 import mindustry.game.EventType;
 import mindustry.gen.Building;
+import mindustry.gen.Call;
 import mindustry.gen.Groups;
 import mindustry.world.Build;
 import mindustry.world.Tile;

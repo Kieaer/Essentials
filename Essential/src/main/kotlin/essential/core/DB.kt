@@ -2,7 +2,6 @@ package essential.core
 
 import arc.Core
 import arc.files.Fi
-import arc.struct.Seq
 import arc.util.Log
 import essential.core.Main.Companion.conf
 import essential.core.exception.DatabaseNotSupportedException
@@ -25,6 +24,7 @@ import java.sql.DriverManager
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 class DB {
@@ -442,8 +442,8 @@ class DB {
         return d
     }
 
-    fun getAllByExp(): Seq<PlayerData> {
-        val d = Seq<PlayerData>()
+    fun getAllByExp(): Array<PlayerData> {
+        val d = ArrayList<PlayerData>()
 
         transaction {
             Player.selectAll().orderBy(Player.exp, SortOrder.DESC).map {
@@ -460,7 +460,7 @@ class DB {
             }
         }
 
-        return d
+        return d.toTypedArray()
     }
 
     fun queue(data: PlayerData) {
