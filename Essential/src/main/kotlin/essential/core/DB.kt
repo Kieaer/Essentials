@@ -4,6 +4,7 @@ import arc.Core
 import arc.files.Fi
 import arc.util.Log
 import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.daemon
 import essential.core.exception.DatabaseNotSupportedException
 import mindustry.gen.Playerc
 import org.hjson.JsonObject
@@ -464,7 +465,11 @@ class DB {
     }
 
     fun queue(data: PlayerData) {
-        // todo player db 저장 추가
+        daemon.submit {
+            transaction {
+                update(data.uuid, data)
+            }
+        }
     }
 
     fun update(id: String, data: PlayerData) {

@@ -983,28 +983,34 @@ class Commands {
 
     @ClientCommand("killall", "[team]", "Kill all enemy units")
     fun killAll(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        // todo killall 완료 메세지
+        val count: Int
         if (arg.isEmpty()) {
+            count = Groups.unit.size()
             repeat(Team.all.count()) {
                 Groups.unit.each { u: Unit -> if (player.team() == u.team) u.kill() }
             }
         } else {
             val team = selectTeam(arg[0])
+            count = Groups.unit.filter { u -> u.team == team }.size
             Groups.unit.each { u -> if (u.team == team) u.kill() }
         }
+        playerData.send("command.killall.count", count)
     }
 
     @ServerCommand("killall", "[team]", "Kill all units")
     fun killAll(arg: Array<out String>) {
-        // todo killall 완료 메세지
+        val count: Int
         if (arg.isEmpty()) {
+            count = Groups.unit.size()
             repeat(Team.all.count()) {
                 Groups.unit.each { u: Unit -> u.kill() }
             }
         } else {
             val team = selectTeam(arg[0])
+            count = Groups.unit.filter { u -> u.team == team }.size
             Groups.unit.each { u -> if (u.team == team) u.kill() }
         }
+        Log.info(Bundle()["command.killall.count", count])
     }
 
     @ClientCommand("killunit", "<name> [amount] [team]", "Destroy specific units")
@@ -1629,7 +1635,6 @@ class Commands {
 
     @ClientCommand("rollback", "<player>", "Undo all actions taken by the player.")
     fun rollback(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        // todo rollback 느림 해결
         val buffer = worldHistory.toTypedArray()
 
         buffer.forEach {
@@ -1982,7 +1987,6 @@ class Commands {
     }
 
     // todo tempban client -> server
-
     @ServerCommand("tempban", "<player> <time> [reason]", "Ban the player for aa certain peroid of time")
     fun tempBan(arg: Array<out String>) {
         val bundle = Bundle()
@@ -2114,7 +2118,6 @@ class Commands {
 
     @ServerCommand("unmute", "<player>", "Unmute player")
     fun unmute(arg: Array<out String>) {
-        // todo server command unmute add
         val bundle = Bundle()
         val other = findPlayers(arg[0])
         if (other != null) {

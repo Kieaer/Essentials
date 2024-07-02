@@ -54,7 +54,6 @@ class Main : Plugin() {
 
     val bundle = Bundle()
 
-
     override fun init() {
         bundle.prefix = "[Essential]"
         Log.info(bundle["event.plugin.starting"])
@@ -186,9 +185,15 @@ class Main : Plugin() {
                         }
                     } else {
                         if (annotation.name == "js") {
-                            Call.kick(player.con(), "js no permission")
+                            Call.kick(player.con(), Bundle(player.locale())["command.js.no.permission"])
                         } else {
-                            player.sendMessage("no permission 4 u")
+                            player.sendMessage(Vars.netServer.invalidHandler.handle(player.self(),
+                                CommandHandler.CommandResponse(
+                                    CommandHandler.ResponseType.unknownCommand,
+                                    null as CommandHandler.Command?,
+                                    annotation.name
+                                ))
+                            )
                         }
                     }
                 }
@@ -226,12 +231,7 @@ class Main : Plugin() {
         }
     }
 
-    fun checkPermission(data: DB.PlayerData, command: String): Boolean {
-        if (!Permission.check(data, command)) {
-            Log.err("command.permission.false")
-            return false
-        } else {
-            return true
-        }
+    private fun checkPermission(data: DB.PlayerData, command: String): Boolean {
+        return Permission.check(data, command)
     }
 }
