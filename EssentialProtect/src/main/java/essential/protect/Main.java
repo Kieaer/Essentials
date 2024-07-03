@@ -74,6 +74,10 @@ public class Main extends Plugin {
             Permission.INSTANCE.setDefault("visitor");
         }
 
+        // 이벤트 설정
+        Event event = new Event();
+        event.start();
+
         Log.info(bundle.get("event.plugin.loaded"));
     }
 

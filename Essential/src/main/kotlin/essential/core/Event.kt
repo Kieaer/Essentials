@@ -2094,7 +2094,7 @@ object Event {
                     it.player
                 }
             }
-            Groups.player.find { p -> p.plainName().contains(name, true) }
+            Groups.player.find { p -> p.id == name.toInt() }
         } else {
             Groups.player.find { p -> p.plainName().contains(name, true) }
         }

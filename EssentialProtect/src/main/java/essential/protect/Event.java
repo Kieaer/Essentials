@@ -100,38 +100,34 @@ public class Event {
             e.player.admin(false);
 
             DB.PlayerData data = database.get(e.player.uuid());
-            if (conf.getAccount().getAuthType() == Config.Account.AuthType.Discord) {
+            if (conf.getAccount().getAuthType() == Config.Account.AuthType.None || !conf.getAccount().isEnabled()) {
                 if (data == null) {
                     daemon.submit(() -> {
-                        database.executeInTransaction(() -> {
+                        if (!trigger.checkUserNameExists(e.player.name)) {
+                            Core.app.post(() -> trigger.createPlayer(e.player, null, null));
+                        } else {
+                            Core.app.post(() -> e.player.con.kick(new Bundle(e.player.locale).get("event.player.name.duplicate"), 0L));
+                        }
+                    });
+                } else {
+                    trigger.loadPlayer(e.player, data, false);
+                }
+            } else {
+                if (conf.getAccount().getAuthType() == Config.Account.AuthType.Discord) {
+                    if (data == null) {
+                        daemon.submit(() -> {
                             if (trigger.checkUserNameExists(e.player.name)) {
                                 Core.app.post(() -> e.player.con.kick(new Bundle(e.player.locale).get("event.player.name.duplicate"), 0L));
                             } else {
                                 Core.app.post(() -> trigger.createPlayer(e.player, null, null));
                             }
-
-                            return null;
                         });
-                    });
+                    } else {
+                        trigger.loadPlayer(e.player, data, false);
+                    }
                 } else {
-                    trigger.loadPlayer(e.player, data, false);
+                    e.player.sendMessage(new Bundle(e.player.locale).get("event.player.first.register"));
                 }
-            } else if (conf.getAccount().getAuthType() == Config.Account.AuthType.None && data != null) {
-                trigger.loadPlayer(e.player, data, false);
-            } else if (conf.getAccount().getAuthType() != Config.Account.AuthType.None) {
-                e.player.sendMessage(new Bundle(e.player.locale).get("event.player.first.register"));
-            } else if (conf.getAccount().getAuthType() == Config.Account.AuthType.None) {
-                daemon.submit(() -> {
-                    database.executeInTransaction(() -> {
-                        if (trigger.checkUserNameExists(e.player.name)) {
-                            Core.app.post(() -> trigger.createPlayer(e.player, null, null));
-                        } else {
-                            Core.app.post(() -> e.player.con.kick(new Bundle(e.player.locale).get("event.player.name.duplicate"), 0L));
-                        }
-
-                        return null;
-                    });
-                });
             }
         });
 

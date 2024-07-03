@@ -105,21 +105,21 @@ class Commands {
     fun changeName(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         fun change(data: DB.PlayerData) {
             transaction {
-                if (DB.Player.select(DB.Player.name).where(DB.Player.name eq (arg[0])).toList().isNotEmpty()) {
-                    data.err("command.changename.exists", arg[0])
+                if (DB.Player.select(DB.Player.name).where(DB.Player.name eq (arg[1])).toList().isNotEmpty()) {
+                    data.err("command.changename.exists", arg[1])
                 } else {
-                    Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[0], data.uuid))
-                    data.send("command.changename.apply.other", data.name, arg[0])
+                    Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
+                    data.send("command.changename.apply.other", data.name, arg[1])
                     data.name = arg[0]
-                    if (data.player.unit() != Nulls.unit) data.player.name(arg[0])
+                    if (data.player.unit() != Nulls.unit) data.player.name(arg[1])
                     database.queue(data)
                 }
             }
             return
         }
 
-        if (arg.size != 1) {
-            val target = findPlayers(arg[1])
+        if (arg.size > 1) {
+            val target = findPlayers(arg[0])
             if (target != null) {
                 val data = findPlayerData(target.uuid())
                 if (data != null) {
@@ -128,7 +128,7 @@ class Commands {
                     playerData.err(PLAYER_NOT_REGISTERED)
                 }
             } else {
-                val offline = database[arg[1]]
+                val offline = database[arg[0]]
                 if (offline != null) {
                     change(offline)
                 } else {
