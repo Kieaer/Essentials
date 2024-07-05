@@ -13,8 +13,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 
-import static essential.core.Main.players;
-import static essential.core.Main.root;
+import static essential.core.Main.*;
 import static mindustry.Vars.netServer;
 
 public class Main extends Plugin {
@@ -59,6 +58,8 @@ public class Main extends Plugin {
                         } else {
                             return true;
                         }
+                    } else {
+                        return true;
                     }
                 }
                 return true;
@@ -82,7 +83,6 @@ public class Main extends Plugin {
     }
 
     DB.PlayerData findPlayerByUuid(String uuid) {
-        Optional<DB.PlayerData> data =  players.stream().filter( e -> e.getUuid().equals(uuid)).findFirst();
-        return data.orElse(null);
+        return database.getPlayers().stream().filter( e -> e.getUuid().equals(uuid)).findFirst().orElse(null);
     }
 }

@@ -46,6 +46,7 @@ user:
     - discord
     - effect
     - hud
+    - help
     - info
     - lang
     - maps

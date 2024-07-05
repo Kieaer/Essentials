@@ -10,7 +10,7 @@ import mindustry.mod.Plugin;
 import java.io.IOException;
 import java.util.Optional;
 
-import static essential.core.Main.players;
+import static essential.core.Main.database;
 import static essential.core.Main.root;
 
 public class Main extends Plugin {
@@ -41,7 +41,6 @@ public class Main extends Plugin {
     }
 
     DB.PlayerData findPlayerByUuid(String uuid) {
-        Optional<DB.PlayerData> data =  players.stream().filter(e -> e.getUuid().equals(uuid)).findFirst();
-        return data.orElse(null);
+        return database.getPlayers().stream().filter(e -> e.getUuid().equals(uuid)).findFirst().orElse(null);
     }
 }

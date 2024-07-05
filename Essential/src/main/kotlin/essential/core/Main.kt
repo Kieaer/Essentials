@@ -38,9 +38,6 @@ class Main : Plugin() {
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
 
         @JvmField
-        val players: MutableList<DB.PlayerData> = mutableListOf()
-
-        @JvmField
         val database = DB()
 
         @JvmField

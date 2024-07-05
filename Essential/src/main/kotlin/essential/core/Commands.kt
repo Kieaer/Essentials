@@ -6,7 +6,10 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.math.Mathf
-import arc.util.*
+import arc.util.Log
+import arc.util.Strings
+import arc.util.Threads
+import arc.util.Tmp
 import com.charleskorn.kaml.Yaml
 import com.github.lalyos.jfiglet.FigletFont
 import essential.core.Event.actionFilter
@@ -49,8 +52,6 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.random.RandomGenerator
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
@@ -169,10 +170,11 @@ class Commands {
     @ServerCommand("chat", "<on/off>", "Mute all players without admins")
     fun chat(arg: Array<out String>) {
         Event.isGlobalMute = arg[0].equals("off", true)
+        val bundle = Bundle()
         if (Event.isGlobalMute) {
-            Log.info("command.chat.off")
+            Log.info(bundle["command.chat.off"])
         } else {
-            Log.info("command.chat.on")
+            Log.info(bundle["command.chat.on"])
         }
     }
 
@@ -398,7 +400,7 @@ class Commands {
     }
 
     @ClientCommand("freeze", "<player>", "Stop player unit movement")
-    fun freeze(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
+    fun freezeClient(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         val target = findPlayers(arg[0])
         if (target != null) {
             val data = findPlayerData(target.uuid())
@@ -417,6 +419,30 @@ class Commands {
             }
         } else {
             playerData.err(PLAYER_NOT_FOUND)
+        }
+    }
+
+    @ServerCommand("freeze", "<player>", "Stop player unit movement")
+    fun freezeServer(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
+        val bundle = Bundle()
+        val target = findPlayers(arg[0])
+        if (target != null) {
+            val data = findPlayerData(target.uuid())
+            if (data != null) {
+                data.freeze = !data.freeze
+                val msg = if (data.freeze) {
+                    data.status["freeze"] = "${target.x}/${target.y}"
+                    "done"
+                } else {
+                    data.status.remove("freeze")
+                    "undo"
+                }
+                Log.info(bundle["command.freeze.$msg", target.plainName()])
+            } else {
+                Log.err(bundle[PLAYER_NOT_REGISTERED])
+            }
+        } else {
+            Log.err(bundle[PLAYER_NOT_FOUND])
         }
     }
 
@@ -2216,6 +2242,10 @@ class Commands {
         if (arg.isEmpty()) {
             playerData.err("command.vote.arg.empty")
             return
+        } else {
+            when (arg[0]) {
+
+            }
         }
 
         if (Event.voterCooltime.containsKey(player.plainName())) {
@@ -2402,9 +2432,6 @@ class Commands {
     @ServerCommand("gen", description = "Generate wiki docs")
     fun genDocs(arg: Array<out String>) {
         if (System.getenv("DEBUG_KEY") != null) {
-            val clientCommands = CommandHandler("/")
-            val serverCommands = CommandHandler("")
-
             class StringUtils {
                 // Source from https://howtodoinjava.com/java/string/escape-html-encode-string/
                 private val htmlEncodeChars = HashMap<Char, String>()
@@ -2455,17 +2482,23 @@ class Commands {
 
             val result = StringBuilder()
 
-            clientCommands.commandList.forEach {
-                val temp = "| ${it.text} | ${StringUtils().encodeHtml(it.paramText)} | ${it.description} |\n"
-                result.append(temp)
+            for (functions in this::class.declaredFunctions) {
+                val annotation = functions.findAnnotation<ClientCommand>()
+                if (annotation != null) {
+                    val temp = "| ${annotation.name} | ${StringUtils().encodeHtml(annotation.parameter)} | ${annotation.description} |\n"
+                    result.append(temp)
+                }
             }
 
             val tmp = "$client$result\n\n"
 
             result.clear()
-            serverCommands.commandList.forEach {
-                val temp = "| ${it.text} | ${StringUtils().encodeHtml(it.paramText)} | ${it.description} |\n"
-                result.append(temp)
+            for (functions in this::class.declaredFunctions) {
+                val annotation = functions.findAnnotation<ServerCommand>()
+                if (annotation != null) {
+                    val temp = "| ${annotation.name} | ${StringUtils().encodeHtml(annotation.parameter)} | ${annotation.description} |\n"
+                    result.append(temp)
+                }
             }
 
             println("$tmp$server$result\n\n\n$time")
