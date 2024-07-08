@@ -9,9 +9,9 @@ tasks.register("jar") {
 
     doLast {
         subprojects.forEach { subproject ->
-            val rootFile = rootProject.layout.buildDirectory.file("${subproject.name}.jar").get().asFile.toPath()
+            val rootFile = file("E:\\test\\config\\mods\\${subproject.name}.jar").toPath()
             delete(rootFile)
-            move(subproject.layout.buildDirectory.file("libs/${subproject.name}-all.jar").get().asFile.toPath(), rootFile)
+            move(subproject.layout.buildDirectory.file("libs/${subproject.name}.jar").get().asFile.toPath(), rootFile)
             println("project build: ${subproject.name}")
         }
     }
@@ -19,4 +19,9 @@ tasks.register("jar") {
 
 tasks.register("clear") {
     dependsOn(subprojects.map { it.tasks.named("clean") })
+
+    subprojects.forEach { subproject ->
+        val rootFile = rootProject.layout.buildDirectory.file("${subproject.name}.jar").get().asFile.toPath()
+        delete(rootFile)
+    }
 }

@@ -48,9 +48,9 @@ public class Main extends Plugin {
                     data.setCurrentControlCount(data.getCurrentControlCount() + 1);
                 }
                 // 계정 기능이 켜져있는 경우
-                if (conf.getAccount().isEnabled()) {
+                if (conf.account.enabled) {
                     // Discord 인증을 사용할 경우
-                    if (Objects.requireNonNull(conf.getAccount().getAuthType()) == Config.Account.AuthType.Discord) {
+                    if (Objects.requireNonNull(conf.account.getAuthType()) == Config.Account.AuthType.Discord) {
                         // 계정에 Discord 인증이 안되어 있는 경우
                         if (data.getDiscord() == null) {
                             action.player.sendMessage(new Bundle(action.player.locale).get("event.discord.not.registered"));
@@ -69,7 +69,7 @@ public class Main extends Plugin {
         });
 
         // 계정 설정 유무에 따라 기본 권한 변경
-        if (conf.getAccount().getAuthType() != Config.Account.AuthType.None) {
+        if (conf.account.getAuthType() != Config.Account.AuthType.None) {
             Permission.INSTANCE.setDefault("user");
         } else {
             Permission.INSTANCE.setDefault("visitor");

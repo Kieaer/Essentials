@@ -37,6 +37,9 @@ public class Main extends Plugin {
             e.printStackTrace();
         }
 
+        // 이벤트 등록
+        new Event().load();
+
         Log.info(bundle.get("event.plugin.loaded"));
     }
 

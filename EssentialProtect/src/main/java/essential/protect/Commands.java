@@ -52,22 +52,29 @@ public class Commands {
 
     @ClientCommand(name = "reg", parameter = "<id> <password> <password_repeat>", description = "Register account")
     void register(Playerc player, DB.PlayerData playerData, String[] arg) {
-        if (conf.getAccount().getAuthType() != Config.Account.AuthType.None) {
+        Bundle bundle = new Bundle(player.locale());
+        if (conf.account.getAuthType() != Config.Account.AuthType.None) {
             if (arg.length != 3) {
-                player.sendMessage(new Bundle(player.locale()).get("command.reg.usage"));
+                player.sendMessage(bundle.get("command.reg.usage"));
             } else if (!Objects.equals(arg[1], arg[2])) {
-                player.sendMessage(new Bundle(player.locale()).get("command.reg.incorrect"));
+                player.sendMessage(bundle.get("command.reg.incorrect"));
             } else {
                 Trigger trigger = new Trigger();
-                if(trigger.checkUserExistsInDatabase(player.plainName(), player.uuid())) {
-                    player.sendMessage(new Bundle(player.locale()).get("command.reg.exists"));
+                if (trigger.checkUserExistsInDatabase(player.plainName(), player.uuid())) {
+                    player.sendMessage(bundle.get("command.reg.exists"));
                 } else {
                     trigger.createPlayer(player, arg[0], arg[1]);
                     Log.info(bundle.get("log.data_created", player.plainName()));
                 }
             }
+        } else if (conf.account.getAuthType() != Config.Account.AuthType.Discord){
+            if (Vars.mods.getMod("essential-discord") != null) {
+                Events.fire(new CustomEvents.PlayerDiscordRequested(player.uuid()));
+            } else {
+                player.sendMessage(bundle.get("command.reg.unavailable-server"));
+            }
         } else {
-            player.sendMessage(new Bundle(player.locale()).get("command.reg.unavailable"));
+            player.sendMessage(bundle.get("command.reg.unavailable"));
         }
     }
 

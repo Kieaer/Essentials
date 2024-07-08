@@ -2,6 +2,7 @@ package essential.protect;
 
 import arc.Core;
 import arc.Events;
+import arc.util.Log;
 import essential.core.Bundle;
 import essential.core.CustomEvents;
 import essential.core.DB;
@@ -37,17 +38,17 @@ public class Event {
 
     void start() {
         Events.on(EventType.WorldLoadEndEvent.class, e -> {
-            if (conf.getPvp().getPeace().isEnabled()) {
+            if (conf.pvp.peace.enabled) {
                 originalBlockMultiplier = Vars.state.rules.blockDamageMultiplier;
                 originalUnitMultiplier = Vars.state.rules.unitDamageMultiplier;
                 Vars.state.rules.blockDamageMultiplier = 0f;
                 Vars.state.rules.unitDamageMultiplier = 0f;
-                pvpCount = conf.getPvp().getPeace().getTime();
+                pvpCount = conf.pvp.peace.time;
             }
         });
 
         Events.on(EventType.Trigger.update.getClass(), e -> {
-            if (conf.getPvp().getPeace().isEnabled()) {
+            if (conf.pvp.peace.enabled) {
                 if (pvpCount != 0) {
                     pvpCount--;
                 } else {
@@ -59,7 +60,7 @@ public class Event {
                 }
             }
 
-            if (conf.getPvp().getBorder().isEnabled()) {
+            if (conf.pvp.border.enabled) {
                 Groups.unit.forEach( unit -> {
                     if (unit.x < 0 || unit.y < 0 || unit.x > (Vars.world.width() * 8) || unit.y > (Vars.world.height() * 8)) {
                         unit.kill();
@@ -67,13 +68,13 @@ public class Event {
                 });
             }
 
-            if (conf.getProtect().isUnbreakableCore()) {
+            if (conf.protect.unbreakableCore) {
                 Vars.state.rules.defaultTeam.cores().forEach ( core -> core.health(1.0E8f));
             }
         });
 
         Events.on(EventType.ConfigEvent.class, e -> {
-            if (conf.getProtect().isPowerDetect() && e.value instanceof Integer) {
+            if (conf.protect.powerDetect && e.value instanceof Integer) {
                 Building entity = e.tile;
                 Tile other = Vars.world.tile((int) e.value);
                 boolean valid = other != null && entity.power != null && other.block().hasPower && other.block().outputsPayload && other.block() != Blocks.massDriver && other.block() == Blocks.payloadMassDriver && other.block() == Blocks.largePayloadMassDriver;
@@ -100,7 +101,7 @@ public class Event {
             e.player.admin(false);
 
             DB.PlayerData data = database.get(e.player.uuid());
-            if (conf.getAccount().getAuthType() == Config.Account.AuthType.None || !conf.getAccount().isEnabled()) {
+            if (conf.account.getAuthType() == Config.Account.AuthType.None || !conf.account.enabled) {
                 if (data == null) {
                     daemon.submit(() -> {
                         if (!trigger.checkUserNameExists(e.player.name)) {
@@ -113,7 +114,7 @@ public class Event {
                     trigger.loadPlayer(e.player, data, false);
                 }
             } else {
-                if (conf.getAccount().getAuthType() == Config.Account.AuthType.Discord) {
+                if (conf.account.getAuthType() == Config.Account.AuthType.Discord) {
                     if (data == null) {
                         daemon.submit(() -> {
                             if (trigger.checkUserNameExists(e.player.name)) {
@@ -132,7 +133,7 @@ public class Event {
         });
 
         Events.on(EventType.BlockDestroyEvent.class, e -> {
-            if (Vars.state.rules.pvp && conf.getPvp().isDestroyCore() && Vars.state.rules.coreCapture) {
+            if (Vars.state.rules.pvp && conf.pvp.destroyCore && Vars.state.rules.coreCapture) {
                 Fx.spawnShockwave.at(e.tile.getX(), e.tile.getY(), Vars.state.rules.dropZoneRadius);
                 Damage.damage(
                         Vars.world.tile(e.tile.pos()).team(),
@@ -146,14 +147,20 @@ public class Event {
         });
 
         Events.on(CustomEvents.PlayerDataLoaded.class, e -> {
-            if (conf.getAccount().getStrict()) {
-                Groups.player.find( p -> Objects.equals(p.uuid(), e.getUuid())).name(e.getOldName());
+            if (conf.account.strict) {
+                Groups.player.find( p -> Objects.equals(p.uuid(), e.getPlayerData().getUuid())).name(e.getPlayerData().getName());
+            }
+        });
+
+        Events.on(EventType.ServerLoadEvent.class, e -> {
+            if (Vars.mods.getMod("essential-discord") == null) {
+                Log.warn(new Bundle().get("command.reg.plugin-enough"));
             }
         });
     }
 
     void loadPlayer(DB.PlayerData data) {
-        if (conf.getAccount().getAuthType() == Config.Account.AuthType.Discord && data.getDiscord() == null) {
+        if (conf.account.getAuthType() == Config.Account.AuthType.Discord && data.getDiscord() == null) {
             data.getPlayer().sendMessage(new Bundle(data.getLanguageTag()).get("event.discord.not.registered"));
         }
     }

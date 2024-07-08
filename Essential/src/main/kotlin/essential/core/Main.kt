@@ -174,7 +174,7 @@ class Main : Plugin() {
                     annotation.description
                 ) { args, player: Playerc ->
                     val data = findPlayerData(player.uuid()) ?: DB.PlayerData()
-                    if (checkPermission(data, annotation.name)) {
+                    if (Permission.check(data, annotation.name)) {
                         if (args.isNotEmpty()) {
                             functions.call(commands, player, data, arrayOf(*args))
                         } else {
@@ -226,9 +226,5 @@ class Main : Plugin() {
                 }
             }
         }
-    }
-
-    private fun checkPermission(data: DB.PlayerData, command: String): Boolean {
-        return Permission.check(data, command)
     }
 }

@@ -34,6 +34,10 @@ public class Event {
     }
 
     void load() {
+        if (conf.getStrict().getEnabled()) {
+            loadDetector();
+        }
+
         Vars.netServer.admins.addChatFilter(new Administration.ChatFilter() {
             private final Pattern specificTextRegex = Pattern.compile("[!@#$%&*()_+=|<>?{}\\[\\]~-]");
 

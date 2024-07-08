@@ -66,7 +66,7 @@ class Trigger {
             }
 
             val bundle = Bundle(data.languageTag)
-            Events.fire(CustomEvents.PlayerDataLoaded(data.name, player.name(), player.uuid()))
+            Events.fire(CustomEvents.PlayerDataLoaded(data))
             data.lastLoginTime = System.currentTimeMillis()
             data.totalJoinCount++
             data.player = player

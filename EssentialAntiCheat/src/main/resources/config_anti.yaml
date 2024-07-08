@@ -4,10 +4,6 @@ vpn: false
 # Block foo's client
 foo: true
 
-# Prevent players from changing their nicknames.
-# This is useful for catching people who change their nicknames frequently and are grieving.
-fixed-name: true
-
 # Allow mobile users to access the server.
 mobile: true
 

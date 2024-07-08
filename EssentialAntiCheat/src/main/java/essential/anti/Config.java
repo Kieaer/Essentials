@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Config {
     private boolean vpn;
     private boolean foo;
-    @JsonProperty("fixed-name")
-    private boolean fixedName;
     private boolean mobile;
     @JsonProperty("steam-only")
     private boolean steamOnly;
@@ -22,10 +20,6 @@ public class Config {
 
     public boolean isFoo() {
         return foo;
-    }
-
-    public boolean isFixedName() {
-        return fixedName;
     }
 
     public boolean isMobile() {
