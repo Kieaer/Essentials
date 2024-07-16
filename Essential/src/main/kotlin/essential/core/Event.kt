@@ -334,7 +334,7 @@ object Event {
                 if (data.status.containsKey("hub_first") && !data.status.containsKey("hub_second")) {
                     data.status["hub_first"] = "${it.tile.x},${it.tile.y}"
                     data.status["hub_second"] = "true"
-                    data.player.sendMessage(Bundle(data.languageTag)["command.hub.zone.next", "${it.tile.x},${it.tile.y}"])
+                    data.player.sendMessage(Bundle(data.languageTag)["command.sb.zone.next", "${it.tile.x},${it.tile.y}"])
                 } else if (data.status.containsKey("hub_first") && data.status.containsKey("hub_second")) {
                     val x = data.status["hub_first"]!!.split(",")[0].toInt()
                     val y = data.status["hub_first"]!!.split(",")[1].toInt()
@@ -342,7 +342,7 @@ object Event {
                     val port = data.status["hub_port"]!!.toInt()
 
                     val bundle = Bundle(data.languageTag)
-                    val options = arrayOf(arrayOf(bundle["command.hub.zone.yes"], bundle["command.hub.zone.no"]))
+                    val options = arrayOf(arrayOf(bundle["command.sb.zone.yes"], bundle["command.sb.zone.no"]))
                     val menu = Menus.registerMenu { player, option ->
                         val touch = when (option) {
                             0 -> true
@@ -358,15 +358,15 @@ object Event {
                                 port
                             )
                         )
-                        player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (touch) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
+                        player.sendMessage(bundle["command.sb.zone.added", "$x:$y", ip, if (touch) bundle["command.sb.zone.clickable"] else bundle["command.sb.zone.enter"]])
                         PluginData.save(false)
                     }
 
                     Call.menu(
                         data.player.con(),
                         menu,
-                        bundle["command.hub.zone.title"],
-                        bundle["command.hub.zone.message"],
+                        bundle["command.sb.zone.title"],
+                        bundle["command.sb.zone.message"],
                         options
                     )
 

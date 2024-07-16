@@ -506,110 +506,6 @@ class Commands {
         player.sendMessage(msg)
     }
 
-    @ClientCommand("hub", "<parameter> [ip] [parameters...]", "Create a server to server point.")
-    fun hub(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        val type = arg[0]
-        val x = player.tileX()
-        val y = player.tileY()
-        val name = Vars.state.map.name()
-        var ip = ""
-        var port = 6567
-        if (arg.size > 1) {
-            if (arg[1].contains(":")) {
-                val address = arg[1].split(":").toTypedArray()
-                ip = address[0]
-
-                if (address[1].toIntOrNull() == null) {
-                    playerData.err("command.hub.address.port.invalid")
-                    return
-                }
-                port = address[1].toInt()
-            } else {
-                ip = arg[1]
-            }
-        } else if (type != "set" && type != "reset" && ip.isBlank()) {
-            playerData.err("command.hub.address.invalid")
-            return
-        }
-
-        when (type) {
-            "set" -> {
-                if (PluginData["hubMode"] == null) {
-                    PluginData.status.add(Pair("hubMode", Vars.state.map.name()))
-                    playerData.send("command.hub.mode.on")
-                } else if (PluginData["hubMode"] != null && PluginData["hubMode"] != Vars.state.map.name()) {
-                    playerData.send("command.hub.mode.exists")
-                } else {
-                    PluginData.status.removeIf { p -> p.first == "hubMode" }
-                    playerData.send("command.hub.mode.off")
-                }
-                PluginData.save(false)
-            }
-
-            "zone" -> {
-                if (!playerData.status.containsKey("hub_first") && !playerData.status.containsKey("hub_second")) {
-                    playerData.status["hub_ip"] = ip
-                    playerData.status["hub_port"] = port.toString()
-                    playerData.status["hub_first"] = "true"
-                    playerData.send("command.hub.zone.first")
-                } else {
-                    playerData.send("command.hub.zone.process")
-                }
-            }
-
-            "block" -> if (arg.size != 3) {
-                playerData.err("command.hub.block.parameter")
-            } else {
-                val t: Tile = player.tileOn()
-                PluginData.warpBlocks.add(
-                    PluginData.WarpBlock(
-                        name,
-                        t.build.tileX(),
-                        t.build.tileY(),
-                        t.block().name,
-                        t.block().size,
-                        ip,
-                        port,
-                        arg[2]
-                    )
-                )
-                playerData.send("command.hub.block.added", "$x:$y", arg[1])
-                PluginData.save(false)
-            }
-
-            "count" -> {
-                if (arg.size < 2) {
-                    playerData.err("command.hub.count.parameter")
-                } else {
-                    PluginData.warpCounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 1))
-                    playerData.send("command.hub.count", "$x:$y", arg[1])
-                    PluginData.save(false)
-                }
-            }
-
-            "total" -> {
-                PluginData.warpTotals.add(PluginData.WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 1))
-                playerData.send("command.hub.total", "$x:$y")
-                PluginData.save(false)
-            }
-
-            "remove" -> {
-                PluginData.warpBlocks.removeAll { a -> a.ip == ip && a.port == port }
-                PluginData.warpZones.removeAll { a -> a.ip == ip && a.port == port }
-                playerData.send("command.hub.removed", arg[1])
-                PluginData.save(false)
-            }
-
-            "reset" -> {
-                PluginData.warpTotals.clear()
-                PluginData.warpCounts.clear()
-                PluginData.save(false)
-            }
-
-            else -> playerData.send("command.hub.help")
-        }
-    }
-
     @ClientCommand("hud", "<health/apm>", "Enable information on screen")
     fun hud(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         val status = if (playerData.hud != null) JsonObject.readJSON(playerData.hud).asArray() else JsonArray()
@@ -1692,6 +1588,110 @@ class Commands {
                     Vars.netServer.sendWorldData(p)
                 }
             }
+        }
+    }
+
+    @ClientCommand("sb", "<parameter> [ip] [parameters...]", "Create a server to server point.")
+    fun sb(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
+        val type = arg[0]
+        val x = player.tileX()
+        val y = player.tileY()
+        val name = Vars.state.map.name()
+        var ip = ""
+        var port = 6567
+        if (arg.size > 1) {
+            if (arg[1].contains(":")) {
+                val address = arg[1].split(":").toTypedArray()
+                ip = address[0]
+
+                if (address[1].toIntOrNull() == null) {
+                    playerData.err("command.sb.address.port.invalid")
+                    return
+                }
+                port = address[1].toInt()
+            } else {
+                ip = arg[1]
+            }
+        } else if (type != "set" && type != "reset" && ip.isBlank()) {
+            playerData.err("command.sb.address.invalid")
+            return
+        }
+
+        when (type) {
+            "set" -> {
+                if (PluginData["hubMode"] == null) {
+                    PluginData.status.add(Pair("hubMode", Vars.state.map.name()))
+                    playerData.send("command.sb.mode.on")
+                } else if (PluginData["hubMode"] != null && PluginData["hubMode"] != Vars.state.map.name()) {
+                    playerData.send("command.sb.mode.exists")
+                } else {
+                    PluginData.status.removeIf { p -> p.first == "hubMode" }
+                    playerData.send("command.sb.mode.off")
+                }
+                PluginData.save(false)
+            }
+
+            "zone" -> {
+                if (!playerData.status.containsKey("hub_first") && !playerData.status.containsKey("hub_second")) {
+                    playerData.status["hub_ip"] = ip
+                    playerData.status["hub_port"] = port.toString()
+                    playerData.status["hub_first"] = "true"
+                    playerData.send("command.sb.zone.first")
+                } else {
+                    playerData.send("command.sb.zone.process")
+                }
+            }
+
+            "block" -> if (arg.size != 3) {
+                playerData.err("command.sb.block.parameter")
+            } else {
+                val t: Tile = player.tileOn()
+                PluginData.warpBlocks.add(
+                    PluginData.WarpBlock(
+                        name,
+                        t.build.tileX(),
+                        t.build.tileY(),
+                        t.block().name,
+                        t.block().size,
+                        ip,
+                        port,
+                        arg[2]
+                    )
+                )
+                playerData.send("command.sb.block.added", "$x:$y", arg[1])
+                PluginData.save(false)
+            }
+
+            "count" -> {
+                if (arg.size < 2) {
+                    playerData.err("command.sb.count.parameter")
+                } else {
+                    PluginData.warpCounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 1))
+                    playerData.send("command.sb.count", "$x:$y", arg[1])
+                    PluginData.save(false)
+                }
+            }
+
+            "total" -> {
+                PluginData.warpTotals.add(PluginData.WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 1))
+                playerData.send("command.sb.total", "$x:$y")
+                PluginData.save(false)
+            }
+
+            "remove" -> {
+                PluginData.warpBlocks.removeAll { a -> a.ip == ip && a.port == port }
+                PluginData.warpZones.removeAll { a -> a.ip == ip && a.port == port }
+                playerData.send("command.sb.removed", arg[1])
+                PluginData.save(false)
+            }
+
+            "reset" -> {
+                PluginData.warpTotals.clear()
+                PluginData.warpCounts.clear()
+                PluginData.save(false)
+            }
+
+            else -> playerData.send("command.sb.help")
         }
     }
 
