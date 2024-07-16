@@ -1,4 +1,4 @@
-package essential.bridge;
+package essential.achievements;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

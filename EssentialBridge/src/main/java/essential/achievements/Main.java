@@ -1,4 +1,4 @@
-package essential.bridge;
+package essential.achievements;
 
 import arc.ApplicationListener;
 import arc.Core;
@@ -9,13 +9,11 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import essential.core.Bundle;
 import mindustry.mod.Plugin;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 

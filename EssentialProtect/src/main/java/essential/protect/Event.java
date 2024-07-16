@@ -2,6 +2,7 @@ package essential.protect;
 
 import arc.Core;
 import arc.Events;
+import arc.net.Server;
 import arc.util.Log;
 import essential.core.Bundle;
 import essential.core.CustomEvents;
@@ -15,6 +16,7 @@ import mindustry.game.EventType;
 import mindustry.gen.Building;
 import mindustry.gen.Call;
 import mindustry.gen.Groups;
+import mindustry.net.Packets;
 import mindustry.world.Build;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.PowerGraph;
@@ -23,18 +25,22 @@ import org.jetbrains.exposed.sql.Op;
 import org.jetbrains.exposed.sql.SqlExpressionBuilder;
 import org.jetbrains.exposed.sql.Transaction;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
 
+import static essential.core.Event.log;
 import static essential.core.Main.daemon;
 import static essential.core.Main.database;
 import static essential.protect.Main.conf;
+import static essential.protect.Main.pluginData;
 import static java.lang.Math.abs;
 
 public class Event {
     Integer pvpCount = 0;
     Float originalBlockMultiplier = 0f;
     Float originalUnitMultiplier = 0f;
+    String[] coldData;
 
     void start() {
         Events.on(EventType.WorldLoadEndEvent.class, e -> {
@@ -157,11 +163,63 @@ public class Event {
                 Log.warn(new Bundle().get("command.reg.plugin-enough"));
             }
         });
+
+        setNetworkFilter();
+        if (conf.rules.blockNewUser) {
+            enableBlockNewUser();
+        }
+
+        Events.on(EventType.ConnectPacketEvent.class, event -> {
+            String kickReason = "";
+            if (!conf.rules.mobile && event.connection.mobile) {
+                event.connection.kick(new Bundle(event.packet.locale).get("event.player.not.allow.mobile"), 0L);
+                kickReason = "mobile";
+            } else if (conf.rules.minimalNameConfig.enabled && conf.rules.minimalNameConfig.length > event.packet.name.length()) {
+                event.connection.kick(new Bundle(event.packet.locale).get("event.player.name.short"), 0L);
+                kickReason = "name.short";
+            } else if (conf.rules.vpn) {
+                for (String ip : pluginData.vpnList) {
+                    essential.core.Event.IpAddressMatcher match = new essential.core.Event.IpAddressMatcher(ip);
+                    if (match.matches(event.connection.address)) {
+                        event.connection.kick(new Bundle(event.packet.locale).get("anti-grief.vpn"));
+                        kickReason = "vpn";
+                        break;
+                    }
+                }
+            } else if (conf.rules.strict && Vars.netServer.admins.findByName(event.packet.name).size > 1) {
+                event.connection.kick(Packets.KickReason.idInUse);
+                kickReason = "ip";
+            } else if (conf.rules.blockNewUser && !Arrays.asList(coldData).contains(event.packet.uuid)) {
+                event.connection.kick(new Bundle(event.packet.locale).get("event.player.new.blocked"), 0L);
+                kickReason = "newuser";
+            }
+
+            if (!kickReason.isEmpty()) {
+                Bundle bundle = new Bundle();
+                log(essential.core.Event.LogType.Player, bundle.get("event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, bundle.get("event.player.kick.reason." + kickReason)));
+                Events.fire(new CustomEvents.PlayerConnectKicked(event.packet.name, bundle.get("event.player.kick.reason." + kickReason)));
+            }
+        });
     }
 
     void loadPlayer(DB.PlayerData data) {
         if (conf.account.getAuthType() == Config.Account.AuthType.Discord && data.getDiscord() == null) {
             data.getPlayer().sendMessage(new Bundle(data.getLanguageTag()).get("event.discord.not.registered"));
+        }
+    }
+
+    void setNetworkFilter() {
+        Server.ServerConnectFilter filter = s -> !Vars.netServer.admins.bannedIPs.contains(s);
+        Vars.platform.getNet().setConnectFilter(filter);
+    }
+
+    void enableBlockNewUser() {
+        ArrayList<DB.PlayerData> list = database.getAll();
+        coldData = new String[list.size()];
+
+        int size = 0;
+        for (DB.PlayerData playerData : list) {
+            coldData[size++] = playerData.getUuid();
         }
     }
 }

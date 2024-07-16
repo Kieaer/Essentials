@@ -1,14 +1,17 @@
 package essential.protect;
 
+import arc.util.Http;
 import arc.util.Log;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import essential.core.Bundle;
 import essential.core.DB;
 import essential.core.Permission;
+import kotlin.Pair;
 import mindustry.mod.Plugin;
 import mindustry.net.Administration;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
@@ -20,6 +23,7 @@ public class Main extends Plugin {
     static String CONFIG_PATH = "config/config_protect.yaml";
     static Bundle bundle = new Bundle();
     static Config conf;
+    static PluginData pluginData = new PluginData();
 
     @Override
     public void init() {
@@ -73,6 +77,27 @@ public class Main extends Plugin {
             Permission.INSTANCE.setDefault("user");
         } else {
             Permission.INSTANCE.setDefault("visitor");
+        }
+
+        // VPN 확인
+        if (conf.rules.vpn) {
+            boolean isUpdate = false;
+            if (essential.core.PluginData.INSTANCE.get("vpnListDate") == null || Long.parseLong(Objects.requireNonNull(essential.core.PluginData.INSTANCE.get("vpnListDate"))) + 8.64e7 < System.currentTimeMillis()) {
+                essential.core.PluginData.INSTANCE.getStatus().add(new Pair<>("vpnListDate", String.valueOf(System.currentTimeMillis())));
+                isUpdate = true;
+            }
+
+            if (isUpdate) {
+                Http.get("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt")
+                        .error(e -> Log.err("Failed to get vpn list!"))
+                        .block(e -> {
+                            String text = new String(new BufferedInputStream(e.getResultAsStream()).readAllBytes());
+                            root.child("data/ipv4.txt").writeString(text);
+                        });
+            }
+
+            String file = root.child("data/ipv4.txt").readString();
+            pluginData.vpnList = new String[(int) file.lines().count()];
         }
 
         // 이벤트 설정

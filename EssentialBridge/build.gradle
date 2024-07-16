@@ -18,6 +18,7 @@ dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.mindustryjitpack:core:$mindustryVersion"
     implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.2"
+    implementation 'org.xerial:sqlite-jdbc:3.46.0.0'
     compileOnly project(":Essential")
 }
 

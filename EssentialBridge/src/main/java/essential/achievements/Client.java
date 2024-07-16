@@ -1,7 +1,6 @@
-package essential.bridge;
+package essential.achievements;
 
 import arc.util.Log;
-import essential.core.Bundle;
 import mindustry.gen.Call;
 
 import java.io.*;
@@ -10,7 +9,7 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Scanner;
 
-import static essential.bridge.Main.bundle;
+import static essential.achievements.Main.bundle;
 
 public class Client implements Runnable {
     // todo ban 공유 서버 ip

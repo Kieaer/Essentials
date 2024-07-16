@@ -1,9 +1,0 @@
-{
-  "displayName": "EssentialAntiCheat",
-  "name": "essential-anti-cheat",
-  "author": "Gureumi ",
-  "main": "essential.anti.Main",
-  "description": "Add anti-cheat feature in Essential plugin.",
-  "version": "v20",
-  "dependencies": [ "essential" ]
-}

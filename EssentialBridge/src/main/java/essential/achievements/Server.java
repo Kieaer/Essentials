@@ -1,7 +1,6 @@
-package essential.bridge;
+package essential.achievements;
 
 import arc.util.Log;
-import essential.core.Bundle;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -11,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static essential.bridge.Main.bundle;
+import static essential.achievements.Main.bundle;
 import static essential.core.Main.root;
 
 public class Server implements Runnable {

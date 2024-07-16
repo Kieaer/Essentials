@@ -6,6 +6,7 @@ public class Config {
     public Pvp pvp;
     public Account account;
     public Protect protect;
+    public Rules rules;
 
     public static class Pvp {
         public Peace peace;
@@ -45,5 +46,23 @@ public class Config {
         public boolean unbreakableCore;
         @JsonProperty("power-detect")
         public boolean powerDetect;
+    }
+
+    public static class Rules {
+        public boolean vpn;
+        public boolean foo;
+        public boolean mobile;
+        @JsonProperty("steam-only")
+        public boolean steamOnly;
+        @JsonProperty("minimalName")
+        public MinimalNameConfig minimalNameConfig;
+        public Boolean strict;
+        @JsonProperty("block-new-user")
+        public Boolean blockNewUser;
+
+        static class MinimalNameConfig {
+            public Boolean enabled;
+            public int length;
+        }
     }
 }
