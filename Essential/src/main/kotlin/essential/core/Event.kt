@@ -224,7 +224,7 @@ object Event {
                     if (two.mapName == Vars.state.map.name() && it.tile.block().name == two.tileName && it.tile.build.tileX() == two.x && it.tile.build.tileY() == two.y) {
                         if (two.online) {
                             database.players.forEach { data ->
-                                data.player.sendMessage(Bundle(data.languageTag)["event.tap.server", it.player.plainName(), two.description])
+                                data.send("event.tap.server", it.player.plainName(), two.description)
                             }
                             // why?
                             val format = NumberFormat.getNumberInstance(Locale.US)
@@ -287,7 +287,11 @@ object Event {
                         }
                     }
                     val str = StringBuilder()
-                    val bundle = Bundle(data.languageTag)
+                    val bundle = if (data.status.containsKey("language")) {
+                        Bundle(data.status["language"]!!)
+                    } else {
+                        Bundle(it.player.locale())
+                    }
                     val handle = Core.files.internal("bundles/bundle")
                     val coreBundle = I18NBundle.createBundle(handle, Locale(data.languageTag))
 
@@ -341,7 +345,11 @@ object Event {
                     val ip = data.status["hub_ip"]!!
                     val port = data.status["hub_port"]!!.toInt()
 
-                    val bundle = Bundle(data.languageTag)
+                    val bundle = if (data.status.containsKey("language")) {
+                        Bundle(data.status["language"]!!)
+                    } else {
+                        Bundle(it.player.locale())
+                    }
                     val options = arrayOf(arrayOf(bundle["command.sb.zone.yes"], bundle["command.sb.zone.no"]))
                     val menu = Menus.registerMenu { player, option ->
                         val touch = when (option) {
@@ -454,7 +462,7 @@ object Event {
                                 } else if (isAdmin) {
                                     isAdminVote = true
                                 }
-                                player.sendMessage(Bundle(data.languageTag)["command.vote.voted"])
+                                data.send("command.vote.voted")
                             } else if (voting && message.equals("n", true) && isAdmin) {
                                 isCanceled = true
                             }
@@ -683,7 +691,7 @@ object Event {
 
                 if (unitLimitMessageCooldown == 0) {
                     database.players.forEach {
-                        it.player.sendMessage(Bundle(it.languageTag)["config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${conf.feature.unit.limit}"])
+                        it.send("config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${conf.feature.unit.limit}")
                     }
                     unitLimitMessageCooldown = 60
                 }
@@ -817,7 +825,7 @@ object Event {
                     if (data.player.team() == it.bullet.team) {
                         data.pvpEliminationTeamCount++
                     }
-                    data.player.sendMessage(Bundle(data.languageTag)["event.bullet.kill", it.bullet.team.coloredName(), it.build.team.coloredName()])
+                    data.send("event.bullet.kill", it.bullet.team.coloredName(), it.build.team.coloredName())
                 }
                 if (Vars.netServer.isWaitingForPlayers) {
                     for (t in Vars.state.teams.getActive()) {
@@ -833,7 +841,7 @@ object Event {
         fun send(message: String, vararg parameter: Any) {
             database.players.forEach {
                 if (voteTargetUUID != it.uuid) {
-                    Core.app.post { it.player.sendMessage(Bundle(it.languageTag).get(message, *parameter)) }
+                    Core.app.post { it.send(message, *parameter) }
                 }
             }
         }
@@ -957,11 +965,9 @@ object Event {
 
                                 val time = it.currentPlayTime
                                 val score = time + 5000
-                                val bundle = Bundle(it.languageTag)
-                                val message = bundle["event.exp.earn.defeat", it.currentExp + score]
 
                                 it.exp += ((score * it.expMultiplier).toInt())
-                                it.player.sendMessage(message)
+                                it.send("event.exp.earn.defeat", it.currentExp + score)
                             }
 
                             if (it.status.containsKey("freeze")) {
@@ -1392,9 +1398,15 @@ object Event {
                                         it.afk = true
                                         if (conf.feature.afk.enabled) {
                                             if (conf.feature.afk.server.isEmpty()) {
-                                                it.player.kick(Bundle(it.languageTag)["event.player.afk"])
+                                                val bundle = if (it.status.containsKey("language")) {
+                                                    Bundle(it.status["language"]!!)
+                                                } else {
+                                                    Bundle(it.player.locale())
+                                                }
+
+                                                it.player.kick(bundle["event.player.afk"])
                                                 database.players.forEach { data ->
-                                                    data.player.sendMessage(Bundle(data.languageTag)["event.player.afk.other", it.player.plainName()])
+                                                    data.send("event.player.afk.other", it.player.plainName())
                                                 }
                                             } else {
                                                 val server = conf.feature.afk.server.split(":")
@@ -1494,8 +1506,7 @@ object Event {
                                                 if (it.team() == voteTeam) {
                                                     val data = findPlayerData(it.uuid())
                                                     if (data != null && voteTargetUUID != data.uuid) {
-                                                        val bundle = Bundle(data.languageTag)
-                                                        it.sendMessage(bundle["command.vote.count", count.toString(), check() - voted.size])
+                                                        data.send("command.vote.count", count.toString(), check() - voted.size)
                                                     }
                                                 }
                                             }
@@ -1741,7 +1752,7 @@ object Event {
                                         if (isPvP) {
                                             database.players.forEach {
                                                 if (it.player.team() == voteTeam) {
-                                                    Core.app.post { it.player.sendMessage(Bundle(it.languageTag)["command.vote.failed"]) }
+                                                    Core.app.post { it.send("command.vote.failed") }
                                                 }
                                             }
                                         } else {
@@ -2016,8 +2027,6 @@ object Event {
         var result: Int = target.currentExp
         val time = target.currentPlayTime.toInt()
 
-        val bundle = Bundle(target.languageTag)
-
         if (PluginData.playtime > 300L) {
             val erekirAttack = if (Vars.state.planet == Planets.erekir) target.currentUnitDestroyedCount else 0
             val erekirPvP = if (Vars.state.planet == Planets.erekir) 5000 else 0
@@ -2077,7 +2086,7 @@ object Event {
             root.child("data/exp.json").writeString(resultArray.toString())
         }
 
-        if (isConnected && conf.feature.level.levelNotify) p.sendMessage(bundle["event.exp.current", target.exp, result, target.level, target.level - oldLevel])
+        if (isConnected && conf.feature.level.levelNotify) target.send("event.exp.current", target.exp, result, target.level, target.level - oldLevel)
     }
 
     fun findPlayerData(uuid: String): DB.PlayerData? {

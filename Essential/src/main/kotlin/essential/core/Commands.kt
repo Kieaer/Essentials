@@ -475,7 +475,11 @@ class Commands {
         }
 
         val temp = ArrayList<String>()
-        val bundle = Bundle(playerData.languageTag)
+        val bundle = if (playerData.status.containsKey("language")) {
+            Bundle(playerData.status["language"]!!)
+        } else {
+            Bundle(player.locale())
+        }
         for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
             val command = Vars.netServer.clientCommands.commandList[a]
             if (Permission.check(playerData, command.text)) {
@@ -555,7 +559,11 @@ class Commands {
 
     @ClientCommand("info", "[player...]", "Show player info")
     fun info(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        val bundle = Bundle(playerData.languageTag)
+        val bundle = if (playerData.status.containsKey("language")) {
+            Bundle(playerData.status["language"]!!)
+        } else {
+            Bundle(player.locale())
+        }
         val timeBundleFormat = "command.info.time"
 
         fun timeFormat(seconds: Long, msg: String): String {
@@ -604,7 +612,6 @@ class Commands {
         val cancel = "info.button.cancel"
 
         if (arg.isNotEmpty()) {
-
             val target = findPlayers(arg[0])
             var targetData: DB.PlayerData? = null
             var isBanned = false
@@ -616,7 +623,7 @@ class Commands {
 
                     Event.log(Event.LogType.Player, Bundle()["log.player.banned", data.name, ip])
                     database.players.forEach {
-                        it.player.sendMessage(Bundle(it.languageTag)["info.banned.message", player.plainName(), data.name])
+                        it.send("info.banned.message", player.plainName(), data.name)
                     }
                 }
             }
@@ -868,6 +875,9 @@ class Commands {
         Groups.player.forEach {
             if (!it.admin) Call.kick(it.con, Packets.KickReason.kick)
         }
+        if (player.unit() != null) {
+            playerData.send("command.kickall.done")
+        }
     }
 
     @ServerCommand("kickall", description = "Kick all players.")
@@ -1023,14 +1033,14 @@ class Commands {
         }
     }
 
-    @ClientCommand("lang", "<language_tag>", "Set the language for current account")
+    @ClientCommand("lang", description = "Set the plugin language from current game language")
     fun lang(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
             playerData.err("command.language.empty")
             return
         }
-        // todo languageTag 를 플레이어 게임 언어로 player.locale()
-        playerData.languageTag = arg[0]
+        playerData.languageTag = player.locale()
+        playerData.status["language"] = player.locale()
         database.queue(playerData)
         playerData.send("command.language.set", Locale(arg[0]).language)
         player.sendMessage(Bundle(arg[0])["command.language.preview", Locale(arg[0]).toLanguageTag()])
@@ -1050,7 +1060,11 @@ class Commands {
     @ClientCommand("maps", "[page]", "Show server map lists")
     fun maps(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         val list = Vars.maps.all().sortedBy { a -> a.name() }
-        val bundle = Bundle(player.locale())
+        val bundle = if (playerData.status.containsKey("language")) {
+            Bundle(playerData.status["language"]!!)
+        } else {
+            Bundle(player.locale())
+        }
         val prebuilt = ArrayList<Pair<String, Array<Array<String>>>>()
         val buffer = Mathf.ceil(list.size.toFloat() / 6)
         val pages = if (buffer > 1.0) buffer - 1 else 0
@@ -1332,7 +1346,11 @@ class Commands {
 
     @ClientCommand("players", "[page]", "Show current players list")
     fun players(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        val bundle = Bundle(player.locale())
+        val bundle = if (playerData.status.containsKey("language")) {
+            Bundle(playerData.status["language"]!!)
+        } else {
+            Bundle(player.locale())
+        }
         val prebuilt = ArrayList<Pair<String, Array<Array<String>>>>()
         val buffer = Mathf.ceil(database.players.size.toFloat() / 6)
         val pages = if (buffer > 1.0) buffer - 1 else 0
@@ -1383,7 +1401,11 @@ class Commands {
 
     @ClientCommand("ranking", "<time/exp/attack/place/break/pvp> [page]", "Show player ranking")
     fun ranking(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        val bundle = Bundle(player.locale())
+        val bundle = if (playerData.status.containsKey("language")) {
+            Bundle(playerData.status["language"]!!)
+        } else {
+            Bundle(player.locale())
+        }
         if (PluginData.isRankingWorking) {
             playerData.err("command.ranking.working")
             return
@@ -1873,7 +1895,11 @@ class Commands {
 
     @ClientCommand("status", description = "Show current server status")
     fun status(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        val bundle = Bundle(player.locale())
+        val bundle = if (playerData.status.containsKey("language")) {
+            Bundle(playerData.status["language"]!!)
+        } else {
+            Bundle(player.locale())
+        }
         fun longToTime(seconds: Long): String {
             val min = seconds / 60
             val hour = min / 60
@@ -2223,10 +2249,9 @@ class Commands {
         fun sendStart(message: String, vararg parameter: Any) {
             fun sendMessage(data: DB.PlayerData?) {
                 if (data != null) {
-                    val bundle = Bundle(data.languageTag)
-                    data.player.sendMessage(bundle["command.vote.starter", player.plainName()])
-                    data.player.sendMessage(bundle.get(message, *parameter))
-                    data.player.sendMessage(bundle["command.vote.how"])
+                    data.send("command.vote.starter", player.plainName())
+                    data.send(message, *parameter)
+                    data.send("command.vote.how")
                 }
             }
 

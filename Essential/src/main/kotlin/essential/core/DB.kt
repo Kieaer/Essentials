@@ -257,7 +257,13 @@ class DB {
          * Bundle 파일에서 [message] 값을 플레이어에게 보냄
          */
         fun send(message: String, vararg parameters: Any) {
-            val text = Bundle(languageTag).get(message, *parameters)
+            val bundle = if (status.containsKey("language")) {
+                Bundle(status["language"]!!)
+            } else {
+                Bundle(player.locale())
+            }
+
+            val text = bundle.get(message, *parameters)
             player.sendMessage(text)
             lastSentMessage = text
         }

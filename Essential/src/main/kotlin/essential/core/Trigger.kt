@@ -65,7 +65,12 @@ class Trigger {
                 data.currentPlayTime = 0L
             }
 
-            val bundle = Bundle(data.languageTag)
+            val bundle = if (data.status.containsKey("language")) {
+                Bundle(data.status["language"]!!)
+            } else {
+                Bundle(player.locale())
+            }
+
             Events.fire(CustomEvents.PlayerDataLoaded(data))
             data.lastLoginTime = System.currentTimeMillis()
             data.totalJoinCount++
