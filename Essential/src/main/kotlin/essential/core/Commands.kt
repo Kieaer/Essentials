@@ -17,6 +17,7 @@ import essential.core.Event.findPlayerData
 import essential.core.Event.findPlayers
 import essential.core.Event.findPlayersByName
 import essential.core.Event.resetVote
+import essential.core.Event.voteMap
 import essential.core.Event.worldHistory
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.currentTime
@@ -30,6 +31,7 @@ import mindustry.content.Blocks
 import mindustry.content.Weathers
 import mindustry.core.GameState
 import mindustry.game.EventType
+import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.*
@@ -2255,7 +2257,8 @@ class Commands {
         }
 
         if (!Event.voting) {
-            if (database.players.filterNot { it.afk }.size <= 3 && !Permission.check(playerData, "vote.admin")) {
+            if ((database.players.filterNot { it.afk }.size <= 3 && !Permission.check(playerData, "vote.admin")) ||
+                (database.players.size == 1 && arg[0] != "map")) {
                 playerData.err("command.vote.enough")
                 return
             }
@@ -2313,12 +2316,18 @@ class Commands {
                             }
 
                             if (target != null) {
-                                Event.voteType = "map"
-                                Event.voteMap = target
-                                Event.voteReason = arg[2]
-                                Event.voteStarter = playerData
-                                Event.voting = true
-                                sendStart("command.vote.map.start", target!!.name(), arg[2])
+                                if (database.players.size != 1) {
+                                    Event.voteType = "map"
+                                    Event.voteMap = target
+                                    Event.voteReason = arg[2]
+                                    Event.voteStarter = playerData
+                                    Event.voting = true
+                                    sendStart("command.vote.map.start", target!!.name(), arg[2])
+                                } else {
+                                    PluginData.isSurrender = true
+                                    Vars.maps.setNextMapOverride(voteMap)
+                                    Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
+                                }
                             } else {
                                 playerData.err(mapNotFound)
                             }
