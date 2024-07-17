@@ -1885,6 +1885,7 @@ class Commands {
                 [#DEA82A]${bundle["command.status.info"]}[]
                 [#2B60DE]========================================[]
                 ${bundle["command.status.name"]}: ${Vars.state.map.name()}[white]
+                ${bundle["command.status.creator"]}: ${Vars.state.map.author()}[white]
                 TPS: ${Core.graphics.framesPerSecond}/60
                 ${bundle["command.status.banned", Vars.netServer.admins.banned.size]}
                 ${bundle["command.status.playtime"]}: ${longToTime(PluginData.playtime)}
