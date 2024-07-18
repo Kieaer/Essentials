@@ -1,0 +1,28 @@
+pvp:
+  peace:
+    # Sets it so that no damage can be inflicted for a certain period of time immediately after starting PvP. (default: false)
+    enabled: false
+    # Time unit is seconds (default: 300)
+    time: 300
+  border:
+    # If a unit leaves the world border, it is destroyed. (default: false)
+    enabled: false
+  # If the team loses, all buildings are destroyed. (default: false)
+  destroy-core: false
+account:
+  # If this feature is enabled, players will need to log in to account using the auth-type value to play. (default: false)
+  enabled: false
+  # Available method: password, discord
+  auth-type: "password"
+  # If you set auth-type to discord, you can enter the discord invite link below to be directed to this discord address.
+  discord-url: ""
+  # Prevent players from changing their nicknames. (default: false)
+  # This is useful for catching people who change their nicknames frequently and are grieving.
+  strict: false
+
+protect:
+  # Ensures the core is never destroyed. (default: false)
+  # This is useful in certain game modes or lobby servers.
+  unbreakable-core: false
+  # If a large amount of power supply is lost due to power node disconnection, a message is notified. (default: true)
+  power-detect: true

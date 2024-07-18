@@ -1,0 +1,76 @@
+owner:
+  admin: true
+  permissions:
+    - '*'
+admin:
+  admin: true
+  inheritance: user
+  permissions:
+    - afk.admin
+    - changemap
+    - chars
+    - chat
+    - chat.admin
+    - color
+    - dps
+    - fillitems
+    - freeze
+    - gg
+    - god
+    - hud.enemy
+    - info.other
+    - kick.admin
+    - kill
+    - kill.other
+    - meme
+    - mute
+    - pause
+    - pm.other
+    - pvp.spector
+    - rollback
+    - search
+    - skip
+    - spawn
+    - strict
+    - team
+    - team.other
+    - tempban
+    - tpp
+    - unmute
+    - vote.pass
+    - vote.reset
+    - weather
+user:
+  permissions:
+    - changepw
+    - discord
+    - effect
+    - hud
+    - help
+    - info
+    - lang
+    - maps
+    - me
+    - motd
+    - players
+    - pm
+    - ranking
+    - report
+    - status
+    - time
+    - tp
+    - track
+    - url
+    - vote
+    - vote.back
+    - vote.gg
+    - vote.kick
+    - vote.map
+    - vote.random
+    - vote.skip
+visitor:
+  default: true
+  permissions:
+    - help
+    - login
+    - reg

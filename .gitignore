@@ -155,3 +155,6 @@ node_modules
 package-lock.json
 package.json
 /maps/
+/.kotlin/
+/*/build
+/Essential/maps

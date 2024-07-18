@@ -1,0 +1,9 @@
+{
+  "displayName": "EssentialDiscord",
+  "name": "essential-discord",
+  "author": "Gureumi",
+  "main": "essential.discord.Main",
+  "description": "Add Discord integration feature in Essential plugin.",
+  "version": "v20",
+  "dependencies": [ "essential" ]
+}

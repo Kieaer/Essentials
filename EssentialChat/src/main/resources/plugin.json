@@ -1,0 +1,9 @@
+{
+  "displayName": "EssentialChat",
+  "name": "essential-chat",
+  "author": "Gureumi",
+  "main": "essential.chat.Main",
+  "description": "Add chat feature in Essential plugin.",
+  "version": "v20",
+  "dependencies": [ "essential" ]
+}
