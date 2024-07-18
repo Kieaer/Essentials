@@ -4,7 +4,6 @@ plugins {
 
 sequenceOf(
     "",
-    "AntiCheat",
     "Chat",
     "Protect",
     "Bridge",

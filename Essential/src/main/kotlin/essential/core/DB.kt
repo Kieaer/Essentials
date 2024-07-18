@@ -267,6 +267,15 @@ class DB {
             player.sendMessage(text)
             lastSentMessage = text
         }
+
+        /**
+         * 외부 Bundle 파일에서 [message] 값을 플레이어에게 보냄
+         */
+        fun send(bundle: Bundle, message: String, vararg parameters: Any) {
+            val text = bundle.get(message, *parameters)
+            player.sendMessage(text)
+            lastSentMessage = text
+        }
     }
 
     fun createData(data: PlayerData) {

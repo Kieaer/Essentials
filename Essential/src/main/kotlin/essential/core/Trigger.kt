@@ -117,10 +117,7 @@ class Trigger {
                         player.team(Event.pvpPlayer[data.uuid])
                     }
 
-                    conf.feature.pvp.spector && Event.pvpSpectors.contains(data.uuid) || Permission.check(
-                        data,
-                        "pvp.spector"
-                    ) -> {
+                    conf.feature.pvp.spector && Event.pvpSpecters.contains(data.uuid) || Permission.check(data, "pvp.spector") -> {
                         player.team(Team.derelict)
                     }
 

@@ -36,6 +36,8 @@ public class Main extends Plugin {
             e.printStackTrace();
         }
 
+        new Event().start();
+
         Log.info(bundle.get("event.plugin.loaded"));
     }
 

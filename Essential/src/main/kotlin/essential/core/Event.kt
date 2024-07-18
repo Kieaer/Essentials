@@ -86,7 +86,7 @@ object Event {
     var blockExp = HashMap<String, Int>()
     var dosBlacklist : List<String> = listOf()
     var count = 60
-    var pvpSpectors = ArrayList<String>()
+    var pvpSpecters = ArrayList<String>()
     var pvpPlayer = HashMap<String, Team>()
     var isGlobalMute = false
     var dpsBlocks = 0f
@@ -550,7 +550,7 @@ object Event {
             if (voting) resetVote()
             offlinePlayers.clear()
             worldHistory.clear()
-            pvpSpectors.clear()
+            pvpSpecters.clear()
             pvpPlayer.clear()
             dpsTile = null
         }.also { listener -> eventListeners[GameOverEvent::class.java] = listener })
@@ -731,6 +731,11 @@ object Event {
                 offlinePlayers.add(data)
                 database.players.removeAll { e -> e.uuid == data.uuid }
             }
+
+            if (database.players.size == 0) {
+                pvpSpecters.clear()
+                pvpPlayer.clear()
+            }
         }.also { listener -> eventListeners[PlayerLeave::class.java] = listener })
 
         Events.on(PlayerBanEvent::class.java, Cons<PlayerBanEvent> {
@@ -758,7 +763,7 @@ object Event {
             if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
 
             if (Vars.state.rules.pvp) {
-                pvpSpectors.clear()
+                pvpSpecters.clear()
 
                 for (data in database.players) {
                     if (Permission.check(data, "pvp.spector")) {
@@ -959,7 +964,7 @@ object Event {
                                 it.pvpDefeatCount++
                                 if (conf.feature.pvp.spector) {
                                     it.player.team(Team.derelict)
-                                    pvpSpectors.add(it.uuid)
+                                    pvpSpecters.add(it.uuid)
                                 }
                                 pvpPlayer.remove(it.uuid)
 
@@ -1561,15 +1566,14 @@ object Event {
                                                     earnEXP(Vars.state.rules.waveTeam, it.player, it, true)
                                                 }
                                                 PluginData.isSurrender = true
-                                                back(voteMap)
+                                                Vars.maps.setNextMapOverride(voteMap)
+                                                Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                                             }
 
                                             "gg" -> {
-                                                if (voteStarter != null && !Permission.check(
-                                                        voteStarter!!,
-                                                        "vote.pass"
-                                                    )
-                                                ) voterCooltime.put(voteStarter!!.uuid, 180)
+                                                if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) {
+                                                    voterCooltime[voteStarter!!.uuid] = 180
+                                                }
                                                 if (isPvP) {
                                                     Vars.world.tiles.forEach {
                                                         if (it.build != null && it.build.team != null && it.build.team == voteTeam) {

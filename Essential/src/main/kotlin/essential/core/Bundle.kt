@@ -12,6 +12,10 @@ class Bundle {
         resource = ResourceBundle.getBundle("bundle", locale)
     }
 
+    constructor(source: ResourceBundle) {
+        resource = source
+    }
+
     constructor(languageTag: String) {
         locale = try {
             when (languageTag.substring(0, 2)) {
