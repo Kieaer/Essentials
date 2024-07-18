@@ -1,0 +1,3 @@
+<configuration>
+    <logger name="Exposed" level="OFF"/>
+</configuration>
