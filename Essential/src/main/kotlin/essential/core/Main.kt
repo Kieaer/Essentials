@@ -6,7 +6,8 @@ import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
-import com.charleskorn.kaml.Yaml
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import essential.core.Event.actionFilter
 import essential.core.Event.findPlayerData
 import essential.core.annotation.ClientCommand
@@ -19,6 +20,7 @@ import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
+import java.io.InputStream
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -47,6 +49,20 @@ class Main : Plugin() {
             return ZonedDateTime.now()
                 .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withLocale(Locale.getDefault()))
         }
+
+        fun <T> createAndReadConfig(name: String, file: InputStream, type: Class<T>): T? {
+            if (!root.child("config/$name").exists()) {
+                root.child("config/$name").write(file, false)
+            }
+
+            val mapper = ObjectMapper(YAMLFactory())
+            return try {
+                mapper.readValue(root.child("config/$name").file(), type)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
     }
 
     val bundle = Bundle()
@@ -56,11 +72,12 @@ class Main : Plugin() {
         Log.info(bundle["event.plugin.starting"])
 
         // 플러그인 설정
-        if (!root.child(CONFIG_PATH).exists()) {
-            root.child(CONFIG_PATH).write(this::class.java.getResourceAsStream("/config.yaml")!!, false)
-        }
+        createAndReadConfig(
+            "config.yaml",
+            this::class.java.getResourceAsStream("/config.yaml")!!,
+            Config.Companion::class.java
+        )
 
-        conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())
         bundle.locale = Locale(conf.plugin.lang)
 
         if (!root.child("data").exists()) {

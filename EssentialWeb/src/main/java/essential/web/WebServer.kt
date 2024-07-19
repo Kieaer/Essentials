@@ -1,7 +1,6 @@
 package essential.web
 
 import essential.core.Main.Companion.database
-import essential.web.Main
 import essential.web.Main.conf
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*

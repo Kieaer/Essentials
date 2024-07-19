@@ -158,3 +158,4 @@ package.json
 /.kotlin/
 /*/build
 /Essential/maps
+/EssentialWeb/src/main/resources/www

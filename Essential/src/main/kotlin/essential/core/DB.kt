@@ -33,7 +33,7 @@ class DB {
     val players: MutableList<PlayerData> = mutableListOf()
 
     fun load() {
-        val cacheDir = File(System.getProperty("java.io.tmpdir"))
+        val cacheDir = root.child("drivers/").file()
 
         // DB 라이브러리 다운로드
         val mavenRepository = "https://repo1.maven.org/maven2"

@@ -1,11 +1,9 @@
-package essential.achievements;
+package essential.bridge;
 
 import arc.ApplicationListener;
 import arc.Core;
 import arc.util.CommandHandler;
 import arc.util.Log;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import essential.core.Bundle;
 import mindustry.mod.Plugin;
 
@@ -14,13 +12,11 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static essential.core.Main.root;
-
 public class Main extends Plugin {
-    static String CONFIG_PATH = "config/config_bridge.yaml";
     static Bundle bundle = new Bundle();
     static Boolean isServerMode = false;
     ExecutorService daemon = Executors.newSingleThreadExecutor();
@@ -44,19 +40,11 @@ public class Main extends Plugin {
         }
 
         // 플러그인 설정
-        if (!root.child(CONFIG_PATH).exists()) {
-            root.child(CONFIG_PATH).write(this.getClass().getResourceAsStream("/config_bridge.yaml"), false);
-        }
-
-        //todo 서버 포트별로 이름을 설정할 수 있고, 설정에서 서버 그룹별로 해당 설정을 덮어쓰기 할 수 있게 만들기
-        // 설정 파일 읽기
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-
-        try {
-            conf = mapper.readValue(root.child(CONFIG_PATH).file(), Config.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        conf = essential.core.Main.Companion.createAndReadConfig(
+                "config_bridge.yaml",
+                Objects.requireNonNull(this.getClass().getResourceAsStream("/config_bridge.yaml")),
+                Config.class
+        );
 
         if (conf.isCountAllServers()) {
             Core.settings.put("totalPlayers", 0);
@@ -92,6 +80,9 @@ public class Main extends Plugin {
                 }
             }
         });
+
+        // test
+        new DB().load();
 
         Log.info(bundle.get("event.plugin.loaded"));
     }

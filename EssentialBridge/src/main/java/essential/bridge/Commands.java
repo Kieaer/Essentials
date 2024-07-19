@@ -1,4 +1,4 @@
-package essential.achievements;
+package essential.bridge;
 
 import essential.core.DB;
 import essential.core.annotation.ClientCommand;

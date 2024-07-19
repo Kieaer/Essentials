@@ -3,13 +3,10 @@ package essential.achievements;
 import arc.util.Strings;
 import essential.core.DB;
 import essential.core.annotation.ClientCommand;
-import mindustry.Vars;
-import mindustry.gen.Call;
 import mindustry.gen.Playerc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 public class Commands {

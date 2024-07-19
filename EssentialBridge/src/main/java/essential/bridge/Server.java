@@ -1,4 +1,4 @@
-package essential.achievements;
+package essential.bridge;
 
 import arc.util.Log;
 
@@ -10,7 +10,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static essential.achievements.Main.bundle;
 import static essential.core.Main.root;
 
 public class Server implements Runnable {
@@ -24,7 +23,7 @@ public class Server implements Runnable {
             server = new ServerSocket(57293);
             while (!Thread.currentThread().isInterrupted()) {
                 Socket socket = server.accept();
-                Log.info(bundle.get("network.server.connected", socket.getInetAddress().getHostAddress()));
+                Log.info(Main.bundle.get("network.server.connected", socket.getInetAddress().getHostAddress()));
                 clients.add(socket);
                 Handler handler = new Handler(socket);
                 handler.start();
@@ -109,7 +108,7 @@ public class Server implements Runnable {
                 e.printStackTrace();
             }
             clients.remove(socket);
-            Log.info(bundle.get("network.server.disconnected", socket.getInetAddress().getHostAddress()));
+            Log.info(Main.bundle.get("network.server.disconnected", socket.getInetAddress().getHostAddress()));
         }
     }
 }

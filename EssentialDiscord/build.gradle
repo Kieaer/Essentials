@@ -17,8 +17,9 @@ ext{
 dependencies{
     compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
     compileOnly "com.github.Anuken.mindustryjitpack:core:$mindustryVersion"
-    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.2"
-    implementation "net.dv8tion:JDA:5.0.0-beta.24"
+    implementation("net.dv8tion:JDA:5.0.0-beta.24") {
+        exclude module: 'opus-java'
+    }
     compileOnly project(":Essential")
 }
 

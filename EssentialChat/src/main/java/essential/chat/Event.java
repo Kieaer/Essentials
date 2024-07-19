@@ -8,7 +8,6 @@ import essential.core.Bundle;
 import essential.core.DB;
 import essential.core.Permission;
 import mindustry.Vars;
-import mindustry.core.NetServer;
 import mindustry.gen.Player;
 import mindustry.net.Administration;
 
@@ -16,7 +15,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import static essential.chat.Main.conf;
-import static essential.core.Event.*;
+import static essential.core.Event.INSTANCE;
 import static essential.core.Main.database;
 import static essential.core.Main.root;
 

@@ -11,7 +11,7 @@ tasks.register("jar") {
         subprojects.forEach { subproject ->
             val rootFile = file("E:\\test\\config\\mods\\${subproject.name}.jar").toPath()
             delete(rootFile)
-            move(subproject.layout.buildDirectory.file("libs/${subproject.name}.jar").get().asFile.toPath(), rootFile)
+            move(subproject.layout.buildDirectory.file("libs/${subproject.name}-all.jar").get().asFile.toPath(), rootFile)
             println("project build: ${subproject.name}")
         }
     }

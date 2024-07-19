@@ -2,8 +2,6 @@ package essential.protect;
 
 import arc.util.Http;
 import arc.util.Log;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import essential.core.Bundle;
 import essential.core.DB;
 import essential.core.Permission;
@@ -12,15 +10,13 @@ import mindustry.mod.Plugin;
 import mindustry.net.Administration;
 
 import java.io.BufferedInputStream;
-import java.io.IOException;
 import java.util.Objects;
-import java.util.Optional;
 
-import static essential.core.Main.*;
+import static essential.core.Main.database;
+import static essential.core.Main.root;
 import static mindustry.Vars.netServer;
 
 public class Main extends Plugin {
-    static String CONFIG_PATH = "config/config_protect.yaml";
     static Bundle bundle = new Bundle();
     static Config conf;
     static PluginData pluginData = new PluginData();
@@ -31,17 +27,11 @@ public class Main extends Plugin {
 
         Log.debug(bundle.get("event.plugin.starting"));
 
-        if (!root.child(CONFIG_PATH).exists()) {
-            root.child(CONFIG_PATH).write(this.getClass().getResourceAsStream("/config_protect.yaml"), false);
-        }
-
-        // 설정 파일 읽기
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        try {
-            conf = mapper.readValue(root.child("config/config_protect.yaml").file(), Config.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        conf = essential.core.Main.Companion.createAndReadConfig(
+                "config_protect.yaml",
+                Objects.requireNonNull(this.getClass().getResourceAsStream("/config_protect.yaml")),
+                Config.class
+        );
 
         netServer.admins.actionFilters.add(action -> {
             if (action.player == null) return true;

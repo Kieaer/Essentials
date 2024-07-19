@@ -1,8 +1,30 @@
-package essential.achievements;
+package essential.bridge;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.sql.*;
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+
+import static essential.core.Main.root;
 
 public class DB {
+    void load() {
+        try {
+            Class.forName(
+                    "org.sqlite.JDBC",
+                    true,
+                    new URLClassLoader(
+                            new URL[]{Arrays.stream(root.child("drivers/").list()).filter(name -> name.name().contains("sqlite")).findFirst().get().file().toURI().toURL()},
+                            this.getClass().getClassLoader()
+                    )
+            );
+        } catch (MalformedURLException | ClassNotFoundException | NoSuchElementException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     void connect() {
         try
                 (Connection connection = DriverManager.getConnection("jdbc:sqlite:sample.db");

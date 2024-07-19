@@ -3,7 +3,6 @@ package essential.chat;
 import essential.core.DB;
 import essential.core.Permission;
 import essential.core.annotation.ClientCommand;
-import kotlin.text.Regex;
 import mindustry.Vars;
 import mindustry.gen.Call;
 import mindustry.gen.Playerc;

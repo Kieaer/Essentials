@@ -3,8 +3,8 @@ package essential.protect;
 import arc.Events;
 import arc.struct.ObjectSet;
 import arc.util.Log;
-import essential.core.*;
 import essential.core.Event;
+import essential.core.*;
 import essential.core.annotation.ClientCommand;
 import mindustry.Vars;
 import mindustry.gen.Playerc;
@@ -17,7 +17,6 @@ import java.util.Objects;
 import static essential.core.Commands.PLAYER_NOT_FOUND;
 import static essential.core.Commands.STANDARD_DATE;
 import static essential.core.Main.database;
-import static essential.protect.Main.bundle;
 import static essential.protect.Main.conf;
 
 public class Commands {

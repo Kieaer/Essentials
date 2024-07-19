@@ -1,4 +1,4 @@
-package essential.achievements;
+package essential.bridge;
 
 import arc.util.Log;
 import mindustry.gen.Call;
@@ -8,8 +8,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Scanner;
-
-import static essential.achievements.Main.bundle;
 
 public class Client implements Runnable {
     // todo ban 공유 서버 ip
@@ -24,7 +22,7 @@ public class Client implements Runnable {
     public void run() {
         try {
             socket.connect(new InetSocketAddress(address, port), 5000);
-            Log.info(bundle.get("network.client.connected", "$address:$port"));
+            Log.info(Main.bundle.get("network.client.connected", "$address:$port"));
 
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -52,7 +50,7 @@ public class Client implements Runnable {
                 }
             }
         } catch (SocketTimeoutException e) {
-            Log.info(bundle.get("network.client.timeout"));
+            Log.info(Main.bundle.get("network.client.timeout"));
         } catch (Exception e) {
             e.printStackTrace();
         }
