@@ -729,12 +729,12 @@ object Event {
 
                 database.queue(data)
                 offlinePlayers.add(data)
-                database.players.removeAll { e -> e.uuid == data.uuid }
-            }
 
-            if (database.players.size == 0) {
-                pvpSpecters.clear()
-                pvpPlayer.clear()
+                if (database.players.size == 0 && pvpSpecters.isNotEmpty()) {
+                    Events.fire(GameOverEvent(data.player.team()))
+                }
+
+                database.players.removeAll { e -> e.uuid == data.uuid }
             }
         }.also { listener -> eventListeners[PlayerLeave::class.java] = listener })
 
