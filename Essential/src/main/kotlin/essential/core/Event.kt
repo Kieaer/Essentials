@@ -10,6 +10,7 @@ import arc.graphics.Colors
 import arc.util.*
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.currentTime
+import essential.core.Main.Companion.daemon
 import essential.core.Main.Companion.database
 import essential.core.Main.Companion.root
 import mindustry.Vars
@@ -34,9 +35,11 @@ import org.hjson.JsonObject
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -99,6 +102,7 @@ object Event {
     lateinit var actionFilter: Administration.ActionFilter
 
     private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}\$")
+    private val logFiles = HashMap<LogType, FileAppender>()
 
     fun register() {
         fun checkValidBlock(tile: Tile): String {
@@ -107,6 +111,11 @@ object Event {
             } else {
                 tile.block().name
             }
+        }
+
+        // 로그 경로 추가
+        for(type in LogType.entries) {
+            logFiles[type] = FileAppender(root.child("log/$type.log").file())
         }
 
         Events.on(WithdrawEvent::class.java, Cons<WithdrawEvent> {
@@ -1878,14 +1887,12 @@ object Event {
         if (type != LogType.Report) {
             val new = Paths.get(root.child("log/$type.log").path())
             val old = Paths.get(root.child("log/old/$type/$time.log").path())
-            var main = root.child("log/$type.log")
+            var main = logFiles[type]
             val folder = root.child("log")
 
             if (main != null && main.length() > 2048 * 1024) {
-                RandomAccessFile(main.file(), "rw").use { raf ->
-                    raf.seek(main.file().length())
-                    raf.writeBytes("\nend of file. $time")
-                }
+                main.write("end of file. $time")
+                main.close()
                 try {
                     if (!root.child("log/old/$type").exists()) {
                         root.child("log/old/$type").mkdirs()
@@ -1897,7 +1904,7 @@ object Event {
                         val zipFileName = "$time.zip"
                         val zipOutputStream = ZipOutputStream(FileOutputStream(zipFileName))
 
-                        Thread {
+                        daemon.submit {
                             for (logFile in logFiles) {
                                 val entryName = logFile.name
                                 val zipEntry = ZipEntry(entryName)
@@ -1924,17 +1931,17 @@ object Event {
                                 Path(Core.files.external(zipFileName).absolutePath()),
                                 Path(root.child("log/old/$type/$zipFileName").absolutePath())
                             )
-                        }.start()
+                        }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
                 main = null
             }
-            if (main == null) main = folder.child("$type.log")
-            RandomAccessFile(main.file(), "rw").use { raf ->
-                raf.seek(main.file().length())
-                raf.writeBytes("\n[$time] $text")
+            if (main == null) {
+                logFiles[type] = FileAppender(folder.child("$type.log").file())
+            } else {
+                main.write("[$time] $text")
             }
         } else {
             val main = root.child("log/report/$time-${name[0]}.txt")
@@ -2011,6 +2018,29 @@ object Event {
         }
 
         if (isConnected && conf.feature.level.levelNotify) target.send("event.exp.current", target.exp, result, target.level, target.level - oldLevel)
+    }
+
+    class FileAppender(private val file: File) {
+        private val raf: RandomAccessFile
+
+        init {
+            if (!file.exists()) {
+                file.createNewFile()
+            }
+            raf = RandomAccessFile(file, "rw")
+        }
+
+        fun write(text: String) {
+            raf.write(("\n$text").toByteArray(StandardCharsets.UTF_8))
+        }
+
+        fun length() : Long {
+            return file.length()
+        }
+
+        fun close() {
+            raf.close()
+        }
     }
 
     fun findPlayerData(uuid: String): DB.PlayerData? {
