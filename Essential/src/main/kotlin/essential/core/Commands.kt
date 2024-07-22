@@ -34,7 +34,9 @@ import mindustry.game.EventType
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
-import mindustry.gen.*
+import mindustry.gen.Call
+import mindustry.gen.Groups
+import mindustry.gen.Playerc
 import mindustry.gen.Unit
 import mindustry.maps.Map
 import mindustry.net.Packets
@@ -104,7 +106,7 @@ class Commands {
         }
     }
 
-    @ClientCommand("changename", "<target> <new_name>", "Change player name")
+    @ClientCommand("changename", "<target> [new_name]", "Change player name")
     fun changeName(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         fun change(data: DB.PlayerData) {
             transaction {
@@ -112,37 +114,34 @@ class Commands {
                     data.err("command.changename.exists", arg[1])
                 } else {
                     Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
-                    data.send("command.changename.apply.other", data.name, arg[1])
-                    data.name = arg[0]
-                    if (data.player.unit() != Nulls.unit) data.player.name(arg[1])
+                    if (data.uuid == playerData.uuid) {
+                        playerData.send("command.changename.apply")
+                    } else {
+                        data.send("command.changename.apply.other", data.name, arg[1])
+                    }
+                    data.name = arg[1]
+                    if (!data.player.isNull) data.player.name(arg[1])
                     database.queue(data)
                 }
             }
             return
         }
 
-        if (arg.size > 1) {
-            val target = findPlayers(arg[0])
-            if (target != null) {
-                val data = findPlayerData(target.uuid())
-                if (data != null) {
-                    change(data)
-                } else {
-                    playerData.err(PLAYER_NOT_REGISTERED)
-                }
+        val target = findPlayers(arg[0])
+        if (target != null) {
+            val data = findPlayerData(target.uuid())
+            if (data != null) {
+                change(data)
             } else {
-                val offline = database[arg[0]]
-                if (offline != null) {
-                    change(offline)
-                } else {
-                    playerData.err(PLAYER_NOT_FOUND)
-                }
+                playerData.err(PLAYER_NOT_REGISTERED)
             }
         } else {
-            playerData.name = arg[0]
-            player.name(arg[0])
-            database.queue(playerData)
-            playerData.send("command.changename.apply")
+            val offline = database[arg[0]]
+            if (offline != null) {
+                change(offline)
+            } else {
+                playerData.err(PLAYER_NOT_FOUND)
+            }
         }
     }
 
@@ -1606,12 +1605,12 @@ class Commands {
                         }
                     }
                 }
-
-                for (p in Groups.player) {
-                    Call.worldDataBegin(p.con)
-                    Vars.netServer.sendWorldData(p)
-                }
             }
+        }
+
+        for (p in Groups.player) {
+            Call.worldDataBegin(p.con)
+            Vars.netServer.sendWorldData(p)
         }
     }
 

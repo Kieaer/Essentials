@@ -91,19 +91,20 @@ class ClientCommandTest {
         setPermission("owner", true)
 
         // Change self name
-        clientCommand.handleMessage("/changename Kieaer", player)
+        clientCommand.handleMessage("/changename ${player.name()} Kieaer", player)
+        sleep(100)
         assertEquals("Kieaer", player.name())
 
         // Change other player name
         val registeredUser = newPlayer()
         val randomName = Faker().name().lastName()
-        clientCommand.handleMessage("/changename $randomName ${registeredUser.first.name()}", player)
+        clientCommand.handleMessage("/changename ${registeredUser.first.name()} $randomName", player)
         sleep(100)
         assertEquals(randomName, database.players.find { p -> p.uuid == registeredUser.second.uuid }!!.name)
         leavePlayer(registeredUser.first)
 
         // If target player not found
-        clientCommand.handleMessage("/changename eat yammi", player)
+        clientCommand.handleMessage("/changename yammi eat", player)
         assertEquals(err("player.not.found"), playerData.lastSentMessage)
     }
 

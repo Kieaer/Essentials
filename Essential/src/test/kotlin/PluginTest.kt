@@ -278,6 +278,9 @@ class PluginTest {
 
         fun setPermission(group : String, admin : Boolean) {
             serverCommand.handleMessage("setperm ${player.name} $group")
+            if (admin) {
+                serverCommand.handleMessage("admin ${player.name}")
+            }
         }
 
         fun err(key : String, vararg parameters : Any) : String {
@@ -295,7 +298,7 @@ class PluginTest {
 
         loadGame()
         loadPlugin()
-        stopPlugin()
+        //stopPlugin()
     }
 
     @After

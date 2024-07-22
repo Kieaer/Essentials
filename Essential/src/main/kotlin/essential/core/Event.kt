@@ -36,6 +36,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.RandomAccessFile
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -239,37 +240,7 @@ object Event {
                 }
 
                 for (two in PluginData.warpZones) {
-                    if (
-                        two != null
-                        &&
-                        two.mapName == Vars.state.map.name()
-                        &&
-                        two.click
-                        &&
-                        if (two.startTile.x > two.finishTile.x) {
-                            two.startTile.x < it.tile.x
-                        } else {
-                            two.finishTile.x > it.tile.x
-                        }
-                        &&
-                        if (two.startTile.x > two.finishTile.x) {
-                            two.finishTile.x < it.tile.x
-                        } else {
-                            two.startTile.x < it.tile.x
-                        }
-                        &&
-                        if (two.startTile.y > two.finishTile.y) {
-                            two.startTile.y > it.tile.y
-                        } else {
-                            two.finishTile.y < it.tile.y
-                        }
-                        &&
-                        if (two.startTile.y > two.finishTile.y) {
-                            two.finishTile.y < it.tile.y
-                        } else {
-                            two.startTile.y < it.tile.y
-                        }
-                    ) {
+                    if (two.mapName == Vars.state.map.name() && two.click && isUnitInside(it.tile, two.startTile, two.finishTile)) {
                         Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
                         Call.connect(it.player.con(), two.ip, two.port)
                         continue
@@ -1008,11 +979,7 @@ object Event {
                             }
 
                             for (two in PluginData.warpZones) {
-                                if (two != null && two.mapName == Vars.state.map.name() && !two.click && it.player.unit()
-                                        .tileX() > two.startTile.x && it.player.unit()
-                                        .tileX() < two.finishTile.x && it.player.unit()
-                                        .tileY() > two.startTile.y && it.player.unit().tileY() < two.finishTile.y
-                                ) {
+                                if (two.mapName == Vars.state.map.name() && !two.click && isUnitInside(it.player.unit().tileOn(), two.startTile, two.finishTile)) {
                                     Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
                                     Call.connect(it.player.con(), two.ip, two.port)
                                     continue
@@ -1915,7 +1882,10 @@ object Event {
             val folder = root.child("log")
 
             if (main != null && main.length() > 2048 * 1024) {
-                main.writeString("end of file. $time", true)
+                RandomAccessFile(main.file(), "rw").use { raf ->
+                    raf.seek(main.file().length())
+                    raf.writeBytes("\nend of file. $time")
+                }
                 try {
                     if (!root.child("log/old/$type").exists()) {
                         root.child("log/old/$type").mkdirs()
@@ -1962,7 +1932,10 @@ object Event {
                 main = null
             }
             if (main == null) main = folder.child("$type.log")
-            main!!.writeString("[$time] $text\n", true)
+            RandomAccessFile(main.file(), "rw").use { raf ->
+                raf.seek(main.file().length())
+                raf.writeBytes("\n[$time] $text")
+            }
         } else {
             val main = root.child("log/report/$time-${name[0]}.txt")
             main.writeString(text)
@@ -2098,4 +2071,13 @@ object Event {
         val team: Team,
         val value: Any?
     )
+
+    fun isUnitInside(target: Tile, first: Tile, second: Tile) : Boolean {
+        val minX = minOf(first.getX(), second.getX())
+        val maxX = maxOf(first.getX(), second.getX())
+        val minY = minOf(first.getY(), second.getY())
+        val maxY = maxOf(first.getY(), second.getY())
+
+        return target.getX() in minX..maxX && target.getY() in minY..maxY
+    }
 }

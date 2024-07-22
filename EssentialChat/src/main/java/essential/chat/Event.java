@@ -77,12 +77,18 @@ public class Event {
             if (player != null) {
                 DB.PlayerData data = database.get(player.uuid());
                 if (message != null) {
+                    String defaultFormat = "[coral][[" + player.coloredName() + "[coral]]:[white] " + message;
                     if (data != null) {
-                        return Permission.INSTANCE.get(data).getChatFormat()
-                                .replace("%1", "[#${player.color}]${data.name}")
-                                .replace("%2", message);
+                        String chatFormat = Permission.INSTANCE.get(data).getChatFormat();
+                        if (chatFormat.isEmpty()) {
+                            return defaultFormat;
+                        } else {
+                            return chatFormat
+                                    .replace("%1", "[${player.color}]${data.name}")
+                                    .replace("%2", message);
+                        }
                     } else {
-                        return "[coral][[" + player.coloredName() + "[coral]]:[white] " + message;
+                        return defaultFormat;
                     }
                 }
             }

@@ -41,7 +41,7 @@ dependencies {
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("com.github.anuken.arc:arc-core:$mindustryVersion")
-    testCompileOnly("com.github.Anuken.mindustryjitpack:server:$mindustryVersion")
+    testImplementation("com.github.Anuken.mindustryjitpack:server:$mindustryVersion")
     testImplementation("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
     testImplementation("com.github.anuken.arc:backend-headless:$mindustryVersion")
     testImplementation("com.github.stefanbirkner:system-rules:$rulesVersion")
