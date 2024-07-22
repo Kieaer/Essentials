@@ -6,6 +6,7 @@ import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
+import com.charleskorn.kaml.Yaml
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import essential.core.Event.actionFilter
@@ -72,12 +73,11 @@ class Main : Plugin() {
         Log.info(bundle["event.plugin.starting"])
 
         // 플러그인 설정
-        createAndReadConfig(
-            "config.yaml",
-            this::class.java.getResourceAsStream("/config.yaml")!!,
-            Config.Companion::class.java
-        )
+        if (!root.child("config/config.yaml").exists()) {
+            root.child("config/config.yaml").write(this.javaClass.getResourceAsStream("/config.yaml"), false)
+        }
 
+        conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())
         bundle.locale = Locale(conf.plugin.lang)
 
         if (!root.child("data").exists()) {

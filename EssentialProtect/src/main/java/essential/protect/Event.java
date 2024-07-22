@@ -19,6 +19,8 @@ import mindustry.net.Packets;
 import mindustry.world.Tile;
 import mindustry.world.blocks.power.PowerGraph;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
@@ -168,12 +170,12 @@ public class Event {
             if (!conf.rules.mobile && event.connection.mobile) {
                 event.connection.kick(new Bundle(event.packet.locale).get("event.player.not.allow.mobile"), 0L);
                 kickReason = "mobile";
-            } else if (conf.rules.minimalNameConfig.enabled && conf.rules.minimalNameConfig.length > event.packet.name.length()) {
+            } else if (conf.rules.minimalName.enabled && conf.rules.minimalName.length > event.packet.name.length()) {
                 event.connection.kick(new Bundle(event.packet.locale).get("event.player.name.short"), 0L);
                 kickReason = "name.short";
             } else if (conf.rules.vpn) {
                 for (String ip : pluginData.vpnList) {
-                    essential.core.Event.IpAddressMatcher match = new essential.core.Event.IpAddressMatcher(ip);
+                    IpAddressMatcher match = new IpAddressMatcher(ip);
                     if (match.matches(event.connection.address)) {
                         event.connection.kick(new Bundle(event.packet.locale).get("anti-grief.vpn"));
                         kickReason = "vpn";
@@ -214,6 +216,60 @@ public class Event {
         int size = 0;
         for (DB.PlayerData playerData : list) {
             coldData[size++] = playerData.getUuid();
+        }
+    }
+
+    class IpAddressMatcher {
+        private int nMaskBits = 0;
+        private final InetAddress requiredAddress;
+
+        IpAddressMatcher(String ipAddress) {
+            String address = ipAddress;
+            if (address.indexOf('/') > 0) {
+                String[] addressAndMask = address.split("/");
+                address = addressAndMask[0];
+                nMaskBits = Integer.parseInt(addressAndMask[1]);
+            } else {
+                nMaskBits = -1;
+            }
+            requiredAddress = parseAddress(address);
+            if (requiredAddress.getAddress().length * 8 < nMaskBits) {
+                throw new IllegalArgumentException(
+                        String.format("IP address %s is too short for bitmask of length %d", address, nMaskBits)
+                );
+            }
+        }
+
+        boolean matches(String address) {
+            InetAddress remoteAddress = parseAddress(address);
+            if (!requiredAddress.getClass().equals(remoteAddress.getClass())) {
+                return false;
+            }
+            if (nMaskBits < 0) {
+                return remoteAddress.equals(requiredAddress);
+            }
+            byte[] remAddr = remoteAddress.getAddress();
+            byte[] reqAddr = requiredAddress.getAddress();
+            int nMaskFullBytes = nMaskBits / 8;
+            byte finalByte = (byte) (0xFF00 >> (nMaskBits & 0x07));
+            for (int i = 0; i < nMaskFullBytes; i++) {
+                if (remAddr[i] != reqAddr[i]) {
+                    return false;
+                }
+            }
+            if (finalByte != 0) {
+                return (remAddr[nMaskFullBytes] & finalByte) == (reqAddr[nMaskFullBytes] & finalByte);
+            } else {
+                return true;
+            }
+        }
+
+        private InetAddress parseAddress(String address) {
+            try {
+                return InetAddress.getByName(address);
+            } catch (UnknownHostException e) {
+                throw new IllegalArgumentException("Failed to parse address " + address, e);
+            }
         }
     }
 }

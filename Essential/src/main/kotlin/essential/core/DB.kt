@@ -33,7 +33,9 @@ class DB {
     val players: MutableList<PlayerData> = mutableListOf()
 
     fun load() {
-        val cacheDir = root.child("drivers/").file()
+        val dir = root.child("drivers/")
+        dir.mkdirs()
+        val cacheDir = dir.file()
 
         // DB 라이브러리 다운로드
         val mavenRepository = "https://repo1.maven.org/maven2"
@@ -57,7 +59,7 @@ class DB {
             if (!targetPath.exists()) {
                 Log.info("Downloading $fileName...")
                 FileOutputStream(targetPath).write(URL(driver.first).readBytes())
-                Log.info("$fileName saved to ${targetPath.absolutePath}")
+                Log.info("$fileName saved")
             }
         }
 
@@ -101,7 +103,11 @@ class DB {
             if (type != null) {
                 Database.connect({
                     DriverManager.getConnection(
-                        "jdbc:${conf.plugin.database.url}",
+                        if (System.getProperty("test") != null) {
+                            "jdbc:sqlite:${Core.settings.dataDirectory.child(conf.plugin.database.url).absolutePath().replace("sqlite:config","")}"
+                        } else {
+                            "jdbc:${conf.plugin.database.url}"
+                        },
                         conf.plugin.database.username,
                         conf.plugin.database.password
                     )

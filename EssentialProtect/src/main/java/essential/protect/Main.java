@@ -87,7 +87,7 @@ public class Main extends Plugin {
             }
 
             String file = root.child("data/ipv4.txt").readString();
-            pluginData.vpnList = new String[(int) file.lines().count()];
+            pluginData.vpnList = file.split("\n");
         }
 
         // 이벤트 설정

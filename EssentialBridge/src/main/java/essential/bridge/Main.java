@@ -46,7 +46,7 @@ public class Main extends Plugin {
                 Config.class
         );
 
-        if (conf.isCountAllServers()) {
+        if (conf.count) {
             Core.settings.put("totalPlayers", 0);
             Core.settings.saveValues();
         }

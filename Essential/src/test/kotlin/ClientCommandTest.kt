@@ -9,7 +9,9 @@ import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
-import essential.core.*
+import essential.core.Bundle
+import essential.core.DB
+import essential.core.Event
 import essential.core.Main.Companion.database
 import junit.framework.TestCase.*
 import mindustry.Vars
@@ -21,6 +23,7 @@ import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
 import net.datafaker.Faker
+import org.junit.After
 import org.junit.BeforeClass
 import org.junit.Test
 import org.mindrot.jbcrypt.BCrypt
@@ -35,6 +38,8 @@ class ClientCommandTest {
         @JvmStatic
         fun setup() {
             if (!done) {
+                System.setProperty("test", "yes")
+
                 loadGame()
                 loadPlugin()
 
@@ -45,6 +50,11 @@ class ClientCommandTest {
 
                 done = true
             }
+        }
+
+        @After
+        fun resetEnv() {
+            System.clearProperty("test")
         }
     }
 

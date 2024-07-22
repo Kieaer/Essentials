@@ -5,9 +5,9 @@ import arc.graphics.Camera
 import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Log
+import essential.core.Bundle
 import essential.core.DB
 import essential.core.Main
-import essential.core.*
 import essential.core.Main.Companion.root
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.fail
@@ -27,8 +27,7 @@ import mindustry.net.Net
 import mindustry.net.NetConnection
 import mindustry.world.Tile
 import net.datafaker.Faker
-import org.hjson.JsonArray
-import org.hjson.JsonObject
+import org.junit.After
 import org.junit.Assert
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any
@@ -37,13 +36,10 @@ import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import java.io.File
 import java.lang.Thread.sleep
-import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.MessageFormat
 import java.util.*
 import java.util.zip.ZipFile
-import kotlin.io.path.Path
 
 class PluginTest {
     companion object {
@@ -58,12 +54,12 @@ class PluginTest {
         lateinit var mockApplication : Application
 
         fun loadGame() {
-            if (System.getProperty("os.name").contains("Windows")) {
+            /*if (System.getProperty("os.name").contains("Windows")) {
                 val pathToBeDeleted : Path = Path("${System.getenv("AppData")}\\app").resolve("mods")
                 if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
                     Files.walk(pathToBeDeleted).sorted(Comparator.reverseOrder()).map { obj : Path -> obj.toFile() }.forEach { obj : File -> obj.delete() }
                 }
-            }
+            }*/
 
             Core.settings = Settings()
             Core.settings.dataDirectory = Fi("")
@@ -71,8 +67,8 @@ class PluginTest {
 
             path.child("maps").deleteDirectory()
 
-            path.child("locales").writeString("en")
-            path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=7\nbuild=custom build")
+            path.child("locales").writeString("en", false)
+            path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=7\nbuild=custom build", false)
 
             if (!path.child("maps").exists()) {
                 path.child("maps").mkdirs()
@@ -281,16 +277,7 @@ class PluginTest {
         }
 
         fun setPermission(group : String, admin : Boolean) {
-            val json = JsonArray()
-            val obj = JsonObject()
-            obj.add("name", player.name())
-            obj.add("uuid", player.uuid())
-            obj.add("group", group)
-            obj.add("admin", admin)
-            json.add(obj)
-
-            Core.settings.dataDirectory.child("mods/Essentials/permission_user.txt").writeString(json.toString())
-            Permission.load()
+            serverCommand.handleMessage("setperm ${player.name} $group")
         }
 
         fun err(key : String, vararg parameters : Any) : String {
@@ -304,9 +291,16 @@ class PluginTest {
 
     @Test
     fun startPlugin() {
+        System.setProperty("test", "yes")
+
         loadGame()
         loadPlugin()
         stopPlugin()
+    }
+
+    @After
+    fun resetEnv() {
+        System.clearProperty("test")
     }
 
     @Test

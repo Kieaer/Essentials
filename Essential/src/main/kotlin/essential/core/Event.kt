@@ -36,8 +36,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.net.InetAddress
-import java.net.UnknownHostException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
@@ -52,7 +50,6 @@ import java.util.random.RandomGenerator
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlin.experimental.and
 import kotlin.io.path.Path
 import kotlin.math.floor
 import kotlin.random.Random
@@ -1808,7 +1805,6 @@ object Event {
                                             )
                                         }
                                     }
-                                    it.player.team().rules().unitBuildSpeedMultiplier
                                 }
                             }
 
@@ -1975,55 +1971,6 @@ object Event {
 
     enum class LogType {
         Player, Tap, WithDraw, Block, Deposit, Chat, Report
-    }
-
-    class IpAddressMatcher(ipAddress: String) {
-        private var nMaskBits = 0
-        private val requiredAddress: InetAddress
-        fun matches(address: String): Boolean {
-            val remoteAddress = parseAddress(address)
-            if (requiredAddress.javaClass != remoteAddress.javaClass) {
-                return false
-            }
-            if (nMaskBits < 0) {
-                return remoteAddress == requiredAddress
-            }
-            val remAddr = remoteAddress.address
-            val reqAddr = requiredAddress.address
-            val nMaskFullBytes = nMaskBits / 8
-            val finalByte = (0xFF00 shr (nMaskBits and 0x07)).toByte()
-            for (i in 0 until nMaskFullBytes) {
-                if (remAddr[i] != reqAddr[i]) {
-                    return false
-                }
-            }
-            return if (finalByte.toInt() != 0) {
-                remAddr[nMaskFullBytes] and finalByte == reqAddr[nMaskFullBytes] and finalByte
-            } else true
-        }
-
-        private fun parseAddress(address: String): InetAddress {
-            return try {
-                InetAddress.getByName(address)
-            } catch (e: UnknownHostException) {
-                throw IllegalArgumentException("Failed to parse address$address", e)
-            }
-        }
-
-        init {
-            var address = ipAddress
-            if (address.indexOf('/') > 0) {
-                val addressAndMask = address.split("/").toTypedArray()
-                address = addressAndMask[0]
-                nMaskBits = addressAndMask[1].toInt()
-            } else {
-                nMaskBits = -1
-            }
-            requiredAddress = parseAddress(address)
-            assert(requiredAddress.address.size * 8 >= nMaskBits) {
-                String.format("IP address %s is too short for bitmask of length %d", address, nMaskBits)
-            }
-        }
     }
 
     private fun earnEXP(winner: Team, p: Playerc, target: DB.PlayerData, isConnected: Boolean) {

@@ -11,17 +11,17 @@ pvp:
     enabled: false
 
   # If the team loses, all buildings are destroyed. (default: false)
-  destroy-core: false
+  destroyCore: false
 
 account:
   # If this feature is enabled, players will need to log in to account using the auth-type value to play. (default: false)
   enabled: false
 
   # Available method: password, discord
-  auth-type: "password"
+  authType: "password"
 
   # If you set auth-type to discord, you can enter the discord invite link below to be directed to this discord address.
-  discord-url: ""
+  discordURL: ""
 
   # Prevent players from changing their nicknames. (default: false)
   # This is useful for catching people who change their nicknames frequently and are grieving.
@@ -30,12 +30,15 @@ account:
 protect:
   # Ensures the core is never destroyed. (default: false)
   # This is useful in certain game modes or lobby servers.
-  unbreakable-core: false
+  unbreakableCore: false
 
   # If a large amount of power supply is lost due to power node disconnection, a message is notified. (default: true)
-  power-detect: true
+  powerDetect: true
 
 rules:
+  # Block datacenter IP
+  vpn: true
+
   # Block foo's client
   foo: true
 
@@ -43,12 +46,15 @@ rules:
   mobile: true
 
   # Blocks access to all users except Steam users.
-  steam-only: false
+  steamOnly: false
 
   # Set nickname minimal length
   minimalName:
     enabled: false
     length: 4
 
+  # If enable this, the player will continue to use the first nickname. (default: false)
+  strict: false
+
   # When attacked by an external program or modded client, you can protect the server and existing users by activating this setting.
-  block-new-user: false
+  blockNewUser: false

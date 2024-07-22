@@ -1,7 +1,5 @@
 package essential.protect;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class Config {
     public Pvp pvp;
     public Account account;
@@ -11,8 +9,6 @@ public class Config {
     public static class Pvp {
         public Peace peace;
         public Border border;
-
-        @JsonProperty("destroy-core")
         public boolean destroyCore;
 
         public static class Peace {
@@ -30,9 +26,7 @@ public class Config {
             None, Password, Discord
         }
         public boolean enabled;
-        @JsonProperty("auth-type")
         private String authType;
-        @JsonProperty("discord-url")
         public String discordURL;
         public Boolean strict;
 
@@ -42,9 +36,7 @@ public class Config {
     }
 
     public static class Protect {
-        @JsonProperty("unbreakable-core")
         public boolean unbreakableCore;
-        @JsonProperty("power-detect")
         public boolean powerDetect;
     }
 
@@ -52,12 +44,9 @@ public class Config {
         public boolean vpn;
         public boolean foo;
         public boolean mobile;
-        @JsonProperty("steam-only")
         public boolean steamOnly;
-        @JsonProperty("minimalName")
-        public MinimalNameConfig minimalNameConfig;
+        public MinimalNameConfig minimalName;
         public Boolean strict;
-        @JsonProperty("block-new-user")
         public Boolean blockNewUser;
 
         static class MinimalNameConfig {
