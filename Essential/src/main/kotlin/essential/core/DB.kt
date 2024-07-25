@@ -613,12 +613,6 @@ class DB {
         }
     }
 
-    fun <T> executeInTransaction(block: () -> T): T {
-        return transaction {
-            block()
-        }
-    }
-
     fun close() {
         TransactionManager.closeAndUnregister(db)
     }

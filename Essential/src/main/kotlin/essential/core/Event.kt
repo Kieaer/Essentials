@@ -6,35 +6,34 @@ import arc.Events
 import arc.files.Fi
 import arc.func.Cons
 import arc.graphics.Color
-import arc.graphics.Colors
-import arc.util.*
+import arc.struct.Seq
+import arc.util.I18NBundle
+import arc.util.Log
+import arc.util.Strings
+import com.charleskorn.kaml.Yaml
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.currentTime
 import essential.core.Main.Companion.daemon
 import essential.core.Main.Companion.database
 import essential.core.Main.Companion.root
+import essential.core.annotation.Event
 import mindustry.Vars
-import mindustry.content.*
-import mindustry.entities.Effect
+import mindustry.content.Blocks
+import mindustry.content.Fx
+import mindustry.content.Planets
 import mindustry.game.EventType.*
 import mindustry.game.Team
-import mindustry.gen.Call
-import mindustry.gen.Groups
-import mindustry.gen.Player
-import mindustry.gen.Playerc
-import mindustry.io.SaveIO
+import mindustry.gen.*
 import mindustry.maps.Map
 import mindustry.net.Administration
-import mindustry.net.Packets
-import mindustry.net.WorldReloader
 import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
+import mindustry.world.blocks.logic.LogicBlock
 import org.hjson.JsonArray
 import org.hjson.JsonObject
-import org.jetbrains.exposed.sql.selectAll
+import org.hjson.ParseException
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -43,20 +42,17 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.nio.file.StandardWatchEventKinds
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.random.RandomGenerator
 import java.util.regex.Pattern
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
-import kotlin.math.floor
-import kotlin.random.Random
 
 
 object Event {
@@ -82,7 +78,6 @@ object Event {
     var worldHistory = ArrayList<TileLog>()
     var voterCooltime = HashMap<String, Int>()
 
-    private var random = RandomGenerator.of("Random")
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     var blockExp = HashMap<String, Int>()
     var dosBlacklist : List<String> = listOf()
@@ -103,21 +98,16 @@ object Event {
 
     private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}\$")
     private val logFiles = HashMap<LogType, FileAppender>()
+    private var effectBlock : Tile? = null
 
-    fun register() {
-        fun checkValidBlock(tile: Tile): String {
-            return if (tile.build != null && blockSelectRegex.matcher(tile.block().name).matches()) {
-                (tile.build as ConstructBlock.ConstructBuild).current.name
-            } else {
-                tile.block().name
-            }
-        }
-
-        // 로그 경로 추가
+    fun init() {
         for(type in LogType.entries) {
             logFiles[type] = FileAppender(root.child("log/$type.log").file())
         }
+    }
 
+    @Event
+    fun withdraw() {
         Events.on(WithdrawEvent::class.java, Cons<WithdrawEvent> {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(
@@ -144,7 +134,10 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[WithdrawEvent::class.java] = listener })
+    }
 
+    @Event
+    fun deposit() {
         Events.on(DepositEvent::class.java, Cons<DepositEvent> {
             if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
                 log(
@@ -171,7 +164,10 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[DepositEvent::class.java] = listener })
+    }
 
+    @Event
+    fun config() {
         Events.on(ConfigEvent::class.java, Cons<ConfigEvent> {
             if (it.tile != null && it.tile.block() != null && it.player != null) {
                 addLog(
@@ -209,7 +205,10 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[ConfigEvent::class.java] = listener })
+    }
 
+    @Event
+    fun tap() {
         Events.on(TapEvent::class.java, Cons<TapEvent> {
             log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), checkValidBlock(it.tile)])
             addLog(
@@ -371,7 +370,10 @@ object Event {
                 data.currentControlCount++
             }
         }.also { listener -> eventListeners[TapEvent::class.java] = listener })
+    }
 
+    @Event
+    fun pickup() {
         Events.on(PickupEvent::class.java, Cons<PickupEvent> {
             if (it.unit != null && it.unit.isPlayer) {
                 val p = findPlayerData(it.unit.player.uuid())
@@ -380,21 +382,30 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[PickupEvent::class.java] = listener })
+    }
 
+    @Event
+    fun unitControl() {
         Events.on(UnitControlEvent::class.java, Cons<UnitControlEvent> {
             val p = findPlayerData(it.player.uuid())
             if (p != null) {
                 p.currentControlCount++
             }
         }.also { listener -> eventListeners[UnitControlEvent::class.java] = listener })
+    }
 
+    @Event
+    fun buildingCommand() {
         Events.on(BuildingCommandEvent::class.java, Cons<BuildingCommandEvent> {
             val p = findPlayerData(it.player.uuid())
             if (p != null) {
                 p.currentControlCount++
             }
         }.also { listener -> eventListeners[BuildingCommandEvent::class.java] = listener })
+    }
 
+    @Event
+    fun wave() {
         Events.on(WaveEvent::class.java, Cons<WaveEvent> {
             for (data in database.players) {
                 data.exp += 500
@@ -410,7 +421,10 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[WaveEvent::class.java] = listener })
+    }
 
+    @Event
+    fun serverLoad() {
         Events.on(ServerLoadEvent::class.java, Cons<ServerLoadEvent> {
             Vars.content.blocks().each { two ->
                 var buf = 0
@@ -469,7 +483,7 @@ object Event {
                     val data = database[it.player.uuid()]
                     val trigger = Trigger()
                     if (data == null) {
-                        Main.daemon.submit(Thread {
+                        daemon.submit(Thread {
                             transaction {
                                 if (DB.Player.select(DB.Player.name).where { DB.Player.name eq it.player.name }
                                         .empty()) {
@@ -490,11 +504,17 @@ object Event {
                 }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
             }
         }.also { listener -> eventListeners[ServerLoadEvent::class.java] = listener })
+    }
 
+    @Event
+    fun playerChat() {
         Events.on(PlayerChatEvent::class.java, Cons<PlayerChatEvent> {
 
         }.also { listener -> eventListeners[PlayerChatEvent::class.java] = listener })
+    }
 
+    @Event
+    fun gameover() {
         Events.on(GameOverEvent::class.java, Cons<GameOverEvent> {
             if (voting) {
                 database.players.forEach { a ->
@@ -531,15 +551,21 @@ object Event {
             pvpPlayer.clear()
             dpsTile = null
         }.also { listener -> eventListeners[GameOverEvent::class.java] = listener })
+    }
 
+    @Event
+    fun blockBuildBegin() {
         Events.on(BlockBuildBeginEvent::class.java, Cons<BlockBuildBeginEvent> {
 
         }.also { listener -> eventListeners[BlockBuildEndEvent::class.java] = listener })
+    }
 
+    @Event
+    fun blockBuildEnd() {
         Events.on(BlockBuildEndEvent::class.java, Cons<BlockBuildEndEvent> {
             val isDebug = Core.settings.getBool("debugMode")
 
-            if (it.unit.isPlayer) {
+            if (it.unit != null && it.unit.isPlayer) {
                 val player = it.unit.player
                 val target = findPlayerData(player.uuid())
 
@@ -613,7 +639,10 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[BlockBuildEndEvent::class.java] = listener })
+    }
 
+    @Event
+    fun buildSelect() {
         Events.on(BuildSelectEvent::class.java, Cons<BuildSelectEvent> {
             if (it.builder is Playerc && it.builder.buildPlan() != null && it.tile.block() !== Blocks.air && it.breaking) {
                 log(
@@ -639,7 +668,10 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[BuildSelectEvent::class.java] = listener })
+    }
 
+    @Event
+    fun blockDestory() {
         Events.on(BlockDestroyEvent::class.java, Cons<BlockDestroyEvent> {
             if (Vars.state.rules.attackMode) {
                 for (a in database.players) {
@@ -651,7 +683,10 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[BlockDestroyEvent::class.java] = listener })
+    }
 
+    @Event
+    fun unitDestroy() {
         Events.on(UnitDestroyEvent::class.java, Cons<UnitDestroyEvent> {
             if (!Vars.state.rules.pvp) {
                 for (a in database.players) {
@@ -661,7 +696,10 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[UnitDestroyEvent::class.java] = listener })
+    }
 
+    @Event
+    fun unitCreate() {
         Events.on(UnitCreateEvent::class.java, Cons<UnitCreateEvent> { u ->
             if (conf.feature.unit.enabled && Groups.unit.size() > conf.feature.unit.limit) {
                 u.unit.kill()
@@ -674,18 +712,28 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[UnitCreateEvent::class.java] = listener })
+    }
 
+    @Event
+    fun unitChange() {
         Events.on(UnitChangeEvent::class.java, Cons<UnitChangeEvent> {
             val p = findPlayerData(it.player.uuid())
             if (p != null) {
                 p.currentControlCount++
             }
         }.also { listener -> eventListeners[UnitChangeEvent::class.java] = listener })
+    }
 
+    @Event
+    fun playerJoin() {
         Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
             log(LogType.Player, Bundle()["log.joined", it.player.plainName(), it.player.uuid(), it.player.con.address])
+            updateEffectProcessorBlock()
         }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
+    }
 
+    @Event
+    fun playerLeave() {
         Events.on(PlayerLeave::class.java, Cons<PlayerLeave> {
             log(
                 LogType.Player,
@@ -713,8 +761,12 @@ object Event {
 
                 database.players.removeAll { e -> e.uuid == data.uuid }
             }
+            updateEffectProcessorBlock()
         }.also { listener -> eventListeners[PlayerLeave::class.java] = listener })
+    }
 
+    @Event
+    fun playerBan() {
         Events.on(PlayerBanEvent::class.java, Cons<PlayerBanEvent> {
             log(
                 LogType.Player,
@@ -723,15 +775,24 @@ object Event {
                 ).names.first()]
             )
         }.also { listener -> eventListeners[PlayerBanEvent::class.java] = listener })
+    }
 
+    @Event
+    fun playerUnban() {
         Events.on(PlayerUnbanEvent::class.java, Cons<PlayerUnbanEvent> {
             Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.getInfo(it.uuid).lastName, currentTime()))
         }.also { listener -> eventListeners[PlayerUnbanEvent::class.java] = listener })
+    }
 
+    @Event
+    fun playerIpUnban() {
         Events.on(PlayerIpUnbanEvent::class.java, Cons<PlayerIpUnbanEvent> {
             Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.findByIP(it.ip).lastName, currentTime()))
         }.also { listener -> eventListeners[PlayerIpUnbanEvent::class.java] = listener })
+    }
 
+    @Event
+    fun worldLoad() {
         Events.on(WorldLoadEvent::class.java, Cons<WorldLoadEvent> {
             PluginData.playtime = 0L
             PluginData.isSurrender = false
@@ -760,7 +821,10 @@ object Event {
 
             resetVote()
         }.also { listener -> eventListeners[WorldLoadEvent::class.java] = listener })
+    }
 
+    @Event
+    fun connectPacket() {
         Events.on(ConnectPacketEvent::class.java, Cons<ConnectPacketEvent> {
             if (conf.feature.blacklist.enabled) {
                 PluginData.blacklist.forEach { text ->
@@ -784,14 +848,20 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[ConnectPacketEvent::class.java] = listener })
+    }
 
+    @Event
+    fun playerConnect() {
         Events.on(PlayerConnect::class.java, Cons<PlayerConnect> {
             log(
                 LogType.Player,
                 Bundle()["event.player.connected", it.player.plainName(), it.player.uuid(), it.player.con.address]
             )
         }.also { listener -> eventListeners[PlayerConnect::class.java] = listener })
+    }
 
+    @Event
+    fun buildingBulletDestroy() {
         Events.on(BuildingBulletDestroyEvent::class.java, Cons<BuildingBulletDestroyEvent> {
             val cores = listOf(
                 Blocks.coreAcropolis,
@@ -819,1063 +889,32 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[BuildingBulletDestroyEvent::class.java] = listener })
-
-        fun send(message: String, vararg parameter: Any) {
-            database.players.forEach {
-                if (voteTargetUUID != it.uuid) {
-                    Core.app.post { it.send(message, *parameter) }
-                }
-            }
-        }
-
-        fun check(): Int {
-            return if (!isPvP) {
-                when (database.players.filterNot { it.afk }.size) {
-                    1 -> 1
-                    in 2..4 -> 2
-                    in 5..6 -> 3
-                    7 -> 4
-                    in 8..9 -> 5
-                    in 10..11 -> 6
-                    12 -> 7
-                    else -> 8
-                }
-            } else {
-                when (database.players.count { a -> a.player.team() == voteTeam && !a.afk }) {
-                    1 -> 1
-                    in 2..4 -> 2
-                    in 5..6 -> 3
-                    7 -> 4
-                    in 8..9 -> 5
-                    in 10..11 -> 6
-                    12 -> 7
-                    else -> 8
-                }
-            }
-        }
-
-        fun back(map: Map?) {
-            Core.app.post {
-                val savePath: Fi = if (Core.settings.getBool("autosave")) {
-                    Vars.saveDirectory.findAll { f: Fi ->
-                        f.name().startsWith("auto_")
-                    }.min { obj: Fi -> obj.lastModified().toFloat() }
-                } else {
-                    Vars.saveDirectory.child("rollback.msav")
-                }
-
-                try {
-                    val mode = Vars.state.rules.mode()
-                    val reloader = WorldReloader()
-
-                    reloader.begin()
-
-                    if (map != null) {
-                        Vars.world.loadMap(map, map.applyRules(mode))
-                    } else {
-                        SaveIO.load(savePath)
-                    }
-
-                    Vars.state.rules = Vars.state.map.applyRules(mode)
-
-                    Vars.logic.play()
-                    reloader.end()
-
-                    savePath.delete()
-                } catch (t: Exception) {
-                    t.printStackTrace()
-                }
-                if (map == null) send("command.vote.back.done")
-            }
-        }
-
-        var colorOffset = 0
-        fun nickcolor(name: String): String {
-            val stringBuilder = StringBuilder()
-            val colors = arrayOfNulls<String>(11)
-            colors[0] = "[#ff0000]"
-            colors[1] = "[#ff7f00]"
-            colors[2] = "[#ffff00]"
-            colors[3] = "[#7fff00]"
-            colors[4] = "[#00ff00]"
-            colors[5] = "[#00ff7f]"
-            colors[6] = "[#00ffff]"
-            colors[7] = "[#007fff]"
-            colors[8] = "[#0000ff]"
-            colors[9] = "[#8000ff]"
-            colors[10] = "[#ff00ff]"
-            val newName = arrayOfNulls<String>(name.length)
-            for (i in name.indices) {
-                val c = name[i]
-                var colorIndex = (i + colorOffset) % colors.size
-                if (colorIndex < 0) {
-                    colorIndex += colors.size
-                }
-                val newtext = colors[colorIndex] + c
-                newName[i] = newtext
-            }
-            colorOffset--
-            newName.forEach {
-                stringBuilder.append(it)
-            }
-            return stringBuilder.toString()
-        }
-
-        var milsCount = 0
-        var secondCount = 0
-        var minuteCount = 0
-
-        // 맵 백업 시간
-        var rollbackCount = conf.command.rollback.time
-        var messageCount = conf.feature.motd.time
-        var messageOrder = 0
-
-        val coreListener = object : ApplicationListener {
-            override fun update() {
-                try {
-                    if (Vars.state.isPlaying) {
-                        for (it in database.players) {
-                            if (Vars.state.rules.pvp && it.player.unit() != null && it.player.team()
-                                    .cores().isEmpty && it.player.team() != Team.derelict && pvpPlayer.containsKey(it.uuid)
-                            ) {
-                                it.pvpDefeatCount++
-                                if (conf.feature.pvp.spector) {
-                                    it.player.team(Team.derelict)
-                                    pvpSpecters.add(it.uuid)
-                                }
-                                pvpPlayer.remove(it.uuid)
-
-                                val time = it.currentPlayTime
-                                val score = time + 5000
-
-                                it.exp += ((score * it.expMultiplier).toInt())
-                                it.send("event.exp.earn.defeat", it.currentExp + score)
-                            }
-
-                            if (it.status.containsKey("freeze")) {
-                                val d = findPlayerData(it.uuid)
-                                if (d != null) {
-                                    val player = d.player
-                                    val split = it.status["freeze"].toString().split("/")
-                                    player[split[0].toFloat()] = split[1].toFloat()
-                                    Call.setPosition(player.con(), split[0].toFloat(), split[1].toFloat())
-                                    Call.setCameraPosition(player.con(), split[0].toFloat(), split[1].toFloat())
-                                    player.x(split[0].toFloat())
-                                    player.y(split[1].toFloat())
-                                }
-                            }
-
-                            if (it.tracking) {
-                                Groups.player.forEach { player ->
-                                    Call.label(
-                                        it.player.con(),
-                                        player.name,
-                                        Time.delta / 2,
-                                        player.mouseX,
-                                        player.mouseY
-                                    )
-                                }
-                            }
-
-                            if (it.tpp != null) {
-                                val target = Groups.player.find { p -> p.uuid() == it.tpp }
-                                if (target != null) {
-                                    Call.setCameraPosition(it.player.con(), target.x, target.y)
-                                } else {
-                                    it.tpp = null
-                                    Call.setCameraPosition(it.player.con(), it.player.x, it.player.y)
-                                }
-                            }
-
-                            for (two in PluginData.warpZones) {
-                                if (two.mapName == Vars.state.map.name() && !two.click && isUnitInside(it.player.unit().tileOn(), two.startTile, two.finishTile)) {
-                                    Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
-                                    Call.connect(it.player.con(), two.ip, two.port)
-                                    continue
-                                }
-                            }
-                        }
-
-                        if (conf.feature.level.effect.enabled && conf.feature.level.effect.moving) {
-                            if (milsCount == 5) {
-                                database.players.forEach {
-                                    if (it.showLevelEffects && it.player.unit() != null && it.player.unit().health > 0f) {
-                                        for (e in database.players) {
-                                            if (e.player.unit().moving()) {
-                                                val color = if (e.effectColor != null) {
-                                                    if (Colors.get(e.effectColor) != null) Colors.get(e.effectColor) else Color.valueOf(
-                                                        e.effectColor
-                                                    )
-                                                } else {
-                                                    e.player.color()
-                                                }
-
-                                                fun runEffect(effect: Effect) {
-                                                    if (e.player.unit() != null) Call.effect(
-                                                        it.player.con(),
-                                                        effect,
-                                                        e.player.unit().x,
-                                                        e.player.unit().y,
-                                                        0f,
-                                                        color
-                                                    )
-                                                }
-
-                                                fun runEffect(effect: Effect, size: Float) {
-                                                    if (e.player.unit() != null) Call.effect(
-                                                        it.player.con(),
-                                                        effect,
-                                                        e.player.unit().x,
-                                                        e.player.unit().y,
-                                                        size,
-                                                        color
-                                                    )
-                                                }
-
-                                                fun runEffectRandom(effect: Effect, range: IntRange) {
-                                                    if (e.player.unit() != null) Call.effect(
-                                                        it.player.con(),
-                                                        effect,
-                                                        e.player.unit().x + range.random(),
-                                                        e.player.unit().y + range.random(),
-                                                        0f,
-                                                        color
-                                                    )
-                                                }
-                                                when (e.effectLevel ?: e.level) {
-                                                    in 10..19 -> runEffect(Fx.freezing)
-                                                    in 20..29 -> runEffect(Fx.overdriven)
-                                                    in 30..39 -> {
-                                                        runEffect(Fx.burning)
-                                                        runEffect(Fx.melting)
-                                                    }
-
-                                                    in 40..49 -> runEffect(Fx.steam)
-                                                    in 50..59 -> runEffect(Fx.shootSmallSmoke)
-                                                    in 60..69 -> runEffect(Fx.mine)
-                                                    in 70..79 -> runEffect(Fx.explosion)
-                                                    in 80..89 -> runEffect(Fx.hitLaser)
-                                                    in 90..99 -> runEffect(Fx.crawlDust)
-                                                    in 100..109 -> runEffect(Fx.mineImpact)
-                                                    in 110..119 -> {
-                                                        runEffect(Fx.vapor)
-                                                        runEffect(Fx.hitBulletColor)
-                                                    }
-
-                                                    in 120..129 -> {
-                                                        runEffect(Fx.vapor)
-                                                        runEffect(Fx.hitBulletColor)
-                                                        runEffect(Fx.hitSquaresColor)
-                                                    }
-
-                                                    in 130..139 -> {
-                                                        runEffect(Fx.vapor)
-                                                        runEffect(Fx.hitLaserBlast)
-                                                    }
-
-                                                    in 140..149 -> {
-                                                        runEffect(Fx.smokePuff)
-                                                        runEffect(Fx.hitBulletColor)
-                                                    }
-
-                                                    in 150..159 -> {
-                                                        runEffect(Fx.smokePuff)
-                                                        runEffect(Fx.hitBulletColor)
-                                                        runEffect(Fx.hitSquaresColor)
-                                                    }
-
-                                                    in 160..169 -> {
-                                                        runEffect(Fx.smokePuff)
-                                                        runEffect(Fx.hitLaserBlast)
-                                                    }
-
-                                                    in 170..179 -> {
-                                                        runEffect(Fx.placeBlock, 1.8f)
-                                                        runEffect(Fx.spawn)
-                                                    }
-
-                                                    in 180..189 -> {
-                                                        runEffect(Fx.placeBlock, 1.8f)
-                                                        runEffect(Fx.spawn)
-                                                        runEffect(Fx.hitLaserBlast)
-                                                    }
-
-                                                    in 190..199 -> {
-                                                        runEffect(Fx.placeBlock, 1.8f)
-                                                        runEffect(Fx.spawn)
-                                                        runEffect(Fx.circleColorSpark)
-                                                    }
-
-                                                    in 200..209 -> {
-                                                        val f = Fx.dynamicWave
-                                                        runEffect(f, 0.5f)
-                                                        runEffect(f, 3f)
-                                                        runEffect(f, 7f)
-                                                        runEffect(f, 5f)
-                                                        runEffect(f, 9f)
-                                                        val xRandom = (-16..16).random()
-                                                        val yRandom = (-16..16).random()
-                                                        if (e.player.unit() != null) {
-                                                            Call.effect(
-                                                                it.player.con(),
-                                                                Fx.hitLaserBlast,
-                                                                e.player.unit().x + xRandom,
-                                                                e.player.unit().y + yRandom,
-                                                                0f,
-                                                                color
-                                                            )
-                                                            Call.effect(
-                                                                it.player.con(),
-                                                                Fx.hitSquaresColor,
-                                                                e.player.unit().x + xRandom,
-                                                                e.player.unit().y + yRandom,
-                                                                0f,
-                                                                color
-                                                            )
-                                                        }
-                                                        runEffectRandom(Fx.vapor, (-4..4))
-                                                    }
-
-                                                    in 210..219 -> {
-                                                        runEffect(Fx.dynamicSpikes, 7f)
-                                                        runEffectRandom(Fx.hitSquaresColor, (-4..4))
-                                                        runEffectRandom(Fx.vapor, (-4..4))
-                                                    }
-
-                                                    in 220..229 -> {
-                                                        runEffect(Fx.dynamicSpikes, 7f)
-                                                        runEffectRandom(Fx.circleColorSpark, (-4..4))
-                                                        runEffectRandom(Fx.vapor, (-4..4))
-                                                    }
-
-                                                    in 230..239 -> {
-                                                        runEffect(Fx.dynamicSpikes, 7f)
-                                                        runEffectRandom(Fx.circleColorSpark, (-4..4))
-                                                        runEffectRandom(Fx.hitLaserBlast, (-4..4))
-                                                        runEffectRandom(Fx.smokePuff, (-4..4))
-                                                    }
-
-                                                    in 240..249 -> {
-                                                        runEffect(Fx.dynamicExplosion, 0.8f)
-                                                        runEffectRandom(Fx.hitLaserBlast, (-16..16))
-                                                        runEffectRandom(Fx.vapor, (-16..16))
-                                                    }
-
-                                                    in 250..259 -> {
-                                                        runEffect(Fx.dynamicExplosion, 0.8f)
-                                                        runEffectRandom(Fx.hitLaserBlast, (-4..4))
-                                                        runEffectRandom(Fx.smokePuff, (-4..4))
-                                                    }
-
-                                                    in 260..269 -> {
-                                                        runEffect(Fx.dynamicExplosion, 0.8f)
-                                                        runEffectRandom(Fx.hitLaserBlast, (-4..4))
-                                                        runEffectRandom(Fx.hitLaserBlast, (-4..4))
-                                                        runEffectRandom(Fx.smokePuff, (-4..4))
-                                                        Call.effect(
-                                                            it.player.con(),
-                                                            Fx.shootSmokeSquareBig,
-                                                            e.player.unit().x + (-1..1).random(),
-                                                            e.player.unit().y + (-1..1).random(),
-                                                            listOf(0f, 90f, 180f, 270f).random(),
-                                                            Color.HSVtoRGB(252f, 164f, 0f, 0.22f)
-                                                        )
-                                                    }
-
-                                                    else -> {}
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                milsCount = 0
-                            } else {
-                                database.players.forEach {
-                                    if (it.showLevelEffects && it.player.unit() != null && it.player.unit().health > 0f) {
-                                        for (e in database.players) {
-                                            if (e.player.unit().moving()) {
-                                                val color = if (e.effectColor != null) {
-                                                    if (Colors.get(e.effectColor) != null) Colors.get(e.effectColor) else Color.valueOf(
-                                                        e.effectColor
-                                                    )
-                                                } else {
-                                                    e.player.color()
-                                                }
-
-                                                fun runEffect(effect: Effect) {
-                                                    if (e.player.unit() != null) Call.effect(
-                                                        it.player.con(),
-                                                        effect,
-                                                        e.player.unit().x,
-                                                        e.player.unit().y,
-                                                        0f,
-                                                        color
-                                                    )
-                                                }
-
-                                                fun runEffect(effect: Effect, size: Float) {
-                                                    if (e.player.unit() != null) Call.effect(
-                                                        it.player.con(),
-                                                        effect,
-                                                        e.player.unit().x,
-                                                        e.player.unit().y,
-                                                        size,
-                                                        color
-                                                    )
-                                                }
-
-                                                fun runEffectRandomRotate(effect: Effect) {
-                                                    if (e.player.unit() != null) Call.effect(
-                                                        it.player.con(),
-                                                        effect,
-                                                        e.player.unit().x,
-                                                        e.player.unit().y,
-                                                        Random.nextFloat() * 360f,
-                                                        color
-                                                    )
-                                                }
-
-                                                fun runEffectAtRotate(effect: Effect, rotate: Float) {
-                                                    if (e.player.unit() != null) Call.effect(
-                                                        it.player.con(),
-                                                        effect,
-                                                        e.player.unit().x,
-                                                        e.player.unit().y,
-                                                        rotate,
-                                                        color
-                                                    )
-                                                }
-
-                                                fun runEffectAtRotateAndColor(
-                                                    effect: Effect,
-                                                    rotate: Float,
-                                                    customColor: Color
-                                                ) {
-                                                    if (e.player.unit() != null) Call.effect(
-                                                        it.player.con(),
-                                                        effect,
-                                                        e.player.unit().x,
-                                                        e.player.unit().y,
-                                                        rotate,
-                                                        customColor
-                                                    )
-                                                }
-                                                when (e.effectLevel ?: e.level) {
-                                                    in 270..279 -> {
-                                                        runEffectRandomRotate(Fx.shootSmokeSquare)
-                                                        runEffect(Fx.hitLaserBlast)
-                                                        runEffect(Fx.colorTrail, 4f)
-                                                    }
-
-                                                    in 280..289 -> {
-                                                        runEffectRandomRotate(Fx.shootSmokeSquare)
-                                                        runEffect(Fx.hitLaserBlast)
-                                                        runEffect(Fx.dynamicWave, 2f)
-                                                    }
-
-                                                    in 290..299 -> {
-                                                        runEffectAtRotate(Fx.shootSmokeSquare, 0f)
-                                                        runEffectAtRotate(Fx.shootSmokeSquare, 45f)
-                                                        runEffectAtRotate(Fx.shootSmokeSquare, 90f)
-                                                        runEffectAtRotate(Fx.shootSmokeSquare, 135f)
-                                                        runEffectAtRotate(Fx.shootSmokeSquare, 180f)
-                                                        runEffectAtRotate(Fx.shootSmokeSquare, 225f)
-                                                        runEffectAtRotate(Fx.shootSmokeSquare, 270f)
-                                                        runEffectAtRotate(Fx.shootSmokeSquare, 315f)
-                                                        runEffect(Fx.breakProp)
-                                                        runEffect(Fx.vapor)
-                                                    }
-
-                                                    in 300..Int.MAX_VALUE -> {
-                                                        var rot = e.player.unit().rotation
-                                                        val customColor = Color.HSVtoRGB(252f, 164f, 0f, 0.22f)
-                                                        rot += 180f
-                                                        runEffectAtRotateAndColor(
-                                                            Fx.shootSmokeSquareBig,
-                                                            rot,
-                                                            customColor
-                                                        )
-                                                        rot += 40f
-                                                        runEffectAtRotateAndColor(Fx.shootTitan, rot, customColor)
-                                                        rot += 25f
-                                                        runEffectAtRotateAndColor(Fx.colorSpark, rot, customColor)
-                                                        rot -= 105f
-                                                        runEffectAtRotateAndColor(Fx.shootTitan, rot, customColor)
-                                                        rot -= 25f
-                                                        runEffectAtRotateAndColor(Fx.colorSpark, rot, customColor)
-                                                        runEffect(Fx.mineHuge)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                milsCount++
-                            }
-                        }
-
-                        if (dpsTile != null) {
-                            if (dpsTile!!.build != null && dpsTile!!.block() != null) {
-                                dpsBlocks += (100000000f - dpsTile!!.build.health)
-                                dpsTile!!.build.health(100000000f)
-                            } else {
-                                dpsTile = null
-                            }
-                        }
-
-                        if (secondCount == 60) {
-                            PluginData.uptime++
-                            PluginData.playtime++
-
-                            if (voteCooltime > 0) voteCooltime--
-                            voterCooltime.forEach {
-                                voterCooltime[it.key] = it.value - 1
-                                if (it.value == 0) voterCooltime.remove(it.key)
-                            }
-
-                            if (dpsTile != null) {
-                                if (maxdps == null) {
-                                    maxdps = 0f
-                                } else if (dpsBlocks > maxdps!!) {
-                                    maxdps = dpsBlocks
-                                }
-                                val message = "Max DPS: $maxdps/min\nDPS: ${dpsBlocks}/s"
-                                Call.label(message, 1f, dpsTile!!.worldx(), dpsTile!!.worldy())
-                            } else {
-                                maxdps = null
-                            }
-                            dpsBlocks = 0f
-
-                            for (it in database.players) {
-                                it.totalPlayTime++
-                                it.currentPlayTime++
-
-                                if (it.apm.size >= 60) {
-                                    it.apm.poll()
-                                }
-                                it.apm.add(it.currentControlCount)
-                                it.currentControlCount = 0
-
-                                if (it.animatedName) {
-                                    val name = it.name.replace("\\[(.*?)]".toRegex(), "")
-                                    it.player.name(nickcolor(name))
-                                } else if (!it.status.containsKey("router")) {
-                                    it.player.name(it.name)
-                                }
-
-                                // 잠수 플레이어 카운트
-                                if (it.player.unit() != null && !it.player.unit().moving() && !it.player.unit()
-                                        .mining() && !Permission.check(
-                                        it,
-                                        "afk.admin"
-                                    ) && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()
-                                ) {
-                                    it.afkTime++
-                                    if (it.afkTime == conf.feature.afk.time) {
-                                        it.afk = true
-                                        if (conf.feature.afk.enabled) {
-                                            if (conf.feature.afk.server.isEmpty()) {
-                                                val bundle = if (it.status.containsKey("language")) {
-                                                    Bundle(it.status["language"]!!)
-                                                } else {
-                                                    Bundle(it.player.locale())
-                                                }
-
-                                                it.player.kick(bundle["event.player.afk"])
-                                                database.players.forEach { data ->
-                                                    data.send("event.player.afk.other", it.player.plainName())
-                                                }
-                                            } else {
-                                                val server = conf.feature.afk.server.split(":")
-                                                val port = if (server.size == 1) {
-                                                    6567
-                                                } else {
-                                                    server[1].toInt()
-                                                }
-                                                Call.connect(it.player.con(), server[0], port)
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    it.afkTime = 0
-                                    it.afk = false
-                                    it.previousMousePosition = it.player.mouseX() + it.player.mouseY()
-                                }
-
-                                val randomResult = (random.nextInt(7) * it.expMultiplier).toInt()
-                                it.exp += randomResult
-                                it.currentExp += randomResult
-                                Commands.Exp[it]
-
-                                if (conf.feature.level.display) {
-                                    val message =
-                                        "${it.exp}/${floor(Commands.Exp.calculateFullTargetXp(it.level)).toInt()}"
-                                    Call.infoPopup(it.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
-                                }
-
-                                if (it.hud != null) {
-                                    val array = JsonArray.readJSON(it.hud).asArray()
-
-                                    fun color(current: Float, max: Float): String {
-                                        return when (current / max * 100.0) {
-                                            in 50.0..100.0 -> "[green]"
-                                            in 20.0..49.9 -> "[yellow]"
-                                            else -> "[scarlet]"
-                                        }
-                                    }
-
-                                    fun shieldColor(current: Float, max: Float): String {
-                                        return when (current / max * 100.0) {
-                                            in 50.0..100.0 -> "[#ffffe0]"
-                                            in 20.0..49.9 -> "[orange]"
-                                            else -> "[#CC5500]"
-                                        }
-                                    }
-
-                                    array.forEach { value ->
-                                        when (value.asString()) {
-                                            "health" -> {
-                                                Groups.unit.forEach { unit ->
-                                                    val msg = StringBuilder()
-                                                    val color = color(unit.health, unit.maxHealth)
-                                                    if (unit.shield > 0) {
-                                                        val shield = shieldColor(unit.health, unit.maxHealth)
-                                                        msg.appendLine("$shield${floor(unit.shield.toDouble())}")
-                                                    }
-                                                    msg.append("$color${floor(unit.health.toDouble())}")
-
-                                                    if (unit.team != it.player.team() && Permission.check(
-                                                            it,
-                                                            "hud.enemy"
-                                                        )
-                                                    ) {
-                                                        Call.label(
-                                                            it.player.con(),
-                                                            msg.toString(),
-                                                            Time.delta,
-                                                            unit.getX(),
-                                                            unit.getY()
-                                                        )
-                                                    } else if (unit.team == it.player.team()) {
-                                                        Call.label(
-                                                            it.player.con(),
-                                                            msg.toString(),
-                                                            Time.delta,
-                                                            unit.getX(),
-                                                            unit.getY()
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            if (voting) {
-                                if (Groups.player.find { a -> a.uuid() == voteStarter!!.uuid } == null) {
-                                    send("command.vote.canceled.leave")
-                                    resetVote()
-                                } else {
-                                    if (count % 10 == 0) {
-                                        if (isPvP) {
-                                            Groups.player.forEach {
-                                                if (it.team() == voteTeam) {
-                                                    val data = findPlayerData(it.uuid())
-                                                    if (data != null && voteTargetUUID != data.uuid) {
-                                                        data.send("command.vote.count", count.toString(), check() - voted.size)
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            send("command.vote.count", count.toString(), check() - voted.size)
-                                            if (voteType == "kick" && Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
-                                                send("command.vote.kick.target.leave")
-                                            }
-                                        }
-                                    }
-                                    count--
-                                    if ((count == 0 && check() <= voted.size) || check() <= voted.size || isAdminVote) {
-                                        send("command.vote.success")
-
-                                        val onlinePlayers = StringBuilder()
-                                        database.players.forEach {
-                                            onlinePlayers.append("${it.name}, ")
-                                        }
-                                        onlinePlayers.substring(0, onlinePlayers.length - 2)
-
-                                        voting = false
-                                        when (voteType) {
-                                            "kick" -> {
-                                                val name = Vars.netServer.admins.getInfo(voteTargetUUID).lastName
-                                                if (Groups.player.find { a -> a.uuid() == voteTargetUUID } == null) {
-                                                    Vars.netServer.admins.banPlayerID(voteTargetUUID)
-                                                    send("command.vote.kick.target.banned", name)
-                                                    Events.fire(
-                                                        CustomEvents.PlayerVoteBanned(
-                                                            voteStarter!!.name,
-                                                            name,
-                                                            voteReason!!,
-                                                            onlinePlayers.toString()
-                                                        )
-                                                    )
-                                                } else {
-                                                    voteTarget?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
-                                                    send("command.vote.kick.target.kicked", name)
-                                                    Events.fire(
-                                                        CustomEvents.PlayerVoteKicked(
-                                                            voteStarter!!.name,
-                                                            name,
-                                                            voteReason!!,
-                                                            onlinePlayers.toString()
-                                                        )
-                                                    )
-                                                }
-                                            }
-
-                                            "map" -> {
-                                                for (it in database.players) {
-                                                    earnEXP(Vars.state.rules.waveTeam, it.player, it, true)
-                                                }
-                                                PluginData.isSurrender = true
-                                                Vars.maps.setNextMapOverride(voteMap)
-                                                Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
-                                            }
-
-                                            "gg" -> {
-                                                if (voteStarter != null && !Permission.check(voteStarter!!, "vote.pass")) {
-                                                    voterCooltime[voteStarter!!.uuid] = 180
-                                                }
-                                                if (isPvP) {
-                                                    Vars.world.tiles.forEach {
-                                                        if (it.build != null && it.build.team != null && it.build.team == voteTeam) {
-                                                            Call.setTile(it, Blocks.air, voteTeam, 0)
-                                                        }
-                                                    }
-                                                } else {
-                                                    PluginData.isSurrender = true
-                                                    Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
-                                                }
-                                            }
-
-                                            "skip" -> {
-                                                if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid, 180)
-                                                for (a in 0..voteWave!!) {
-                                                    Vars.spawner.spawnEnemies()
-                                                    Vars.state.wave++
-                                                    Vars.state.wavetime = Vars.state.rules.waveSpacing
-                                                }
-                                                send("command.vote.skip.done", voteWave!!.toString())
-                                            }
-
-                                            "back" -> {
-                                                PluginData.isSurrender = true
-                                                back(null)
-                                            }
-
-                                            "random" -> {
-                                                if (LocalTime.now()
-                                                        .isAfter(lastVoted!!.plusMinutes(10L)) && Permission.check(
-                                                        voteStarter!!,
-                                                        "vote.random.bypass"
-                                                    )
-                                                ) {
-                                                    send("command.vote.random.cool")
-                                                } else {
-                                                    if (voteStarter != null) voterCooltime.put(voteStarter!!.uuid, 420)
-                                                    lastVoted = LocalTime.now()
-                                                    send("command.vote.random.done")
-                                                    Thread {
-                                                        var map: Map
-                                                        send("command.vote.random.is")
-                                                        Thread.sleep(3000)
-                                                        when (random.nextInt(7)) {
-                                                            0 -> {
-                                                                send("command.vote.random.unit")
-                                                                Groups.unit.each {
-                                                                    if (voteStarter != null) {
-                                                                        if (it.team == voteStarter!!.player.team()) it.kill()
-                                                                    } else {
-                                                                        it.kill()
-                                                                    }
-                                                                }
-                                                                send("command.vote.random.unit.wave")
-                                                                Vars.logic.runWave()
-                                                            }
-
-                                                            1 -> {
-                                                                send("command.vote.random.wave")
-                                                                for (a in 0..5) Vars.logic.runWave()
-                                                            }
-
-                                                            2 -> {
-                                                                send("command.vote.random.health")
-                                                                Groups.build.each {
-                                                                    if (voteStarter != null) {
-                                                                        if (it.team == voteStarter!!.player.team()) {
-                                                                            it.block.health /= 2
-                                                                        }
-                                                                    } else {
-                                                                        it.block.health /= 2
-                                                                    }
-                                                                }
-                                                                Groups.player.forEach {
-                                                                    Call.worldDataBegin(it.con)
-                                                                    Vars.netServer.sendWorldData(it)
-                                                                }
-                                                            }
-
-                                                            3 -> {
-                                                                send("command.vote.random.fill.core")
-                                                                if (voteStarter != null) {
-                                                                    Vars.content.items().forEach {
-                                                                        if (!it.isHidden) {
-                                                                            Vars.state.teams.cores(voteStarter!!.player.team())
-                                                                                .first().items.add(
-                                                                                    it,
-                                                                                    random.nextInt(2000)
-                                                                                )
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    Vars.content.items().forEach {
-                                                                        if (!it.isHidden) {
-                                                                            Vars.state.teams.cores(Team.sharded)
-                                                                                .first().items.add(
-                                                                                    it,
-                                                                                    random.nextInt(2000)
-                                                                                )
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            4 -> {
-                                                                send("command.vote.random.storm")
-                                                                Thread.sleep(1000)
-                                                                Call.createWeather(
-                                                                    Weathers.rain,
-                                                                    10f,
-                                                                    60 * 60f,
-                                                                    50f,
-                                                                    10f
-                                                                )
-                                                            }
-
-                                                            5 -> {
-                                                                send("command.vote.random.fire")
-                                                                for (x in 0 until Vars.world.width()) {
-                                                                    for (y in 0 until Vars.world.height()) {
-                                                                        Call.effect(
-                                                                            Fx.fire,
-                                                                            (x * 8).toFloat(),
-                                                                            (y * 8).toFloat(),
-                                                                            0f,
-                                                                            Color.red
-                                                                        )
-                                                                    }
-                                                                }
-                                                                var tick = 600
-                                                                map = Vars.state.map
-
-                                                                while (tick != 0 && map == Vars.state.map) {
-                                                                    Thread.sleep(1000)
-                                                                    tick--
-                                                                    Core.app.post {
-                                                                        Groups.unit.each {
-                                                                            it.health(it.health() - 10f)
-                                                                        }
-                                                                        Groups.build.each {
-                                                                            it.block.health /= 30
-                                                                        }
-                                                                    }
-                                                                    if (tick == 300) {
-                                                                        send("command.vote.random.supply")
-                                                                        repeat(2) {
-                                                                            if (voteStarter != null) {
-                                                                                UnitTypes.oct.spawn(
-                                                                                    voteStarter!!.player.team(),
-                                                                                    voteStarter!!.player.x,
-                                                                                    voteStarter!!.player.y
-                                                                                )
-                                                                            } else {
-                                                                                UnitTypes.oct.spawn(
-                                                                                    Team.sharded,
-                                                                                    Vars.state.teams.cores(
-                                                                                        Team.sharded
-                                                                                    ).first().x,
-                                                                                    Vars.state.teams.cores(
-                                                                                        Team.sharded
-                                                                                    ).first().y
-                                                                                )
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            else -> {
-                                                                send("command.vote.random.nothing")
-                                                            }
-                                                        }
-                                                    }.start()
-                                                }
-                                            }
-                                        }
-
-                                        resetVote()
-                                    } else if ((count == 0 && check() > voted.size) || isCanceled) {
-                                        if (isPvP) {
-                                            database.players.forEach {
-                                                if (it.player.team() == voteTeam) {
-                                                    Core.app.post { it.send("command.vote.failed") }
-                                                }
-                                            }
-                                        } else {
-                                            send("command.vote.failed")
-                                        }
-                                        resetVote()
-                                    }
-                                }
-                            }
-
-                            if (unitLimitMessageCooldown > 0) {
-                                unitLimitMessageCooldown--
-                            }
-
-                            apmRanking = "APM\n"
-                            val color = arrayOf("[scarlet]", "[orange]", "[yellow]", "[green]", "[white]", "[gray]")
-                            val list = LinkedHashMap<String, Int>()
-                            database.players.forEach {
-                                val total = it.apm.max()
-                                list[it.player.plainName()] = total
-                            }
-                            list.toList().sortedBy { (key, _) -> key }.forEach {
-                                val colored = when (it.second) {
-                                    in 41..Int.MAX_VALUE -> color[0]
-                                    in 21..40 -> color[1]
-                                    in 11..20 -> color[2]
-                                    in 6..10 -> color[3]
-                                    in 1..5 -> color[4]
-                                    else -> color[5]
-                                }
-                                val coloredName = if (it.second >= 41) nickcolor(it.first) else it.first
-                                apmRanking += "$coloredName[orange] > $colored${it.second}[white]\n"
-                            }
-                            apmRanking = apmRanking.substring(0, apmRanking.length - 1)
-                            database.players.forEach {
-                                if (it.hud != null) {
-                                    val array = JsonArray.readJSON(it.hud).asArray()
-                                    array.forEach { value ->
-                                        if (value.asString() == "apm") {
-                                            Call.infoPopup(
-                                                it.player.con(),
-                                                apmRanking,
-                                                Time.delta,
-                                                Align.left,
-                                                0,
-                                                0,
-                                                0,
-                                                0
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            secondCount = 0
-                        } else {
-                            secondCount++
-                        }
-
-                        if (minuteCount == 3600) {
-                            if (Vars.state.rules.pvp) {
-                                database.players.forEach {
-                                    if (!pvpPlayer.containsKey(it.uuid) && it.player.team() != Team.derelict) {
-                                        pvpPlayer.put(it.uuid, it.player.team())
-                                    }
-                                }
-                            }
-
-                            Main.daemon.submit(Thread {
-                                transaction {
-                                    DB.Player.selectAll().where { DB.Player.banTime neq null }.forEach { data ->
-                                        val banTime = data[DB.Player.banTime]
-                                        val uuid = data[DB.Player.uuid]
-                                        val name = data[DB.Player.name]
-
-                                        // todo datetime 을 모두 zoneddatetime 으로 바꾸기
-                                        if (ZonedDateTime.now().isAfter(ZonedDateTime.parse(banTime))) {
-                                            DB.Player.update({ DB.Player.uuid eq uuid }) {
-                                                it[DB.Player.banTime] = null
-                                            }
-                                            Events.fire(CustomEvents.PlayerTempUnbanned(name))
-                                        }
-                                    }
-                                }
-                            })
-
-                            if (rollbackCount == 0) {
-                                SaveIO.save(Vars.saveDirectory.child("rollback.msav"))
-                                rollbackCount = conf.command.rollback.time
-                            } else {
-                                rollbackCount--
-                            }
-
-                            if (conf.feature.motd.enabled) {
-                                if (messageCount == conf.feature.motd.time) {
-                                    database.players.forEach {
-                                        val message = if (root.child("messages/${it.languageTag}.txt").exists()) {
-                                            root.child("messages/${it.languageTag}.txt").readString()
-                                        } else if (root.child("messages").list().isNotEmpty()) {
-                                            val file = root.child("messages/en.txt")
-                                            if (file.exists()) file.readString() else null
-                                        } else {
-                                            null
-                                        }
-                                        if (message != null) {
-                                            val c = message.split(Regex("\r\n"))
-
-                                            if (c.size <= messageOrder) {
-                                                messageOrder = 0
-                                            }
-                                            it.player.sendMessage(c[messageOrder])
-                                        }
-                                    }
-                                    messageOrder++
-                                    messageCount = 0
-                                } else {
-                                    messageCount++
-                                }
-                            }
-
-                            maxdps = null
-                            minuteCount = 0
-                        } else {
-                            minuteCount++
-                        }
-                    } else {
-                        if (secondCount == 60) {
-                            milsCount = 0
-                            secondCount = 0
-                            minuteCount = 0
-                            rollbackCount = conf.command.rollback.time
-                            messageCount = conf.feature.motd.time
-                            messageOrder = 0
-                            maxdps = null
-                            resetVote()
-                        } else {
-                            secondCount++
+    }
+
+    @Event
+    fun configFileModified() {
+        Events.on(CustomEvents.ConfigFileModified::class.java, Cons<CustomEvents.ConfigFileModified> {
+            if (it.kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+                when (it.paths) {
+                    "permission_user.yaml", "permission.yaml" -> {
+                        try {
+                            Permission.load()
+                            Log.info(Bundle()["config.permission.updated"])
+                        } catch (e: ParseException) {
+                            Log.err(e)
                         }
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+
+                    "config.yaml" -> {
+                        Main.conf = Yaml.default.decodeFromString(
+                            Config.serializer(),
+                            Main.root.child(Main.CONFIG_PATH).readString()
+                        )
+                        Log.info(Bundle()["config.reloaded"])
+                    }
                 }
             }
-        }
-        Core.app.addListener(coreListener)
-        coreListeners.add(coreListener)
+        }.also { listener -> essential.core.Event.eventListeners[CustomEvents.ConfigFileModified::class.java] = listener })
     }
 
     @JvmStatic
@@ -1953,7 +992,7 @@ object Event {
         Player, Tap, WithDraw, Block, Deposit, Chat, Report
     }
 
-    private fun earnEXP(winner: Team, p: Playerc, target: DB.PlayerData, isConnected: Boolean) {
+    fun earnEXP(winner: Team, p: Playerc, target: DB.PlayerData, isConnected: Boolean) {
         val oldLevel = target.level
         var result: Int = target.currentExp
         val time = target.currentPlayTime.toInt()
@@ -2109,5 +1148,299 @@ object Event {
         val maxY = maxOf(first.getY(), second.getY())
 
         return target.getX() in minX..maxX && target.getY() in minY..maxY
+    }
+
+    private fun checkValidBlock(tile: Tile): String {
+        return if (tile.build != null && blockSelectRegex.matcher(tile.block().name).matches()) {
+            (tile.build as ConstructBlock.ConstructBuild).current.name
+        } else {
+            tile.block().name
+        }
+    }
+
+    fun updateEffectProcessorBlock(vararg id: Int) {
+        if (conf.feature.level.effect.enabled) {
+            val buffer = StringBuilder()
+            database.players.forEach { playerData ->
+                // playerData.player.team().data().players.indexOf(
+                //                            playerData.player
+                //                        )
+                val uuid = playerData.uuid
+                val config = """
+                    fetch player $uuid @${playerData.player.team().name} ${id.get(0)} @conveyor
+                    sensor ${uuid}_x $uuid @x
+                    sensor ${uuid}_y $uuid @y
+                """.trimIndent()
+                val color = playerData.effectColor ?: "ffaaff"
+                buffer.appendLine(config)
+
+                val next = when (playerData.effectLevel ?: playerData.level) {
+                    in 110..119 -> {
+                        """
+                        effect vapor ${uuid}_x ${uuid}_y 2 %$color
+                        effect hit ${uuid}_x ${uuid}_y 2 %$color
+                    """.trimIndent()
+                    }
+
+                    in 120..129 -> {
+                        """
+                        effect vapor ${uuid}_x ${uuid}_y 2 %$color
+                        effect hit ${uuid}_x ${uuid}_y 2 %$color
+                        effect hitSquare ${uuid}_x ${uuid}_y 2 %$color
+                    """.trimIndent()
+                    }
+
+                    in 130..139 -> {
+                        """
+                        effect vapor ${uuid}_x ${uuid}_y 2 %$color
+                        effect spark ${uuid}_x ${uuid}_y 2 %$color
+                    """.trimIndent()
+                    }
+
+                    in 140..149 -> {
+                        """
+                        effect smokePuff ${uuid}_x ${uuid}_y 2 %$color
+                        effect hit ${uuid}_x ${uuid}_y 2 %$color
+                    """.trimIndent()
+                    }
+
+                    in 150..159 -> {
+                        """
+                        effect smokePuff ${uuid}_x ${uuid}_y 2 %$color
+                        effect hit ${uuid}_x ${uuid}_y 2 %$color
+                        effect hitSquare ${uuid}_x ${uuid}_y 2 %$color
+                    """.trimIndent()
+                    }
+
+                    in 160..169 -> {
+                        """
+                        effect smokePuff ${uuid}_x ${uuid}_y 2 %$color 
+                        effect spark ${uuid}_x ${uuid}_y 2 %$color 
+                    """.trimIndent()
+                    }
+
+                    in 170..179 -> {
+                        """
+                        effect placeBlock ${uuid}_x ${uuid}_y 1.8 %$color
+                        effect spawn ${uuid}_x ${uuid}_y 1 %$color
+                    """.trimIndent()
+                    }
+
+                    in 180..189 -> {
+                        """
+                        effect placeBlock ${uuid}_x ${uuid}_y 1.8 %$color 
+                        effect spawn ${uuid}_x ${uuid}_y 1 %$color 
+                        effect spark ${uuid}_x ${uuid}_y 1 %$color 
+                    """.trimIndent()
+                    }
+
+                    in 190..199 -> {
+                        """
+                        effect placeBlock ${uuid}_x ${uuid}_y 1.8 %$color 
+                        effect spawn ${uuid}_x ${uuid}_y 1 %$color 
+                        effect sparkBig ${uuid}_x ${uuid}_y 1 %$color 
+                    """.trimIndent()
+                    }
+
+                    in 210..219 -> {
+                        """
+                        effect crossExplosion ${uuid}_x ${uuid}_y 7 %$color @duo
+                        op rand ${uuid}_r1 2 b
+                        op rand ${uuid}_r2 2 b
+                        op sub ${uuid}_r1 ${uuid}_r1 1
+                        op sub ${uuid}_r2 ${uuid}_r2 1
+                        op add ${uuid}_x ${uuid}_x ${uuid}_r1
+                        op add ${uuid}_y ${uuid}_y ${uuid}_r2
+                        effect spark ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect vapor ${uuid}_x ${uuid}_y 2 %$color @duo
+                    """.trimIndent()
+                    }
+
+                    in 220..229 -> {
+                        """
+                        effect crossExplosion ${uuid}_x ${uuid}_y 7 %$color @duo
+                        op rand ${uuid}_r1 2 b
+                        op rand ${uuid}_r2 2 b
+                        op sub ${uuid}_r1 ${uuid}_r1 1
+                        op sub ${uuid}_r2 ${uuid}_r2 1
+                        op add ${uuid}_x ${uuid}_x ${uuid}_r1
+                        op add ${uuid}_y ${uuid}_y ${uuid}_r2
+                        effect sparkBig ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect vapor ${uuid}_x ${uuid}_y 2 %$color @duo
+                    """.trimIndent()
+                    }
+
+                    in 230..239 -> {
+                        """
+                        effect crossExplosion ${uuid}_x ${uuid}_y 7 %$color @duo
+                        op rand ${uuid}_r1 2 b
+                        op rand ${uuid}_r2 2 b
+                        op sub ${uuid}_r1 ${uuid}_r1 1
+                        op sub ${uuid}_r2 ${uuid}_r2 1
+                        op add ${uuid}_x ${uuid}_x ${uuid}_r1
+                        op add ${uuid}_y ${uuid}_y ${uuid}_r2
+                        effect sparkBig ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect spark ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect smokePuff ${uuid}_x ${uuid}_y 2 %$color @duo
+                    """.trimIndent()
+                    }
+
+                    in 240..249 -> {
+                        """
+                        effect explosion ${uuid}_x ${uuid}_y 0.8 %$color @duo
+                        op rand ${uuid}_r1 4 b
+                        op rand ${uuid}_r2 4 b
+                        op sub ${uuid}_r1 ${uuid}_r1 2
+                        op sub ${uuid}_r2 ${uuid}_r2 2
+                        op add ${uuid}_x ${uuid}_x ${uuid}_r1
+                        op add ${uuid}_y ${uuid}_y ${uuid}_r2
+                        effect spark ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect vapor ${uuid}_x ${uuid}_y 2 %$color @duo
+                    """.trimIndent()
+                    }
+
+                    in 250..259 -> {
+                        """
+                        effect explosion ${uuid}_x ${uuid}_y 0.8 %$color @duo                        
+                        op rand ${uuid}_r1 1 b
+                        op rand ${uuid}_r2 1 b
+                        op sub ${uuid}_r1 ${uuid}_r1 0.5
+                        op sub ${uuid}_r2 ${uuid}_r2 0.5
+                        op add ${uuid}_x ${uuid}_x ${uuid}_r1
+                        op add ${uuid}_y ${uuid}_y ${uuid}_r2
+                        effect spark ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect smokePuff ${uuid}_x ${uuid}_y 2 %$color @duo
+                    """.trimIndent()
+                    }
+
+                    in 260..269 -> {
+                        """
+                        effect explosion ${uuid}_x ${uuid}_y 0.8 %$color @duo                        
+                        op rand ${uuid}_r1 1 b
+                        op rand ${uuid}_r2 1 b
+                        op sub ${uuid}_r1 ${uuid}_r1 0.5
+                        op sub ${uuid}_r2 ${uuid}_r2 0.5
+                        op add ${uuid}_x ${uuid}_x ${uuid}_r1
+                        op add ${uuid}_y ${uuid}_y ${uuid}_r2
+                        effect spark ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect spark ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect smokePuff ${uuid}_x ${uuid}_y 2 %$color @duo
+                        op rand ${uuid}_rotation 4 b
+                        op ceil ${uuid}_rotation rotation b
+                        op mul ${uuid}_rotation rotation 90
+                        effect smokeSquareBig ${uuid}_x ${uuid}_y ${uuid}_rotation %fca40038 @duo
+                    """.trimIndent()
+                    }
+
+                    in 270..279 -> {
+                        """
+                        op rand ${uuid}_rotation 360 b
+                        effect smokeSquare ${uuid}_x ${uuid}_y ${uuid}_rotation %$color
+                        effect spark ${uuid}_x ${uuid}_y ${uuid}_rotation %$color
+                        effect trail ${uuid}_x ${uuid}_y 4 %$color
+                    """.trimIndent()
+                    }
+
+                    in 280..289 -> {
+                        """
+                        op rand ${uuid}_rotation 360 b
+                        effect smokeSquare ${uuid}_x ${uuid}_y ${uuid}_rotation %$color
+                        effect spark ${uuid}_x ${uuid}_y ${uuid}_rotation %$color
+                        effect wave ${uuid}_x ${uuid}_y 2 %$color
+                    """.trimIndent()
+                    }
+
+                    in 290..299 -> {
+                        """
+                        effect smokeSquare ${uuid}_x ${uuid}_y 0 %$color
+                        effect smokeSquare ${uuid}_x ${uuid}_y 45 %$color
+                        effect smokeSquare ${uuid}_x ${uuid}_y 90 %$color
+                        effect smokeSquare ${uuid}_x ${uuid}_y 135 %$color
+                        effect smokeSquare ${uuid}_x ${uuid}_y 180 %$color
+                        effect smokeSquare ${uuid}_x ${uuid}_y 225 %$color
+                        effect smokeSquare ${uuid}_x ${uuid}_y 270 %$color
+                        effect smokeSquare ${uuid}_x ${uuid}_y 315 %$color
+                        effect breakProp ${uuid}_x ${uuid}_y rotation %$color
+                        effect vapor ${uuid}_x ${uuid}_y rotation %$color
+                    """.trimIndent()
+                    }
+
+                    in 300..Int.MAX_VALUE -> {
+                        """
+                        sensor ${uuid}_rotation $uuid @rotation
+                        op add ${uuid}_rotation ${uuid}_rotation 180
+                        effect smokeSquareBig ${uuid}_x ${uuid}_y ${uuid}_rotation %fca40038 
+                        op add ${uuid}_rotation ${uuid}_rotation 40
+                        effect shootBig ${uuid}_x ${uuid}_y ${uuid}_rotation %fca40038 
+                        op add ${uuid}_rotation ${uuid}_rotation 25
+                        effect sparkShoot ${uuid}_x ${uuid}_y ${uuid}_rotation %fca40038 
+                        op sub ${uuid}_rotation ${uuid}_rotation 105
+                        effect shootBig ${uuid}_x ${uuid}_y ${uuid}_rotation %fca40038 
+                        op sub ${uuid}_rotation ${uuid}_rotation 25
+                        effect sparkShoot ${uuid}_x ${uuid}_y ${uuid}_rotation %fca40038 
+                        effect drillBig ${uuid}_x ${uuid}_y 2 %$color 
+                    """.trimIndent()
+                    }
+
+                    else -> {
+                        ""
+                    }
+                }
+
+                buffer.appendLine(next)
+
+                if ((playerData.effectLevel ?: playerData.level) in 200..209) {
+                    buffer.appendLine(
+                        """
+                            op rand ${uuid}_r1 1.5 b
+                            op ceil ${uuid}_r1 ${uuid}_r1 b
+                            op rand ${uuid}_r2 1.5 b
+                            op ceil ${uuid}_r2 ${uuid}_r2 b
+                            op rand ${uuid}_r 4 b
+                            op ceil ${uuid}_r ${uuid}_r b
+                    """.trimIndent()
+                    )
+
+                    val order = buffer.lines().size
+                    buffer.appendLine(
+                        """
+                        jump ${order + 3} notEqual ${uuid}_r 1
+                        op add ${uuid}_x ${uuid}_x ${uuid}_r2
+                        op add ${uuid}_y ${uuid}_y ${uuid}_r1
+                        jump ${order + 6} notEqual ${uuid}_r 2
+                        op sub ${uuid}_x ${uuid}_x ${uuid}_r2
+                        op add ${uuid}_y ${uuid}_y ${uuid}_r1
+                        jump ${order + 9} notEqual ${uuid}_r 3
+                        op sub ${uuid}_x ${uuid}_x ${uuid}_r2
+                        op sub ${uuid}_y ${uuid}_y ${uuid}_r1
+                        jump ${order + 12} notEqual ${uuid}_r 4
+                        op add ${uuid}_x ${uuid}_x ${uuid}_r2
+                        op sub ${uuid}_y ${uuid}_y ${uuid}_r1
+                    """.trimIndent()
+                    )
+
+                    buffer.append(
+                        """
+                        effect wave ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect wave ${uuid}_x ${uuid}_y 3 %$color @duo
+                        effect wave ${uuid}_x ${uuid}_y 7 %$color @duo
+                        effect wave ${uuid}_x ${uuid}_y 5 %$color @duo
+                        effect wave ${uuid}_x ${uuid}_y 9 %$color @duo
+                        effect hitSquare ${uuid}_x ${uuid}_y 0.5 %$color @duo
+                        effect vapor ${uuid}_x ${uuid}_y 2 %$color @duo
+                    """.trimIndent()
+                    )
+                }
+            }
+
+            buffer.appendLine("wait 0.05")
+            for (it in Vars.world.tiles) {
+                if (it.block() !is LogicBlock || effectBlock == null || effectBlock == it) {
+                    Call.constructFinish(it, Blocks.worldProcessor, Nulls.unit, 0, Vars.state.rules.defaultTeam, LogicBlock.compress(buffer.toString(), Seq()))
+                    effectBlock = it
+                    break
+                }
+            }
+        }
     }
 }

@@ -15,7 +15,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
 import static essential.core.Commands.PLAYER_NOT_FOUND;
-import static essential.core.Commands.STANDARD_DATE;
 import static essential.core.Main.database;
 import static essential.protect.Main.conf;
 
@@ -83,7 +82,7 @@ public class Commands {
         if (target != null) {
             String reason = arg[1];
             Administration.PlayerInfo infos = Vars.netServer.admins.findByName(target.first().plainLastName()).first();
-            String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern(STANDARD_DATE));
+            String date = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
             String text = new Bundle().get("command.report.texts", target.first()
                     .plainLastName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips);
             essential.core.Event.log(Event.LogType.Report, date + text, target.first().plainLastName());

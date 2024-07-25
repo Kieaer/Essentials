@@ -6,6 +6,7 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.math.Mathf
+import arc.struct.Seq
 import arc.util.Log
 import arc.util.Strings
 import arc.util.Threads
@@ -46,6 +47,7 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
+import mindustry.world.blocks.logic.LogicBlock
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -55,7 +57,6 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
-import java.util.random.RandomGenerator
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
@@ -68,7 +69,6 @@ class Commands {
         // 다중 사용 함수
         const val PLAYER_NOT_FOUND = "player.not.found"
         const val PLAYER_NOT_REGISTERED = "player.not.registered"
-        const val STANDARD_DATE = "YYYY-MM-dd HH:mm:ss"
     }
 
     @ClientCommand("changemap", "<name> [gamemode]", "Change the world or gamemode immediately.")
@@ -262,6 +262,9 @@ class Commands {
                         } catch (_: StringIndexOutOfBoundsException) {
                             playerData.err("command.effect.no.color")
                         }
+                    }
+                    if (PluginData.effectLocal) {
+                        Event.updateEffectProcessorBlock()
                     }
                 } else {
                     playerData.err("command.effect.level")
@@ -709,13 +712,12 @@ class Commands {
                                                 CustomEvents.PlayerTempBanned(
                                                     targetData!!.name,
                                                     p.plainName(),
-                                                    LocalDateTime.now().plusMinutes(time.toLong())
-                                                        .format(DateTimeFormatter.ofPattern(STANDARD_DATE))
+                                                    LocalDateTime.now().plusMinutes(time.toLong()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                                                 )
                                             )
                                             banPlayer(targetData)
                                         }
-                                    } // 임시 차단
+                                    }
                                     Call.menu(
                                         p.con(),
                                         tempBanConfirmMenu,
@@ -2229,7 +2231,7 @@ class Commands {
             val duration = arg[1].toInt()
             Call.createWeather(
                 weather,
-                (RandomGenerator.of("random").nextDouble() * 100).toFloat(),
+                (Random().nextDouble() * 100).toFloat(),
                 (duration * 8).toFloat(),
                 10f,
                 10f
@@ -2511,7 +2513,7 @@ class Commands {
             val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
             val client = "## Client commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
             val time = "README.md Generated time: ${
-                DateTimeFormatter.ofPattern(STANDARD_DATE).format(LocalDateTime.now())
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now())
             }"
 
             val result = StringBuilder()
@@ -2597,6 +2599,19 @@ class Commands {
             System.gc()
             Log.info("unloaded")
         }
+    }
+
+    @ClientCommand("test", "[id]", "Test world processor")
+    fun testProcessor(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
+        PluginData.effectLocal = true
+        val code = """
+            fetch player Player(Sharded)(0) @sharded 0 @conveyor
+            sensor Name(Player(Sharded)(0)) Player(Sharded)(0) @name
+            print Name(Player(Sharded)(0))
+            message mission 3
+        """.trimIndent()
+        player.tileOn().setNet(Blocks.worldProcessor)
+        player.tileOn().build.configure(LogicBlock.compress(code, Seq()))
     }
 
     private fun selectTeam(arg: String): Team {

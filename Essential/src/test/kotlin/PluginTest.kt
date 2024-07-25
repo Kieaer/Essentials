@@ -161,6 +161,8 @@ class PluginTest {
         fun loadPlugin() {
             path.child("mods/Essentials").deleteDirectory()
 
+
+
             // todo 설정 바꿔서 테스트 하기
             //Config.databasePW = "pk1450"
             main = Main()
@@ -177,13 +179,43 @@ class PluginTest {
             main.registerClientCommands(clientCommand)
             main.registerServerCommands(serverCommand)
 
+            /*val achievement = essential.achievements.Main()
+            achievement.init()
+            achievement.registerServerCommands(serverCommand)
+            achievement.registerClientCommands(clientCommand)
+
+            val bridge = essential.bridge.Main()
+            bridge.init()
+            bridge.registerServerCommands(serverCommand)
+            bridge.registerClientCommands(clientCommand)
+
+            val chat = essential.chat.Main()
+            chat.init()
+            chat.registerClientCommands(clientCommand)
+            chat.registerServerCommands(serverCommand)
+
+            val discord = essential.discord.Main()
+            discord.init()
+            discord.registerClientCommands(clientCommand)
+            discord.registerServerCommands(serverCommand)
+
+            val protect = essential.protect.Main()
+            protect.init()
+            protect.registerClientCommands(clientCommand)
+            protect.registerServerCommands(serverCommand)
+
+            val web = essential.web.Main()
+            web.init()
+            web.registerClientCommands(clientCommand)
+            web.registerServerCommands(serverCommand)*/
+
             //daemon.submit(Trigger.Client)
 
             Events.fire(ServerLoadEvent())
         }
 
         fun stopPlugin() {
-            Core.app.dispose()
+            Core.app.exit()
         }
 
         fun runPost() {
@@ -298,7 +330,7 @@ class PluginTest {
 
         loadGame()
         loadPlugin()
-        //stopPlugin()
+        stopPlugin()
     }
 
     @After

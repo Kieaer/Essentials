@@ -34,6 +34,7 @@ object PluginData {
     var isCheated = false
 
     var entityOrder = 0
+    var effectLocal = false
     val clients = Seq<Socket>()
 
     data class WarpZone(

@@ -44,7 +44,7 @@ class Main : Plugin() {
         val database = DB()
 
         @JvmField
-        val daemon: ExecutorService = Executors.newFixedThreadPool(3)
+        val daemon: ExecutorService = Executors.newFixedThreadPool(4)
 
         fun currentTime(): String {
             return ZonedDateTime.now()
@@ -104,11 +104,21 @@ class Main : Plugin() {
         Permission.load()
 
         // 설정 파일 감시기능
-        FileWatchService.registerEvent()
-        daemon.submit(FileWatchService)
+        daemon.submit(FileWatchService())
 
         // 이벤트 등록
-        Event.register()
+        for (functions in Event::class.declaredFunctions) {
+            val annotation = functions.findAnnotation<essential.core.annotation.Event>()
+            if (annotation != null) {
+                functions.call(Event)
+            }
+        }
+
+        // 스레드 등록
+        val trigger = Trigger()
+        trigger.register()
+        daemon.submit(Trigger.Thread())
+        daemon.submit(Trigger.UpdateThread())
 
         Vars.netServer.admins.addActionFilter(Administration.ActionFilter { e ->
             if (e.player == null) return@ActionFilter true
@@ -146,12 +156,11 @@ class Main : Plugin() {
             return@ActionFilter false
         }.also { listener -> actionFilter = listener })
 
-        val coreListener = object : ApplicationListener {
+        Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
                 daemon.shutdownNow()
             }
-        }.also { listener -> Event.coreListeners.add(listener) }
-        Core.app.addListener(coreListener)
+        })
 
         Log.info(bundle["event.plugin.loaded"])
     }
