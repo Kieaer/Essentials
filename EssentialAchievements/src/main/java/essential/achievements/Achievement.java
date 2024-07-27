@@ -16,88 +16,165 @@ public enum Achievement {
     // Attack
 }*/
 
+import arc.Events;
 import essential.core.DB;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public enum Achievement {
     // int 배열값은 현재 값과 목표 값
     Builder {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{data.getBlockPlaceCount(), 100000};
+        public int value() {
+            return 100000;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return data.getBlockPlaceCount();
         }
     },
     Deconstructor {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{data.getBlockBreakCount(), 100000};
+        public int value() {
+            return 100000;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return data.getBlockBreakCount();
         }
     },
 
     Creator {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{Integer.parseInt(data.getStatus().get("record.time.sandbox")), 360000};
+        public int value() {
+            return 360000;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return Integer.parseInt(data.getStatus().getOrDefault("record.time.sandbox", "0"));
         }
     },
     Eliminator {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{data.getPvpVictoriesCount(), 100};
+        public int value() {
+            return 100;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return data.getPvpVictoriesCount();
         }
     },
     Defender {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{Integer.parseInt(data.getStatus().get("record.wave")), 10000};
+        public int value() {
+            return 10000;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return Integer.parseInt(data.getStatus().getOrDefault("record.wave", "0"));
         }
     },
     Aggressor {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{data.getAttackModeClear(), 50};
+        public int value() {
+            return 50;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return data.getAttackModeClear();
         }
     },
     Serpulo {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{Integer.parseInt(data.getStatus().get("record.time.serpulo")), 360000};
+        public int value() {
+            return 360000;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return Integer.parseInt(data.getStatus().getOrDefault("record.time.serpulo", "0"));
         }
     },
     Erekir {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{Integer.parseInt(data.getStatus().get("record.time.erekir")), 360000};
+        public int value() {
+            return 360000;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return Integer.parseInt(data.getStatus().getOrDefault("record.time.erekir", "0"));
         }
     },
 
     TurbidWater {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{(int) data.getTotalPlayTime(), 360000};
+        public int value() {
+            return 360000;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return (int) data.getTotalPlayTime();
         }
     },
     BlackWater {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{(int) data.getTotalPlayTime(), 720000};
+        public int value() {
+            return 720000;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return (int) data.getTotalPlayTime();
         }
     },
     Oil {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{(int) data.getTotalPlayTime(), 1080000};
+        public int value() {
+            return 1080000;
+        }
 
+        @Override
+        public int current(DB.PlayerData data) {
+            return (int) data.getTotalPlayTime();
         }
     },
 
     Lord {
         @Override
-        public int[] get(DB.PlayerData data) {
-            return new int[]{
-                (data.getPvpVictoriesCount() + data.getPvpDefeatCount()) / (data.getPvpVictoriesCount() + data.getPvpDefeatCount()) * 100, 70
-            };
+        public int value() {
+            return 70;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            int result;
+            try {
+                result = (data.getPvpVictoriesCount() + data.getPvpDefeatCount()) / (data.getPvpVictoriesCount() + data.getPvpDefeatCount()) * 100;
+            } catch (ArithmeticException e) {
+                result = 0;
+            }
+            return result;
         }
     };
 
-    public abstract int[] get(DB.PlayerData data);
+    public abstract int value();
+    public abstract int current(DB.PlayerData data);
+    public boolean success(DB.PlayerData data) {
+        return current(data) >= value();
+    }
+    public void set(DB.PlayerData data) {
+        if (!data.getStatus().containsKey("achievement." + this.toString().toLowerCase())) {
+            data.getStatus().put("achievement." + this.toString().toLowerCase(), LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            Events.fire(new CustomEvents.AchievementClear(this, data));
+        }
+    }
 }

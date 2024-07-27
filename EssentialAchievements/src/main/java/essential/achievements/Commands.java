@@ -5,9 +5,7 @@ import essential.core.DB;
 import essential.core.annotation.ClientCommand;
 import mindustry.gen.Playerc;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class Commands {
     @ClientCommand(name = "achievements", parameter = "[page]", description = "Show your achievements")
@@ -15,14 +13,18 @@ public class Commands {
         List<String> temp = new ArrayList<>();
         ResourceBundle bundle;
         if (playerData.getStatus().containsKey("language")) {
-            bundle = ResourceBundle.getBundle(playerData.getStatus().get("language"));
+            bundle = ResourceBundle.getBundle("bundle", new Locale(playerData.getStatus().get("language").split("_")[0]));
         } else {
-            bundle = ResourceBundle.getBundle(player.locale());
+            try {
+                bundle = ResourceBundle.getBundle("bundle", new Locale(player.locale().split("_")[0]));
+            } catch (MissingResourceException e) {
+                bundle = ResourceBundle.getBundle("bundle", Locale.ENGLISH);
+            }
         }
 
         for (Achievement ach : Achievement.values()) {
             String name = ach.toString().toLowerCase();
-            temp.add("[green]" + bundle.getString("achievement." + name) + "[] (" + ach.get(playerData)[0] + " / " + ach.get(playerData)[1] + ")\n");
+            temp.add("[green]" + bundle.getString("achievement." + name) + "[] (" + ach.current(playerData) + " / " + ach.value() + ")\n");
             temp.add("[yellow]" + bundle.getString("description." + name) + "\n");
             temp.add("\n");
         }

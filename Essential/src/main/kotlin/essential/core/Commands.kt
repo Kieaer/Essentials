@@ -7,26 +7,28 @@ import arc.graphics.Color
 import arc.graphics.Colors
 import arc.math.Mathf
 import arc.struct.Seq
-import arc.util.Log
-import arc.util.Strings
-import arc.util.Threads
-import arc.util.Tmp
+import arc.util.*
+import arc.util.Timer
 import com.charleskorn.kaml.Yaml
 import com.github.lalyos.jfiglet.FigletFont
 import essential.core.Event.actionFilter
 import essential.core.Event.findPlayerData
 import essential.core.Event.findPlayers
 import essential.core.Event.findPlayersByName
-import essential.core.Event.resetVote
-import essential.core.Event.voteMap
 import essential.core.Event.worldHistory
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.currentTime
 import essential.core.Main.Companion.daemon
 import essential.core.Main.Companion.database
 import essential.core.Main.Companion.root
+import essential.core.PluginData.voteCooltime
+import essential.core.PluginData.voterCooltime
+import essential.core.PluginData.voting
 import essential.core.annotation.ClientCommand
 import essential.core.annotation.ServerCommand
+import essential.core.service.vote.VoteData
+import essential.core.service.vote.VoteSystem
+import essential.core.service.vote.VoteType
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Weathers
@@ -334,7 +336,11 @@ class Commands {
 
         when (arg[0]) {
             "set" -> {
-                set(arg[1].toIntOrNull(), "set")
+                if (arg.size >= 2) {
+                    set(arg[1].toIntOrNull(), "set")
+                } else {
+                    playerData.err("command.exp.invalid")
+                }
             }
 
             "hide" -> {
@@ -362,11 +368,19 @@ class Commands {
             }
 
             "add" -> {
-                set(arg[1].toIntOrNull(), "add")
+                if (arg.size >= 2) {
+                    set(arg[1].toIntOrNull(), "add")
+                } else {
+                    playerData.err("command.exp.invalid")
+                }
             }
 
             "remove" -> {
-                set(arg[1].toIntOrNull(), "remove")
+                if (arg.size >= 2) {
+                    set(arg[1].toIntOrNull(), "remove")
+                } else {
+                    playerData.err("command.exp.invalid")
+                }
             }
 
             else -> {
@@ -613,7 +627,7 @@ class Commands {
         val ban = "info.button.ban"
         val cancel = "info.button.cancel"
 
-        if (arg.isNotEmpty()) {
+        if (arg.isNotEmpty() && Permission.check(playerData, "info.admin")) {
             val target = findPlayers(arg[0])
             var targetData: DB.PlayerData? = null
             var isBanned = false
@@ -792,8 +806,7 @@ class Commands {
 
             // todo 특정 플레이어 조회 안됨
             if (target != null) {
-                isBanned =
-                    (Vars.netServer.admins.isIDBanned(target.uuid()) || Vars.netServer.admins.isIPBanned(target.con().address))
+                isBanned = (Vars.netServer.admins.isIDBanned(target.uuid()) || Vars.netServer.admins.isIPBanned(target.con().address))
                 val banned = "\n${bundle["info.banned"]}: $isBanned"
                 val other = findPlayerData(target.uuid())
                 if (other != null) {
@@ -922,8 +935,9 @@ class Commands {
         if (arg.isEmpty()) {
             count = Groups.unit.size()
             repeat(Team.all.count()) {
-                Groups.unit.each { u: Unit -> if (player.team() == u.team) u.kill() }
+                Groups.unit.each { u: Unit -> u.kill() }
             }
+
         } else {
             val team = selectTeam(arg[0])
             count = Groups.unit.filter { u -> u.team == team }.size
@@ -2247,42 +2261,21 @@ class Commands {
         val noReason = "command.vote.no.reason"
         val mapNotFound = "command.vote.map.not.exists"
 
-        fun sendStart(message: String, vararg parameter: Any) {
-            fun sendMessage(data: DB.PlayerData?) {
-                if (data != null) {
-                    data.send("command.vote.starter", player.plainName())
-                    data.send(message, *parameter)
-                    data.send("command.vote.how")
-                }
-            }
-
-            Event.voted.add(player.uuid())
-            database.players.forEach {
-                if (Event.isPvP) {
-                    if (Event.voteTeam == it.player.team()) {
-                        sendMessage(findPlayerData(it.uuid))
-                    }
-                } else {
-                    sendMessage(findPlayerData(it.uuid))
-                }
-            }
+        fun start(voteData: VoteData) {
+            Timer.schedule(VoteSystem(voteData), 0f, 1f, 60)
         }
 
         if (arg.isEmpty()) {
             playerData.err("command.vote.arg.empty")
             return
-        } else {
-            when (arg[0]) {
-
-            }
         }
 
-        if (Event.voterCooltime.containsKey(player.plainName())) {
+        if (voterCooltime.containsKey(player.plainName())) {
             playerData.err(cooltime)
             return
         }
 
-        if (!Event.voting) {
+        if (!voting) {
             if ((database.players.filterNot { it.afk }.size <= 3 && !Permission.check(playerData, "vote.admin")) ||
                 (database.players.size == 1 && arg[0] != "map")) {
                 playerData.err("command.vote.enough")
@@ -2290,6 +2283,7 @@ class Commands {
             }
             when (arg[0]) {
                 "kick" -> {
+                    if (!Permission.check(playerData, "vote.kick")) return
                     if (arg.size != 3) {
                         playerData.err(noReason)
                         return
@@ -2299,13 +2293,15 @@ class Commands {
                         if (Permission.check(playerData, "kick.admin")) {
                             playerData.err("command.vote.kick.target.admin")
                         } else {
-                            Event.voteTarget = target
-                            Event.voteTargetUUID = target.uuid()
-                            Event.voteReason = arg[2]
-                            Event.voteType = "kick"
-                            Event.voteStarter = playerData
-                            Event.voting = true
-                            sendStart("command.vote.kick.start", target.plainName(), arg[2])
+                            val voteData = VoteData(
+                                target = target,
+                                targetUUID = target.uuid(),
+                                reason = arg[2],
+                                type = VoteType.Kick,
+                                starter = playerData
+                            )
+                            voting = true
+                            start(voteData)
                         }
                     } else {
                         playerData.err(PLAYER_NOT_FOUND)
@@ -2314,6 +2310,7 @@ class Commands {
 
                 // vote map <map name> <reason>
                 "map" -> {
+                    if (!Permission.check(playerData, "vote.map")) return
                     if (arg.size == 1) {
                         playerData.err("command.vote.no.map")
                         return
@@ -2343,15 +2340,17 @@ class Commands {
 
                             if (target != null) {
                                 if (database.players.size != 1) {
-                                    Event.voteType = "map"
-                                    Event.voteMap = target
-                                    Event.voteReason = arg[2]
-                                    Event.voteStarter = playerData
-                                    Event.voting = true
-                                    sendStart("command.vote.map.start", target!!.name(), arg[2])
+                                    val voteData = VoteData(
+                                        type = VoteType.Map,
+                                        map = target,
+                                        reason = arg[2],
+                                        starter = playerData
+                                    )
+                                    voting = true
+                                    start(voteData)
                                 } else {
                                     PluginData.isSurrender = true
-                                    Vars.maps.setNextMapOverride(voteMap)
+                                    Vars.maps.setNextMapOverride(target)
                                     Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                                 }
                             } else {
@@ -2367,18 +2366,17 @@ class Commands {
 
                 // vote gg
                 "gg" -> {
-                    if (Event.voteCooltime == 0) {
-                        Event.voteType = "gg"
-                        Event.voteStarter = playerData
-                        Event.voting = true
+                    if (!Permission.check(playerData, "vote.gg")) return
+                    if (voteCooltime == 0) {
+                        val voteData = VoteData(
+                            type = VoteType.Gameover,
+                            starter = playerData,
+                        )
                         if (Vars.state.rules.pvp) {
-                            Event.voteTeam = player.team()
-                            Event.isPvP = true
-                            Event.voteCooltime = 120
-                            sendStart("command.vote.gg.pvp.team")
-                        } else {
-                            sendStart("command.vote.gg.start")
+                            voteData.team = player.team()
+                            voteCooltime = 120
                         }
+                        start(voteData)
                     } else {
                         playerData.err(cooltime)
                     }
@@ -2386,19 +2384,22 @@ class Commands {
 
                 // vote skip <count>
                 "skip" -> {
+                    if (!Permission.check(playerData, "vote.skip")) return
                     if (arg.size == 1) {
                         playerData.send("command.vote.skip.wrong")
                     } else if (arg[1].toIntOrNull() != null) {
                         if (arg[1].toInt() > conf.command.skip.limit) {
                             playerData.send("command.vote.skip.toomany")
                         } else {
-                            if (Event.voteCooltime == 0) {
-                                Event.voteType = "skip"
-                                Event.voteWave = arg[1].toInt()
-                                Event.voteStarter = playerData
-                                Event.voting = true
-                                Event.voteCooltime = 120
-                                sendStart("command.vote.skip.start", arg[1])
+                            if (voteCooltime == 0) {
+                                val voteData = VoteData(
+                                    type = VoteType.Skip,
+                                    wave = arg[1].toInt(),
+                                    starter = playerData
+                                )
+                                voting = true
+                                voteCooltime = 120
+                                start(voteData)
                             } else {
                                 playerData.send(cooltime)
                             }
@@ -2408,6 +2409,7 @@ class Commands {
 
                 // vote back <reason>
                 "back" -> {
+                    if (!Permission.check(playerData, "vote.back")) return
                     if (!Vars.saveDirectory.child("rollback.msav").exists()) {
                         playerData.err("command.vote.back.no.file")
                         return
@@ -2416,28 +2418,36 @@ class Commands {
                         playerData.send(noReason)
                         return
                     }
-                    Event.voteType = "back"
-                    Event.voteReason = arg[1]
-                    Event.voteStarter = playerData
-                    Event.voting = true
-                    sendStart("command.vote.back.start", arg[1])
+                    val voteData = VoteData(
+                        type = VoteType.Back,
+                        reason = arg[1],
+                        starter = playerData
+                    )
+                    voting = true
+                    start(voteData)
                 }
 
                 // vote random
                 "random" -> {
-                    if (Event.voteCooltime == 0) {
-                        Event.voteType = "random"
-                        Event.voteStarter = playerData
-                        Event.voting = true
-                        Event.voteCooltime = 360
-                        sendStart("command.vote.random.start")
+                    if (!Permission.check(playerData, "vote.random")) return
+                    if (voteCooltime == 0) {
+                        val voteData = VoteData(
+                            type = VoteType.Random,
+                            starter = playerData
+                        )
+                        voting = true
+                        voteCooltime = 360
+                        start(voteData)
                     } else {
                         playerData.err(cooltime)
                     }
                 }
 
                 "reset" -> {
-                    resetVote()
+                    if (!Permission.check(playerData, "vote.reset")) return
+                    voting = false
+                    voteCooltime = 0
+                    voterCooltime.clear()
                     playerData.send("command.vote.reset")
                 }
 

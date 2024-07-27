@@ -27,7 +27,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.util.concurrent.SynchronousQueue
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
 
@@ -44,11 +46,14 @@ class Main : Plugin() {
         val database = DB()
 
         @JvmField
-        val daemon: ExecutorService = Executors.newFixedThreadPool(4)
+        val daemon: ExecutorService = ThreadPoolExecutor(
+            0, Int.MAX_VALUE,
+            16, TimeUnit.MILLISECONDS,
+            SynchronousQueue()
+        )
 
         fun currentTime(): String {
-            return ZonedDateTime.now()
-                .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withLocale(Locale.getDefault()))
+            return ZonedDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withLocale(Locale.getDefault()))
         }
 
         fun <T> createAndReadConfig(name: String, file: InputStream, type: Class<T>): T? {
@@ -125,7 +130,7 @@ class Main : Plugin() {
             val data = database.players.find { it.uuid == e.player.uuid() }
             val isHub = PluginData["hubMode"]
             for (it in PluginData.warpBlocks) {
-                if (e.tile != null && it.mapName == Vars.state.map.name() && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
+                if (it.mapName == PluginData.currentMap && e.tile != null && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
                     return@ActionFilter false
                 }
             }

@@ -1,6 +1,5 @@
 package essential.core
 
-import arc.struct.Seq
 import mindustry.Vars
 import mindustry.world.Tile
 import org.hjson.JsonArray
@@ -10,7 +9,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.IOException
-import java.net.Socket
+import java.time.LocalTime
 
 object PluginData {
     var uptime = 0L
@@ -25,9 +24,6 @@ object PluginData {
     var banned: ArrayList<Banned> = arrayListOf()
     var status: ArrayList<Pair<String, String>> = arrayListOf()
 
-    var sudoPassword = ""
-
-    var vpnList = Seq<String>()
     var isRankingWorking = false
     var isSurrender = false
 
@@ -35,7 +31,13 @@ object PluginData {
 
     var entityOrder = 0
     var effectLocal = false
-    val clients = Seq<Socket>()
+    var currentMap = ""
+    var voting = false
+
+    var voteCooltime: Int = 0
+    var voterCooltime = HashMap<String, Int>()
+    var lastVoted: LocalTime? = null
+
 
     data class WarpZone(
         val mapName: String,

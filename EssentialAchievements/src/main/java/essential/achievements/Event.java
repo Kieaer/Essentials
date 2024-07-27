@@ -1,13 +1,12 @@
 package essential.achievements;
 
 import arc.Events;
+import arc.util.Timer;
 import essential.core.Bundle;
 import essential.core.DB;
 import mindustry.content.Planets;
 import mindustry.game.EventType;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -17,97 +16,57 @@ import static mindustry.Vars.state;
 public class Event {
     int tick = 0;
 
-    void set(Achievement achievement, DB.PlayerData data) {
-        if (has(achievement, data)) {
-            data.getStatus().put("achievement." + achievement.toString().toLowerCase(), LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            Events.fire(new CustomEvents.AchievementClear(achievement, data));
-        }
-    }
-
-    boolean has(Achievement achievement, DB.PlayerData data) {
-        return !data.getStatus().containsKey("achievement." + achievement.toString().toLowerCase());
-    }
-
-    void start() {
+    @essential.core.annotation.Event
+    void blockBuildEnd() {
         Events.on(EventType.BlockBuildEndEvent.class, e -> {
             if (e.unit.isPlayer()) {
                 DB.PlayerData data = findPlayerByUuid(e.unit.getPlayer().uuid());
                 if (data != null) {
-                    if (data.getBlockPlaceCount() >= 100000) {
-                        set(Achievement.Builder, data);
+                    if (Achievement.Builder.success(data)) {
+                        Achievement.Builder.set(data);
                     }
-                    if (data.getBlockBreakCount() >= 100000) {
-                        set(Achievement.Deconstructor, data);
+                    if (Achievement.Deconstructor.success(data)) {
+                        Achievement.Deconstructor.set(data);
                     }
                 }
             }
         });
+    }
 
+    @essential.core.annotation.Event
+    void gameover() {
         Events.on(EventType.GameOverEvent.class, e -> {
             database.getPlayers().forEach(data -> {
-                if (data.getPvpVictoriesCount() >= 100) {
-                    set(Achievement.Eliminator, data);
+                if (Achievement.Eliminator.success(data)) {
+                    Achievement.Eliminator.set(data);
                 }
 
-                if (has(Achievement.Lord, data)) {
-                    Integer victories = data.getPvpVictoriesCount();
-                    Integer defeats = data.getPvpDefeatCount();
-                    double percent = (victories + defeats) / 100.0;
-                    if ((victories + defeats) >= 50 && percent >= 70.0) {
-                        set(Achievement.Lord, data);
-                    }
+                if (Achievement.Lord.success(data)) {
+                    Achievement.Lord.set(data);
                 }
 
-                if (data.getAttackModeClear() >= 50) {
-                    set(Achievement.Aggressor, data);
+                if (Achievement.Aggressor.success(data)) {
+                    Achievement.Aggressor.set(data);
                 }
             });
         });
+    }
 
+    @essential.core.annotation.Event
+    void wave() {
         Events.on(EventType.WaveEvent.class, e -> {
             database.getPlayers().forEach(data -> {
-                data.getStatus().put("record.wave", String.valueOf(Integer.parseInt(data.getStatus().get("record.wave")) + 1));
-                if (Integer.parseInt(data.getStatus().get("record.wave")) >= 10000) {
-                    set(Achievement.Defender, data);
+                int value = Integer.parseInt(data.getStatus().getOrDefault("record.wave", "0")) + 1;
+                data.getStatus().put("record.wave", Integer.toString(value));
+                if (Achievement.Defender.success(data)) {
+                    Achievement.Defender.set(data);
                 }
             });
         });
+    }
 
-        Events.on(EventType.Trigger.class, e -> {
-            tick++;
-            if (tick >= 60) {
-                database.getPlayers().forEach(data -> {
-                    if (state.rules.planet == Planets.serpulo) {
-                        data.getStatus().put("record.time.serpulo", String.valueOf(Integer.parseInt(data.getStatus().get("record.time.serpulo")) + 1));
-                        if (Integer.parseInt(data.getStatus().get("record.time.serpulo")) >= 360000) {
-                            set(Achievement.Serpulo, data);
-                        }
-                    } else if (state.rules.planet == Planets.erekir) {
-                        data.getStatus().put("record.time.erekir", String.valueOf(Integer.parseInt(data.getStatus().get("record.time.erekir")) + 1));
-                        if (Integer.parseInt(data.getStatus().get("record.time.erekir")) >= 360000) {
-                            set(Achievement.Erekir, data);
-                        }
-                    } else if (state.rules.infiniteResources) {
-                        data.getStatus().put("record.time.sandbox", String.valueOf(Integer.parseInt(data.getStatus().get("record.time.sandbox")) + 1));
-                        if (Integer.parseInt(data.getStatus().get("record.time.sandbox")) >= 360000) {
-                            set(Achievement.Creator, data);
-                        }
-                    }
-                    if (data.getTotalPlayTime() >= 360000) {
-                        set(Achievement.TurbidWater, data);
-                    }
-                    if (data.getTotalPlayTime() >= 720000) {
-                        set(Achievement.BlackWater, data);
-                    }
-                    if (data.getTotalPlayTime() >= 1080000) {
-                        set(Achievement.Oil, data);
-                    }
-                });
-            } else {
-                tick = 0;
-            }
-        });
-
+    @essential.core.annotation.Event
+    void achievementClear() {
         Events.on(CustomEvents.AchievementClear.class, e -> {
             Locale locale;
             if (e.playerData.getStatus().containsKey("language")) {
@@ -121,6 +80,34 @@ public class Event {
             e.playerData.send(bundle, "event.achievement.success", e.achievement.toString().toLowerCase());
         });
     }
+
+    @essential.core.annotation.Event
+    void updateSecond() {
+        Timer.schedule(() -> {
+            database.getPlayers().forEach(data -> {
+                if (state.rules.planet == Planets.serpulo) {
+                    int value = Integer.parseInt(data.getStatus().getOrDefault("record.time.serpulo", "0")) + 1;
+                    data.getStatus().put("record.time.serpulo", Integer.toString(value));
+                    if (Achievement.Serpulo.success(data)) {
+                        Achievement.Serpulo.set(data);
+                    }
+                } else if (state.rules.planet == Planets.erekir) {
+                    int value = Integer.parseInt(data.getStatus().getOrDefault("record.time.erekir", "0")) + 1;
+                    data.getStatus().put("record.time.erekir", Integer.toString(value));
+                    if (Achievement.Erekir.success(data)) {
+                        Achievement.Erekir.set(data);
+                    }
+                } else if (state.rules.infiniteResources) {
+                    int value = Integer.parseInt(data.getStatus().getOrDefault("record.time.sandbox", "0")) + 1;
+                    data.getStatus().put("record.time.sandbox", Integer.toString(value));
+                    if (Achievement.Creator.success(data)) {
+                        Achievement.Creator.set(data);
+                    }
+                }
+            });
+        }, 0, 1);
+    }
+
 
     DB.PlayerData findPlayerByUuid(String uuid) {
         return database.getPlayers().stream().filter( e -> e.getUuid().equals(uuid)).findFirst().orElse(null);

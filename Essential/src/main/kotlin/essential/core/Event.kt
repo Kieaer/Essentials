@@ -24,7 +24,6 @@ import mindustry.content.Planets
 import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.*
-import mindustry.maps.Map
 import mindustry.net.Administration
 import mindustry.ui.Menus
 import mindustry.world.Tile
@@ -46,7 +45,6 @@ import java.nio.file.StandardWatchEventKinds
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.regex.Pattern
@@ -59,29 +57,12 @@ object Event {
     var originalBlockMultiplier = 1f
     var originalUnitMultiplier = 1f
 
-    var voting = false
-    var voteType: String? = null
-    var voteTarget: Playerc? = null
-    var voteTargetUUID: String? = null
-    var voteReason: String? = null
-    var voteMap: Map? = null
-    var voteWave: Int? = null
-    var voteStarter: DB.PlayerData? = null
-    var isPvP: Boolean = false
-    var voteTeam: Team = Vars.state.rules.defaultTeam
-    var voteCooltime: Int = 0
-    var voted = ArrayList<String>()
-    var lastVoted: LocalTime? = LocalTime.now()
-    var isAdminVote = false
-    var isCanceled = false
 
     var worldHistory = ArrayList<TileLog>()
-    var voterCooltime = HashMap<String, Int>()
 
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     var blockExp = HashMap<String, Int>()
     var dosBlacklist : List<String> = listOf()
-    var count = 60
     var pvpSpecters = ArrayList<String>()
     var pvpPlayer = HashMap<String, Team>()
     var isGlobalMute = false
@@ -268,6 +249,7 @@ object Event {
                     } else {
                         Bundle(it.player.locale())
                     }
+                    // todo 이거 파일 없음
                     val handle = Core.files.internal("bundles/bundle")
                     val coreBundle = I18NBundle.createBundle(handle, Locale(data.languageTag))
 
@@ -442,28 +424,12 @@ object Event {
                     val data = findPlayerData(player.uuid())
                     if (data != null) {
                         if (!data.mute) {
-                            val isAdmin = Permission.check(data, "vote.pass")
-                            if (voting && message.equals("y", true) && !voted.contains(player.uuid())) {
-                                if (voteStarter != data) {
-                                    if (Vars.state.rules.pvp && voteTeam == player.team()) {
-                                        voted.add(player.uuid())
-                                    } else if (!Vars.state.rules.pvp) {
-                                        voted.add(player.uuid())
-                                    }
-                                } else if (isAdmin) {
-                                    isAdminVote = true
-                                }
-                                data.send("command.vote.voted")
-                            } else if (voting && message.equals("n", true) && isAdmin) {
-                                isCanceled = true
-                            }
-
                             if (isGlobalMute && Permission.check(data, "chat.admin")) {
                                 message
-                            } else if (!isGlobalMute && !(voting && message.contains("y", true))) {
-                                message
-                            } else {
+                            } else if (isGlobalMute){
                                 null
+                            } else {
+                                message
                             }
                         } else {
                             message
@@ -516,13 +482,6 @@ object Event {
     @Event
     fun gameover() {
         Events.on(GameOverEvent::class.java, Cons<GameOverEvent> {
-            if (voting) {
-                database.players.forEach { a ->
-                    if (voteTargetUUID != a.uuid) a.player.sendMessage(Bundle(a.languageTag)["command.vote.canceled"])
-                }
-                resetVote()
-            }
-
             if (!Vars.state.rules.infiniteResources) {
                 if (Vars.state.rules.pvp) {
                     for (data in database.players) {
@@ -544,7 +503,6 @@ object Event {
                     earnEXP(it.winner, data.player, data, false)
                 }
             }
-            if (voting) resetVote()
             offlinePlayers.clear()
             worldHistory.clear()
             pvpSpecters.clear()
@@ -797,6 +755,7 @@ object Event {
             PluginData.playtime = 0L
             PluginData.isSurrender = false
             PluginData.isCheated = false
+            PluginData.currentMap = Vars.state.map.name()
             dpsTile = null
             if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
 
@@ -818,8 +777,6 @@ object Event {
                 data.currentControlCount = 0
                 data.currentBuildDeconstructedCount = 0
             }
-
-            resetVote()
         }.also { listener -> eventListeners[WorldLoadEvent::class.java] = listener })
     }
 
@@ -914,7 +871,7 @@ object Event {
                     }
                 }
             }
-        }.also { listener -> essential.core.Event.eventListeners[CustomEvents.ConfigFileModified::class.java] = listener })
+        }.also { listener -> eventListeners[CustomEvents.ConfigFileModified::class.java] = listener })
     }
 
     @JvmStatic
@@ -1108,23 +1065,6 @@ object Event {
         }
     }
 
-    fun resetVote() {
-        voting = false
-        voteType = null
-        voteTarget = null
-        voteTargetUUID = null
-        voteReason = null
-        voteMap = null
-        voteWave = null
-        voteStarter = null
-        isCanceled = false
-        isAdminVote = false
-        isPvP = false
-        voteTeam = Vars.state.rules.defaultTeam
-        voted.clear()
-        count = 60
-    }
-
     private fun addLog(log: TileLog) {
         worldHistory.add(log)
     }
@@ -1158,7 +1098,7 @@ object Event {
         }
     }
 
-    fun updateEffectProcessorBlock(vararg id: Int) {
+    fun updateEffectProcessorBlock() {
         if (conf.feature.level.effect.enabled) {
             val buffer = StringBuilder()
             database.players.forEach { playerData ->
@@ -1167,7 +1107,7 @@ object Event {
                 //                        )
                 val uuid = playerData.uuid
                 val config = """
-                    fetch player $uuid @${playerData.player.team().name} ${id.get(0)} @conveyor
+                    fetch player $uuid @${playerData.player.team().name} ${playerData.player.team().data().players.indexOf(playerData.player)} @conveyor
                     sensor ${uuid}_x $uuid @x
                     sensor ${uuid}_y $uuid @y
                 """.trimIndent()
@@ -1436,7 +1376,7 @@ object Event {
             buffer.appendLine("wait 0.05")
             for (it in Vars.world.tiles) {
                 if (it.block() !is LogicBlock || effectBlock == null || effectBlock == it) {
-                    Call.constructFinish(it, Blocks.worldProcessor, Nulls.unit, 0, Vars.state.rules.defaultTeam, LogicBlock.compress(buffer.toString(), Seq()))
+                    Call.constructFinish(it, Blocks.worldProcessor, Nulls.unit, 0, Team.sharded, LogicBlock.compress(buffer.toString(), Seq()))
                     effectBlock = it
                     break
                 }
