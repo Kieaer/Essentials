@@ -158,7 +158,12 @@ public enum Achievement {
         public int current(DB.PlayerData data) {
             int result;
             try {
-                result = (data.getPvpVictoriesCount() + data.getPvpDefeatCount()) / (data.getPvpVictoriesCount() + data.getPvpDefeatCount()) * 100;
+                int total = data.getPvpVictoriesCount() + data.getPvpDefeatCount();
+                if (total > 50) {
+                    result = 0;
+                } else {
+                    result = data.getPvpVictoriesCount() * 100 / total;
+                }
             } catch (ArithmeticException e) {
                 result = 0;
             }

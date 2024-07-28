@@ -42,6 +42,7 @@ admin:
     - weather
 user:
   permissions:
+    - achievements
     - changepw
     - discord
     - effect

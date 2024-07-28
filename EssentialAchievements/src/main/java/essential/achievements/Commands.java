@@ -24,7 +24,7 @@ public class Commands {
 
         for (Achievement ach : Achievement.values()) {
             String name = ach.toString().toLowerCase();
-            temp.add("[green]" + bundle.getString("achievement." + name) + "[] (" + ach.current(playerData) + " / " + ach.value() + ")\n");
+            temp.add("[green]" + bundle.getString("achievement." + name) + "[orange] (" + ach.current(playerData) + " / " + ach.value() + ")[][]\n");
             temp.add("[yellow]" + bundle.getString("description." + name) + "\n");
             temp.add("\n");
         }
@@ -43,7 +43,7 @@ public class Commands {
         result.append("[orange]-- ").append(bundle.getString("command.page"))
                 .append("[lightgray] ").append(page + 1)
                 .append("[gray]/[lightgray]").append(pages)
-                .append("[orange] --\n");
+                .append("[orange] --[white]\n");
 
         for (int a = per * page; a < Math.min(per * (page + 1), temp.size()); a++) {
             result.append(temp.get(a));

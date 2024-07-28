@@ -7,7 +7,6 @@ import arc.files.Fi
 import arc.func.Cons
 import arc.graphics.Color
 import arc.struct.Seq
-import arc.util.I18NBundle
 import arc.util.Log
 import arc.util.Strings
 import com.charleskorn.kaml.Yaml
@@ -250,8 +249,7 @@ object Event {
                         Bundle(it.player.locale())
                     }
                     // todo 이거 파일 없음
-                    val handle = Core.files.internal("bundles/bundle")
-                    val coreBundle = I18NBundle.createBundle(handle, Locale(data.languageTag))
+                    val coreBundle = Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.languageTag)))
 
                     buf.forEach { two ->
                         val action = when (two.action) {
@@ -267,29 +265,25 @@ object Event {
 
                         if (two.action == "message") {
                             str.append(
-                                bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle.get(
-                                    "block.${two.tile}.name"
-                                ), two.value as String]
+                                bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], two.value as String]
                             ).append("\n")
                         } else {
                             str.append(
-                                bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle.get(
-                                    "block.${two.tile}.name"
-                                ), action]
+                                bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], action]
                             ).append("\n")
                         }
                     }
 
                     Call.effect(it.player.con(), Fx.shockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
-                    val str2 = StringBuilder()
                     if (str.toString().lines().size > 10) {
+                        str.append(bundle["event.log.position", it.tile.x, it.tile.y] + "\n")
                         val lines: List<String> = str.toString().split("\n").reversed()
                         for (i in 0 until 10) {
-                            str2.append(lines[i]).append("\n")
+                            str.append(lines[i]).append("\n")
                         }
-                        it.player.sendMessage(str2.toString())
+                        it.player.sendMessage(str.toString().trim())
                     } else {
-                        it.player.sendMessage(str.toString())
+                        it.player.sendMessage(bundle["event.log.position", it.tile.x, it.tile.y] + "\n" + str.toString().trim())
                     }
                 }
 

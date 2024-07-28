@@ -627,7 +627,7 @@ class Commands {
         val ban = "info.button.ban"
         val cancel = "info.button.cancel"
 
-        if (arg.isNotEmpty() && Permission.check(playerData, "info.admin")) {
+        if (arg.isNotEmpty() && Permission.check(playerData, "info.other")) {
             val target = findPlayers(arg[0])
             var targetData: DB.PlayerData? = null
             var isBanned = false
@@ -908,12 +908,16 @@ class Commands {
             player.unit().kill()
             playerData.send("command.kill.self")
         } else {
-            val other = findPlayers(arg[0])
-            if (other == null) {
-                playerData.err(PLAYER_NOT_FOUND)
+            if (Permission.check(playerData, "kill.other")) {
+                val other = findPlayers(arg[0])
+                if (other == null) {
+                    playerData.err(PLAYER_NOT_FOUND)
+                } else {
+                    other.unit().kill()
+                    playerData.send("command.kill.done", other.plainName())
+                }
             } else {
-                other.unit().kill()
-                playerData.send("command.kill.done", other.plainName())
+                playerData.send("command.permission.false")
             }
         }
     }
@@ -1143,7 +1147,7 @@ class Commands {
                             [stat][#404040][]
                             [stat][#404040][]
                             [stat][#404040][][#404040]
-                            """, """
+                            """.trimIndent(), """
                             [stat][#404040][]
                             [stat][#404040]
                             [stat][#404040][]
@@ -1152,7 +1156,7 @@ class Commands {
                             [stat][#404040][]
                             [stat][#404040]
                             [stat][#404040][][#404040][]
-                            """, """
+                            """.trimIndent(), """
                             [stat][#404040][][#404040]
                             [stat][#404040][]
                             [#404040][stat]
@@ -1161,7 +1165,7 @@ class Commands {
                             [stat][#404040]
                             [stat][#404040][]
                             [#404040][stat][][stat]
-                            """, """
+                            """.trimIndent(), """
                             [stat][#404040][][#404040][]
                             [#404040][stat]
                             [stat][#404040][]
@@ -1170,7 +1174,7 @@ class Commands {
                             [stat][#404040][]
                             [#404040][stat]
                             [stat][#404040][]
-                            """, """
+                            """.trimIndent(), """
                             [#404040][stat][][stat]
                             [stat][#404040][]
                             [stat][#404040][]
@@ -1179,7 +1183,7 @@ class Commands {
                             [#404040][stat]
                             [stat][#404040][]
                             [stat][#404040][]
-                            """
+                            """.trimIndent()
                 )
                 val loop = arrayOf(
                     """
@@ -1191,7 +1195,7 @@ class Commands {
                             [stat][#404040][]
                             [stat][#404040][]
                             [#6B6B6B][stat][#404040][][#6B6B6B]
-                            """, """
+                            """.trimIndent(), """
                             [#6B6B6B][stat][#6B6B6B]
                             [#6B6B6B][stat][#404040][][#6B6B6B]
                             [stat][#404040][]
@@ -1200,7 +1204,7 @@ class Commands {
                             [stat][#404040][]
                             [#6B6B6B][stat][#404040][][#6B6B6B]
                             [#6B6B6B][stat][#6B6B6B]
-                            """, """
+                            """.trimIndent(), """
                             [#6B6B6B][#585858][stat][][#6B6B6B]
                             [#6B6B6B][#828282][stat][#404040][][][#6B6B6B]
                             [#585858][stat][#404040][][#585858]
@@ -1209,7 +1213,7 @@ class Commands {
                             [#585858][stat][#404040][][#585858]
                             [#6B6B6B][stat][#404040][][#828282][#6B6B6B]
                             [#6B6B6B][#585858][stat][][#6B6B6B]
-                            """, """
+                            """.trimIndent(), """
                             [#6B6B6B][#585858][#6B6B6B]
                             [#6B6B6B][#828282][stat][][#6B6B6B]
                             [#585858][#6B6B6B][stat][#404040][][#828282][#585858]
@@ -1218,7 +1222,7 @@ class Commands {
                             [#585858][#6B6B6B][stat][#404040][][#828282][#585858]
                             [#6B6B6B][stat][][#828282][#6B6B6B]
                             [#6B6B6B][#585858][#6B6B6B]
-                            """, """
+                            """.trimIndent(), """
                             [#6B6B6B][#585858][#6B6B6B]
                             [#6B6B6B][#828282][#6B6B6B]
                             [#585858][#6B6B6B][stat][][#828282][#585858]
@@ -1227,7 +1231,7 @@ class Commands {
                             [#585858][#6B6B6B][stat][][#828282][#585858]
                             [#6B6B6B][#828282][#6B6B6B]
                             [#6B6B6B][#585858][#6B6B6B]
-                            """, """
+                            """.trimIndent(), """
                             [#6B6B6B][#585858][#6B6B6B]
                             [#6B6B6B][#828282][#6B6B6B]
                             [#585858][#6B6B6B][#828282][#585858]
@@ -1236,7 +1240,7 @@ class Commands {
                             [#585858][#6B6B6B][#828282][#585858]
                             [#6B6B6B][#828282][#6B6B6B]
                             [#6B6B6B][#585858][#6B6B6B]
-                            """, """
+                            """.trimIndent(), """
                             [#6B6B6B][#585858][#6B6B6B]
                             [#6B6B6B][#828282][#6B6B6B]
                             [#585858][#6B6B6B][#828282][#585858]
@@ -1245,13 +1249,13 @@ class Commands {
                             [#585858][#6B6B6B][#828282][#585858]
                             [#6B6B6B][#828282][#6B6B6B]
                             [#6B6B6B][#585858][#6B6B6B]
-                            """
+                            """.trimIndent()
                 )
                 if (playerData.status.containsKey("router")) {
                     playerData.status.remove("router")
                 } else {
                     // todo thread 개선
-                    Thread {
+                    Main.daemon.submit {
                         fun change(name: String) {
                             player.name(name)
                             Threads.sleep(500)
@@ -1271,7 +1275,7 @@ class Commands {
                                 change(it)
                             }
                         }
-                    }.start()
+                    }
                 }
             }
         }
@@ -1854,26 +1858,31 @@ class Commands {
 
     @ClientCommand(
         "spawn",
-        "<unit/block> <name> [amount/rotate]",
+        "<unit/block> <name> [amount(rotate)/block_team] [unit_team]",
         "Spawn units or block at the player's current location."
     )
     fun spawn(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         val type = arg[0]
         val name = arg[1]
-        val parameter = if (arg.size == 3) arg[2].toIntOrNull() else 1
+        val parameter = if (arg.size == 3) {
+            arg[2].toIntOrNull() ?: selectTeam(arg[2])
+        } else {
+            1
+        }
+        val team = if (arg.size == 4) selectTeam(arg[3]) else playerData.player.team()
         val spread = (Vars.tilesize * 1.5).toFloat()
 
         when {
             type.equals("unit", true) -> {
                 val unit = Vars.content.units().find { unitType: UnitType -> unitType.name == name }
                 if (unit != null) {
-                    if (parameter != null) {
+                    if (parameter is Int) {
                         if (!unit.hidden) {
                             unit.useUnitCap = false
                             PluginData.isCheated = true
                             for (a in 1..parameter) {
                                 Tmp.v1.rnd(spread)
-                                unit.spawn(player.team(), player.x + Tmp.v1.x, player.y + Tmp.v1.y)
+                                unit.spawn(team, player.x + Tmp.v1.x, player.y + Tmp.v1.y)
                             }
                         } else {
                             playerData.err("command.spawn.unit.invalid")
@@ -1893,8 +1902,8 @@ class Commands {
                         player.tileOn(),
                         Vars.content.blocks().find { a -> a.name.equals(name, true) },
                         player.unit(),
-                        parameter?.toByte() ?: 0,
-                        player.team(),
+                        0,
+                        team,
                         null
                     )
                 } else {

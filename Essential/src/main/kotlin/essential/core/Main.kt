@@ -215,13 +215,7 @@ class Main : Plugin() {
                         if (annotation.name == "js") {
                             Call.kick(player.con(), Bundle(player.locale())["command.js.no.permission"])
                         } else {
-                            player.sendMessage(Vars.netServer.invalidHandler.handle(player.self(),
-                                CommandHandler.CommandResponse(
-                                    CommandHandler.ResponseType.unknownCommand,
-                                    null as CommandHandler.Command?,
-                                    annotation.name
-                                ))
-                            )
+                            player.sendMessage(bundle["command.permission.false"])
                         }
                     }
                 }
