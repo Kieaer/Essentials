@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "1.9.20-RC2"
+    kotlin("jvm") version "1.9.22"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
@@ -80,7 +80,6 @@ tasks.jar {
     }
 
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-    dependsOn("shadowJar")
 
     manifest {
         attributes["Main-Class"] = "essentials.core.Main"
@@ -88,6 +87,8 @@ tasks.jar {
 }
 
 tasks.shadowJar {
+    dependsOn("jar")
+
     minimize {
         exclude(dependency("org.jetbrains.exposed:.*:.*"))
         exclude(dependency("org.slf4j:slf4j-api:.*"))

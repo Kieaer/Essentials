@@ -10,8 +10,6 @@ import mindustry.gen.Playerc
 import org.hjson.JsonObject
 import org.hjson.Stringify
 import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.javatime.date
-import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
@@ -22,8 +20,10 @@ import java.net.URL
 import java.net.URLClassLoader
 import java.sql.Driver
 import java.sql.DriverManager
+import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 
@@ -126,6 +126,22 @@ class DB {
         }
     }
 
+    fun upgrade() {
+        try {
+            DriverManager.getConnection("jdbc:${conf.plugin.database.url}", conf.plugin.database.username, conf.plugin.database.password).use { conn ->
+                conn.createStatement().use {
+                    it.executeQuery("SELECT version FROM db").use { rs ->
+                        if (rs.next() && rs.getInt(1) < PluginData.databaseVersion) {
+                            it.executeUpdate("UPDATE db SET version = ${PluginData.databaseVersion}")
+                        }
+                    }
+                }
+            }
+        } catch (e: SQLException) {
+            e.printStackTrace()
+        }
+    }
+
     object Data : Table("data") {
         val data = text("data")
     }
@@ -170,8 +186,8 @@ class DB {
         val duplicateName = text("duplicateName").nullable()
         val tracking = bool("tracking")
         val joinStacks = integer("joinStacks")
-        val lastLoginDate = date("lastLoginDate").nullable()
-        val lastLeaveDate = datetime("lastLeaveDate").nullable()
+        val lastLoginDate = text("lastLoginDate").nullable()
+        val lastLeaveDate = text("lastLeaveDate").nullable()
         val showLevelEffects = bool("showLevelEffects")
         val currentPlayTime = long("currentPlayTime")
         val isConnected = bool("isConnected")
@@ -377,9 +393,9 @@ class DB {
             data.tracking = it[Player.tracking]
             data.joinStacks = it[Player.joinStacks]
             data.lastLoginDate =
-                if (it[Player.lastLoginDate] == null) null else it[Player.lastLoginDate]
+                if (it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate], DateTimeFormatter.ISO_LOCAL_DATE)
             data.lastLeaveDate =
-                if (it[Player.lastLeaveDate] == null) null else it[Player.lastLeaveDate]
+                if (it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate], DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             data.showLevelEffects = it[Player.showLevelEffects]
             data.currentPlayTime = it[Player.currentPlayTime]
             data.isConnected = it[Player.isConnected]
@@ -441,8 +457,8 @@ class DB {
                 data.duplicateName = it[Player.duplicateName]
                 data.tracking = it[Player.tracking]
                 data.joinStacks = it[Player.joinStacks]
-                data.lastLoginDate = if (it[Player.lastLoginDate] == null) null else it[Player.lastLoginDate]
-                data.lastLeaveDate = if (it[Player.lastLeaveDate] == null) null else it[Player.lastLeaveDate]
+                data.lastLoginDate = if (it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate], DateTimeFormatter.ISO_LOCAL_DATE)
+                data.lastLeaveDate = if (it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate], DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                 data.showLevelEffects = it[Player.showLevelEffects]
                 data.currentPlayTime = it[Player.currentPlayTime]
                 data.isConnected = it[Player.isConnected]
@@ -530,8 +546,8 @@ class DB {
                 it[duplicateName] = data.duplicateName
                 it[tracking] = data.tracking
                 it[joinStacks] = data.joinStacks
-                it[lastLoginDate] = if (data.lastLoginDate == null) null else data.lastLoginDate
-                it[lastLeaveDate] = if (data.lastLeaveDate == null) null else data.lastLeaveDate
+                it[lastLoginDate] = if (data.lastLoginDate == null) null else data.lastLoginDate!!.format(DateTimeFormatter.ISO_LOCAL_DATE)
+                it[lastLeaveDate] = if (data.lastLeaveDate == null) null else data.lastLeaveDate!!.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                 it[showLevelEffects] = data.showLevelEffects
                 it[currentPlayTime] = data.currentPlayTime
                 it[isConnected] = data.isConnected
@@ -589,8 +605,8 @@ class DB {
                 data.duplicateName = this[Player.duplicateName]
                 data.tracking = this[Player.tracking]
                 data.joinStacks = this[Player.joinStacks]
-                data.lastLoginDate = if (data.lastLoginDate == null) null else this[Player.lastLoginDate]
-                data.lastLeaveDate = if (data.lastLeaveDate == null) null else this[Player.lastLeaveDate]
+                data.lastLoginDate = if (data.lastLoginDate == null) null else LocalDate.parse(this[Player.lastLoginDate], DateTimeFormatter.ISO_LOCAL_DATE)
+                data.lastLeaveDate = if (data.lastLeaveDate == null) null else LocalDateTime.parse(this[Player.lastLeaveDate], DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                 data.showLevelEffects = this[Player.showLevelEffects]
                 data.currentPlayTime = this[Player.currentPlayTime]
                 data.isConnected = this[Player.isConnected]

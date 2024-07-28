@@ -2,7 +2,7 @@ plugins {
     id "java"
     id "com.github.johnrengelman.shadow" version "8.1.1"
     id "com.github.node-gradle.node" version "5.0.0"
-    id 'org.jetbrains.kotlin.jvm' version '1.9.20-RC2'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.22'
 
 }
 
@@ -48,8 +48,6 @@ jar{
     from(rootDir){
         include "plugin.json"
     }
-
-    dependsOn shadowJar
 }
 
 tasks.register('nodeBuild', NpmTask) {
@@ -62,6 +60,7 @@ tasks.register('nodeBuild', NpmTask) {
 tasks.register('nodeInstall', NpmTask) {
     description = "node.js 복사"
     group = JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME
+    workingDir = file("src/www")
     args = ['install']
 }
 
@@ -87,17 +86,13 @@ tasks.register('web') {
     }
 }
 
-
-
 shadowJar {
+    dependsOn shadowJar
     minimize()
 }
 
-configurations.all {
+configurations.configureEach {
     resolutionStrategy.eachDependency { details ->
         if(details.requested.group == 'com.github.Anuken.Arc') details.useVersion "$mindustryVersion"
     }
-}
-kotlin {
-    jvmToolchain(17)
 }

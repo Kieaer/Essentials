@@ -27,15 +27,13 @@ jar{
     }
 
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
-
     from(rootDir){
         include "plugin.json"
     }
-
-    dependsOn shadowJar
 }
 
 shadowJar {
+    dependsOn shadowJar
     minimize()
 }
 

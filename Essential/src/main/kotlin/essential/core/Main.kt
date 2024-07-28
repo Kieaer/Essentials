@@ -101,6 +101,7 @@ class Main : Plugin() {
         database.load()
         database.connect()
         database.create()
+        database.upgrade()
 
         // 데이터 설정
         PluginData.load()

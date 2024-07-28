@@ -16,6 +16,7 @@ object PluginData {
     var uptime = 0L
     var playtime = 0L
     var pluginVersion = ""
+    var databaseVersion = 3
 
     var warpZones: ArrayList<WarpZone> = arrayListOf()
     var warpBlocks: ArrayList<WarpBlock> = arrayListOf()
@@ -27,7 +28,6 @@ object PluginData {
 
     var isRankingWorking = false
     var isSurrender = false
-
     var isCheated = false
 
     var entityOrder = 0
@@ -38,7 +38,6 @@ object PluginData {
     var voteCooltime: Int = 0
     var voterCooltime = HashMap<String, Int>()
     var lastVoted: LocalTime? = null
-
 
     data class WarpZone(
         val mapName: String,
@@ -194,7 +193,12 @@ object PluginData {
                     status = arrayListOf()
 
                     DB.Data.selectAll().first().run {
-                        val data = JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
+                        // upgrade
+                        val data = try {
+                            JsonObject.readJSON(this[DB.Data.data]).asObject()
+                        } catch (e: Exception) {
+                            JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data].toString()))).asObject()
+                        }
 
                         data["warpZones"].asArray().forEach {
                             val obj = it.asObject()
