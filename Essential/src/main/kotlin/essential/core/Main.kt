@@ -81,6 +81,9 @@ class Main : Plugin() {
         if (!root.child("config/config.yaml").exists()) {
             root.child("config/config.yaml").write(this.javaClass.getResourceAsStream("/config.yaml"), false)
         }
+        if (root.child("log/old").exists()) {
+            root.child("log/old").mkdirs()
+        }
 
         conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())
         bundle.locale = Locale(conf.plugin.lang)

@@ -183,7 +183,6 @@ class DB {
         val strict = bool("strict")
     }
 
-
     class PlayerData {
         var name: String = "none"
         var uuid: String = "none"

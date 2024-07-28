@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.io.IOException
 import java.time.LocalTime
+import java.util.*
 
 object PluginData {
     var uptime = 0L
@@ -193,7 +194,7 @@ object PluginData {
                     status = arrayListOf()
 
                     DB.Data.selectAll().first().run {
-                        val data = JsonObject.readJSON(this[DB.Data.data]).asObject()
+                        val data = JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data]))).asObject()
 
                         data["warpZones"].asArray().forEach {
                             val obj = it.asObject()

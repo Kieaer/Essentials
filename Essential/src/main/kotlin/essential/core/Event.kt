@@ -874,6 +874,13 @@ object Event {
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         val time = DateTimeFormatter.ofPattern("YYYY-MM-dd HH_mm_ss").format(LocalDateTime.now())
 
+        if (!Main.root.child("log/old/$type").exists()) {
+            Main.root.child("log/old/$type").mkdirs()
+        }
+        if (!Main.root.child("log/$type.log").exists()) {
+            Main.root.child("log/$type.log").writeString("")
+        }
+
         if (type != LogType.Report) {
             val new = Paths.get(root.child("log/$type.log").path())
             val old = Paths.get(root.child("log/old/$type/$time.log").path())
@@ -1015,7 +1022,7 @@ object Event {
 
         init {
             if (!file.exists()) {
-                file.createNewFile()
+                file.writeText("")
             }
             raf = RandomAccessFile(file, "rw")
         }

@@ -384,10 +384,12 @@ class Trigger {
 
                                     var alive = false
                                     var alivePlayer = 0
+                                    var currentMap = ""
                                     serverInfo.forEach {
                                         if ((it.address == value.ip || it.address == InetAddress.getByName(value.ip).hostAddress) && it.port == value.port) {
                                             alive = true
                                             alivePlayer = it.players
+                                            currentMap = it.mapname
                                         }
                                     }
 
@@ -396,7 +398,7 @@ class Trigger {
                                         Groups.player.forEach { a ->
                                             memory.add(
                                                 a to Triple(
-                                                    "[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
+                                                    "$currentMap\n[white][yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
                                                     x,
                                                     y
                                                 )
