@@ -28,7 +28,6 @@ public class Config {
         public boolean enabled;
         private String authType;
         public String discordURL;
-        public Boolean strict;
 
         public AuthType getAuthType() {
             return AuthType.valueOf(authType.substring(0, 1).toUpperCase() + authType.substring(1));

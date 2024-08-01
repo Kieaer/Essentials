@@ -38,7 +38,7 @@ public class Main extends Plugin {
             Log.warn(bundle.get("config.invalid.url"));
         }
 
-        Log.info(bundle.get("event.plugin.loaded"));
+        Log.debug(bundle.get("event.plugin.loaded"));
     }
 
     @Override
@@ -79,7 +79,7 @@ public class Main extends Plugin {
         for (Method method : methods) {
             ClientCommand annotation = method.getAnnotation(ClientCommand.class);
             if (annotation != null) {
-                handler.<Player>register(annotation.name(), annotation.parameter(), (args, player) -> {
+                handler.<Player>register(annotation.name(), annotation.parameter(), annotation.description(), (args, player) -> {
                     DB.PlayerData data = findPlayerByUuid(player.uuid());
                     if (data == null) {
                         data = new DB.PlayerData();

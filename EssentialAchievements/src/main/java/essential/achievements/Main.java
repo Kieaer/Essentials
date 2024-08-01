@@ -45,7 +45,7 @@ public class Main extends Plugin {
             }
         }
 
-        Log.info(bundle.get("event.plugin.loaded"));
+        Log.debug(bundle.get("event.plugin.loaded"));
     }
 
     @Override

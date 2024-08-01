@@ -9,13 +9,12 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import essential.core.Main.Companion.database
-import mindustry.Vars
 import org.hjson.*
 import java.util.*
 
 object Permission {
     private var main: Map<String, RoleConfig> = mapOf()
-    private var user: Map<String, UserPermissionConfig> = mapOf()
+    private var user: Map<String, PermissionData> = mapOf()
     var default = "user"
     private val mainFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.yaml")
     private val userFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.yaml")
@@ -32,6 +31,7 @@ object Permission {
         # admin:${bundle["permission.usage.admin"]}
         # isAlert:${bundle["permission.usage.isAlert"]}
         # alertMessage:${bundle["permission.usage.alertMessage"]}
+        # chatFormat:${bundle["permission.usage.chatformat"]}
         
         #${bundle["permission.example"]}
         # uuid123:
@@ -42,8 +42,8 @@ object Permission {
         #     admin: true
         #     isAlert: true
         #     alertMessage: Player asdfg has entered the server!
-        exampleuuid:
-            name: it is test name
+        #     chatFormat: [admin] %1 > %2
+        
         """.trimIndent()
 
     init {
@@ -66,25 +66,23 @@ object Permission {
         user = mapper.readValue(userFile.reader())
         main = mapper.readValue(mainFile.reader())
 
-        main.forEach { (name, roleConfig) ->
-            roleConfig.let {
-                if (default == "user" && roleConfig.default == true) {
-                    default = name
-                }
+        for ((name, roleConfig) in main) {
+            if (default == "user" && roleConfig.default == true) {
+                default = name
+            }
 
-                var inheritance: String? = roleConfig.inheritance
-                while (inheritance != null) {
-                    val inheritedRoleConfig = main[inheritance]
-                    inheritedRoleConfig?.let { inheritedRole ->
-                        for (permission in inheritedRole.permissions) {
-                            if (!permission.contains("*") && !roleConfig.permissions.contains(permission)) {
-                                roleConfig.permissions.add(permission)
-                            }
+            var inheritance: String? = roleConfig.inheritance
+            while (inheritance != null) {
+                val inheritedRoleConfig = main[inheritance]
+                inheritedRoleConfig?.let { inheritedRole ->
+                    for (permission in inheritedRole.permission) {
+                        if (!permission.contains("all", true) && !roleConfig.permission.contains(permission)) {
+                            roleConfig.permission.add(permission)
                         }
-                        inheritance = inheritedRole.inheritance
-                    } ?: run {
-                        inheritance = null
                     }
+                    inheritance = inheritedRole.inheritance
+                } ?: run {
+                    inheritance = null
                 }
             }
         }
@@ -93,20 +91,20 @@ object Permission {
     }
 
     fun apply() {
-        user.forEach { (uuid, config) ->
+        for ((uuid, permissionData) in user) {
             val c = database.players.find { e -> e.uuid == uuid }
             if (c == null) {
                 val data = database[uuid]
-                if (data != null && config.group != null) {
-                    data.permission = config.group
-                    data.name = config.name ?: data.name
+                if (data != null) {
+                    data.permission = permissionData.group
+                    data.name = permissionData.name
                     database.queue(data)
                 }
             } else {
-                c.permission = config.group ?: default
-                c.name = config.name ?: Vars.netServer.admins.findByName(c.player.uuid()).first().lastName
-                c.player.admin(config.admin ?: false)
-                c.player.name(config.name ?: Vars.netServer.admins.findByName(c.player.uuid()).first().lastName)
+                c.permission = permissionData.group
+                c.name = permissionData.name
+                c.player.name(permissionData.name)
+                c.player.admin(permissionData.admin)
                 database.queue(c)
             }
         }
@@ -117,12 +115,12 @@ object Permission {
 
         val u = user[data.uuid]
         if (u != null) {
-            result.name = u.name ?: data.player.name()
-            result.group = u.group ?: data.permission
-            result.admin = u.admin ?: false
-            result.isAlert = u.isAlert ?: false
-            result.alertMessage = u.alertMessage ?: ""
-            result.chatFormat = u.chatFormat ?: ""
+            result.name = u.name
+            result.group = u.group
+            result.admin = u.admin
+            result.isAlert = u.isAlert
+            result.alertMessage = u.alertMessage
+            result.chatFormat = u.chatFormat
         } else {
             result.name = data.player.name()
             result.group = data.permission
@@ -138,35 +136,25 @@ object Permission {
     fun check(data: DB.PlayerData, command: String): Boolean {
         val group = main[this[data].group]
         return if (group != null) {
-            group.permissions.contains(command) || group.permissions.contains("*")
+            group.permission.contains(command) || group.permission.contains("all")
         } else {
             false
         }
     }
 
-    class PermissionData {
-        var name = ""
-        var uuid = ""
-        var group = default
-        var admin = false
-        var isAlert = false
-        var alertMessage = ""
-        var chatFormat = ""
-    }
+    data class PermissionData (
+        var name: String = "",
+        var group: String = default,
+        var admin: Boolean = false,
+        var isAlert: Boolean = false,
+        var alertMessage: String = "",
+        var chatFormat: String = ""
+    )
 
-    class RoleConfig {
-        val admin: Boolean? = null
-        val inheritance: String? = null
-        val permissions: MutableList<String> = mutableListOf()
+    data class RoleConfig (
+        val admin: Boolean? = null,
+        val inheritance: String? = null,
+        val permission: MutableList<String> = mutableListOf(),
         val default: Boolean? = null
-    }
-
-    class UserPermissionConfig {
-        val name: String? = null
-        val group: String? = null
-        val admin: Boolean? = null
-        val isAlert: Boolean? = null
-        val alertMessage: String? = null
-        val chatFormat: String? = null
-    }
+    )
 }

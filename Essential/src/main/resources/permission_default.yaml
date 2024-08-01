@@ -1,7 +1,7 @@
 owner:
   admin: true
   permissions:
-    - '*'
+    - all
 admin:
   admin: true
   inheritance: user

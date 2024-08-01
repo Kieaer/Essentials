@@ -1,40 +1,17 @@
 package essential.chat;
 
 public class Config {
-    private StrictConfig strict;
-    private BlacklistConfig blacklist;
-
-    public StrictConfig getStrict() {
-        return strict;
-    }
-
-    public BlacklistConfig getBlacklist() {
-        return blacklist;
-    }
+    public String chatFormat;
+    public StrictConfig strict;
+    public BlacklistConfig blacklist;
 
     static class StrictConfig {
-        private Boolean enabled;
-        private String language;
-
-        public Boolean getEnabled() {
-            return enabled;
-        }
-
-        public String getLanguage() {
-            return language;
-        }
+        public Boolean enabled;
+        public String language;
     }
 
     static class BlacklistConfig {
-        private Boolean enabled;
-        private Boolean regex;
-
-        public Boolean getEnabled() {
-            return enabled;
-        }
-
-        public Boolean getRegex() {
-            return regex;
-        }
+        public Boolean enabled;
+        public Boolean regex;
     }
 }

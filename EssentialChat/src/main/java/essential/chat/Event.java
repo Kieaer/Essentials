@@ -23,7 +23,7 @@ public class Event {
     LanguageDetector detector;
 
     void loadDetector() {
-        String[] configs = conf.getStrict().getLanguage().split(",");
+        String[] configs = conf.strict.language.split(",");
         ArrayList<Language> languages = new ArrayList<>();
         for (String a : configs) {
             languages.add(Language.getByIsoCode639_1(IsoCode639_1.valueOf(a.toUpperCase())));
@@ -33,7 +33,7 @@ public class Event {
     }
 
     void load() {
-        if (conf.getStrict().getEnabled()) {
+        if (conf.strict.enabled) {
             loadDetector();
         }
 
@@ -43,7 +43,7 @@ public class Event {
             @Override
             public String filter(Player player, String message) {
                 Bundle bundle = new Bundle(player.locale);
-                if (conf.getStrict().getEnabled()) {
+                if (conf.strict.enabled) {
                     Language e = detector.detectLanguageOf(message);
 
                     if (e == Language.UNKNOWN && !specificTextRegex.matcher(message.substring(0, 1)).matches() && !(PluginData.INSTANCE.getVoting() && message.equalsIgnoreCase("y"))) {
@@ -52,10 +52,10 @@ public class Event {
                     }
                 }
 
-                if (conf.getBlacklist().getEnabled()) {
+                if (conf.blacklist.enabled) {
                     String[] file = root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n");
                     for (String text : file) {
-                        if (conf.getBlacklist().getRegex()) {
+                        if (conf.blacklist.regex) {
                             if (Pattern.compile(text).matcher(message).find()) {
                                 player.sendMessage(bundle.get("event.chat.blacklisted"));
                                 return null;
@@ -84,7 +84,7 @@ public class Event {
                             return defaultFormat;
                         } else {
                             return chatFormat
-                                    .replace("%1", "[${player.color}]${data.name}")
+                                    .replace("%1", player.coloredName())
                                     .replace("%2", message);
                         }
                     } else {

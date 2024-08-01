@@ -16,6 +16,7 @@ import mindustry.mod.Plugin;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -94,7 +95,21 @@ public class Main extends Plugin {
         // test
         new DB().load();
 
-        Log.info(bundle.get("event.plugin.loaded"));
+        // 이벤트 실행
+        Event event = new Event();
+        Method[] methods = event.getClass().getDeclaredMethods();
+        for (Method method : methods) {
+            essential.core.annotation.Event annotation = method.getAnnotation(essential.core.annotation.Event.class);
+            if (annotation != null) {
+                try {
+                    method.invoke(event);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        Log.debug(bundle.get("event.plugin.loaded"));
     }
 
     @Override
@@ -135,7 +150,7 @@ public class Main extends Plugin {
         for (Method method : methods) {
             ClientCommand annotation = method.getAnnotation(ClientCommand.class);
             if (annotation != null) {
-                handler.<Player>register(annotation.name(), annotation.parameter(), (args, player) -> {
+                handler.<Player>register(annotation.name(), annotation.parameter(), annotation.description(), (args, player) -> {
                     essential.core.DB.PlayerData data = findPlayerByUuid(player.uuid());
                     if (data == null) {
                         data = new essential.core.DB.PlayerData();

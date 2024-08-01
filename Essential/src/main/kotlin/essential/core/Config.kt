@@ -112,4 +112,3 @@ data class Config(
         val time: Int
     )
 }
-

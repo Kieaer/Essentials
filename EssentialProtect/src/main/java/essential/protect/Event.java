@@ -2,7 +2,6 @@ package essential.protect;
 
 import arc.Core;
 import arc.Events;
-import arc.net.Server;
 import arc.util.Log;
 import essential.core.Bundle;
 import essential.core.CustomEvents;
@@ -149,7 +148,7 @@ public class Event {
         });
 
         Events.on(CustomEvents.PlayerDataLoaded.class, e -> {
-            if (conf.account.strict) {
+            if (conf.rules.strict) {
                 Groups.player.find( p -> Objects.equals(p.uuid(), e.getPlayerData().getUuid())).name(e.getPlayerData().getName());
             }
         });
@@ -160,7 +159,6 @@ public class Event {
             }
         });
 
-        setNetworkFilter();
         if (conf.rules.blockNewUser) {
             enableBlockNewUser();
         }
@@ -202,11 +200,6 @@ public class Event {
         if (conf.account.getAuthType() == Config.Account.AuthType.Discord && data.getDiscord() == null) {
             data.getPlayer().sendMessage(new Bundle(data.getLanguageTag()).get("event.discord.not.registered"));
         }
-    }
-
-    void setNetworkFilter() {
-        Server.ServerConnectFilter filter = s -> !Vars.netServer.admins.bannedIPs.contains(s);
-        Vars.platform.getNet().setConnectFilter(filter);
     }
 
     void enableBlockNewUser() {

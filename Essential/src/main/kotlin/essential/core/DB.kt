@@ -20,7 +20,6 @@ import java.net.URL
 import java.net.URLClassLoader
 import java.sql.Driver
 import java.sql.DriverManager
-import java.sql.SQLException
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -123,22 +122,6 @@ class DB {
             if (!Player.exists()) SchemaUtils.create(Player)
             if (!Data.exists()) SchemaUtils.create(Data)
             if (!DB.exists()) SchemaUtils.create(DB)
-        }
-    }
-
-    fun upgrade() {
-        try {
-            DriverManager.getConnection("jdbc:${conf.plugin.database.url}", conf.plugin.database.username, conf.plugin.database.password).use { conn ->
-                conn.createStatement().use {
-                    it.executeQuery("SELECT version FROM db").use { rs ->
-                        if (rs.next() && rs.getInt(1) < PluginData.databaseVersion) {
-                            it.executeUpdate("UPDATE db SET version = ${PluginData.databaseVersion}")
-                        }
-                    }
-                }
-            }
-        } catch (e: SQLException) {
-            e.printStackTrace()
         }
     }
 
@@ -298,6 +281,70 @@ class DB {
             } else {
                 Bundle(player.locale())
             }
+        }
+
+        override fun toString(): String {
+            return """PlayerData(name='$name', 
+                    uuid='$uuid', 
+                    languageTag='$languageTag', 
+                    blockPlaceCount=$blockPlaceCount, 
+                    blockBreakCount=$blockBreakCount, 
+                    totalJoinCount=$totalJoinCount, 
+                    totalKickCount=$totalKickCount, 
+                    level=$level, 
+                    exp=$exp, 
+                    firstPlayDate=$firstPlayDate, 
+                    lastLoginTime=$lastLoginTime, 
+                    totalPlayTime=$totalPlayTime, 
+                    attackModeClear=$attackModeClear, 
+                    pvpVictoriesCount=$pvpVictoriesCount, 
+                    pvpDefeatCount=$pvpDefeatCount, 
+                    animatedName=$animatedName, 
+                    permission='$permission', 
+                    mute=$mute, 
+                    accountID='$accountID', 
+                    accountPW='$accountPW', 
+                    status=$status, 
+                    discord=$discord, 
+                    effectLevel=$effectLevel, 
+                    effectColor=$effectColor, 
+                    hideRanking=$hideRanking, 
+                    freeze=$freeze, 
+                    hud=$hud, 
+                    tpp=$tpp, 
+                    tppTeam=$tppTeam, 
+                    log=$log, 
+                    oldUUID=$oldUUID, 
+                    banTime=$banTime, 
+                    duplicateName=$duplicateName, 
+                    tracking=$tracking, 
+                    joinStacks=$joinStacks, 
+                    lastLoginDate=$lastLoginDate, 
+                    lastLeaveDate=$lastLeaveDate, 
+                    showLevelEffects=$showLevelEffects, 
+                    currentPlayTime=$currentPlayTime, 
+                    currentUnitDestroyedCount=$currentUnitDestroyedCount, 
+                    currentBuildDestroyedCount=$currentBuildDestroyedCount, 
+                    currentBuildAttackCount=$currentBuildAttackCount, 
+                    apm=$apm, 
+                    currentControlCount=$currentControlCount, 
+                    currentBuildDeconstructedCount=$currentBuildDeconstructedCount, 
+                    isConnected=$isConnected, 
+                    lastPlayedWorldName=$lastPlayedWorldName, 
+                    lastPlayedWorldMode=$lastPlayedWorldMode, 
+                    lastPlayedWorldId=$lastPlayedWorldId, 
+                    mvpTime=$mvpTime, 
+                    pvpEliminationTeamCount=$pvpEliminationTeamCount, 
+                    strict=$strict, 
+                    expMultiplier=$expMultiplier, 
+                    currentExp=$currentExp, 
+                    afkTime=$afkTime, 
+                    afk=$afk, 
+                    previousMousePosition=$previousMousePosition, 
+                    player=$player, 
+                    entityid=$entityid, 
+                    lastSentMessage='$lastSentMessage')
+                    """.trimIndent()
         }
     }
 

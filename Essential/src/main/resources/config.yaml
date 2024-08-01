@@ -67,6 +67,7 @@ feature:
       autoSkip: 1
   blacklist:
     # Set the word ban function.
+    # It only applies to player name, not chat.
     enabled: false
     # When enabling this function, a blacklist of words is read as a regular expression.
     regex: false
@@ -75,7 +76,10 @@ command:
   skip:
     # Set the maximum wave skip limit by voting. (default: true)
     enabled: true
+    # Sets the maximum skippable wave that can be executed in a single command. (default: 10)
     limit: 10
   rollback:
+    # When enabling this function, it will save separately from the built-in auto-save.
     enabled: true
+    # Set how often to save. (Time unit: minute, default: 10)
     time: 10

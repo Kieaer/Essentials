@@ -75,7 +75,7 @@ class Main : Plugin() {
 
     override fun init() {
         bundle.prefix = "[Essential]"
-        Log.info(bundle["event.plugin.starting"])
+        Log.debug(bundle["event.plugin.starting"])
 
         // 플러그인 설정
         if (!root.child("config/config.yaml").exists()) {
@@ -86,22 +86,20 @@ class Main : Plugin() {
         }
 
         conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())
+        Yaml.default.encodeToString(Config.serializer(), conf)
         bundle.locale = Locale(conf.plugin.lang)
 
         if (!root.child("data").exists()) {
             root.child("data").mkdirs()
         }
 
-        // 채팅 금지어 파일 추가
-        if (!root.child("chat_blacklist.txt").exists()) {
-            root.child("chat_blacklist.txt").writeString("않")
-        }
-
         // DB 설정
         database.load()
         database.connect()
         database.create()
-        database.upgrade()
+
+        // 설정 및 DB 업그레이드
+        Upgrade().upgrade()
 
         // 데이터 설정
         PluginData.load()
@@ -219,7 +217,7 @@ class Main : Plugin() {
                         if (annotation.name == "js") {
                             Call.kick(player.con(), Bundle(player.locale())["command.js.no.permission"])
                         } else {
-                            player.sendMessage(bundle["command.permission.false"])
+                            data.send("command.permission.false")
                         }
                     }
                 }

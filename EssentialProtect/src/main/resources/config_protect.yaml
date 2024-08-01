@@ -23,10 +23,6 @@ account:
   # If you set auth-type to discord, you can enter the discord invite link below to be directed to this discord address.
   discordURL: ""
 
-  # Prevent players from changing their nicknames. (default: false)
-  # This is useful for catching people who change their nicknames frequently and are grieving.
-  strict: false
-
 protect:
   # Ensures the core is never destroyed. (default: false)
   # This is useful in certain game modes or lobby servers.
@@ -53,7 +49,8 @@ rules:
     enabled: false
     length: 4
 
-  # If enable this, the player will continue to use the first nickname. (default: false)
+  # Prevent players from changing their nicknames. (default: false)
+  # This is useful for catching people who change their nicknames frequently and are grieving.
   strict: false
 
   # When attacked by an external program or modded client, you can protect the server and existing users by activating this setting.

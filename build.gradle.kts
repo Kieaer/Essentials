@@ -32,11 +32,6 @@ tasks.register("shadowJar") {
     }
 }
 
-tasks.register("clear") {
+tasks.clean {
     dependsOn(subprojects.map { it.tasks.named("clean") })
-
-    subprojects.forEach { subproject ->
-        val rootFile = rootProject.layout.buildDirectory.file("${subproject.name}.jar").get().asFile.toPath()
-        delete(rootFile)
-    }
 }

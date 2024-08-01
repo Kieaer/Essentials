@@ -1,5 +1,8 @@
 package essential.protect;
 
+import arc.Events;
+import arc.net.Server;
+import arc.net.ServerDiscoveryHandler;
 import arc.util.CommandHandler;
 import arc.util.Http;
 import arc.util.Log;
@@ -10,13 +13,20 @@ import essential.core.annotation.ClientCommand;
 import essential.core.annotation.ServerCommand;
 import kotlin.Pair;
 import mindustry.Vars;
+import mindustry.game.EventType;
 import mindustry.gen.Call;
 import mindustry.gen.Player;
 import mindustry.mod.Plugin;
 import mindustry.net.Administration;
+import mindustry.net.ArcNetProvider;
+import mindustry.net.NetworkIO;
 
 import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import static essential.core.Main.database;
@@ -101,7 +111,42 @@ public class Main extends Plugin {
         Event event = new Event();
         event.start();
 
-        Log.info(bundle.get("event.plugin.loaded"));
+        Log.debug(bundle.get("event.plugin.loaded"));
+
+        Events.on(EventType.WorldLoadEndEvent.class, e -> setNetworkFilter());
+    }
+
+    void setNetworkFilter() {
+        try {
+            Class<?> inner = ((ArcNetProvider) Vars.platform.getNet()).getClass();
+            Field field = inner.getDeclaredField("server");
+            field.setAccessible(true);
+
+            Object serverInstance = field.get(Vars.platform.getNet());
+
+            Class<?> innerClass = field.get(Vars.platform.getNet()).getClass();
+            Method method = innerClass.getMethod("setDiscoveryHandler", ServerDiscoveryHandler.class);
+
+            ServerDiscoveryHandler handler = new ServerDiscoveryHandler() {
+                @Override
+                public void onDiscoverReceived(InetAddress inetAddress, ReponseHandler reponseHandler) throws IOException {
+                    if (!Vars.netServer.admins.isIPBanned(inetAddress.getHostAddress())) {
+                        ByteBuffer buffer = NetworkIO.writeServerData();
+                        buffer.position(0);
+                        reponseHandler.respond(buffer);
+                    } else {
+                        reponseHandler.respond(ByteBuffer.allocate(0));
+                    }
+                }
+            };
+
+            method.invoke(serverInstance, handler);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        Server.ServerConnectFilter filter = s -> !Vars.netServer.admins.bannedIPs.contains(s);
+        Vars.platform.getNet().setConnectFilter(filter);
     }
 
     @Override
@@ -142,7 +187,7 @@ public class Main extends Plugin {
         for (Method method : methods) {
             ClientCommand annotation = method.getAnnotation(ClientCommand.class);
             if (annotation != null) {
-                handler.<Player>register(annotation.name(), annotation.parameter(), (args, player) -> {
+                handler.<Player>register(annotation.name(), annotation.parameter(), annotation.description(), (args, player) -> {
                     DB.PlayerData data = findPlayerByUuid(player.uuid());
                     if (data == null) {
                         data = new DB.PlayerData();

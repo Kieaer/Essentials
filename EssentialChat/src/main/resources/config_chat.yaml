@@ -1,3 +1,4 @@
+chatFormat: "[coral][{0}[coral]]:[white] {1}"
 strict:
   # Enabling this feature will only allow specific languages.
   enabled: false

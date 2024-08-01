@@ -16,6 +16,7 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 
 import static essential.core.Main.database;
+import static essential.core.Main.root;
 
 public class Main extends Plugin {
     static Bundle bundle = new Bundle();
@@ -36,7 +37,12 @@ public class Main extends Plugin {
         // 이벤트 등록
         new Event().load();
 
-        Log.info(bundle.get("event.plugin.loaded"));
+        // 채팅 금지어 파일 추가
+        if (!root.child("chat_blacklist.txt").exists()) {
+            root.child("chat_blacklist.txt").writeString("않");
+        }
+
+        Log.debug(bundle.get("event.plugin.loaded"));
     }
 
     @Override
@@ -77,7 +83,7 @@ public class Main extends Plugin {
         for (Method method : methods) {
             ClientCommand annotation = method.getAnnotation(ClientCommand.class);
             if (annotation != null) {
-                handler.<Player>register(annotation.name(), annotation.parameter(), (args, player) -> {
+                handler.<Player>register(annotation.name(), annotation.parameter(), annotation.description(), (args, player) -> {
                     DB.PlayerData data = findPlayerByUuid(player.uuid());
                     if (data == null) {
                         data = new DB.PlayerData();

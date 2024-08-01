@@ -19,18 +19,17 @@ public class Commands {
     @ClientCommand(name = "me", parameter = "<text...>", description = "Chat with special prefix")
     void me(Playerc player, DB.PlayerData playerData, String[] arg) {
         if (playerData.getMute()) return;
-        if (conf.getBlacklist().getEnabled()) {
+        if (conf.blacklist.enabled) {
             String[] file = root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n");
-            if (file.length != 0) {
-                for (String s : file) {
-                    if ((conf.getBlacklist().getRegex() && arg[0].matches(s)) || (!conf.getBlacklist().getRegex() && arg[0].contains(s))) {
-                        playerData.err("event.chat.blacklisted");
-                        return;
-                    }
+            for (String s : file) {
+                if ((conf.blacklist.regex && arg[0].matches(s)) || (!conf.blacklist.regex && arg[0].contains(s))) {
+                    playerData.err("event.chat.blacklisted");
+                    return;
                 }
-                Call.sendMessage("[orange]*[]" + Vars.netServer.chatFormatter.format(player.as(), arg[0]));
             }
         }
+
+        Call.sendMessage("[orange]*[]" + Vars.netServer.chatFormatter.format(player.as(), arg[0]));
     }
 
     @ClientCommand(name = "pm", parameter = "<player> <message...>", description = "Send a private message")

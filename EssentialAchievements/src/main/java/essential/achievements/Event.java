@@ -108,7 +108,6 @@ public class Event {
         }, 0, 1);
     }
 
-
     DB.PlayerData findPlayerByUuid(String uuid) {
         return database.getPlayers().stream().filter( e -> e.getUuid().equals(uuid)).findFirst().orElse(null);
     }

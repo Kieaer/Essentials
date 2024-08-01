@@ -22,6 +22,6 @@ public class Main extends Plugin {
                 Config.class
         );
 
-        Log.info(bundle.get("event.plugin.loaded"));
+        Log.debug(bundle.get("event.plugin.loaded"));
     }
 }

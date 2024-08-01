@@ -6,7 +6,6 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.math.Mathf
-import arc.struct.Seq
 import arc.util.*
 import arc.util.Timer
 import com.charleskorn.kaml.Yaml
@@ -49,7 +48,6 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
-import mindustry.world.blocks.logic.LogicBlock
 import org.hjson.JsonArray
 import org.hjson.JsonObject
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -108,7 +106,7 @@ class Commands {
         }
     }
 
-    @ClientCommand("changename", "<target> [new_name]", "Change player name")
+    @ClientCommand("changename", "<target> <new_name>", "Change player name")
     fun changeName(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         fun change(data: DB.PlayerData) {
             transaction {
@@ -265,9 +263,6 @@ class Commands {
                             playerData.err("command.effect.no.color")
                         }
                     }
-                    if (PluginData.effectLocal) {
-                        Event.updateEffectProcessorBlock()
-                    }
                 } else {
                     playerData.err("command.effect.level")
                 }
@@ -410,7 +405,9 @@ class Commands {
             }
 
             Vars.content.items().forEach {
-                Vars.state.teams.cores(team).first().items[it] = Vars.state.teams.cores(team).first().storageCapacity
+                Vars.state.teams.cores(team).forEach { core ->
+                    core.items[it] = core.storageCapacity
+                }
             }
 
             playerData.send("command.fillitems.core.filled", team.coloredName())
@@ -1054,15 +1051,10 @@ class Commands {
 
     @ClientCommand("lang", description = "Set the plugin language from current game language")
     fun lang(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        if (arg.isEmpty()) {
-            playerData.err("command.language.empty")
-            return
-        }
         playerData.languageTag = player.locale()
         playerData.status["language"] = player.locale()
         database.queue(playerData)
-        playerData.send("command.language.set", Locale(arg[0]).language)
-        player.sendMessage(Bundle(arg[0])["command.language.preview", Locale(arg[0]).toLanguageTag()])
+        playerData.send("command.language.set", Locale(playerData.languageTag).language)
     }
 
     @ClientCommand("log", description = "Enable block history view mode")
@@ -1131,7 +1123,6 @@ class Commands {
         }
         Call.menu(player.con(), mainMenu, title, prebuilt[0].first, prebuilt[0].second)
     }
-
 
     @ClientCommand("meme", "<type>", "Enjoy mindustry meme features!")
     fun meme(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
@@ -1255,7 +1246,7 @@ class Commands {
                     playerData.status.remove("router")
                 } else {
                     // todo thread 개선
-                    Main.daemon.submit {
+                    daemon.submit {
                         fun change(name: String) {
                             player.name(name)
                             Threads.sleep(500)
@@ -1289,8 +1280,12 @@ class Commands {
             val file = root.child("motd/en.txt")
             if (file.exists()) file.readString() else ""
         }
-        val count = motd.split("\r\n|\r|\n").toTypedArray().size
-        if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
+        if (motd.isNotEmpty()) {
+            val count = motd.split("\r\n|\r|\n").toTypedArray().size
+            if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
+        } else {
+            playerData.send("command.motd.not-found")
+        }
     }
 
     @ClientCommand("mute", "<player>", "Mute player")
@@ -1428,9 +1423,6 @@ class Commands {
         if (PluginData.isRankingWorking) {
             playerData.err("command.ranking.working")
             return
-        }
-        Core.app.post {
-
         }
         daemon.submit(Thread {
             try {
@@ -2620,17 +2612,11 @@ class Commands {
         }
     }
 
-    @ClientCommand("test", "[id]", "Test world processor")
-    fun testProcessor(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
-        PluginData.effectLocal = true
-        val code = """
-            fetch player Player(Sharded)(0) @sharded 0 @conveyor
-            sensor Name(Player(Sharded)(0)) Player(Sharded)(0) @name
-            print Name(Player(Sharded)(0))
-            message mission 3
-        """.trimIndent()
-        player.tileOn().setNet(Blocks.worldProcessor)
-        player.tileOn().build.configure(LogicBlock.compress(code, Seq()))
+    @ServerCommand("debug", "[parameter...]", "Debug any commands")
+    fun debug(arg: Array<out String>) {
+        for (a in database.players) {
+            println(a.toString())
+        }
     }
 
     private fun selectTeam(arg: String): Team {
