@@ -169,6 +169,18 @@ public enum Achievement {
             }
             return result;
         }
+    },
+
+    Chatter {
+        @Override
+        public int value() {
+            return 10000;
+        }
+
+        @Override
+        public int current(DB.PlayerData data) {
+            return Integer.parseInt(data.getStatus().getOrDefault("record.time.chat", "0"));
+        }
     };
 
     public abstract int value();

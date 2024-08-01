@@ -948,7 +948,7 @@ class Trigger {
 
         Events.on(ServerLoadEvent::class.java) {
             if (conf.feature.level.effect.enabled) {
-                Timer.schedule(EffectSystem(), 0f, 0.5f)
+                Timer.schedule(EffectSystem(), 0f, 0.05f)
             }
             coreListeners.forEach {
                 Core.app.addListener(it)
