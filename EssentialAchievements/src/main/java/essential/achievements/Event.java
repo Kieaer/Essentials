@@ -79,7 +79,7 @@ public class Event {
 
             e.playerData.send(bundle, "event.achievement.success", e.achievement.toString().toLowerCase());
             database.getPlayers().forEach(data -> {
-                Bundle b = new Bundle(ResourceBundle.getBundle("bundle", new Locale(data.getLanguageTag())));
+                Bundle b = new Bundle(ResourceBundle.getBundle("bundle", new Locale(data.getPlayer().locale())));
                 data.send(b, "event.achievement.success.other", e.playerData.getName(), b.get("achievement." + e.achievement.toString().toLowerCase()));
             });
         });

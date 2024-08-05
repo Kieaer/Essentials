@@ -86,20 +86,19 @@ class Main : Plugin() {
         }
 
         conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())
-        Yaml.default.encodeToString(Config.serializer(), conf)
         bundle.locale = Locale(conf.plugin.lang)
 
         if (!root.child("data").exists()) {
             root.child("data").mkdirs()
         }
 
+        // 설정 및 DB 업그레이드
+        Upgrade().upgrade()
+
         // DB 설정
         database.load()
         database.connect()
         database.create()
-
-        // 설정 및 DB 업그레이드
-        Upgrade().upgrade()
 
         // 데이터 설정
         PluginData.load()

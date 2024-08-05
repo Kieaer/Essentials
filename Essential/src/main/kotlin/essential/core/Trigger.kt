@@ -695,7 +695,7 @@ class Trigger {
                         if (it.afkTime == conf.feature.afk.time) {
                             it.afk = true
                             if (conf.feature.afk.enabled) {
-                                if (conf.feature.afk.server.isEmpty()) {
+                                if (conf.feature.afk.server == null) {
                                     val bundle = if (it.status.containsKey("language")) {
                                         Bundle(it.status["language"]!!)
                                     } else {
@@ -707,7 +707,7 @@ class Trigger {
                                         data.send("event.player.afk.other", it.player.plainName())
                                     }
                                 } else {
-                                    val server = conf.feature.afk.server.split(":")
+                                    val server = conf.feature.afk.server!!.split(":")
                                     val port = if (server.size == 1) {
                                         6567
                                     } else {

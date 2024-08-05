@@ -20,7 +20,7 @@ public class Client implements Runnable {
     public void run() {
         try {
             socket.connect(new InetSocketAddress(Main.conf.address, Main.conf.port), 5000);
-            Log.debug(Main.bundle.get("network.client.connected", Main.conf.address, Main.conf.port));
+            Log.info(Main.bundle.get("network.client.connected", Main.conf.address, Main.conf.port));
 
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));

@@ -38,7 +38,7 @@ data class Config(
     data class Afk(
         val enabled: Boolean = false,
         val time: Int = 300,
-        val server: String = ""
+        val server: String? = ""
     )
 
     @Serializable
