@@ -80,7 +80,7 @@ public class Event {
             e.playerData.send(bundle, "event.achievement.success", e.achievement.toString().toLowerCase());
             database.getPlayers().forEach(data -> {
                 Bundle b = new Bundle(ResourceBundle.getBundle("bundle", new Locale(data.getLanguageTag())));
-                data.send("event.achievement.success.other", e.playerData.getName(), b.get("achievement." + e.achievement.toString().toLowerCase()));
+                data.send(b, "event.achievement.success.other", e.playerData.getName(), b.get("achievement." + e.achievement.toString().toLowerCase()));
             });
         });
     }
@@ -88,12 +88,14 @@ public class Event {
     @essential.core.annotation.Event
     void playerChat() {
         Events.on(EventType.PlayerChatEvent.class, e -> {
-            DB.PlayerData data = findPlayerByUuid(e.player.uuid());
-            if (data != null) {
-                int value = Integer.parseInt(data.getStatus().getOrDefault("record.time.chat", "0")) + 1;
-                data.getStatus().put("record.time.chat", Integer.toString(value));
-                if (Achievement.Chatter.success(data)) {
-                    Achievement.Chatter.set(data);
+            if (!e.message.startsWith("/")) {
+                DB.PlayerData data = findPlayerByUuid(e.player.uuid());
+                if (data != null) {
+                    int value = Integer.parseInt(data.getStatus().getOrDefault("record.time.chat", "0")) + 1;
+                    data.getStatus().put("record.time.chat", Integer.toString(value));
+                    if (Achievement.Chatter.success(data)) {
+                        Achievement.Chatter.set(data);
+                    }
                 }
             }
         });

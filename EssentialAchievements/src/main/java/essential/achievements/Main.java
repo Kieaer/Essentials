@@ -7,7 +7,6 @@ import essential.core.DB;
 import essential.core.Permission;
 import essential.core.annotation.ClientCommand;
 import essential.core.annotation.ServerCommand;
-import mindustry.Vars;
 import mindustry.gen.Player;
 import mindustry.mod.Plugin;
 
@@ -103,14 +102,7 @@ public class Main extends Plugin {
                             e.printStackTrace();
                         }
                     } else {
-                        player.sendMessage(Vars.netServer.invalidHandler.handle(
-                                player.self(),
-                                new CommandHandler.CommandResponse(
-                                        CommandHandler.ResponseType.unknownCommand,
-                                        null,
-                                        annotation.name()
-                                )
-                        ));
+                        data.send("command.permission.false");
                     }
                 });
             }

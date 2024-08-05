@@ -11,8 +11,6 @@ import java.util.Scanner;
 
 public class Client implements Runnable {
     // todo ban 공유 서버 ip
-    private String address = "";
-    private int port = 6000;
     private Socket socket = new Socket();
     private BufferedReader reader;
     private BufferedWriter writer;
@@ -21,8 +19,8 @@ public class Client implements Runnable {
     @Override
     public void run() {
         try {
-            socket.connect(new InetSocketAddress(address, port), 5000);
-            Log.info(Main.bundle.get("network.client.connected", "$address:$port"));
+            socket.connect(new InetSocketAddress(Main.conf.address, Main.conf.port), 5000);
+            Log.debug(Main.bundle.get("network.client.connected", Main.conf.address, Main.conf.port));
 
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -80,7 +78,7 @@ public class Client implements Runnable {
                         try (BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
                             out.write("crash\n");
                             try (Scanner sc = new Scanner(socket.getInputStream())) {
-                                sc.nextLine(); // ok
+                                sc.nextLine();
                                 out.write(parameter[0] + "\n");
                                 out.write("null");
                                 sc.nextLine();

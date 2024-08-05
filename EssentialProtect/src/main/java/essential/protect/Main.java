@@ -14,7 +14,6 @@ import essential.core.annotation.ServerCommand;
 import kotlin.Pair;
 import mindustry.Vars;
 import mindustry.game.EventType;
-import mindustry.gen.Call;
 import mindustry.gen.Player;
 import mindustry.mod.Plugin;
 import mindustry.net.Administration;
@@ -204,18 +203,7 @@ public class Main extends Plugin {
                             e.printStackTrace();
                         }
                     } else {
-                        if ("js".equals(annotation.name())) {
-                            Call.kick(player.con(), new Bundle(player.locale()).get("command.js.no.permission"));
-                        } else {
-                            player.sendMessage(Vars.netServer.invalidHandler.handle(
-                                    player.self(),
-                                    new CommandHandler.CommandResponse(
-                                            CommandHandler.ResponseType.unknownCommand,
-                                            null,
-                                            annotation.name()
-                                    )
-                            ));
-                        }
+                        data.send("command.permission.false");
                     }
                 });
             }

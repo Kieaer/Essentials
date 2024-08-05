@@ -186,6 +186,9 @@ public class Event {
             } else if (conf.rules.blockNewUser && !Arrays.asList(coldData).contains(event.packet.uuid)) {
                 event.connection.kick(new Bundle(event.packet.locale).get("event.player.new.blocked"), 0L);
                 kickReason = "newuser";
+            } else if (database.isBanned(Vars.netServer.admins.getInfo(event.connection.uuid))) {
+                event.connection.kick(Packets.KickReason.banned);
+                kickReason = "banned";
             }
 
             if (!kickReason.isEmpty()) {

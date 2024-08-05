@@ -725,6 +725,7 @@ object Event {
                     it.uuid
                 ).names.first()]
             )
+            database.addBan(Vars.netServer.admins.getInfo(it.uuid))
         }.also { listener -> eventListeners[PlayerBanEvent::class.java] = listener })
     }
 
@@ -732,6 +733,7 @@ object Event {
     fun playerUnban() {
         Events.on(PlayerUnbanEvent::class.java, Cons<PlayerUnbanEvent> {
             Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.getInfo(it.uuid).lastName, currentTime()))
+            database.removeBan(Vars.netServer.admins.getInfo(it.uuid))
         }.also { listener -> eventListeners[PlayerUnbanEvent::class.java] = listener })
     }
 
@@ -739,6 +741,7 @@ object Event {
     fun playerIpUnban() {
         Events.on(PlayerIpUnbanEvent::class.java, Cons<PlayerIpUnbanEvent> {
             Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.findByIP(it.ip).lastName, currentTime()))
+            database.removeBan(Vars.netServer.admins.findByIP(it.ip))
         }.also { listener -> eventListeners[PlayerIpUnbanEvent::class.java] = listener })
     }
 

@@ -616,6 +616,7 @@ class Commands {
                     target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100
                 ) else 0}%[white])
                 ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
+                Discord: ${if (target.discord != null) target.discord else "none"}
                 """.trimIndent()
         }
 

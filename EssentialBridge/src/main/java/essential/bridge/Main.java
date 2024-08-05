@@ -8,14 +8,10 @@ import essential.core.Bundle;
 import essential.core.Permission;
 import essential.core.annotation.ClientCommand;
 import essential.core.annotation.ServerCommand;
-import mindustry.Vars;
-import mindustry.gen.Call;
 import mindustry.gen.Player;
 import mindustry.mod.Plugin;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ServerSocket;
@@ -40,21 +36,21 @@ public class Main extends Plugin {
 
         Log.debug(bundle.get("event.plugin.starting"));
 
-        // 서버간 연결할 포트 생성
-        try (ServerSocket serverSocket = new ServerSocket(57293)) {
-            isServerMode = true;
-            daemon.submit(server);
-        } catch (IOException e) {
-            isServerMode = false;
-            daemon.submit(client);
-        }
-
         // 플러그인 설정
         conf = essential.core.Main.Companion.createAndReadConfig(
                 "config_bridge.yaml",
                 Objects.requireNonNull(this.getClass().getResourceAsStream("/config_bridge.yaml")),
                 Config.class
         );
+
+        // 서버간 연결할 포트 생성
+        try (ServerSocket serverSocket = new ServerSocket(conf.port)) {
+            isServerMode = true;
+            daemon.submit(server);
+        } catch (IOException e) {
+            isServerMode = false;
+            daemon.submit(client);
+        }
 
         if (conf.count) {
             Core.settings.put("totalPlayers", 0);
@@ -67,33 +63,16 @@ public class Main extends Plugin {
                 if (isServerMode) {
                     for (Socket socket : server.clients) {
                         try {
-                            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-                            writer.write("exit");
-                            writer.newLine();
-                            writer.flush();
                             socket.close();
-                        } catch (IOException e) {
-                            try {
-                                socket.close();
-                            } catch (IOException ex) {
-                                throw new RuntimeException(ex);
-                            }
+                        } catch (IOException ignored) {
+
                         }
                     }
                     server.shutdown();
-                } else {
-                    try {
-                        client.send("exit");
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
                 }
                 daemon.shutdown();
             }
         });
-
-        // test
-        new DB().load();
 
         // 이벤트 실행
         Event event = new Event();
@@ -167,18 +146,7 @@ public class Main extends Plugin {
                             e.printStackTrace();
                         }
                     } else {
-                        if ("js".equals(annotation.name())) {
-                            Call.kick(player.con(), new Bundle(player.locale()).get("command.js.no.permission"));
-                        } else {
-                            player.sendMessage(Vars.netServer.invalidHandler.handle(
-                                    player.self(),
-                                    new CommandHandler.CommandResponse(
-                                            CommandHandler.ResponseType.unknownCommand,
-                                            null,
-                                            annotation.name()
-                                    )
-                            ));
-                        }
+                        data.send("command.permission.false");
                     }
                 });
             }

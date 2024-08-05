@@ -1,6 +1,9 @@
 package essential.bridge;
 
 import arc.util.Log;
+import arc.util.serialization.Json;
+import mindustry.Vars;
+import mindustry.net.Administration;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -20,10 +23,10 @@ public class Server implements Runnable {
     @Override
     public void run() {
         try {
-            server = new ServerSocket(57293);
+            server = new ServerSocket(Main.conf.port);
             while (!Thread.currentThread().isInterrupted()) {
                 Socket socket = server.accept();
-                Log.info(Main.bundle.get("network.server.connected", socket.getInetAddress().getHostAddress()));
+                Log.debug(Main.bundle.get("network.server.connected", socket.getInetAddress().getHostAddress()));
                 clients.add(socket);
                 Handler handler = new Handler(socket);
                 handler.start();
@@ -76,7 +79,6 @@ public class Server implements Runnable {
         public void run() {
             try {
                 BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 
                 while (!currentThread().isInterrupted()) {
                     String d = reader.readLine();
@@ -84,12 +86,25 @@ public class Server implements Runnable {
                         interrupt();
                     } else {
                         switch (d) {
+                            case "isBanned":
+                                Administration.PlayerInfo info = new Json().fromJson(Administration.PlayerInfo.class, reader.readLine());
+                                boolean banned = Vars.netServer.admins.isIDBanned(info.id);
+                                for (String ip : info.ips) {
+                                    if (Vars.netServer.admins.isIPBanned(ip)) {
+                                        banned = true;
+                                        break;
+                                    }
+                                }
+                                if (banned) {
+                                    info.banned = true;
+                                    sendAll("banned", new Json().toJson(info, Administration.PlayerInfo.class));
+                                }
+                                break;
                             case "exit":
                                 interrupt();
                                 break;
                             case "message":
-                                String msg = reader.readLine();
-                                sendAll("message", msg);
+                                sendAll("message", reader.readLine());
                                 break;
                             case "crash":
                                 StringBuilder stacktrace = new StringBuilder();

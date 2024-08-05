@@ -4,6 +4,7 @@ import arc.graphics.Color
 import arc.graphics.Colors
 import arc.util.Timer
 import essential.core.DB
+import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.database
 import essential.core.PluginData
 import mindustry.content.Fx
@@ -240,12 +241,17 @@ class EffectSystem : Timer.Task() {
         if (!PluginData.effectLocal) {
             val target = ArrayList<Playerc>()
             database.players.forEach {
-                if (it.showLevelEffects) {
-                    target.add(it.player)
-                }
-
-                if (it.player.unit() != null && it.player.unit().health > 0f) {
-                    effect(it)
+                if (conf.feature.level.effect.enabled) {
+                    if (it.showLevelEffects) {
+                        effect(it)
+                        if (it.player.unit() != null && it.player.unit().health > 0f) {
+                            if (conf.feature.level.effect.moving && it.player.unit().moving()) {
+                                target.add(it.player)
+                            } else if (!conf.feature.level.effect.moving) {
+                                target.add(it.player)
+                            }
+                        }
+                    }
                 }
             }
 

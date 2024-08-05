@@ -4,7 +4,7 @@ import java.sql.*
 import java.util.*
 import java.util.logging.Logger
 
-internal class DriverLoader(private val driver: Driver) : Driver {
+class DriverLoader(private val driver: Driver) : Driver {
     @Throws(SQLException::class)
     override fun acceptsURL(u: String): Boolean {
         return driver.acceptsURL(u)

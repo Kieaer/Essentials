@@ -7,9 +7,11 @@ import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.daemon
 import essential.core.exception.DatabaseNotSupportedException
 import mindustry.gen.Playerc
+import mindustry.net.Administration.PlayerInfo
 import org.hjson.JsonObject
 import org.hjson.Stringify
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
@@ -119,10 +121,16 @@ class DB {
 
     fun create() {
         transaction {
+            if (!Banned.exists()) SchemaUtils.create(Banned)
             if (!Player.exists()) SchemaUtils.create(Player)
             if (!Data.exists()) SchemaUtils.create(Data)
             if (!DB.exists()) SchemaUtils.create(DB)
         }
+    }
+
+    object Banned : Table("banned") {
+        val type = integer("type")
+        val data = text("data")
     }
 
     object Data : Table("data") {
@@ -675,6 +683,38 @@ class DB {
                 null
             }
         }
+    }
+
+    fun addBan(info: PlayerInfo) {
+        transaction {
+            Banned.insert {
+                it[type] = 0
+                it[data] = info.id
+            }
+            info.ips.forEach { ip ->
+                Banned.insert {
+                    it[type] = 1
+                    it[data] = ip
+                }
+            }
+        }
+    }
+
+    fun removeBan(info: PlayerInfo) {
+        val ips = info.ips.toArray()
+        transaction {
+            Banned.deleteWhere { type eq 0 and (data eq info.id) }
+            for (ip in ips) {
+                Banned.deleteWhere { type eq 1 and (data eq ip) }
+            }
+        }
+    }
+
+    fun isBanned(info: PlayerInfo) : Boolean {
+        transaction {
+            return@transaction Banned.selectAll().where { Banned.type eq 0 and (Banned.data eq info.id) or (Banned.type eq 1 and (Banned.data eq info.lastIP)) }.fetchSize != 0
+        }
+        return false
     }
 
     fun close() {
