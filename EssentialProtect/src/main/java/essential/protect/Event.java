@@ -48,7 +48,7 @@ public class Event {
             }
         });
 
-        Events.on(EventType.Trigger.update.getClass(), e -> {
+        Events.run(EventType.Trigger.update, () -> {
             if (conf.pvp.peace.enabled) {
                 if (pvpCount != 0) {
                     pvpCount--;
@@ -70,7 +70,7 @@ public class Event {
             }
 
             if (conf.protect.unbreakableCore) {
-                Vars.state.rules.defaultTeam.cores().forEach ( core -> core.health(1.0E8f));
+                Vars.state.teams.active.forEach( t -> t.cores.forEach(c -> c.health(1.0E8f)));
             }
         });
 

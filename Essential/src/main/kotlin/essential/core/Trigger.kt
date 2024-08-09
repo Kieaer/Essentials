@@ -511,10 +511,9 @@ class Trigger {
                         }
                     }
 
-                    /*if (Config.countAllServers) {
+                    if (conf.feature.count) {
                         Core.settings.put("totalPlayers", total + Groups.player.size())
-                        Core.settings.saveValues()
-                    }*/
+                    }
 
                     ping = 0.000
                     TimeUnit.SECONDS.sleep(3)
@@ -812,7 +811,7 @@ class Trigger {
         var messageCount = conf.feature.motd.time
         var messageOrder = 0
 
-        Events.on(EventType.Trigger.update::class.java) {
+        Events.run(EventType.Trigger.update) {
             for (data in database.players) {
                 if (Vars.state.rules.pvp && data.player.unit() != null && data.player.team().cores().isEmpty && data.player.team() != Team.derelict && pvpPlayer.containsKey(data.uuid)) {
                     data.pvpDefeatCount += 1

@@ -24,9 +24,8 @@ public class Commands {
 
         for (Achievement ach : Achievement.values()) {
             String name = ach.toString().toLowerCase();
-            String cleared = ach.success(playerData) ? bundle.getString("cleared") : "";
-            temp.add(cleared + " " + bundle.getString("achievement." + name) + "[orange] (" + ach.current(playerData) + " / " + ach.value() + ")[][]\n");
-            temp.add("[white]" + bundle.getString("target." + name) + "\n");
+            String cleared = ach.success(playerData) ? "[sky][" + bundle.getString("cleared") + "][] " : "";
+            temp.add(cleared + bundle.getString("achievement." + name) + "[orange] (" + ach.current(playerData) + " / " + ach.value() + ")[][]\n");
             temp.add("[yellow]" + bundle.getString("description." + name) + "\n");
             temp.add("\n");
         }

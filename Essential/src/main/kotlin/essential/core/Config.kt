@@ -31,7 +31,8 @@ data class Config(
         val pvp: Pvp,
         val level: LevelConf,
         val game: Game,
-        val blacklist: Blacklist
+        val blacklist: Blacklist,
+        val count: Boolean
     )
 
     @Serializable

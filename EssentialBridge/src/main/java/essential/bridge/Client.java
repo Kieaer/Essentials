@@ -22,26 +22,28 @@ public class Client implements Runnable {
             socket.connect(new InetSocketAddress(Main.conf.address, Main.conf.port), 5000);
             Log.info(Main.bundle.get("network.client.connected", Main.conf.address, Main.conf.port));
 
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             while (!java.lang.Thread.currentThread().isInterrupted()) {
                 try {
                     String d = reader.readLine();
-                    switch (d) {
-                        case "message":
-                            String msg = reader.readLine();
-                            lastReceivedMessage = msg;
-                            Call.sendMessage(msg);
-                            break;
-                        case "exit":
-                            writer.close();
-                            reader.close();
-                            socket.close();
-                            Thread.currentThread().interrupt();
-                            break;
-                        default:
-                            break;
+                    if (d != null) {
+                        switch (d) {
+                            case "message":
+                                String msg = reader.readLine();
+                                lastReceivedMessage = msg;
+                                Call.sendMessage(msg);
+                                break;
+                            case "exit":
+                                writer.close();
+                                reader.close();
+                                socket.close();
+                                Thread.currentThread().interrupt();
+                                break;
+                            default:
+                                break;
+                        }
                     }
                 } catch (Exception e) {
                     java.lang.Thread.currentThread().interrupt();
@@ -49,6 +51,14 @@ public class Client implements Runnable {
             }
         } catch (SocketTimeoutException e) {
             Log.info(Main.bundle.get("network.client.timeout"));
+        } catch (InterruptedIOException e) {
+            try {
+                writer.close();
+                reader.close();
+                socket.close();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

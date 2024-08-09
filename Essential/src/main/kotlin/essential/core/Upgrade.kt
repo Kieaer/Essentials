@@ -45,8 +45,8 @@ class Upgrade {
             edit(config, 57, "enabled: " + features.get("moveEffects").asBoolean())
             edit(config, 63, "display: " + features.get("expDisplay").asBoolean())
             edit(config, 67, "autoSkip: " + features.get("waveskip").asInt())
-            edit(config, 80, "limit: " + features.get("skiplimit").asInt())
-            edit(config, 85, "time: " + features.get("rollbackTime").asInt())
+            edit(config, 83, "limit: " + features.get("skiplimit").asInt())
+            edit(config, 88, "time: " + features.get("rollbackTime").asInt())
 
             root.child("config/config.yaml").file().writeText(config.joinToString("\n"))
             conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())

@@ -52,11 +52,6 @@ public class Main extends Plugin {
             daemon.submit(client);
         }
 
-        if (conf.count) {
-            Core.settings.put("totalPlayers", 0);
-            Core.settings.saveValues();
-        }
-
         Core.app.addListener(new ApplicationListener() {
             @Override
             public void dispose() {

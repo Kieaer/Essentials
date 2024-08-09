@@ -43,7 +43,7 @@ object Permission {
         #     isAlert: true
         #     alertMessage: Player asdfg has entered the server!
         #     chatFormat: [admin] %1 > %2
-        
+        ---
         """.trimIndent()
 
     init {

@@ -130,7 +130,7 @@ class Main : Plugin() {
             if (e.player == null) return@ActionFilter true
             val data = database.players.find { it.uuid == e.player.uuid() }
             val isHub = PluginData["hubMode"]
-            for (it in PluginData.warpBlocks) {
+            PluginData.warpBlocks.forEach {
                 if (it.mapName == PluginData.currentMap && e.tile != null && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
                     return@ActionFilter false
                 }

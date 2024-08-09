@@ -7,10 +7,13 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.util.Time
 import arc.util.Timer
-import essential.core.*
+import essential.core.CustomEvents
+import essential.core.DB
 import essential.core.Event.earnEXP
 import essential.core.Event.findPlayerData
 import essential.core.Main.Companion.database
+import essential.core.Permission
+import essential.core.PluginData
 import essential.core.PluginData.lastVoted
 import essential.core.PluginData.voterCooltime
 import essential.core.PluginData.voting
@@ -111,9 +114,6 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
         }
 
         gameoverEvent = Cons<GameOverEvent> {
-            database.players.forEach { a ->
-                if (voteData.targetUUID != a.uuid) a.player.sendMessage(Bundle(a.languageTag)["command.vote.canceled"])
-            }
             this.cancel()
         }
 

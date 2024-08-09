@@ -1,11 +1,11 @@
 owner:
   admin: true
-  permissions:
+  permission:
     - all
 admin:
   admin: true
   inheritance: user
-  permissions:
+  permission:
     - afk.admin
     - changemap
     - chars
@@ -41,7 +41,7 @@ admin:
     - vote.reset
     - weather
 user:
-  permissions:
+  permission:
     - achievements
     - changepw
     - discord
@@ -71,7 +71,7 @@ user:
     - vote.skip
 visitor:
   default: true
-  permissions:
+  permission:
     - help
     - login
     - reg
