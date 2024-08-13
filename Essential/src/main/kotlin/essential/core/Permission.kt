@@ -14,7 +14,7 @@ import java.util.*
 
 object Permission {
     private var main: Map<String, RoleConfig> = mapOf()
-    private var user: Map<String, PermissionData> = mapOf()
+    private var user: Map<String, PermissionData>? = mapOf()
     var default = "user"
     private val mainFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.yaml")
     private val userFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.yaml")
@@ -91,21 +91,23 @@ object Permission {
     }
 
     fun apply() {
-        for ((uuid, permissionData) in user) {
-            val c = database.players.find { e -> e.uuid == uuid }
-            if (c == null) {
-                val data = database[uuid]
-                if (data != null) {
-                    data.permission = permissionData.group
-                    data.name = permissionData.name
-                    database.queue(data)
+        if (user != null) {
+            for ((uuid, permissionData) in user!!) {
+                val c = database.players.find { e -> e.uuid == uuid }
+                if (c == null) {
+                    val data = database[uuid]
+                    if (data != null) {
+                        data.permission = permissionData.group
+                        data.name = permissionData.name
+                        database.queue(data)
+                    }
+                } else {
+                    c.permission = permissionData.group
+                    c.name = permissionData.name
+                    c.player.name(permissionData.name)
+                    c.player.admin(permissionData.admin)
+                    database.queue(c)
                 }
-            } else {
-                c.permission = permissionData.group
-                c.name = permissionData.name
-                c.player.name(permissionData.name)
-                c.player.admin(permissionData.admin)
-                database.queue(c)
             }
         }
     }
@@ -113,7 +115,7 @@ object Permission {
     operator fun get(data: DB.PlayerData): PermissionData {
         val result = PermissionData()
 
-        val u = user[data.uuid]
+        val u = user?.get(data.uuid)
         if (u != null) {
             result.name = u.name
             result.group = u.group

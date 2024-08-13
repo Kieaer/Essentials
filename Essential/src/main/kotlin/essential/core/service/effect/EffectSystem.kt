@@ -7,6 +7,7 @@ import essential.core.DB
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.database
 import essential.core.PluginData
+import mindustry.Vars
 import mindustry.content.Fx
 import mindustry.entities.Effect
 import mindustry.gen.Call
@@ -238,33 +239,35 @@ class EffectSystem : Timer.Task() {
     }
 
     override fun run() {
-        if (!PluginData.effectLocal) {
-            val target = ArrayList<Playerc>()
-            database.players.forEach {
-                if (conf.feature.level.effect.enabled) {
-                    if (it.showLevelEffects) {
-                        effect(it)
-                        if (it.player.unit() != null && it.player.unit().health > 0f) {
-                            if (conf.feature.level.effect.moving && it.player.unit().moving()) {
-                                target.add(it.player)
-                            } else if (!conf.feature.level.effect.moving) {
-                                target.add(it.player)
+        if (Vars.state.isPlaying) {
+            if (!PluginData.effectLocal) {
+                val target = ArrayList<Playerc>()
+                database.players.forEach {
+                    if (conf.feature.level.effect.enabled) {
+                        if (it.showLevelEffects) {
+                            effect(it)
+                            if (it.player.unit() != null && it.player.unit().health > 0f) {
+                                if (conf.feature.level.effect.moving && it.player.unit().moving()) {
+                                    target.add(it.player)
+                                } else if (!conf.feature.level.effect.moving) {
+                                    target.add(it.player)
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            buffer.forEach {
-                target.forEach { p ->
-                    val x = if (it.random.isNotEmpty()) it.player.x + it.random[0].random() else it.player.x
-                    val y = if (it.random.isNotEmpty()) it.player.y + it.random[0].random() else it.player.y
-                    Call.effect(p.con(), it.effect, x, y, it.rotate, it.color)
+                buffer.forEach {
+                    target.forEach { p ->
+                        val x = if (it.random.isNotEmpty()) it.player.x + it.random[0].random() else it.player.x
+                        val y = if (it.random.isNotEmpty()) it.player.y + it.random[0].random() else it.player.y
+                        Call.effect(p.con(), it.effect, x, y, it.rotate, it.color)
+                    }
                 }
+                buffer = ArrayList()
+            } else {
+                this.cancel()
             }
-            buffer = ArrayList()
-        } else {
-            this.cancel()
         }
     }
 }

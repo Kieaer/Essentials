@@ -1,5 +1,7 @@
 package essential.chat;
 
+import arc.Events;
+import arc.util.Log;
 import com.github.pemistahl.lingua.api.IsoCode639_1;
 import com.github.pemistahl.lingua.api.Language;
 import com.github.pemistahl.lingua.api.LanguageDetector;
@@ -12,7 +14,9 @@ import mindustry.Vars;
 import mindustry.gen.Player;
 import mindustry.net.Administration;
 
+import java.nio.file.StandardWatchEventKinds;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import static essential.chat.Main.conf;
@@ -75,7 +79,7 @@ public class Event {
 
         Vars.netServer.chatFormatter = (player, message) -> {
             if (player != null) {
-                DB.PlayerData data = database.get(player.uuid());
+                DB.PlayerData data = findPlayerData(player.uuid());
                 if (message != null) {
                     String defaultFormat = "[coral][[" + player.coloredName() + "[coral]]:[white] " + message;
                     if (data != null) {
@@ -94,5 +98,27 @@ public class Event {
             }
             return null;
         };
+
+        Events.on(essential.core.CustomEvents.ConfigFileModified.class, e -> {
+            if (e.getKind() == StandardWatchEventKinds.ENTRY_MODIFY) {
+                if (e.getPaths().equals("config_chat.yaml")) {
+                    Main.conf = essential.core.Main.Companion.createAndReadConfig(
+                            "config_chat.yaml",
+                            Objects.requireNonNull(this.getClass().getResourceAsStream("/config_chat.yaml")),
+                            Config.class
+                    );
+                    Log.info(new Bundle().get("config.reloaded"));
+                }
+            }
+        });
+    }
+
+    DB.PlayerData findPlayerData(String uuid) {
+        for (DB.PlayerData data : database.getPlayers()) {
+            if ((data.getOldUUID() != null && data.getOldUUID().equals(uuid)) || data.getUuid().equals(uuid)) {
+                return data;
+            }
+        }
+        return null;
     }
 }

@@ -2264,7 +2264,12 @@ class Commands {
         val mapNotFound = "command.vote.map.not.exists"
 
         fun start(voteData: VoteData) {
-            Timer.schedule(VoteSystem(voteData), 0f, 1f, 60)
+            if (!voting) {
+                voting = true
+                Timer.schedule(VoteSystem(voteData), 0f, 1f, 60)
+            } else {
+                playerData.err("command.vote.process")
+            }
         }
 
         if (arg.isEmpty()) {
@@ -2277,185 +2282,179 @@ class Commands {
             return
         }
 
-        if (!voting) {
-            if ((database.players.filterNot { it.afk }.size <= 3 && !Permission.check(playerData, "vote.admin")) ||
-                (database.players.size == 1 && arg[0] != "map")) {
-                playerData.err("command.vote.enough")
-                return
-            }
-            when (arg[0]) {
-                "kick" -> {
-                    if (!Permission.check(playerData, "vote.kick")) return
-                    if (arg.size != 3) {
-                        playerData.err(noReason)
-                        return
-                    }
-                    val target = findPlayers(arg[1])
-                    if (target != null) {
-                        if (Permission.check(playerData, "kick.admin")) {
-                            playerData.err("command.vote.kick.target.admin")
-                        } else {
-                            val voteData = VoteData(
-                                target = target,
-                                targetUUID = target.uuid(),
-                                reason = arg[2],
-                                type = VoteType.Kick,
-                                starter = playerData
-                            )
-                            voting = true
-                            start(voteData)
-                        }
-                    } else {
-                        playerData.err(PLAYER_NOT_FOUND)
-                    }
+        val solo = database.players.size == 1 && arg[0] == "map"
+        if (!solo && database.players.filter { !it.afk }.size <= 3 && !Permission.check(playerData, "vote.admin")) {
+            playerData.err("command.vote.enough")
+            return
+        }
+
+        when (arg[0]) {
+            "kick" -> {
+                if (!Permission.check(playerData, "vote.kick")) return
+                if (arg.size != 3) {
+                    playerData.err(noReason)
+                    return
                 }
-
-                // vote map <map name> <reason>
-                "map" -> {
-                    if (!Permission.check(playerData, "vote.map")) return
-                    if (arg.size == 1) {
-                        playerData.err("command.vote.no.map")
-                        return
-                    }
-                    if (arg.size == 2) {
-                        playerData.err(noReason)
-                        return
-                    }
-                    if (arg[1].toIntOrNull() != null) {
-                        try {
-                            var target: Map? = null
-                            val list = Vars.maps.all().sortedBy { a -> a.name() }
-                            val arr = HashMap<Map, Int>()
-                            list.forEachIndexed { index, map ->
-                                arr[map] = index
-                            }
-                            arr.forEach {
-                                if (it.value == arg[1].toInt()) {
-                                    target = it.key
-                                    return@forEach
-                                }
-                            }
-
-                            if (target == null) {
-                                target = Vars.maps.all().find { e -> e.name().contains(arg[1]) }
-                            }
-
-                            if (target != null) {
-                                if (database.players.size != 1) {
-                                    val voteData = VoteData(
-                                        type = VoteType.Map,
-                                        map = target,
-                                        reason = arg[2],
-                                        starter = playerData
-                                    )
-                                    voting = true
-                                    start(voteData)
-                                } else {
-                                    PluginData.isSurrender = true
-                                    Vars.maps.setNextMapOverride(target)
-                                    Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
-                                }
-                            } else {
-                                playerData.err(mapNotFound)
-                            }
-                        } catch (e: IndexOutOfBoundsException) {
-                            playerData.err(mapNotFound)
-                        }
+                val target = findPlayers(arg[1])
+                if (target != null) {
+                    if (Permission.check(playerData, "kick.admin")) {
+                        playerData.err("command.vote.kick.target.admin")
                     } else {
-                        playerData.err(mapNotFound)
-                    }
-                }
-
-                // vote gg
-                "gg" -> {
-                    if (!Permission.check(playerData, "vote.gg")) return
-                    if (voteCooltime == 0) {
                         val voteData = VoteData(
-                            type = VoteType.Gameover,
-                            starter = playerData,
-                        )
-                        if (Vars.state.rules.pvp) {
-                            voteData.team = player.team()
-                            voteCooltime = 120
-                        }
-                        start(voteData)
-                    } else {
-                        playerData.err(cooltime)
-                    }
-                }
-
-                // vote skip <count>
-                "skip" -> {
-                    if (!Permission.check(playerData, "vote.skip")) return
-                    if (arg.size == 1) {
-                        playerData.send("command.vote.skip.wrong")
-                    } else if (arg[1].toIntOrNull() != null) {
-                        if (arg[1].toInt() > conf.command.skip.limit) {
-                            playerData.send("command.vote.skip.toomany")
-                        } else {
-                            if (voteCooltime == 0) {
-                                val voteData = VoteData(
-                                    type = VoteType.Skip,
-                                    wave = arg[1].toInt(),
-                                    starter = playerData
-                                )
-                                voting = true
-                                voteCooltime = 120
-                                start(voteData)
-                            } else {
-                                playerData.send(cooltime)
-                            }
-                        }
-                    }
-                }
-
-                // vote back <reason>
-                "back" -> {
-                    if (!Permission.check(playerData, "vote.back")) return
-                    if (!Vars.saveDirectory.child("rollback.msav").exists()) {
-                        playerData.err("command.vote.back.no.file")
-                        return
-                    }
-                    if (arg.size == 1) {
-                        playerData.send(noReason)
-                        return
-                    }
-                    val voteData = VoteData(
-                        type = VoteType.Back,
-                        reason = arg[1],
-                        starter = playerData
-                    )
-                    voting = true
-                    start(voteData)
-                }
-
-                // vote random
-                "random" -> {
-                    if (!Permission.check(playerData, "vote.random")) return
-                    if (voteCooltime == 0) {
-                        val voteData = VoteData(
-                            type = VoteType.Random,
+                            target = target,
+                            targetUUID = target.uuid(),
+                            reason = arg[2],
+                            type = VoteType.Kick,
                             starter = playerData
                         )
-                        voting = true
-                        voteCooltime = 360
                         start(voteData)
+                    }
+                } else {
+                    playerData.err(PLAYER_NOT_FOUND)
+                }
+            }
+
+            // vote map <map name> <reason>
+            "map" -> {
+                if (!Permission.check(playerData, "vote.map")) return
+                if (arg.size == 1) {
+                    playerData.err("command.vote.no.map")
+                    return
+                }
+                if (arg.size == 2) {
+                    playerData.err(noReason)
+                    return
+                }
+                if (arg[1].toIntOrNull() != null) {
+                    try {
+                        var target: Map? = null
+                        val list = Vars.maps.all().sortedBy { a -> a.name() }
+                        val arr = HashMap<Map, Int>()
+                        list.forEachIndexed { index, map ->
+                            arr[map] = index
+                        }
+                        arr.forEach {
+                            if (it.value == arg[1].toInt()) {
+                                target = it.key
+                                return@forEach
+                            }
+                        }
+
+                        if (target == null) {
+                            target = Vars.maps.all().find { e -> e.name().contains(arg[1]) }
+                        }
+
+                        if (target != null) {
+                            if (database.players.size != 1) {
+                                val voteData = VoteData(
+                                    type = VoteType.Map,
+                                    map = target,
+                                    reason = arg[2],
+                                    starter = playerData
+                                )
+                                start(voteData)
+                            } else {
+                                PluginData.isSurrender = true
+                                Vars.maps.setNextMapOverride(target)
+                                Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
+                            }
+                        } else {
+                            playerData.err(mapNotFound)
+                        }
+                    } catch (e: IndexOutOfBoundsException) {
+                        playerData.err(mapNotFound)
+                    }
+                } else {
+                    playerData.err(mapNotFound)
+                }
+            }
+
+            // vote gg
+            "gg" -> {
+                if (!Permission.check(playerData, "vote.gg")) return
+                if (voteCooltime == 0) {
+                    val voteData = VoteData(
+                        type = VoteType.Gameover,
+                        starter = playerData,
+                    )
+                    if (Vars.state.rules.pvp) {
+                        voteData.team = player.team()
+                        voteCooltime = 120
+                    }
+                    start(voteData)
+                } else {
+                    playerData.err(cooltime)
+                }
+            }
+
+            // vote skip <count>
+            "skip" -> {
+                if (!Permission.check(playerData, "vote.skip")) return
+                if (arg.size == 1) {
+                    playerData.send("command.vote.skip.wrong")
+                } else if (arg[1].toIntOrNull() != null) {
+                    if (arg[1].toInt() > conf.command.skip.limit) {
+                        playerData.send("command.vote.skip.toomany")
                     } else {
-                        playerData.err(cooltime)
+                        if (voteCooltime == 0) {
+                            val voteData = VoteData(
+                                type = VoteType.Skip,
+                                wave = arg[1].toInt(),
+                                starter = playerData
+                            )
+                            voteCooltime = 120
+                            start(voteData)
+                        } else {
+                            playerData.send(cooltime)
+                        }
                     }
                 }
+            }
 
-                "reset" -> {
-                    if (!Permission.check(playerData, "vote.reset")) return
-                    voting = false
-                    voteCooltime = 0
-                    voterCooltime.clear()
-                    playerData.send("command.vote.reset")
+            // vote back <reason>
+            "back" -> {
+                if (!Permission.check(playerData, "vote.back")) return
+                if (!Vars.saveDirectory.child("rollback.msav").exists()) {
+                    playerData.err("command.vote.back.no.file")
+                    return
                 }
+                if (arg.size == 1) {
+                    playerData.send(noReason)
+                    return
+                }
+                val voteData = VoteData(
+                    type = VoteType.Back,
+                    reason = arg[1],
+                    starter = playerData
+                )
+                start(voteData)
+            }
 
-                else -> {
-                    playerData.send("command.help.vote")
+            // vote random
+            "random" -> {
+                if (!Permission.check(playerData, "vote.random")) return
+                if (voteCooltime == 0 || Permission.check(playerData, "vote.random.bypass")) {
+                    val voteData = VoteData(
+                        type = VoteType.Random,
+                        starter = playerData
+                    )
+                    voteCooltime = 360
+                    start(voteData)
+                } else {
+                    playerData.err(cooltime)
                 }
+            }
+
+            "reset" -> {
+                if (!Permission.check(playerData, "vote.reset")) return
+                voting = false
+                voteCooltime = 0
+                voterCooltime.clear()
+                playerData.send("command.vote.reset")
+            }
+
+            else -> {
+                playerData.send("command.help.vote")
             }
         }
     }

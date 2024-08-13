@@ -32,6 +32,7 @@ import mindustry.net.Administration
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
 import java.time.LocalTime
+import java.util.*
 
 class VoteSystem(val voteData: VoteData) : Timer.Task() {
     private var count = 60
@@ -165,6 +166,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
         Vars.netServer.admins.chatFilters.remove(chatFilter)
         Events.remove(GameOverEvent::class.java, gameoverEvent)
         Events.remove(WorldLoadEvent::class.java, worldLoadEvent)
+        super.cancel()
     }
 
     override fun run() {
@@ -292,7 +294,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         }
 
                         VoteType.Random -> {
-                            if (LocalTime.now().isAfter(lastVoted!!.plusMinutes(10L)) && Permission.check(voteData.starter, "vote.random.bypass")) {
+                            if (lastVoted != null && LocalTime.now().isAfter(lastVoted!!.plusMinutes(10L)) && !Permission.check(voteData.starter, "vote.random.bypass")) {
                                 send("command.vote.random.cool")
                             } else {
                                 voterCooltime[voteData.starter.uuid] = 420
@@ -320,13 +322,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                                             2 -> {
                                                 send("command.vote.random.health")
                                                 Groups.build.each {
-                                                    if (it.team == voteData.starter.player.team()) {
-                                                        it.block.health /= 2
-                                                    }
-                                                }
-                                                Groups.player.forEach {
-                                                    Call.worldDataBegin(it.con)
-                                                    Vars.netServer.sendWorldData(it)
+                                                    it.health(it.health / 2)
                                                 }
                                             }
 
@@ -345,7 +341,6 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
 
                                             4 -> {
                                                 send("command.vote.random.storm")
-                                                Thread.sleep(1000)
                                                 Call.createWeather(
                                                     Weathers.rain,
                                                     10f,
@@ -368,29 +363,46 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                                                         )
                                                     }
                                                 }
-                                                var tick = 600
-                                                map = Vars.state.map
 
-                                                while (tick != 0 && map == Vars.state.map) {
-                                                    Thread.sleep(1000)
-                                                    tick--
-                                                    Groups.unit.each {
-                                                        it.health(it.health() - 10f)
+                                                Timer.schedule(object : TimerTask() {
+                                                    var tick = 600
+                                                    val listener: Cons<WorldLoadEvent>
+
+                                                    init {
+                                                        listener = Cons<WorldLoadEvent> {
+                                                            this.cancel()
+                                                        }
+
+                                                        Events.on(WorldLoadEvent::class.java, listener)
                                                     }
-                                                    Groups.build.each {
-                                                        it.block.health /= 30
+
+                                                    override fun cancel(): Boolean {
+                                                        Events.remove(WorldLoadEvent::class.java, listener)
+                                                        return super.cancel()
                                                     }
-                                                    if (tick == 300) {
-                                                        send("command.vote.random.supply")
-                                                        repeat(2) {
-                                                            UnitTypes.oct.spawn(
-                                                                voteData.starter.player.team(),
-                                                                voteData.starter.player.x,
-                                                                voteData.starter.player.y
-                                                            )
+
+                                                    override fun run() {
+                                                        tick--
+                                                        Groups.unit.each {
+                                                            it.health(it.health() / 10)
+                                                        }
+                                                        Groups.build.each {
+                                                            it.health(it.health() / 30)
+                                                        }
+                                                        if (tick == 300) {
+                                                            send("command.vote.random.supply")
+                                                            repeat(2) {
+                                                                UnitTypes.oct.spawn(
+                                                                    voteData.starter.player.team(),
+                                                                    voteData.starter.player.x,
+                                                                    voteData.starter.player.y
+                                                                )
+                                                            }
                                                         }
                                                     }
-                                                }
+
+                                                }, 0f, 10f)
+
                                             }
 
                                             else -> {

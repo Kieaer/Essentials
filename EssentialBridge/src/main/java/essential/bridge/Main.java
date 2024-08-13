@@ -64,6 +64,16 @@ public class Main extends Plugin {
                         }
                     }
                     server.shutdown();
+                } else {
+                    try {
+                        client.send("exit");
+                    } catch (IOException e) {
+                        try {
+                            client.socket.close();
+                        } catch (IOException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                    }
                 }
                 daemon.shutdown();
             }

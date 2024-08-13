@@ -48,6 +48,12 @@ public class Event {
                 if (Achievement.Aggressor.success(data)) {
                     Achievement.Aggressor.set(data);
                 }
+
+                if (e.winner == data.getPlayer().team()) {
+                    if (Achievement.Asteroids.success(data)) {
+                        Achievement.Asteroids.set(data);
+                    }
+                }
             });
         });
     }
@@ -104,7 +110,7 @@ public class Event {
     @essential.core.annotation.Event
     void updateSecond() {
         Timer.schedule(() -> {
-            database.getPlayers().forEach(data -> {
+            for (DB.PlayerData data : database.getPlayers()) {
                 if (state.rules.planet == Planets.serpulo) {
                     int value = Integer.parseInt(data.getStatus().getOrDefault("record.time.serpulo", "0")) + 1;
                     data.getStatus().put("record.time.serpulo", Integer.toString(value));
@@ -124,7 +130,26 @@ public class Event {
                         Achievement.Creator.set(data);
                     }
                 }
-            });
+            }
+
+            boolean isOwnerMeet = false;
+
+            for (DB.PlayerData data : database.getPlayers()) {
+                if(data.getPermission().equals("owner")) {
+                    isOwnerMeet = true;
+                    break;
+                }
+            }
+
+            if(isOwnerMeet) {
+                for (DB.PlayerData data : database.getPlayers()) {
+                    int value = Integer.parseInt(data.getStatus().getOrDefault("record.time.meetowner", "0")) + 1;
+                    data.getStatus().put("record.time.meetowner", Integer.toString(value));
+                    if (Achievement.MeetOwner.success(data)) {
+                        Achievement.MeetOwner.set(data);
+                    }
+                }
+            }
         }, 0, 1);
     }
 

@@ -20,6 +20,7 @@ import mindustry.world.blocks.power.PowerGraph;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.StandardWatchEventKinds;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
@@ -195,6 +196,19 @@ public class Event {
                 Bundle bundle = new Bundle();
                 log(essential.core.Event.LogType.Player, bundle.get("event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, bundle.get("event.player.kick.reason." + kickReason)));
                 Events.fire(new CustomEvents.PlayerConnectKicked(event.packet.name, bundle.get("event.player.kick.reason." + kickReason)));
+            }
+        });
+
+        Events.on(essential.core.CustomEvents.ConfigFileModified.class, e -> {
+            if (e.getKind() == StandardWatchEventKinds.ENTRY_MODIFY) {
+                if (e.getPaths().equals("config_protect.yaml")) {
+                    Main.conf = essential.core.Main.Companion.createAndReadConfig(
+                            "config_protect.yaml",
+                            Objects.requireNonNull(this.getClass().getResourceAsStream("/config_protect.yaml")),
+                            Config.class
+                    );
+                    Log.info(new Bundle().get("config.reloaded"));
+                }
             }
         });
     }

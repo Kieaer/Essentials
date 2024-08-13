@@ -204,7 +204,7 @@ class Trigger {
         data.languageTag = player.locale()
 
         database.createData(data)
-        Permission.apply()
+        Permission.load()
 
         player.sendMessage(Bundle(player.locale())["event.player.data.registered"])
         loadPlayer(player, data, false)

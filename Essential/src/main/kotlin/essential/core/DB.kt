@@ -399,7 +399,18 @@ class DB {
 
     fun getByDiscord(discord: String): PlayerData? {
         return transaction {
-            val data = Player.selectAll().where { Player.uuid eq discord }.firstOrNull()
+            val data = Player.selectAll().where { Player.discord eq discord }.firstOrNull()
+            if (data != null) {
+                convertToData(data)
+            } else {
+                null
+            }
+        }
+    }
+
+    fun getByName(name: String): PlayerData? {
+        return transaction {
+            val data = Player.selectAll().where { Player.name eq name }.firstOrNull()
             if (data != null) {
                 convertToData(data)
             } else {

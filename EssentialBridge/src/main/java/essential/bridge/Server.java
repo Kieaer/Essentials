@@ -56,6 +56,7 @@ public class Server implements Runnable {
                 b.newLine();
                 b.flush();
             } catch (SocketException e) {
+                e.printStackTrace();
                 try {
                     a.close();
                 } catch (IOException ex) {
@@ -83,6 +84,7 @@ public class Server implements Runnable {
                 while (!currentThread().isInterrupted()) {
                     String d = reader.readLine();
                     if (d == null) {
+                        System.out.println("reader data received null");
                         interrupt();
                     } else {
                         switch (d) {
@@ -118,7 +120,8 @@ public class Server implements Runnable {
                         }
                     }
                 }
-            } catch (SocketException ignored) {
+            } catch (SocketException e) {
+                e.printStackTrace();
             } catch (Exception e) {
                 e.printStackTrace();
             }

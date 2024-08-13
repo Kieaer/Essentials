@@ -1,5 +1,6 @@
 package essential.discord;
 
+import arc.Events;
 import arc.util.CommandHandler;
 import arc.util.Log;
 import essential.core.Bundle;
@@ -11,6 +12,7 @@ import mindustry.gen.Player;
 import mindustry.mod.Plugin;
 
 import java.lang.reflect.Method;
+import java.nio.file.StandardWatchEventKinds;
 import java.util.Objects;
 
 import static essential.core.Main.database;
@@ -32,9 +34,22 @@ public class Main extends Plugin {
                 Config.class
         );
 
-        if (!conf.getUrl().isEmpty() && !conf.getUrl().matches("^https://discord\\\\.gg/[a-zA-Z0-9_-]{6,16}$")) {
+        if (!conf.getUrl().isEmpty() && !conf.getUrl().matches("https://discord\\.gg/[a-zA-Z0-9]{1,16}")) {
             Log.warn(bundle.get("config.invalid.url"));
         }
+
+        Events.on(essential.core.CustomEvents.ConfigFileModified.class, e -> {
+            if (e.getKind() == StandardWatchEventKinds.ENTRY_MODIFY) {
+                if (e.getPaths().equals("config_discord.yaml")) {
+                    Main.conf = essential.core.Main.Companion.createAndReadConfig(
+                            "config_discord.yaml",
+                            Objects.requireNonNull(this.getClass().getResourceAsStream("/config_discord.yaml")),
+                            Config.class
+                    );
+                    Log.info(new Bundle().get("config.reloaded"));
+                }
+            }
+        });
 
         Log.debug(bundle.get("event.plugin.loaded"));
     }

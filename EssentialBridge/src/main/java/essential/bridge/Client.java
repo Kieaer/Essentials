@@ -11,9 +11,7 @@ import java.util.Scanner;
 
 public class Client implements Runnable {
     // todo ban 공유 서버 ip
-    private Socket socket = new Socket();
-    private BufferedReader reader;
-    private BufferedWriter writer;
+    Socket socket = new Socket();
     String lastReceivedMessage = "";
 
     @Override
@@ -22,8 +20,7 @@ public class Client implements Runnable {
             socket.connect(new InetSocketAddress(Main.conf.address, Main.conf.port), 5000);
             Log.info(Main.bundle.get("network.client.connected", Main.conf.address, Main.conf.port));
 
-            writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             while (!java.lang.Thread.currentThread().isInterrupted()) {
                 try {
@@ -36,8 +33,6 @@ public class Client implements Runnable {
                                 Call.sendMessage(msg);
                                 break;
                             case "exit":
-                                writer.close();
-                                reader.close();
                                 socket.close();
                                 Thread.currentThread().interrupt();
                                 break;
@@ -53,8 +48,6 @@ public class Client implements Runnable {
             Log.info(Main.bundle.get("network.client.timeout"));
         } catch (InterruptedIOException e) {
             try {
-                writer.close();
-                reader.close();
                 socket.close();
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -65,9 +58,11 @@ public class Client implements Runnable {
     }
 
     private void write(String msg) throws IOException {
-        writer.write(msg);
-        writer.newLine();
-        writer.flush();
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
+            writer.write(msg);
+            writer.newLine();
+            writer.flush();
+        }
     }
 
     void message(String message) {
@@ -103,10 +98,8 @@ public class Client implements Runnable {
                 }
                 break;
             case "exit":
-                if (reader != null) {
+                if (socket != null) {
                     write("exit");
-                    writer.close();
-                    reader.close();
                     socket.close();
                 }
                 break;
