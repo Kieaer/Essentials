@@ -2,6 +2,7 @@ package essential.core
 
 import arc.ApplicationListener
 import arc.Core
+import arc.Events
 import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Http
@@ -14,6 +15,7 @@ import essential.core.Event.findPlayerData
 import essential.core.annotation.ClientCommand
 import essential.core.annotation.ServerCommand
 import mindustry.Vars
+import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Playerc
@@ -126,40 +128,54 @@ class Main : Plugin() {
         daemon.submit(Trigger.Thread())
         daemon.submit(Trigger.UpdateThread())
 
-        Vars.netServer.admins.addActionFilter(Administration.ActionFilter { e ->
-            if (e.player == null) return@ActionFilter true
-            val data = database.players.find { it.uuid == e.player.uuid() }
-            val isHub = PluginData["hubMode"]
-            PluginData.warpBlocks.forEach {
-                if (it.mapName == PluginData.currentMap && e.tile != null && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
-                    return@ActionFilter false
+
+        Vars.netServer.admins.addActionFilter(object : Administration.ActionFilter {
+            var isNotTargetMap = false
+
+            init {
+                Events.on(WorldLoadEvent::class.java) {
+                    isNotTargetMap = !isNotTargetMap && PluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name() }
                 }
             }
 
-            if (Vars.state.rules.pvp && conf.feature.pvp.autoTeam && e.player.team() == Team.derelict) {
-                return@ActionFilter false
-            }
+            override fun allow(e: Administration.PlayerAction): Boolean {
+                if (e.player == null) return true
+                val data = database.players.find { it.uuid == e.player.uuid() }
+                val isHub = PluginData["hubMode"]
 
-            if (data != null) {
-                if (e.type == Administration.ActionType.commandUnits) {
-                    data.currentControlCount += e.unitIDs.size
-                }
-
-                return@ActionFilter when {
-                    isHub != null && isHub == Vars.state.map.name() -> {
-                        Permission.check(data, "hub.build")
-                    }
-
-                    data.strict -> {
-                        false
-                    }
-
-                    else -> {
-                        true
+                if (!isNotTargetMap) {
+                    PluginData.warpBlocks.forEach {
+                        if (it.mapName == PluginData.currentMap && e.tile != null && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
+                            return false
+                        }
                     }
                 }
+
+                if (Vars.state.rules.pvp && conf.feature.pvp.autoTeam && e.player.team() == Team.derelict) {
+                    return false
+                }
+
+                if (data != null) {
+                    if (e.type == Administration.ActionType.commandUnits) {
+                        data.currentControlCount += e.unitIDs.size
+                    }
+
+                    return when {
+                        isHub != null && isHub == Vars.state.map.name() -> {
+                            Permission.check(data, "hub.build")
+                        }
+
+                        data.strict -> {
+                            false
+                        }
+
+                        else -> {
+                            true
+                        }
+                    }
+                }
+                return false
             }
-            return@ActionFilter false
         }.also { listener -> actionFilter = listener })
 
         Core.app.addListener(object : ApplicationListener {

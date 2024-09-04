@@ -102,15 +102,15 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         isCanceled = true
                     }
                     if (voting && message.contains("y", true) && !voted.contains(player.uuid())) {
-                        null
+                        return@ChatFilter null
                     } else {
-                        message
+                        return@ChatFilter message
                     }
                 } else {
-                    message
+                    return@ChatFilter message
                 }
             } else {
-                message
+                return@ChatFilter message
             }
         }
 
