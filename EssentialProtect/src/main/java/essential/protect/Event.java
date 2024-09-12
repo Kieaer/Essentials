@@ -181,9 +181,6 @@ public class Event {
                         break;
                     }
                 }
-            } else if (conf.rules.strict && Vars.netServer.admins.findByName(event.packet.name).size > 1) {
-                event.connection.kick(Packets.KickReason.idInUse);
-                kickReason = "ip";
             } else if (conf.rules.blockNewUser && !Arrays.asList(coldData).contains(event.packet.uuid)) {
                 event.connection.kick(new Bundle(event.packet.locale).get("event.player.new.blocked"), 0L);
                 kickReason = "newuser";

@@ -27,8 +27,7 @@ public class Main extends Plugin {
     static Boolean isServerMode = false;
     ExecutorService daemon = Executors.newSingleThreadExecutor();
     static Config conf;
-    Server server = new Server();
-    Client client = new Client();
+    static Runnable network;
 
     @Override
     public void init() {
@@ -46,34 +45,27 @@ public class Main extends Plugin {
         // 서버간 연결할 포트 생성
         try (ServerSocket serverSocket = new ServerSocket(conf.port)) {
             isServerMode = true;
-            daemon.submit(server);
+            network = new Server();
         } catch (IOException e) {
             isServerMode = false;
-            daemon.submit(client);
+            network = new Client();
         }
+        daemon.submit(network);
 
         Core.app.addListener(new ApplicationListener() {
             @Override
             public void dispose() {
                 if (isServerMode) {
-                    for (Socket socket : server.clients) {
+                    for (Socket socket : ((Server) network).clients) {
                         try {
                             socket.close();
                         } catch (IOException ignored) {
 
                         }
                     }
-                    server.shutdown();
+                    ((Server) network).shutdown();
                 } else {
-                    try {
-                        client.send("exit");
-                    } catch (IOException e) {
-                        try {
-                            client.socket.close();
-                        } catch (IOException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                    }
+                    ((Client) network).send("exit");
                 }
                 daemon.shutdown();
             }
