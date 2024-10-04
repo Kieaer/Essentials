@@ -702,10 +702,21 @@ object Event {
                 database.queue(data)
                 offlinePlayers.add(data)
 
-                if (database.players.size == 0 && pvpSpecters.isNotEmpty()) {
+                if (Vars.state.rules.pvp) {
+                    val b = Groups.player.copy()
+                    b.remove(it.player)
+                    val s: HashMap<Team, Playerc> = hashMapOf()
+                    b.forEach { p ->
+                        if (p.team() != Team.derelict) {
+                            s[p.team()] = p
+                        }
+                    }
+                    if (s.keys.size == 1) {
+                        Events.fire(GameOverEvent(b.first().team()))
+                    }
+                } else if (database.players.size == 0 && pvpSpecters.isNotEmpty()) {
                     Events.fire(GameOverEvent(data.player.team()))
                 }
-
                 database.players.removeAll { e -> e.uuid == data.uuid }
             }
         }.also { listener -> eventListeners[PlayerLeave::class.java] = listener })
