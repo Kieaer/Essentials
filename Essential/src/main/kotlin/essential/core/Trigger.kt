@@ -287,19 +287,15 @@ class Trigger {
         }
 
         override fun run() {
-
             while (!java.lang.Thread.currentThread().isInterrupted) {
                 try {
                     var isNotTargetMap = false
-
                     PluginData.load()
 
-                    if (
-                        !PluginData.warpCounts.none { f -> f.mapName == Vars.state.map.name() } ||
-                        !PluginData.warpTotals.none { f -> f.mapName == Vars.state.map.name() } ||
-                        !PluginData.warpZones.none { f -> f.mapName == Vars.state.map.name() } ||
-                        !PluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name()
-                        }
+                    if (PluginData.warpCounts.none { f -> f.mapName == Vars.state.map.name() } &&
+                        PluginData.warpTotals.none { f -> f.mapName == Vars.state.map.name() } &&
+                        PluginData.warpZones.none { f -> f.mapName == Vars.state.map.name() } &&
+                        PluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name() }
                     ) {
                         isNotTargetMap = true
                     }
@@ -905,7 +901,7 @@ class Trigger {
             override fun run() {
                 if (Vars.state.rules.pvp) {
                     database.players.forEach {
-                        if (!pvpPlayer.containsKey(it.uuid) && it.player.team() != Team.derelict) {
+                        if (!pvpPlayer.containsKey(it.uuid) && it.player.team() != Team.derelict && it.player.unit() != null) {
                             pvpPlayer[it.uuid] = it.player.team()
                         }
                     }

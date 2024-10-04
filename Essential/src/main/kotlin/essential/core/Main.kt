@@ -128,7 +128,6 @@ class Main : Plugin() {
         daemon.submit(Trigger.Thread())
         daemon.submit(Trigger.UpdateThread())
 
-
         Vars.netServer.admins.addActionFilter(object : Administration.ActionFilter {
             var isNotTargetMap = false
 

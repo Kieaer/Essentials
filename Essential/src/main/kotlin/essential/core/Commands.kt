@@ -2614,6 +2614,7 @@ class Commands {
 
     @ServerCommand("debug", "[parameter...]", "Debug any commands")
     fun debug(arg: Array<out String>) {
+        println(PluginData.toString())
         for (a in database.players) {
             println(a.toString())
         }

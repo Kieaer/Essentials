@@ -34,7 +34,7 @@ import static mindustry.Vars.netServer;
 
 public class Main extends Plugin {
     static Bundle bundle = new Bundle();
-    static Config conf;
+    public static Config conf;
     static PluginData pluginData = new PluginData();
 
     @Override

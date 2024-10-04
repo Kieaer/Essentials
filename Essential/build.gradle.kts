@@ -33,7 +33,6 @@ dependencies {
     implementation("io.github.classgraph:classgraph:4.8.173")
     implementation("com.github.lalyos:jfiglet:0.0.9")
 
-
     val rulesVersion = "1.19.0"
     val dataFakerVersion = "1.8.1"
     val mockitoVersion = "5.4.0"
