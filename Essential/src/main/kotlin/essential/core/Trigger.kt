@@ -113,8 +113,8 @@ class Trigger {
             entityOrder += 1
 
             if (!login) {
-                val motd = if (root.child("motd/${data.languageTag}.txt").exists()) {
-                    root.child("motd/${data.languageTag}.txt").readString()
+                val motd = if (root.child("motd/${bundle.locale.toLanguageTag()}.txt").exists()) {
+                    root.child("motd/${bundle.locale.toLanguageTag()}.txt").readString()
                 } else if (root.child("motd").list().isNotEmpty()) {
                     val file = root.child("motd/en.txt")
                     if (file.exists()) file.readString() else null
@@ -287,17 +287,19 @@ class Trigger {
         }
 
         override fun run() {
-            var isNotTargetMap = false
 
             while (!java.lang.Thread.currentThread().isInterrupted) {
                 try {
+                    var isNotTargetMap = false
+
                     PluginData.load()
 
-                    if (!isNotTargetMap &&
-                        PluginData.warpCounts.none { f -> f.mapName == Vars.state.map.name() } &&
-                        PluginData.warpTotals.none { f -> f.mapName == Vars.state.map.name() } &&
-                        PluginData.warpZones.none { f -> f.mapName == Vars.state.map.name() } &&
-                        PluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name() }
+                    if (
+                        !PluginData.warpCounts.none { f -> f.mapName == Vars.state.map.name() } ||
+                        !PluginData.warpTotals.none { f -> f.mapName == Vars.state.map.name() } ||
+                        !PluginData.warpZones.none { f -> f.mapName == Vars.state.map.name() } ||
+                        !PluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name()
+                        }
                     ) {
                         isNotTargetMap = true
                     }
