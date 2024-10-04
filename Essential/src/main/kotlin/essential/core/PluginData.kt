@@ -194,9 +194,11 @@ object PluginData {
 
                     DB.Data.selectAll().first().run {
                         // upgrade
+                        var isOldVersion = false
                         val data = try {
                             JsonObject.readJSON(this[DB.Data.data]).asObject()
                         } catch (e: Exception) {
+                            isOldVersion = true
                             JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.Data.data].toString()))).asObject()
                         }
 
@@ -273,6 +275,10 @@ object PluginData {
                         JsonArray.readJSON(data["status"].asString().replace("\\", "")).asObject().forEach {
                             status.add(Pair(it.name, it.value.asString()))
                         }
+
+                        if (isOldVersion) {
+                            save(false)
+                        }
                     }
                 }
             }
@@ -282,4 +288,10 @@ object PluginData {
             e.printStackTrace()
         }
     }
+
+    override fun toString(): String {
+        return "PluginData(uptime=$uptime, playtime=$playtime, pluginVersion='$pluginVersion', databaseVersion=$databaseVersion, warpZones=$warpZones, warpBlocks=$warpBlocks, warpCounts=$warpCounts, warpTotals=$warpTotals, blacklist=$blacklist, banned=$banned, status=$status, isRankingWorking=$isRankingWorking, isSurrender=$isSurrender, isCheated=$isCheated, entityOrder=$entityOrder, effectLocal=$effectLocal, currentMap='$currentMap', voting=$voting, voteCooltime=$voteCooltime, voterCooltime=$voterCooltime, lastVoted=$lastVoted)"
+    }
+
+
 }
