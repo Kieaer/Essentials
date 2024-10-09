@@ -2341,7 +2341,7 @@ class Commands {
                         }
 
                         if (target == null) {
-                            target = Vars.maps.all().find { e -> e.name().contains(arg[1]) }
+                            target = Vars.maps.all().find { e -> e.plainName().contains(arg[1]) }
                         }
 
                         if (target != null) {
