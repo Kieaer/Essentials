@@ -88,8 +88,8 @@ public class Main extends Plugin {
         // VPN 확인
         if (conf.rules.vpn) {
             boolean isUpdate = false;
-            if (essential.core.PluginData.INSTANCE.get("vpnListDate") == null || Long.parseLong(Objects.requireNonNull(essential.core.PluginData.INSTANCE.get("vpnListDate"))) + 8.64e7 < System.currentTimeMillis()) {
-                essential.core.PluginData.INSTANCE.getStatus().add(new Pair<>("vpnListDate", String.valueOf(System.currentTimeMillis())));
+            if (essential.core.Main.pluginData.get("vpnListDate") == null || Long.parseLong(Objects.requireNonNull(essential.core.Main.pluginData.get("vpnListDate"))) + 8.64e7 < System.currentTimeMillis()) {
+                essential.core.Main.pluginData.getStatus().add(new Pair<>("vpnListDate", String.valueOf(System.currentTimeMillis())));
                 isUpdate = true;
             }
 

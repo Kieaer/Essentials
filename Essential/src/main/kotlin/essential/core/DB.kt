@@ -104,11 +104,7 @@ class DB {
             if (type != null) {
                 Database.connect({
                     DriverManager.getConnection(
-                        if (System.getProperty("test") != null) {
-                            "jdbc:sqlite:${Core.settings.dataDirectory.child(conf.plugin.database.url).absolutePath().replace("sqlite:config","")}"
-                        } else {
-                            "jdbc:${conf.plugin.database.url}"
-                        },
+                        "jdbc:${conf.plugin.database.url}",
                         conf.plugin.database.username,
                         conf.plugin.database.password
                     )
@@ -119,12 +115,9 @@ class DB {
         }
     }
 
-    fun create() {
+    fun createTable() {
         transaction {
-            if (!Banned.exists()) SchemaUtils.create(Banned)
-            if (!Player.exists()) SchemaUtils.create(Player)
-            if (!Data.exists()) SchemaUtils.create(Data)
-            if (!DB.exists()) SchemaUtils.create(DB)
+            SchemaUtils.create(Data, Player, DB, Banned, inBatch = true)
         }
     }
 

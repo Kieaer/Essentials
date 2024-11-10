@@ -17,7 +17,7 @@ data class Config(
 
     @Serializable
     data class DatabaseConf(
-        val url: String,
+        var url: String,
         val username: String,
         val password: String
     )

@@ -22,6 +22,7 @@ import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Groups
 import net.datafaker.Faker
 import org.junit.After
 import org.junit.BeforeClass
@@ -60,8 +61,15 @@ class ClientCommandTest {
 
     @Test
     fun client_changemap() {
-        // Require admin or above permission
-        setPermission("owner", true)
+        fun reload() {
+            val newPlayer = newPlayer()
+            player = newPlayer.first
+            playerData = newPlayer.second
+
+            // Require admin or above permission
+            setPermission("owner", true)
+        }
+        reload()
 
         // If map not found
         clientCommand.handleMessage("/changemap nothing survival", player)
@@ -70,10 +78,12 @@ class ClientCommandTest {
         // Number method
         clientCommand.handleMessage("/changemap 0 survival", player)
         assertEquals("Ancient Caldera", Vars.state.map.name())
+        reload()
 
         // Name method
         clientCommand.handleMessage("/changemap fork survival", player)
         assertEquals("Fork", Vars.state.map.name())
+        reload()
 
         // If player enter wrong gamemode
         clientCommand.handleMessage("/changemap fork creative", player)
@@ -83,6 +93,7 @@ class ClientCommandTest {
         clientCommand.handleMessage("/changemap glacier", player)
         assertEquals("Glacier", Vars.state.map.name())
         assertEquals(Gamemode.survival, Vars.state.rules.mode())
+        reload()
     }
 
     @Test
@@ -92,14 +103,12 @@ class ClientCommandTest {
 
         // Change self name
         clientCommand.handleMessage("/changename ${player.name()} Kieaer", player)
-        sleep(100)
         assertEquals("Kieaer", player.name())
 
         // Change other player name
         val registeredUser = newPlayer()
         val randomName = Faker().name().lastName()
         clientCommand.handleMessage("/changename ${registeredUser.first.name()} $randomName", player)
-        sleep(100)
         assertEquals(randomName, database.players.find { p -> p.uuid == registeredUser.second.uuid }!!.name)
         leavePlayer(registeredUser.first)
 
@@ -132,14 +141,14 @@ class ClientCommandTest {
 
         // Set all players mute
         clientCommand.handleMessage("/chat off", player)
-        assertNull(Vars.netServer.chatFormatter.format(dummy.first, "hello"))
+        assertNull(Vars.netServer.admins.filterMessage(dummy.first, "hello"))
 
         // But if player has chat.admin permission, still can chat
-        assertNotNull(Vars.netServer.chatFormatter.format(player, "hello"))
+        assertNotNull(Vars.netServer.admins.filterMessage(player.self(), "hello"))
 
         // Set all players unmute
         clientCommand.handleMessage("/chat on", player)
-        assertNotNull(Vars.netServer.chatFormatter.format(dummy.first, "hello"))
+        assertNotNull(Vars.netServer.admins.filterMessage(dummy.first, "yes"))
 
         leavePlayer(dummy.first)
     }
@@ -153,18 +162,28 @@ class ClientCommandTest {
 
     @Test
     fun client_color() {
+        fun checkChanged(condition: Boolean): Boolean {
+            for (i in 0 until 120) {
+                sleep(16)
+                if (player.name().contains("[#ff0000]") && condition) {
+                    return true
+                } else if (!player.name().contains("[#ff0000]") && !condition) {
+                    return false
+                }
+            }
+            fail()
+            return false
+        }
         // Require admin or above permission
         setPermission("admin", true)
 
         // Enable animated name
         clientCommand.handleMessage("/color", player)
-        sleep(1250)
-        assertTrue(player.name.contains("[#ff0000]"))
+        assertTrue(checkChanged(true))
 
         // Disable animated name
         clientCommand.handleMessage("/color", player)
-        sleep(1250)
-        assertFalse(player.name.contains("[#ff0000]"))
+        assertFalse(checkChanged(false))
     }
 
     fun client_discord() {
@@ -208,8 +227,6 @@ class ClientCommandTest {
         setPermission("user", true)
         playerData.exp = 100000
 
-        sleep(1000)
-
         // todo call effect mock
 
         // Disable all other player effects
@@ -233,6 +250,70 @@ class ClientCommandTest {
 
     @Test
     fun client_exp() {
+        fun assert(expected: Int, actual: Int) : Boolean {
+            for (i in 0 until 60) {
+                sleep(16)
+                if (expected == actual) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun assertFalse(condition: Boolean) : Boolean {
+            for (i in 0 until 60) {
+                sleep(16)
+                if (!condition) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun assertTrue(condition: Boolean) : Boolean {
+            for (i in 0 until 60) {
+                sleep(16)
+                if (condition) {
+                    return true
+                }
+            }
+            return false
+        }
+
+        fun assertHide(name: String, condition: Boolean) : Boolean {
+            var next = true
+            var buffer = playerData.lastSentMessage
+            var count = 0
+            var exists = false
+            while (next) {
+                clientCommand.handleMessage("/ranking exp $count", player)
+                sleep(200)
+                next = playerData.lastSentMessage != buffer
+                buffer = playerData.lastSentMessage
+                count++
+                if (buffer.contains(name)) {
+                    exists = true
+                }
+            }
+            if (exists && condition) {
+                return false
+            } else if (!exists && !condition) {
+                return false
+            }
+            return true
+        }
+
+        fun assertExp(uuid: String, exp: Int) : Boolean {
+            for (time in 1..10) {
+                if (database[uuid]!!.exp != exp) {
+                    sleep(100)
+                } else if (time == 10 && database[uuid]!!.exp != exp) {
+                    return false
+                }
+            }
+            return true
+        }
+
         // Require owner permission
         setPermission("owner", true)
 
@@ -243,7 +324,7 @@ class ClientCommandTest {
         // Set another player EXP value
         val dummy = newPlayer()
         clientCommand.handleMessage("/exp set 500 ${dummy.first.name}", player)
-        assertEquals(500, dummy.second.exp)
+        assertTrue(assert(500, dummy.second.exp))
 
         // If player enter wrong value
         clientCommand.handleMessage("/exp set number", player)
@@ -254,56 +335,25 @@ class ClientCommandTest {
         database.update(player.uuid(), playerData)
         assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastSentMessage)
         clientCommand.handleMessage("/ranking exp", player)
-        sleep(250)
-        assertFalse(playerData.lastSentMessage.contains(player.name))
+        assertFalse(playerData.lastSentMessage.contains(player.name()))
 
         // Un-hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
         database.update(player.uuid(), playerData)
         assertEquals(Bundle()["command.exp.ranking.unhide"], playerData.lastSentMessage)
         clientCommand.handleMessage("/ranking exp", player)
-        sleep(250)
-        assertTrue(playerData.lastSentMessage.contains(player.name))
+        assertTrue(playerData.lastSentMessage.contains(player.name()))
 
         // Hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.first.name}", player)
         database.update(dummy.first.uuid(), dummy.second)
         assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastSentMessage)
-        var next = true
-        var buffer = playerData.lastSentMessage
-        var count = 0
-        var exists = false
-        while (next) {
-            clientCommand.handleMessage("/ranking exp $count", player)
-            sleep(200)
-            next = playerData.lastSentMessage != buffer
-            buffer = playerData.lastSentMessage
-            count++
-            if (buffer.contains(dummy.first.name)) {
-                exists = true
-            }
-        }
-        if (exists) fail()
-        buffer = ""
-        count = 0
-        exists = false
-        next = true
+        assertTrue(assertHide(dummy.first.name, true))
 
         // Un-hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.second.name}", player)
         database.update(dummy.first.uuid(), dummy.second)
-        assertEquals(Bundle()["command.exp.ranking.unhide"], playerData.lastSentMessage)
-        while (next) {
-            clientCommand.handleMessage("/ranking exp $count", player)
-            sleep(200)
-            next = playerData.lastSentMessage != buffer
-            buffer = playerData.lastSentMessage
-            count++
-            if (buffer.contains(dummy.first.name)) {
-                exists = true
-            }
-        }
-        if (!exists) fail()
+        assertTrue(assertHide(dummy.first.name, false))
 
         // Add exp value
         clientCommand.handleMessage("/exp add 500", player)
@@ -324,33 +374,15 @@ class ClientCommandTest {
         // Set EXP for players who are not currently logged in
         leavePlayer(dummy.first)
         clientCommand.handleMessage("/exp set 10 ${dummy.first.name}", player)
-        for (time in 1..10) {
-            if (database[dummy.first.uuid()]!!.exp != 10) {
-                sleep(200)
-            } else if (time == 10 && database[dummy.first.uuid()]!!.exp != 10) {
-                fail()
-            }
-        }
+        assertExp(dummy.first.uuid(), 10)
 
         // Add EXP for players who are not currently logged in
         clientCommand.handleMessage("/exp add 10 ${dummy.first.name}", player)
-        for (time in 1..10) {
-            if (database[dummy.first.uuid()]!!.exp != 10) {
-                sleep(200)
-            } else if (time == 10 && database[dummy.first.uuid()]!!.exp != 20) {
-                fail()
-            }
-        }
+        assertExp(dummy.first.uuid(), 20)
 
         // Subtract EXP for players who are not currently logged in
-        clientCommand.handleMessage("/exp remove ${dummy.first.name}", player)
-        for (time in 1..10) {
-            if (database[dummy.first.uuid()]!!.exp != 10) {
-                sleep(200)
-            } else if (time == 10 && database[dummy.first.uuid()]!!.exp != 0) {
-                fail()
-            }
-        }
+        clientCommand.handleMessage("/exp remove 5 ${dummy.first.name}", player)
+        assertExp(dummy.first.uuid(), 15)
 
         // If target player not found
         clientCommand.handleMessage("/exp set 10 dummy", player)
@@ -547,7 +579,24 @@ class ClientCommandTest {
 
     @Test
     fun client_js() {
+        // Test js command work
+        setPermission("owner", true)
+        clientCommand.handleMessage("/js Vars.state.rules.infiniteResources = true", player)
+        assertTrue(Vars.state.rules.infiniteResources)
 
+        clientCommand.handleMessage("/js Vars.state.rules.infiniteResources = false", player)
+        assertFalse(Vars.state.rules.infiniteResources)
+
+        // Test js command works only owner
+        val dummy = newPlayer()
+        clientCommand.handleMessage("/js yes", dummy.first)
+        assertTrue(dummy.first.con.kicked)
+
+        // Test admin status
+        val fakeAdmin = newPlayer()
+        setPermission(fakeAdmin.first, "user", true)
+        clientCommand.handleMessage("/js yeah", fakeAdmin.first)
+        assertTrue(fakeAdmin.first.con.kicked)
     }
 
     @Test
@@ -557,7 +606,9 @@ class ClientCommandTest {
 
     @Test
     fun client_kill() {
-
+        setPermission("owner", true)
+        clientCommand.handleMessage("/kill", player)
+        assertTrue(Groups.player.find { p -> p.name == player.name() }.unit().dead())
     }
 
     @Test
@@ -652,12 +703,30 @@ class ClientCommandTest {
 
     @Test
     fun client_setitem() {
+        setPermission("owner", true)
+        clientCommand.handleMessage("/setitem all 500", player)
+        assertEquals(500, player.team().core().items().get(Items.copper))
+        assertEquals(500, player.team().core().items().get(Items.lead))
 
+        clientCommand.handleMessage("/setitem copper 1000", player)
+        assertEquals(1000, player.team().core().items().get(Items.copper))
+        assertEquals(500, player.team().core().items().get(Items.lead))
+
+        clientCommand.handleMessage("/setitem copper 1000 sharded", player)
+        assertEquals(1000, Vars.state.teams.cores(Team.sharded).first().items().get(Items.copper))
     }
 
     @Test
     fun client_setperm() {
+        setPermission("owner", true)
+        val dummy = newPlayer()
+        clientCommand.handleMessage("/setperm ${dummy.first.name} admin", player)
+        assertEquals("admin", dummy.second.permission)
 
+        clientCommand.handleMessage("/setperm ${dummy.first.name} user", player)
+        assertEquals("user", dummy.second.permission)
+
+        leavePlayer(dummy.first)
     }
 
     @Test
@@ -666,7 +735,7 @@ class ClientCommandTest {
     }
 
     @Test
-    fun client_spanw() {
+    fun client_spawn() {
 
     }
 

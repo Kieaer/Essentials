@@ -17,7 +17,6 @@ import essential.core.annotation.ServerCommand
 import mindustry.Vars
 import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
-import mindustry.gen.Call
 import mindustry.gen.Playerc
 import mindustry.mod.Plugin
 import mindustry.net.Administration
@@ -40,6 +39,7 @@ class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
         lateinit var conf: Config
+        lateinit var pluginData: PluginData
 
         @JvmField
         val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
@@ -49,7 +49,7 @@ class Main : Plugin() {
 
         @JvmField
         val daemon: ExecutorService = ThreadPoolExecutor(
-            0, Int.MAX_VALUE,
+            0, Runtime.getRuntime().availableProcessors(),
             16, TimeUnit.MILLISECONDS,
             SynchronousQueue()
         )
@@ -100,10 +100,11 @@ class Main : Plugin() {
         // DB 설정
         database.load()
         database.connect()
-        database.create()
+        database.createTable()
 
         // 데이터 설정
-        PluginData.load()
+        pluginData = PluginData()
+        pluginData.load()
 
         // 업데이트 확인
         checkUpdate()
@@ -133,18 +134,18 @@ class Main : Plugin() {
 
             init {
                 Events.on(WorldLoadEvent::class.java) {
-                    isNotTargetMap = !isNotTargetMap && PluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name() }
+                    isNotTargetMap = !isNotTargetMap && pluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name() }
                 }
             }
 
             override fun allow(e: Administration.PlayerAction): Boolean {
                 if (e.player == null) return true
                 val data = database.players.find { it.uuid == e.player.uuid() }
-                val isHub = PluginData["hubMode"]
+                val isHub = pluginData["hubMode"]
 
                 if (!isNotTargetMap) {
-                    PluginData.warpBlocks.forEach {
-                        if (it.mapName == PluginData.currentMap && e.tile != null && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
+                    pluginData.warpBlocks.forEach {
+                        if (it.mapName == pluginData.currentMap && e.tile != null && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
                             return false
                         }
                     }
@@ -229,7 +230,7 @@ class Main : Plugin() {
                         }
                     } else {
                         if (annotation.name == "js") {
-                            Call.kick(player.con(), Bundle(player.locale())["command.js.no.permission"])
+                            player.kick(Bundle(player.locale())["command.js.no.permission"])
                         } else {
                             data.send("command.permission.false")
                         }
@@ -246,11 +247,11 @@ class Main : Plugin() {
                 .block {
                     if (it.status == Http.HttpStatus.OK) {
                         val json = JsonValue.readJSON(it.resultAsString).asObject()
-                        PluginData.pluginVersion = JsonValue.readJSON(
+                        pluginData.pluginVersion = JsonValue.readJSON(
                             this::class.java.getResourceAsStream("/plugin.json")!!.reader().readText()
                         ).asObject()["version"].asString()
-                        val latest = DefaultArtifactVersion(json.getString("tag_name", PluginData.pluginVersion))
-                        val current = DefaultArtifactVersion(PluginData.pluginVersion)
+                        val latest = DefaultArtifactVersion(json.getString("tag_name", pluginData.pluginVersion))
+                        val current = DefaultArtifactVersion(pluginData.pluginVersion)
 
                         when {
                             latest > current -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject()["browser_download_url"].asString(), json["body"].asString()])
@@ -262,7 +263,7 @@ class Main : Plugin() {
         } else {
             Vars.mods.list().forEach { mod ->
                 if (mod.meta.name == "Essentials") {
-                    PluginData.pluginVersion = mod.meta.version
+                    pluginData.pluginVersion = mod.meta.version
                     return@forEach
                 }
             }

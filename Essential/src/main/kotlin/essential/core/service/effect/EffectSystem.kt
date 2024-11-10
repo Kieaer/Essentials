@@ -6,7 +6,7 @@ import arc.util.Timer
 import essential.core.DB
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.database
-import essential.core.PluginData
+import essential.core.Main.Companion.pluginData
 import mindustry.Vars
 import mindustry.content.Fx
 import mindustry.entities.Effect
@@ -240,7 +240,7 @@ class EffectSystem : Timer.Task() {
 
     override fun run() {
         if (Vars.state.isPlaying) {
-            if (!PluginData.effectLocal) {
+            if (!pluginData.effectLocal) {
                 val target = ArrayList<Playerc>()
                 database.players.forEach {
                     if (conf.feature.level.effect.enabled) {

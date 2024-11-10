@@ -12,11 +12,8 @@ import essential.core.DB
 import essential.core.Event.earnEXP
 import essential.core.Event.findPlayerData
 import essential.core.Main.Companion.database
+import essential.core.Main.Companion.pluginData
 import essential.core.Permission
-import essential.core.PluginData
-import essential.core.PluginData.lastVoted
-import essential.core.PluginData.voterCooltime
-import essential.core.PluginData.voting
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -87,7 +84,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                 val data = findPlayerData(player.uuid())
                 if (data != null) {
                     val isAdmin = Permission.check(data, "vote.pass")
-                    if (voting && message.equals("y", true) && !voted.contains(player.uuid())) {
+                    if (pluginData.voting && message.equals("y", true) && !voted.contains(player.uuid())) {
                         if (voteData.starter != data) {
                             if (Vars.state.rules.pvp && voteData.team == player.team()) {
                                 voted.add(player.uuid())
@@ -98,10 +95,10 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                             isAdminVote = true
                         }
                         data.send("command.vote.voted")
-                    } else if (voting && message.equals("n", true) && isAdmin) {
+                    } else if (pluginData.voting && message.equals("n", true) && isAdmin) {
                         isCanceled = true
                     }
-                    if (voting && message.contains("y", true) && !voted.contains(player.uuid())) {
+                    if (pluginData.voting && message.contains("y", true) && !voted.contains(player.uuid())) {
                         return@ChatFilter null
                     } else {
                         return@ChatFilter message
@@ -162,7 +159,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
     }
 
     override fun cancel() {
-        voting = false
+        pluginData.voting = false
         Vars.netServer.admins.chatFilters.remove(chatFilter)
         Events.remove(GameOverEvent::class.java, gameoverEvent)
         Events.remove(WorldLoadEvent::class.java, worldLoadEvent)
@@ -170,7 +167,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
     }
 
     override fun run() {
-        if (voting) {
+        if (pluginData.voting) {
             if (Groups.player.find { a -> a.uuid() == voteData.starter.uuid } == null) {
                 send("command.vote.canceled.leave")
                 this.cancel()
@@ -234,14 +231,14 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                             for (it in database.players) {
                                 earnEXP(Vars.state.rules.waveTeam, it.player, it, true)
                             }
-                            PluginData.isSurrender = true
+                            pluginData.isSurrender = true
                             Vars.maps.setNextMapOverride(voteData.map)
                             Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                         }
 
                         VoteType.Gameover -> {
                             if (!Permission.check(voteData.starter, "vote.pass")) {
-                                voterCooltime[voteData.starter.uuid] = 180
+                                pluginData.voterCooltime[voteData.starter.uuid] = 180
                             }
                             if (isPvP) {
                                 Vars.world.tiles.forEach {
@@ -250,13 +247,13 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                                     }
                                 }
                             } else {
-                                PluginData.isSurrender = true
+                                pluginData.isSurrender = true
                                 Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                             }
                         }
 
                         VoteType.Skip -> {
-                            voterCooltime[voteData.starter.uuid] = 180
+                            pluginData.voterCooltime[voteData.starter.uuid] = 180
                             for (a in 0..voteData.wave!!) {
                                 Vars.spawner.spawnEnemies()
                                 Vars.state.wave++
@@ -266,7 +263,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         }
 
                         VoteType.Back -> {
-                            PluginData.isSurrender = true
+                            pluginData.isSurrender = true
                             val savePath: Fi = if (Core.settings.getBool("autosave")) {
                                 Vars.saveDirectory.findAll { f: Fi ->
                                     f.name().startsWith("auto_")
@@ -294,11 +291,11 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         }
 
                         VoteType.Random -> {
-                            if (lastVoted != null && LocalTime.now().isAfter(lastVoted!!.plusMinutes(10L)) && !Permission.check(voteData.starter, "vote.random.bypass")) {
+                            if (pluginData.lastVoted != null && LocalTime.now().isAfter(pluginData.lastVoted!!.plusMinutes(10L)) && !Permission.check(voteData.starter, "vote.random.bypass")) {
                                 send("command.vote.random.cool")
                             } else {
-                                voterCooltime[voteData.starter.uuid] = 420
-                                lastVoted = LocalTime.now()
+                                pluginData.voterCooltime[voteData.starter.uuid] = 420
+                                pluginData.lastVoted = LocalTime.now()
                                 send("command.vote.random.done")
                                 var map: Map
                                 send("command.vote.random.is")

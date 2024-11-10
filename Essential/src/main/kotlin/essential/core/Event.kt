@@ -13,6 +13,7 @@ import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.currentTime
 import essential.core.Main.Companion.daemon
 import essential.core.Main.Companion.database
+import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.root
 import essential.core.annotation.Event
 import mindustry.Vars
@@ -56,7 +57,6 @@ import kotlin.io.path.Path
 object Event {
     var originalBlockMultiplier = 1f
     var originalUnitMultiplier = 1f
-
 
     var worldHistory = ArrayList<TileLog>()
 
@@ -207,7 +207,7 @@ object Event {
             )
             val data = findPlayerData(it.player.uuid())
             if (data != null) {
-                PluginData.warpBlocks.forEach { two ->
+                pluginData.warpBlocks.forEach { two ->
                     if (two.mapName == Vars.state.map.name() && it.tile.block().name == two.tileName && it.tile.build.tileX() == two.x && it.tile.build.tileY() == two.y) {
                         if (two.online) {
                             database.players.forEach { data ->
@@ -228,7 +228,7 @@ object Event {
                     }
                 }
 
-                for (two in PluginData.warpZones) {
+                for (two in pluginData.warpZones) {
                     if (two.mapName == Vars.state.map.name() && two.click && isUnitInside(it.tile, two.startTile, two.finishTile)) {
                         Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
                         Call.connect(it.player.con(), two.ip, two.port)
@@ -309,7 +309,7 @@ object Event {
                             0 -> true
                             else -> false
                         }
-                        PluginData.warpZones.add(
+                        pluginData.warpZones.add(
                             PluginData.WarpZone(
                                 Vars.state.map.plainName(),
                                 Vars.world.tile(x, y).pos(),
@@ -320,7 +320,7 @@ object Event {
                             )
                         )
                         player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (touch) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
-                        PluginData.save(false)
+                        pluginData.save(false)
                     }
 
                     Call.menu(
@@ -419,10 +419,12 @@ object Event {
                     val data = findPlayerData(player.uuid())
                     if (data != null) {
                         if (!data.mute) {
-                            if (isGlobalMute && Permission.check(data, "chat.admin")) {
-                                message
-                            } else if (isGlobalMute){
-                                null
+                            if (isGlobalMute) {
+                                if (Permission.check(data, "chat.admin")) {
+                                    message
+                                } else {
+                                    null
+                                }
                             } else {
                                 message
                             }
@@ -754,10 +756,10 @@ object Event {
     @Event
     fun worldLoad() {
         Events.on(WorldLoadEvent::class.java, Cons<WorldLoadEvent> {
-            PluginData.playtime = 0L
-            PluginData.isSurrender = false
-            PluginData.isCheated = false
-            PluginData.currentMap = Vars.state.map.name()
+            pluginData.playtime = 0L
+            pluginData.isSurrender = false
+            pluginData.isCheated = false
+            pluginData.currentMap = Vars.state.map.name()
             dpsTile = null
             if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
 
@@ -786,7 +788,7 @@ object Event {
     fun connectPacket() {
         Events.on(ConnectPacketEvent::class.java, Cons<ConnectPacketEvent> {
             if (conf.feature.blacklist.enabled) {
-                PluginData.blacklist.forEach { text ->
+                pluginData.blacklist.forEach { text ->
                     val pattern = Regex(text)
                     if ((conf.feature.blacklist.regex && pattern.matches(it.packet.name)) ||
                         !conf.feature.blacklist.regex && it.packet.name.contains(text)
@@ -963,7 +965,7 @@ object Event {
         var result: Int = target.currentExp
         val time = target.currentPlayTime.toInt()
 
-        if (PluginData.playtime > 300L) {
+        if (pluginData.playtime > 300L) {
             val erekirAttack = if (Vars.state.planet == Planets.erekir) target.currentUnitDestroyedCount else 0
             val erekirPvP = if (Vars.state.planet == Planets.erekir) 5000 else 0
 

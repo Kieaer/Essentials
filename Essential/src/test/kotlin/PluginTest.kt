@@ -4,6 +4,7 @@ import arc.files.Fi
 import arc.graphics.Camera
 import arc.graphics.Color
 import arc.util.CommandHandler
+import arc.util.Http
 import arc.util.Log
 import essential.core.Bundle
 import essential.core.DB
@@ -45,7 +46,7 @@ class PluginTest {
     companion object {
         private lateinit var main : Main
         private val r = Random()
-        lateinit var player : Player
+        lateinit var player : Playerc
         lateinit var path : Fi
         val serverCommand : CommandHandler = CommandHandler("")
         val clientCommand : CommandHandler = CommandHandler("/")
@@ -66,6 +67,7 @@ class PluginTest {
             path = Core.settings.dataDirectory
 
             path.child("maps").deleteDirectory()
+            path.child("scripts").deleteDirectory()
 
             path.child("locales").writeString("en", false)
             path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=7\nbuild=custom build", false)
@@ -85,6 +87,16 @@ class PluginTest {
                             }
                         }
                     }
+                }
+            }
+
+            if (!path.child("scripts").exists()) {
+                path.child("scripts").mkdirs()
+                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/refs/heads/master/core/assets/scripts/global.js").submit { res ->
+                    path.child("scripts/global.js").writeString(res.resultAsString)
+                }
+                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/refs/heads/master/core/assets/scripts/base.js").submit { res ->
+                    path.child("scripts/base.js").writeString(res.resultAsString)
                 }
             }
 
@@ -143,6 +155,7 @@ class PluginTest {
                 }
                 world.loadMap(testMap!!)
                 state.set(GameState.State.playing)
+
                 Version.build = 145
                 Version.revision = 1
 
@@ -174,6 +187,9 @@ class PluginTest {
             Config.chatBlacklist = true
             Config.blockfooclient = true
             Config.webServer = true*/
+
+
+            root.child("config/config.yaml").writeString(String(Main.Companion::class.java.getResourceAsStream("/config.yaml").readAllBytes()).replace("sqlite:config/mods/Essentials/data/database.db", "\"h2:mem:testdb;DB_CLOSE_DELAY=-1\""), false)
 
             main.init()
             main.registerClientCommands(clientCommand)
@@ -239,6 +255,10 @@ class PluginTest {
             return salt.toString()
         }
 
+        /**
+         * 플레이어 생성
+         * @return 플레이어
+         */
         fun createPlayer() : Player {
             val player = Player.create()
             val faker = Faker(Locale.ENGLISH)
@@ -278,7 +298,10 @@ class PluginTest {
             return world.tile(random.nextInt(100), random.nextInt(100))
         }
 
-
+        /**
+         * DB 에 계정이 등록된 플레이어 생성
+         * @return 1번째 값에 플레이어, 2번째 값에 플레이어 정보
+         */
         fun newPlayer() : Pair<Player, DB.PlayerData> {
             val player = createPlayer()
             Events.fire(EventType.PlayerJoin(player))
@@ -296,6 +319,10 @@ class PluginTest {
             return Pair(player, Main.database.players.find { data -> data.uuid == player.uuid() }!!)
         }
 
+        /**
+         * 대상 플레이어가 서버에서 나갔다고 하기
+         * @param player 플레이어
+         */
         fun leavePlayer(player : Playerc) {
             Events.fire(EventType.PlayerLeave(player.self()))
             player.remove()
@@ -308,10 +335,28 @@ class PluginTest {
             sleep(500)
         }
 
+        /**
+         * 현재 유저의 권한을 변경함
+         * @param group 그룹명 (visitor, user, admin, owner)
+         * @param admin 관리자 유무 (true, false)
+         */
         fun setPermission(group : String, admin : Boolean) {
-            serverCommand.handleMessage("setperm ${player.name} $group")
+            serverCommand.handleMessage("setperm ${player.name()} $group")
             if (admin) {
-                serverCommand.handleMessage("admin ${player.name}")
+                serverCommand.handleMessage("admin ${player.name()}")
+            }
+        }
+
+        /**
+         * 대상 플레이어의 권한을 변경함
+         * @param player 플레이어
+         * @param group 그룹명 (visitor, user, admin, owner)
+         * @param admin 관리자 유무 (true, false)
+         */
+        fun setPermission(player: Playerc, group : String, admin : Boolean) {
+            serverCommand.handleMessage("setperm ${player.name()} $group")
+            if (admin) {
+                serverCommand.handleMessage("admin ${player.name()}")
             }
         }
 

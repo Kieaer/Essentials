@@ -19,10 +19,8 @@ import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.currentTime
 import essential.core.Main.Companion.daemon
 import essential.core.Main.Companion.database
+import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.root
-import essential.core.PluginData.voteCooltime
-import essential.core.PluginData.voterCooltime
-import essential.core.PluginData.voting
 import essential.core.annotation.ClientCommand
 import essential.core.annotation.ServerCommand
 import essential.core.service.vote.VoteData
@@ -63,6 +61,7 @@ import kotlin.math.pow
 import kotlin.math.round
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
+
 
 class Commands {
     companion object {
@@ -152,10 +151,12 @@ class Commands {
             return
         }
 
-        val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
-        playerData.accountPW = password
-        database.queue(playerData)
-        playerData.send("command.changepw.apply")
+        daemon.submit {
+            val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
+            playerData.accountPW = password
+            database.queue(playerData)
+            Core.app.post { playerData.send("command.changepw.apply") }
+        }
     }
 
     @ClientCommand("chat", "<on/off>", "Mute all players without admins")
@@ -740,10 +741,9 @@ class Commands {
                                 } else if (s == 6) {
                                     val banConfirmMenu = Menus.registerMenu { _, i ->
                                         if (i == 0) {
-                                            if (targetData!!.player.con() != null) Call.kick(
-                                                targetData!!.player.con(),
-                                                Packets.KickReason.banned
-                                            )
+                                            if (targetData!!.player.con() != null) {
+                                                targetData!!.player.kick(Packets.KickReason.banned)
+                                            }
                                             Events.fire(
                                                 CustomEvents.PlayerBanned(
                                                     targetData!!.name,
@@ -796,7 +796,7 @@ class Commands {
 
                     select == 2 -> {
                         if (targetData != null) {
-                            Call.kick(targetData!!.player.con(), Packets.KickReason.kick)
+                            targetData!!.player.kick(Packets.KickReason.kick)
                         }
                     }
                 }
@@ -871,13 +871,15 @@ class Commands {
         if (arg.isEmpty()) {
             playerData.err("command.js.invalid")
         } else {
-            val output = Vars.mods.scripts.runConsole(arg[0])
-            try {
-                val errorName = output?.substring(0, output.indexOf(' ') - 1)
-                Class.forName("org.mozilla.javascript.$errorName")
-                player.sendMessage("> [#ff341c]$output")
-            } catch (e: Throwable) {
-                player.sendMessage("[scarlet]> $output")
+            Vars.mods.scripts.runConsole(arg[0]).also { result ->
+                try {
+                    val errorName: String = result.substring(0, result.indexOf(' ') - 1)
+                    Class.forName("org.mozilla.javascript.$errorName")
+                    player.sendMessage("[scarlet]> $result")
+                } catch (e: Throwable) {
+                    player.sendMessage("> $result")
+                }
+                playerData.lastSentMessage = result
             }
         }
     }
@@ -885,7 +887,7 @@ class Commands {
     @ClientCommand("kickall", description = "Kick all players without you.")
     fun kickAll(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         Groups.player.forEach {
-            if (!it.admin) Call.kick(it.con, Packets.KickReason.kick)
+            if (!it.admin) it.kick(Packets.KickReason.kick)
         }
         if (player.unit() != null) {
             playerData.send("command.kickall.done")
@@ -895,7 +897,7 @@ class Commands {
     @ServerCommand("kickall", description = "Kick all players.")
     fun kickAll(arg: Array<out String>) {
         Groups.player.forEach {
-            if (!it.admin) Call.kick(it.con, Packets.KickReason.kick)
+            if (!it.admin) it.kick(Packets.KickReason.kick)
         }
         Log.info(Bundle()["command.kickall.done"])
     }
@@ -1421,7 +1423,7 @@ class Commands {
         } else {
             Bundle(player.locale())
         }
-        if (PluginData.isRankingWorking) {
+        if (pluginData.isRankingWorking) {
             playerData.err("command.ranking.working")
             return
         }
@@ -1451,7 +1453,7 @@ class Commands {
                     return@Thread
                 }
 
-                PluginData.isRankingWorking = true
+                pluginData.isRankingWorking = true
                 Core.app.post { player.sendMessage(bundle["command.ranking.wait"]) }
                 val time = mutableMapOf<Pair<String, String>, Long>()
                 val exp = mutableMapOf<Pair<String, String>, Int>()
@@ -1516,7 +1518,7 @@ class Commands {
                     "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
                     "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.first })
                     else -> {
-                        PluginData.isRankingWorking = false
+                        pluginData.isRankingWorking = false
                         return@Thread
                     }
                 }
@@ -1529,7 +1531,7 @@ class Commands {
 
                 if (page >= pages || page < 0) {
                     Core.app.post { playerData.err("command.page.range", pages) }
-                    PluginData.isRankingWorking = false
+                    pluginData.isRankingWorking = false
                     return@Thread
                 }
                 string.append(bundle[firstMessage, page + 1, pages] + "\n")
@@ -1587,7 +1589,7 @@ class Commands {
                 e.printStackTrace()
                 Core.app.exit()
             }
-            PluginData.isRankingWorking = false
+            pluginData.isRankingWorking = false
         })
     }
 
@@ -1655,16 +1657,16 @@ class Commands {
 
         when (type) {
             "set" -> {
-                if (PluginData["hubMode"] == null) {
-                    PluginData.status.add(Pair("hubMode", Vars.state.map.name()))
+                if (pluginData["hubMode"] == null) {
+                    pluginData.status.add(Pair("hubMode", Vars.state.map.name()))
                     playerData.send("command.hub.mode.on")
-                } else if (PluginData["hubMode"] != null && PluginData["hubMode"] != Vars.state.map.name()) {
+                } else if (pluginData["hubMode"] != null && pluginData["hubMode"] != Vars.state.map.name()) {
                     playerData.send("command.hub.mode.exists")
                 } else {
-                    PluginData.status.removeIf { p -> p.first == "hubMode" }
+                    pluginData.status.removeIf { p -> p.first == "hubMode" }
                     playerData.send("command.hub.mode.off")
                 }
-                PluginData.save(false)
+                pluginData.save(false)
             }
 
             "zone" -> {
@@ -1682,7 +1684,7 @@ class Commands {
                 playerData.err("command.hub.block.parameter")
             } else {
                 val t: Tile = player.tileOn()
-                PluginData.warpBlocks.add(
+                pluginData.warpBlocks.add(
                     PluginData.WarpBlock(
                         name,
                         t.build.tileX(),
@@ -1695,36 +1697,36 @@ class Commands {
                     )
                 )
                 playerData.send("command.hub.block.added", "$x:$y", arg[1])
-                PluginData.save(false)
+                pluginData.save(false)
             }
 
             "count" -> {
                 if (arg.size < 2) {
                     playerData.err("command.hub.count.parameter")
                 } else {
-                    PluginData.warpCounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 1))
+                    pluginData.warpCounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 1))
                     playerData.send("command.hub.count", "$x:$y", arg[1])
-                    PluginData.save(false)
+                    pluginData.save(false)
                 }
             }
 
             "total" -> {
-                PluginData.warpTotals.add(PluginData.WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 1))
+                pluginData.warpTotals.add(PluginData.WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 1))
                 playerData.send("command.hub.total", "$x:$y")
-                PluginData.save(false)
+                pluginData.save(false)
             }
 
             "remove" -> {
-                PluginData.warpBlocks.removeAll { a -> a.ip == ip && a.port == port }
-                PluginData.warpZones.removeAll { a -> a.ip == ip && a.port == port }
+                pluginData.warpBlocks.removeAll { a -> a.ip == ip && a.port == port }
+                pluginData.warpZones.removeAll { a -> a.ip == ip && a.port == port }
                 playerData.send("command.hub.removed", arg[1])
-                PluginData.save(false)
+                pluginData.save(false)
             }
 
             "reset" -> {
-                PluginData.warpTotals.clear()
-                PluginData.warpCounts.clear()
-                PluginData.save(false)
+                pluginData.warpTotals.clear()
+                pluginData.warpCounts.clear()
+                pluginData.save(false)
             }
 
             else -> playerData.send("command.hub.help")
@@ -1872,7 +1874,7 @@ class Commands {
                     if (parameter is Int) {
                         if (!unit.hidden) {
                             unit.useUnitCap = false
-                            PluginData.isCheated = true
+                            pluginData.isCheated = true
                             for (a in 1..parameter) {
                                 Tmp.v1.rnd(spread)
                                 unit.spawn(team, player.x + Tmp.v1.x, player.y + Tmp.v1.y)
@@ -1890,7 +1892,7 @@ class Commands {
 
             type.equals("block", true) -> {
                 if (Vars.content.blocks().find { a -> a.name == name } != null) {
-                    PluginData.isCheated = true
+                    pluginData.isCheated = true
                     Call.constructFinish(
                         player.tileOn(),
                         Vars.content.blocks().find { a -> a.name.equals(name, true) },
@@ -1933,8 +1935,8 @@ class Commands {
                 ${bundle["command.status.creator"]}: ${Vars.state.map.author()}[white]
                 TPS: ${Core.graphics.framesPerSecond}/60
                 ${bundle["command.status.banned", Vars.netServer.admins.banned.size]}
-                ${bundle["command.status.playtime"]}: ${longToTime(PluginData.playtime)}
-                ${bundle["command.status.uptime"]}: ${longToTime(PluginData.uptime)}
+                ${bundle["command.status.playtime"]}: ${longToTime(pluginData.playtime)}
+                ${bundle["command.status.uptime"]}: ${longToTime(pluginData.uptime)}
             """.trimIndent()
         )
 
@@ -2071,7 +2073,7 @@ class Commands {
             if (d == null) {
                 Log.info(bundle["command.tempban.not.registered"])
                 Vars.netServer.admins.banPlayer(other.uuid())
-                Call.kick(other.con(), Packets.KickReason.banned)
+                other.kick(Packets.KickReason.banned)
             } else {
                 val time = LocalDateTime.now()
                 val minute = arg[1].toLongOrNull()
@@ -2080,7 +2082,7 @@ class Commands {
                 if (minute != null) { // todo d h m s 날짜 형식 지원
                     d.banTime = time.plusMinutes(minute.toLong()).toString()
                     Vars.netServer.admins.banPlayer(other.uuid())
-                    Call.kick(other.con(), reason)
+                    other.kick(reason)
                 } else {
                     Log.err(bundle["command.tempban.not.number"])
                 }
@@ -2264,8 +2266,8 @@ class Commands {
         val mapNotFound = "command.vote.map.not.exists"
 
         fun start(voteData: VoteData) {
-            if (!voting) {
-                voting = true
+            if (!pluginData.voting) {
+                pluginData.voting = true
                 Timer.schedule(VoteSystem(voteData), 0f, 1f, 60)
             } else {
                 playerData.err("command.vote.process")
@@ -2277,7 +2279,7 @@ class Commands {
             return
         }
 
-        if (voterCooltime.containsKey(player.plainName())) {
+        if (pluginData.voterCooltime.containsKey(player.plainName())) {
             playerData.err(cooltime)
             return
         }
@@ -2354,7 +2356,7 @@ class Commands {
                                 )
                                 start(voteData)
                             } else {
-                                PluginData.isSurrender = true
+                                pluginData.isSurrender = true
                                 Vars.maps.setNextMapOverride(target)
                                 Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                             }
@@ -2372,14 +2374,14 @@ class Commands {
             // vote gg
             "gg" -> {
                 if (!Permission.check(playerData, "vote.gg")) return
-                if (voteCooltime == 0) {
+                if (pluginData.voteCooltime == 0) {
                     val voteData = VoteData(
                         type = VoteType.Gameover,
                         starter = playerData,
                     )
                     if (Vars.state.rules.pvp) {
                         voteData.team = player.team()
-                        voteCooltime = 120
+                        pluginData.voteCooltime = 120
                     }
                     start(voteData)
                 } else {
@@ -2396,13 +2398,13 @@ class Commands {
                     if (arg[1].toInt() > conf.command.skip.limit) {
                         playerData.send("command.vote.skip.toomany")
                     } else {
-                        if (voteCooltime == 0) {
+                        if (pluginData.voteCooltime == 0) {
                             val voteData = VoteData(
                                 type = VoteType.Skip,
                                 wave = arg[1].toInt(),
                                 starter = playerData
                             )
-                            voteCooltime = 120
+                            pluginData.voteCooltime = 120
                             start(voteData)
                         } else {
                             playerData.send(cooltime)
@@ -2433,12 +2435,12 @@ class Commands {
             // vote random
             "random" -> {
                 if (!Permission.check(playerData, "vote.random")) return
-                if (voteCooltime == 0 || Permission.check(playerData, "vote.random.bypass")) {
+                if (pluginData.voteCooltime == 0 || Permission.check(playerData, "vote.random.bypass")) {
                     val voteData = VoteData(
                         type = VoteType.Random,
                         starter = playerData
                     )
-                    voteCooltime = 360
+                    pluginData.voteCooltime = 360
                     start(voteData)
                 } else {
                     playerData.err(cooltime)
@@ -2447,9 +2449,9 @@ class Commands {
 
             "reset" -> {
                 if (!Permission.check(playerData, "vote.reset")) return
-                voting = false
-                voteCooltime = 0
-                voterCooltime.clear()
+                pluginData.voting = false
+                pluginData.voteCooltime = 0
+                pluginData.voterCooltime.clear()
                 playerData.send("command.vote.reset")
             }
 
@@ -2614,7 +2616,7 @@ class Commands {
 
     @ServerCommand("debug", "[parameter...]", "Debug any commands")
     fun debug(arg: Array<out String>) {
-        println(PluginData.toString())
+        println(pluginData.toString())
         for (a in database.players) {
             println(a.toString())
         }

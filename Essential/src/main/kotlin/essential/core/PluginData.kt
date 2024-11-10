@@ -12,7 +12,7 @@ import java.io.IOException
 import java.time.LocalTime
 import java.util.*
 
-object PluginData {
+class PluginData {
     var uptime = 0L
     var playtime = 0L
     var pluginVersion = ""

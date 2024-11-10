@@ -9,7 +9,6 @@ import com.github.pemistahl.lingua.api.LanguageDetectorBuilder;
 import essential.core.Bundle;
 import essential.core.DB;
 import essential.core.Permission;
-import essential.core.PluginData;
 import mindustry.Vars;
 import mindustry.gen.Player;
 import mindustry.net.Administration;
@@ -20,8 +19,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 import static essential.chat.Main.conf;
-import static essential.core.Main.database;
-import static essential.core.Main.root;
+import static essential.core.Main.*;
 
 public class Event {
     LanguageDetector detector;
@@ -50,7 +48,7 @@ public class Event {
                 if (conf.strict.enabled) {
                     Language e = detector.detectLanguageOf(message);
 
-                    if (e == Language.UNKNOWN && !specificTextRegex.matcher(message.substring(0, 1)).matches() && !(PluginData.INSTANCE.getVoting() && message.equalsIgnoreCase("y"))) {
+                    if (e == Language.UNKNOWN && !specificTextRegex.matcher(message.substring(0, 1)).matches() && !(pluginData.getVoting() && message.equalsIgnoreCase("y"))) {
                         player.sendMessage(bundle.get("event.chat.language.not.allow"));
                         return null;
                     }

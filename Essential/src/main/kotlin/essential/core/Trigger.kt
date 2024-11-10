@@ -107,8 +107,8 @@ class Trigger {
             player.admin(Permission[data].admin)
             message.appendLine(bundle[if (login) "event.player.logged" else "event.player.loaded"])
 
-            data.entityid = entityOrder
-            entityOrder += 1
+            data.entityid = pluginData.entityOrder
+            pluginData.entityOrder += 1
 
             if (!login) {
                 val motd = if (root.child("motd/${bundle.locale.toLanguageTag()}.txt").exists()) {
@@ -202,7 +202,6 @@ class Trigger {
         data.languageTag = player.locale()
 
         database.createData(data)
-        Permission.load()
 
         player.sendMessage(Bundle(player.locale())["event.player.data.registered"])
         loadPlayer(player, data, false)
@@ -288,12 +287,12 @@ class Trigger {
             while (!java.lang.Thread.currentThread().isInterrupted) {
                 try {
                     var isNotTargetMap = false
-                    PluginData.load()
+                    pluginData.load()
 
-                    if (PluginData.warpCounts.none { f -> f.mapName == Vars.state.map.name() } &&
-                        PluginData.warpTotals.none { f -> f.mapName == Vars.state.map.name() } &&
-                        PluginData.warpZones.none { f -> f.mapName == Vars.state.map.name() } &&
-                        PluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name() }
+                    if (pluginData.warpCounts.none { f -> f.mapName == Vars.state.map.name() } &&
+                        pluginData.warpTotals.none { f -> f.mapName == Vars.state.map.name() } &&
+                        pluginData.warpZones.none { f -> f.mapName == Vars.state.map.name() } &&
+                        pluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name() }
                     ) {
                         isNotTargetMap = true
                     }
@@ -306,9 +305,9 @@ class Trigger {
                         }
 
                         if (Vars.state.isPlaying) {
-                            for (i in 0 until PluginData.warpCounts.size) {
-                                if (Vars.state.map.name() == PluginData.warpCounts[i].mapName) {
-                                    val value = PluginData.warpCounts[i]
+                            for (i in 0 until pluginData.warpCounts.size) {
+                                if (Vars.state.map.name() == pluginData.warpCounts[i].mapName) {
+                                    val value = pluginData.warpCounts[i]
                                     val info = serverInfo.find { a -> a.address == value.ip && a.port == value.port }
                                     if (info != null) {
                                         val str = info.players.toString()
@@ -333,7 +332,7 @@ class Trigger {
                                         dummy.y = tile.getY()
 
                                         //Core.app.post { Commands.Client(arrayOf(str), dummy).chars(tile) }
-                                        PluginData.warpCounts[i] = PluginData.WarpCount(
+                                        pluginData.warpCounts[i] = PluginData.WarpCount(
                                             Vars.state.map.name(),
                                             value.tile.pos(),
                                             value.ip,
@@ -352,11 +351,11 @@ class Trigger {
                             }
 
                             val memory = mutableListOf<Pair<Playerc, Triple<String, Float, Float>>>()
-                            for (value in PluginData.warpBlocks) {
+                            for (value in pluginData.warpBlocks) {
                                 if (Vars.state.map.name() == value.mapName) {
                                     val tile = Vars.world.tile(value.x, value.y)
                                     if (tile.block() == Blocks.air) {
-                                        PluginData.warpBlocks.remove(value)
+                                        pluginData.warpBlocks.remove(value)
                                     } else {
                                         var margin = 0f
                                         var isDup = false
@@ -430,7 +429,7 @@ class Trigger {
                                 }
                             }
 
-                            for (value in PluginData.warpZones) {
+                            for (value in pluginData.warpZones) {
                                 if (Vars.state.map.name() == value.mapName) {
                                     val center = caculateCenter(value.startTile, value.finishTile)
 
@@ -479,8 +478,8 @@ class Trigger {
                                 }
                             }
 
-                            for (i in 0 until PluginData.warpTotals.size) {
-                                val value = PluginData.warpTotals[i]
+                            for (i in 0 until pluginData.warpTotals.size) {
+                                val value = pluginData.warpTotals[i]
                                 if (Vars.state.map.name() == value.mapName) {
                                     if (value.totalplayers != total) {
                                         when (total) {
@@ -567,13 +566,13 @@ class Trigger {
             val total = Seq<Host>()
             var buf = arrayOf<Pair<String, Int>>()
 
-            for (it in PluginData.warpBlocks) {
+            for (it in pluginData.warpBlocks) {
                 buf += Pair(it.ip, it.port)
             }
-            for (it in PluginData.warpCounts) {
+            for (it in pluginData.warpCounts) {
                 buf += Pair(it.ip, it.port)
             }
-            for (it in PluginData.warpZones) {
+            for (it in pluginData.warpZones) {
                 buf += Pair(it.ip, it.port)
             }
             for (a in buf) {
@@ -637,8 +636,8 @@ class Trigger {
             }
 
             override fun run() {
-                PluginData.uptime++
-                PluginData.playtime++
+                pluginData.uptime++
+                pluginData.playtime++
 
                 if (pluginData.voteCooltime > 0) pluginData.voteCooltime--
 
@@ -883,7 +882,7 @@ class Trigger {
                     }
                 }
 
-                for (two in PluginData.warpZones) {
+                for (two in pluginData.warpZones) {
                     if (two.mapName == Vars.state.map.name() && !two.click && isUnitInside(data.player.unit().tileOn(), two.startTile, two.finishTile)) {
                         Log.info(Bundle()["log.warp.move", data.player.plainName(), two.ip, two.port.toString()])
                         Call.connect(data.player.con(), two.ip, two.port)

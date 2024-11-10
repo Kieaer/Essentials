@@ -14,7 +14,7 @@ repositories {
 val mindustryVersion = "v146"
 
 dependencies {
-    compileOnly("com.github.anuken.arc:arc-core:$mindustryVersion")
+    compileOnly("com.github.Anuken.Arc:arc-core:$mindustryVersion")
     compileOnly("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
     compileOnly("com.github.Anuken.mindustryjitpack:server:$mindustryVersion")
 
@@ -39,14 +39,17 @@ dependencies {
     val jtsVersion = "1.19.0"
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
-    testImplementation("com.github.anuken.arc:arc-core:$mindustryVersion")
+    testImplementation("com.github.Anuken.Arc:arc-core:$mindustryVersion")
     testImplementation("com.github.Anuken.mindustryjitpack:server:$mindustryVersion")
     testImplementation("com.github.Anuken.mindustryjitpack:core:$mindustryVersion")
-    testImplementation("com.github.anuken.arc:backend-headless:$mindustryVersion")
+    testImplementation("com.github.Anuken.Arc:backend-headless:$mindustryVersion")
     testImplementation("com.github.stefanbirkner:system-rules:$rulesVersion")
     testImplementation("net.datafaker:datafaker:$dataFakerVersion")
     testImplementation("org.mockito:mockito-core:$mockitoVersion")
     testImplementation("org.locationtech.jts:jts-core:$jtsVersion")
+    testImplementation("com.h2database:h2:1.4.200")
+
+    implementation("ch.qos.logback:logback-classic:1.2.3")
 }
 
 tasks.test {
@@ -70,7 +73,9 @@ sourceSets{
 }
 
 tasks.jar {
-    from(sourceSets.main.get().output)
+    from(sourceSets.main.get().output) {
+        exclude("**/mindustry/**")
+    }
 
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
         exclude("META-INF/*.SF")
@@ -83,6 +88,8 @@ tasks.jar {
     manifest {
         attributes["Main-Class"] = "essentials.core.Main"
     }
+
+
 }
 
 tasks.shadowJar {

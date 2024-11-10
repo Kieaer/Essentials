@@ -63,7 +63,7 @@ class WebServer {
 
             singlePageApplication {
                 useResources = true
-                filesPath = "www"
+                filesPath = "webTest"
                 defaultPage = "index.html"
             }
         }
