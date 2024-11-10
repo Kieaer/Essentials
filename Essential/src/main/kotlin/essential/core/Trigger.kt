@@ -20,10 +20,8 @@ import essential.core.Event.pvpSpecters
 import essential.core.Event.unitLimitMessageCooldown
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.database
+import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.root
-import essential.core.PluginData.entityOrder
-import essential.core.PluginData.voteCooltime
-import essential.core.PluginData.voterCooltime
 import essential.core.service.effect.EffectSystem
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -642,10 +640,17 @@ class Trigger {
                 PluginData.uptime++
                 PluginData.playtime++
 
-                if (voteCooltime > 0) voteCooltime--
-                for (it in voterCooltime) {
-                    voterCooltime[it.key] = it.value - 1
-                    if (it.value == 0) voterCooltime.remove(it.key)
+                if (pluginData.voteCooltime > 0) pluginData.voteCooltime--
+
+                for (it in pluginData.voterCooltime) {
+                    pluginData.voterCooltime[it.key] = it.value - 1
+                }
+
+                val voterCooltimeIterator = pluginData.voterCooltime.iterator()
+                while (voterCooltimeIterator.hasNext()) {
+                    if(voterCooltimeIterator.next().value == 0){
+                        voterCooltimeIterator.remove()
+                    }
                 }
 
                 if (dpsTile != null) {
