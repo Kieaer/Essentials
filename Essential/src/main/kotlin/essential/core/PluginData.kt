@@ -175,8 +175,11 @@ class PluginData {
     }
 
     operator fun get(key: String): String? {
-        return status.find { e -> e.first == key }?.second
+        synchronized(status) {
+            return status.find { e -> e.first == key }?.second
+        }
     }
+
 
     fun load() {
         try {
