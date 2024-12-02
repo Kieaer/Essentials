@@ -56,7 +56,7 @@ class PluginTest {
 
         fun loadGame() {
             /*if (System.getProperty("os.name").contains("Windows")) {
-                val pathToBeDeleted : Path = Path("${System.getenv("AppData")}\\app").resolve("mods")
+                val pathToBeDeleted : Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
                 if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
                     Files.walk(pathToBeDeleted).sorted(Comparator.reverseOrder()).map { obj : Path -> obj.toFile() }.forEach { obj : File -> obj.delete() }
                 }

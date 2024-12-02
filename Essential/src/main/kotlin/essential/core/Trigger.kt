@@ -641,8 +641,8 @@ class Trigger {
 
                 if (pluginData.voteCooltime > 0) pluginData.voteCooltime--
 
-                for (it in pluginData.voterCooltime) {
-                    pluginData.voterCooltime[it.key] = it.value - 1
+                for ((key, value) in pluginData.voterCooltime) {
+                    pluginData.voterCooltime[key] = value - 1
                 }
 
                 val voterCooltimeIterator = pluginData.voterCooltime.iterator()

@@ -11,6 +11,7 @@ import org.jetbrains.exposed.sql.update
 import java.io.IOException
 import java.time.LocalTime
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 class PluginData {
     var uptime = 0L
@@ -36,7 +37,7 @@ class PluginData {
     var voting = false
 
     var voteCooltime: Int = 0
-    var voterCooltime = HashMap<String, Int>()
+    var voterCooltime = ConcurrentHashMap<String, Int>()
     var lastVoted: LocalTime? = null
 
     data class WarpZone(
