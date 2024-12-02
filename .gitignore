@@ -153,5 +153,9 @@ src/main/resources/www
 
 node_modules
 package-lock.json
-package.json
 /maps/
+/scripts/
+/.kotlin/
+/*/build
+/Essential/maps
+/EssentialWeb/src/main/resources/www

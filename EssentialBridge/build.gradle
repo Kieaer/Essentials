@@ -1,0 +1,43 @@
+plugins {
+    id "java"
+    id "com.github.johnrengelman.shadow" version "8.1.1"
+}
+
+repositories{
+    mavenLocal()
+    mavenCentral()
+    maven{ url "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository" }
+    maven{ url 'https://www.jitpack.io' }
+}
+
+ext{
+    mindustryVersion = 'v146'
+}
+
+dependencies{
+    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
+    compileOnly "com.github.Anuken.mindustryjitpack:core:$mindustryVersion"
+    compileOnly project(":Essential")
+}
+
+jar{
+    from{
+        configurations.runtimeClasspath.collect{it.isDirectory() ? it : zipTree(it)}
+    }
+
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    from(rootDir){
+        include "plugin.json"
+    }
+}
+
+shadowJar {
+    dependsOn shadowJar
+    minimize()
+}
+
+configurations.all {
+    resolutionStrategy.eachDependency { details ->
+        if(details.requested.group == 'com.github.Anuken.Arc') details.useVersion "$mindustryVersion"
+    }
+}

@@ -1,0 +1,88 @@
+plugin:
+  # Plugin language (default: en)
+  lang: en
+  # Check for plugin update from GitHub (default: true)
+  autoUpdate: true
+  # Database URL
+  # Example) postgresql://127.0.0.1:5432/essentials
+  database:
+    url: sqlite:config/mods/Essentials/data/database.db
+    username: sa
+    password: 123
+
+feature:
+  # Settings for AFK players
+  afk:
+    # If enabled, AFK players will be kick after the time setting has elapsed. (default: false)
+    enabled: false
+    # Time unit: seconds (default: 300)
+    time: 300
+    # If you do not set this value to empty, AFK players will be moved to that server address instead of being kicked.
+    server: ""
+
+  # Setting for voting features
+  vote:
+    # Use plugin voting system (default: true)
+    enabled: true
+    # If you use this feature, players can be start voting from player list.
+    # A modded client may start voting for random players and then watch them griefing.
+    enableVotekick: false
+
+  # Setting for unit features
+  unit:
+    # Set an upper limit on the total number of units in the world. (default: false)
+    # This is useful on low-end servers or sandbox servers.
+    enabled: false
+    limit: 3000
+
+  # Setting for message of the day features
+  motd:
+    # A message is output to the server for each set time value. (default: false)
+    # This is useful for advertising notices or discord server addresses, etc.
+    enabled: false
+    # Time unit: seconds (default: 600)
+    time: 600
+
+  # Setting for PvP features
+  pvp:
+    # Automatically sets PvP teams based on a player's PvP win rate. (default: false)
+    autoTeam: false
+    # If a PvP team loses, all affected players will become spectators.
+    spector: false
+
+  # Setting for Particle effect features
+  level:
+    # Activates movement effects according to the player's level. (default: false)
+    effect:
+      enabled: false
+      # If this value is disabled, the effect will occur even if the player is not moving.
+      moving: false
+    # When the player levels up, a level up message is displayed as a message.
+    levelNotify: false
+    # Displays the current level status on the screen.
+    display: false
+  game:
+    wave:
+      # Starts the wave n times at a time. (default: 1)
+      autoSkip: 1
+  blacklist:
+    # Set the word ban function.
+    # It only applies to player name, not chat.
+    enabled: false
+    # When enabling this function, a blacklist of words is read as a regular expression.
+    regex: false
+  # If this setting is turned on, the number of servers connected using the hub command is totaled and displayed on the current server.
+  # default: false
+  count: false
+
+command:
+  skip:
+    # Set the maximum wave skip limit by voting. (default: true)
+    enabled: true
+    # Sets the maximum skippable wave that can be executed in a single command. (default: 10)
+    limit: 10
+  rollback:
+    # When enabling this function, it will save separately from the built-in auto-save.
+    enabled: true
+    # Set how often to save. (Time unit: minute, default: 10)
+    time: 10
