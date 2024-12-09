@@ -117,7 +117,7 @@ object Permission {
 
         val u = user?.get(data.uuid)
         if (u != null) {
-            result.name = u.name
+            result.name = if (u.name.isEmpty()) data.player.name() else u.name
             result.group = u.group
             result.admin = u.admin
             result.isAlert = u.isAlert
