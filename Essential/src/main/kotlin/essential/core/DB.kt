@@ -117,7 +117,7 @@ class DB {
 
     fun createTable() {
         transaction {
-            SchemaUtils.create(Data, Player, DB, Banned, inBatch = true)
+            SchemaUtils.create(Data, Player, DBTable, Banned)
         }
     }
 
@@ -130,7 +130,7 @@ class DB {
         val data = text("data")
     }
 
-    object DB : Table("db") {
+    object DBTable : Table("db") {
         val version = integer("version")
     }
 

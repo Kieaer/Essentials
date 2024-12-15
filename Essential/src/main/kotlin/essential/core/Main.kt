@@ -27,10 +27,7 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.SynchronousQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
 
@@ -51,7 +48,7 @@ class Main : Plugin() {
         val daemon: ExecutorService = ThreadPoolExecutor(
             0, Runtime.getRuntime().availableProcessors(),
             16, TimeUnit.MILLISECONDS,
-            SynchronousQueue()
+            LinkedBlockingQueue<Runnable>()
         )
 
         fun currentTime(): String {
