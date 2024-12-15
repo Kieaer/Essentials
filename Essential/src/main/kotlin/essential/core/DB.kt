@@ -567,7 +567,7 @@ class DB {
     }
 
     fun removeBan(info: PlayerInfo) {
-        val ips = info.ips.toArray()
+        val ips = info.ips
         transaction {
             Banned.deleteWhere { type eq 0 and (data eq info.id) }
             for (ip in ips) {
