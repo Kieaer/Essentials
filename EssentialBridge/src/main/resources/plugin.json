@@ -1,9 +1,0 @@
-{
-  "displayName": "EssentialBridge",
-  "name": "essential-bridge",
-  "author": "Gureumi",
-  "main": "essential.bridge.Main",
-  "description": "All in one ",
-  "version": "v20",
-  "dependencies": [ "essential" ]
-}

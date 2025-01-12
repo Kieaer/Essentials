@@ -1,0 +1,8 @@
+{
+  "displayName": "Essential",
+  "name": "essential",
+  "author": "Gureumi",
+  "main": "essentials.Main",
+  "description": "More commands and features.",
+  "version": "v21"
+}

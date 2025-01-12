@@ -1,37 +1,61 @@
-import java.nio.file.Files.copy
-import java.nio.file.Files.move
-import java.nio.file.StandardCopyOption
+import java.io.BufferedWriter
+import java.io.OutputStreamWriter
+import java.lang.Thread.sleep
+import java.net.Socket
 
 plugins {
-    base
+    kotlin("jvm") version "2.1.0"
+    kotlin("plugin.serialization") version "2.1.0"
+    kotlin("kapt") version "2.1.0"
 }
 
-tasks.register("jar") {
-    dependsOn(subprojects.map { it.tasks.named("jar") })
+repositories {
+    mavenCentral()
+}
 
+val exposedVersion = "0.57.0"
+val sqliteVersion = "3.47.1.0"
+val serializationVersion = "1.7.3"
+
+dependencies {
+    compileOnly(fileTree("lib"))
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-kotlin-datetime:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-json:$exposedVersion")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
+    implementation("org.xerial:sqlite-jdbc:$sqliteVersion")
+    implementation("org.reflections:reflections:0.10.2")
+
+
+    testImplementation(kotlin("test"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+tasks.jar {
+    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     doLast {
-        rootProject.layout.buildDirectory.get().asFile.mkdirs()
-        subprojects.forEach { subproject ->
-            val rootFile = rootProject.layout.buildDirectory.file("${subproject.name}.jar").get().asFile.toPath()
-            copy(subproject.layout.buildDirectory.file("libs/${subproject.name}.jar").get().asFile.toPath(), rootFile, StandardCopyOption.REPLACE_EXISTING)
-            println("project build: ${subproject.name}")
+        Socket("localhost", 6859).use { socket ->
+            BufferedWriter(OutputStreamWriter(socket.getOutputStream())).use {
+                it.write("exit")
+                it.newLine()
+            }
+        }.apply {
+            sleep(1500)
+            File("E:\\Github\\Remake\\untitled\\build\\libs\\untitled.jar").copyTo(
+                File("E:\\민더\\config\\mods\\Essentials.jar"),
+                true
+            )
         }
     }
-}
-
-tasks.register("shadowJar") {
-    dependsOn(subprojects.map { it.tasks.named("shadowJar") })
-
-    doLast {
-        subprojects.forEach { subproject ->
-            val rootFile = rootProject.layout.buildDirectory.file("${subproject.name}.jar").get().asFile.toPath()
-            delete(rootFile)
-            move(subproject.layout.buildDirectory.file("libs/${subproject.name}-all.jar").get().asFile.toPath(), rootFile)
-            println("project build: ${subproject.name}")
-        }
-    }
-}
-
-tasks.clean {
-    dependsOn(subprojects.map { it.tasks.named("clean") })
 }
