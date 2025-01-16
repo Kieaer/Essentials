@@ -46,9 +46,11 @@ class Main : Plugin() {
 
         @JvmField
         val daemon: ExecutorService = ThreadPoolExecutor(
-            0, Runtime.getRuntime().availableProcessors(),
-            16, TimeUnit.MILLISECONDS,
-            LinkedBlockingQueue<Runnable>()
+            1,
+            16,
+            60, TimeUnit.SECONDS,
+            SynchronousQueue<Runnable>(),
+            ThreadPoolExecutor.CallerRunsPolicy()
         )
 
         fun currentTime(): String {
