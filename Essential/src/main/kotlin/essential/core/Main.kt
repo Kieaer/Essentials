@@ -45,13 +45,8 @@ class Main : Plugin() {
         val database = DB()
 
         @JvmField
-        val daemon: ExecutorService = ThreadPoolExecutor(
-            1,
-            16,
-            60, TimeUnit.SECONDS,
-            SynchronousQueue<Runnable>(),
-            ThreadPoolExecutor.CallerRunsPolicy()
-        )
+        val daemon: ExecutorService =
+            ThreadPoolExecutor(0, Int.MAX_VALUE, 60L, TimeUnit.MILLISECONDS, SynchronousQueue())
 
         fun currentTime(): String {
             return ZonedDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withLocale(Locale.getDefault()))
