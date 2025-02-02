@@ -2,7 +2,7 @@
   "displayName": "Essential",
   "name": "essential",
   "author": "Gureumi",
-  "main": "essentials.Main",
+  "main": "essentials.MainPlugin",
   "description": "More commands and features.",
   "version": "v21"
 }

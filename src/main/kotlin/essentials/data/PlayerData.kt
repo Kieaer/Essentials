@@ -1,4 +1,4 @@
-package essentials.database
+package essentials.data
 
 import essentials.bundle.Bundle
 import kotlinx.serialization.KSerializer
@@ -19,25 +19,22 @@ data class PlayerData(
     val uuidList: List<String> = emptyList(),
     val id: String,
     val password: String,
-    val blockPlaceCount: Int = 0,
-    val blockBreakCount: Int = 0,
-    val totalJoinCount: Int = 0,
-    val totalKickCount: Int = 0,
-    val level: Int = 0,
-    val exp: Int = 0,
-    @Serializable(with = LocalDateTimeSerializer::class)
-    val firstPlayDate: LocalDateTime = LocalDateTime.now(),
-    @Serializable(with = LocalDateTimeSerializer::class)
-    val lastLoginDate: LocalDateTime = LocalDateTime.now(),
-    @Serializable(with = LocalDateTimeSerializer::class)
-    val lastLeaveDate: LocalDateTime = LocalDateTime.now(),
-    val totalPlayTime: Long = 0,
-    val attackModeClear: Int = 0,
-    val pvpVictories: Int = 0,
-    val pvpDefeats: Int = 0,
-    val pvpEliminationTeamCount: Int = 0,
+    val blockPlaceCount: UInt = 0u,
+    val blockBreakCount: UInt = 0u,
+    val totalJoinCount: UInt = 0u,
+    val totalKickCount: UInt = 0u,
+    val level: UInt = 0u,
+    val exp: UInt = 0u,
+    @Serializable(with = LocalDateTimeSerializer::class) val firstPlayDate: LocalDateTime = LocalDateTime.now(),
+    @Serializable(with = LocalDateTimeSerializer::class) val lastLoginDate: LocalDateTime = LocalDateTime.now(),
+    @Serializable(with = LocalDateTimeSerializer::class) val lastLeaveDate: LocalDateTime = LocalDateTime.now(),
+    val totalPlayTime: ULong = 0u,
+    val attackModeClear: UInt = 0u,
+    val pvpVictories: UInt = 0u,
+    val pvpDefeats: UInt = 0u,
+    val pvpEliminationTeamCount: UInt = 0u,
     val hideRanking: Boolean = false,
-    val joinStacks: Int = 0,
+    val joinStacks: UInt = 0u,
     val strict: Boolean = false,
     val isConnected: Boolean = false,
 
@@ -45,22 +42,21 @@ data class PlayerData(
     val permission: String,
     val mute: Boolean = false,
     val discord: String,
-    val effectLevel: Int = 0,
+    val effectLevel: UInt = 0u,
     val effectColor: String,
     val freeze: Boolean = false,
     val hud: String,
     val tpp: Boolean = false,
     val log: Boolean = false,
-    @Serializable(with = LocalDateTimeSerializer::class)
-    val banTime: LocalDateTime?,
+    @Serializable(with = LocalDateTimeSerializer::class) val banTime: LocalDateTime?,
     val tracking: Boolean = false,
     val showLevelEffects: Boolean = false,
     val lastPlayedWorldName: List<String> = emptyList(),
     val lastPlayedWorldMode: List<String> = emptyList(),
-    val mvpTime: Int = 0,
+    val mvpTime: UInt = 0u,
 
-    var currentPlayTime: Int = 0,
-    var afkTime: Int = 0,
+    var currentPlayTime: UInt = 0u,
+    var afkTime: UInt = 0u,
     var afk: Boolean = false,
     var player: Playerc,
     var entityId: Int = 0
@@ -89,20 +85,20 @@ data class PlayerData(
         player.sendMessage(text)
     }
 
-    fun bundle() = Bundle(player.locale())
-}
+    private fun bundle() = Bundle(player.locale())
 
-/** LocalDateTime 에 대한 Kotlin Serializer */
-object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
-    private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    /** LocalDateTime 에 대한 Kotlin Serializer */
+    private class LocalDateTimeSerializer : KSerializer<LocalDateTime> {
+        private val formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
+        override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, value: LocalDateTime) {
-        encoder.encodeString(value.format(formatter))
-    }
+        override fun serialize(encoder: Encoder, value: LocalDateTime) {
+            encoder.encodeString(value.format(formatter))
+        }
 
-    override fun deserialize(decoder: Decoder): LocalDateTime {
-        return LocalDateTime.parse(decoder.decodeString(), formatter)
+        override fun deserialize(decoder: Decoder): LocalDateTime {
+            return LocalDateTime.parse(decoder.decodeString(), formatter)
+        }
     }
 }

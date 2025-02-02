@@ -1,21 +1,17 @@
-import java.io.BufferedWriter
-import java.io.OutputStreamWriter
-import java.lang.Thread.sleep
-import java.net.Socket
-
 plugins {
-    kotlin("jvm") version "2.1.0"
-    kotlin("plugin.serialization") version "2.1.0"
-    kotlin("kapt") version "2.1.0"
+    kotlin("jvm") version "2.1.10"
+    kotlin("plugin.serialization") version "2.1.10"
+    kotlin("kapt") version "2.1.10"
 }
 
 repositories {
     mavenCentral()
 }
 
-val exposedVersion = "0.57.0"
-val sqliteVersion = "3.47.1.0"
-val serializationVersion = "1.7.3"
+val exposedVersion = "0.58.0"
+val sqliteVersion = "3.48.0.0"
+val serializationVersion = "1.8.0"
+val hikariVersion = "6.2.1"
 
 dependencies {
     compileOnly(fileTree("lib"))
@@ -27,8 +23,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:$serializationVersion")
     implementation("org.xerial:sqlite-jdbc:$sqliteVersion")
-    implementation("org.reflections:reflections:0.10.2")
 
+    implementation("com.zaxxer:HikariCP:$hikariVersion")
 
     testImplementation(kotlin("test"))
 }
@@ -44,7 +40,7 @@ kotlin {
 tasks.jar {
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    doLast {
+    /*doLast {
         Socket("localhost", 6859).use { socket ->
             BufferedWriter(OutputStreamWriter(socket.getOutputStream())).use {
                 it.write("exit")
@@ -57,5 +53,5 @@ tasks.jar {
                 true
             )
         }
-    }
+    }*/
 }

@@ -1,12 +1,14 @@
-package essentials.database.table
+package essentials.data
 
+import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.json.jsonb
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 
-object PlayerDataTable : Table("PlayerData") {
+object PlayerTable : Table("PlayerData") {
     val name = varchar("name", 255)
     val uuid = varchar("uuid", 24)
-    val uuidList = text("uuidList")
+    val uuidList = jsonb<List<String>>("uuidList", Json.Default)
     val id = varchar("id", 255)
     val password = text("password")
     val blockPlaceCount = uinteger("blockPlaceCount")
@@ -18,7 +20,7 @@ object PlayerDataTable : Table("PlayerData") {
     val firstPlayDate = datetime("firstPlayDate")
     val lastLoginDate = datetime("lastLoginDate")
     val lastLeaveDate = datetime("lastLeaveDate")
-    val totalPlayTime = uinteger("totalPlayTime")
+    val totalPlayTime = ulong("totalPlayTime")
     val attackModeClear = uinteger("attackModeClear")
     val pvpVictories = uinteger("pvpVictories")
     val pvpDefeats = uinteger("pvpDefeats")
@@ -41,7 +43,9 @@ object PlayerDataTable : Table("PlayerData") {
     val banTime = datetime("banTime")
     val tracking = bool("tracking")
     val showLevelEffects = bool("showLevelEffects")
-    val lastPlayedWorldName = text("lastPlayedWorldName")
-    val lastPlayedWorldMode = text("lastPlayedWorldMode")
+    val lastPlayedWorldName = jsonb<List<String>>("lastPlayedWorldName", Json.Default)
+    val lastPlayedWorldMode = jsonb<List<String>>("lastPlayedWorldMode", Json.Default)
     val mvpTime = uinteger("mvpTime")
+
+    override val primaryKey: PrimaryKey = PrimaryKey(uuid)
 }
