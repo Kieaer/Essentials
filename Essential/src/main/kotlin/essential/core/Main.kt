@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import kotlin.reflect.KFunction
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
 
@@ -72,6 +73,9 @@ class Main : Plugin() {
             }
         }
     }
+
+    private val clientCommandCache = mutableMapOf<KFunction<*>, (Commands, Playerc, DB.PlayerData, Array<String>) -> Unit>()
+    private val serverCommandCache = mutableMapOf<KFunction<*>, (Commands, Array<String>) -> Unit>()
 
     val bundle = Bundle()
 
@@ -190,15 +194,22 @@ class Main : Plugin() {
     override fun registerServerCommands(handler: CommandHandler) {
         val commands = Commands()
 
-        for (functions in commands::class.declaredFunctions) {
-            val annotation = functions.findAnnotation<ServerCommand>()
+        for (function in commands::class.declaredFunctions) {
+            val annotation = function.findAnnotation<ServerCommand>()
             if (annotation != null) {
+                val lambda = serverCommandCache.getOrPut(function) {
+                    { instance, args ->
+                        function.call(instance, args)
+                    }
+                }
+
                 handler.register(annotation.name, annotation.parameter, annotation.description) { args ->
                     if (args.isNotEmpty()) {
-                        functions.call(commands, arrayOf(*args))
+                        lambda(commands, args)
+                        function.call(commands, arrayOf(*args))
                     } else {
                         try {
-                            functions.call(commands, arrayOf<String>())
+                            function.call(commands, arrayOf<String>())
                         } catch (e: Exception) {
                             Log.err("arg size - ${args.size}")
                             Log.err("command - ${annotation.name}")
@@ -213,21 +224,19 @@ class Main : Plugin() {
     override fun registerClientCommands(handler: CommandHandler) {
         val commands = Commands()
 
-        for (functions in commands::class.declaredFunctions) {
-            val annotation = functions.findAnnotation<ClientCommand>()
+        for (function in commands::class.declaredFunctions) {
+            val annotation = function.findAnnotation<ClientCommand>()
             if (annotation != null) {
-                handler.register(
-                    annotation.name,
-                    annotation.parameter,
-                    annotation.description
-                ) { args, player: Playerc ->
+                val lambda = clientCommandCache.getOrPut(function) {
+                    { instance, player, data, args ->
+                        function.call(instance, player, data, args)
+                    }
+                }
+
+                handler.register<Playerc>(annotation.name, annotation.parameter, annotation.description) { args, player ->
                     val data = findPlayerData(player.uuid()) ?: DB.PlayerData()
                     if (Permission.check(data, annotation.name)) {
-                        if (args.isNotEmpty()) {
-                            functions.call(commands, player, data, arrayOf(*args))
-                        } else {
-                            functions.call(commands, player, data, arrayOf<String>())
-                        }
+                        lambda(commands, player, data, args)
                     } else {
                         if (annotation.name == "js") {
                             player.kick(Bundle(player.locale())["command.js.no.permission"])
