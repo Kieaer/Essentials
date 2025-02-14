@@ -117,24 +117,32 @@ class DB {
 
     fun createTable() {
         transaction {
-            SchemaUtils.create(Data, Player, DB, Banned, inBatch = true)
+            SchemaUtils.create(ServiceData, Player, Banned, inBatch = true)
         }
     }
 
-    object Banned : Table("banned") {
+    fun updateDatabase() {
+        val sql = """
+            ALTER TABLE player RENAME TO player_data;
+            ALTER TABLE data RENAME TO service_data;
+            ALTER TABLE banned RENAME TO banned_data;
+            DROP TABLE db;
+        """.trimIndent()
+        transaction {
+            exec(sql)
+        }
+    }
+
+    object Banned : Table("banned_data") {
         val type = integer("type")
         val data = text("data")
     }
 
-    object Data : Table("data") {
+    object ServiceData : Table("service_data") {
         val data = text("data")
     }
 
-    object DB : Table("db") {
-        val version = integer("version")
-    }
-
-    object Player : Table("player") {
+    object Player : Table("player_data") {
         val name = text("name").index()
         val uuid = text("uuid")
         val languageTag = text("languageTag")

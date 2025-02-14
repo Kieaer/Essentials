@@ -19,9 +19,9 @@ dependencies {
     compileOnly("com.github.Anuken.mindustryjitpack:server:$mindustryVersion")
 
     implementation("com.charleskorn.kaml:kaml-jvm:0.59.0")
-    implementation("org.jetbrains.exposed:exposed-core:0.51.0")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.51.0")
-    implementation("org.jetbrains.exposed:exposed-java-time:0.51.1")
+    implementation("org.jetbrains.exposed:exposed-core:0.59.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.59.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.59.0")
 
     runtimeOnly("org.slf4j:slf4j-nop:2.0.13")
 
