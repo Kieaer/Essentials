@@ -448,7 +448,7 @@ object Event {
                     if (data == null) {
                         daemon.submit(Thread {
                             transaction {
-                                if (DB.Player.select(DB.Player.name).where { DB.Player.name eq it.player.name }
+                                if (DB.PlayerTable.select(DB.PlayerTable.name).where { DB.PlayerTable.name eq it.player.name }
                                         .empty()) {
                                     Core.app.post { trigger.createPlayer(it.player, null, null) }
                                 } else {

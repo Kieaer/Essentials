@@ -209,16 +209,16 @@ class Trigger {
 
     fun checkUserExistsInDatabase(name: String, uuid: String): Boolean {
         return transaction {
-            DB.Player.select(DB.Player.name).where {
-                DB.Player.accountID.eq(name).and(DB.Player.uuid.eq(uuid))
-                    .and(DB.Player.oldUUID.eq(uuid))
+            DB.PlayerTable.select(DB.PlayerTable.name).where {
+                DB.PlayerTable.accountID.eq(name).and(DB.PlayerTable.uuid.eq(uuid))
+                    .and(DB.PlayerTable.oldUUID.eq(uuid))
             }.firstOrNull() != null
         }
     }
 
     fun checkUserNameExists(name: String): Boolean {
         return transaction {
-            DB.Player.select(DB.Player.name).where { DB.Player.name.eq(name) }.firstOrNull()
+            DB.PlayerTable.select(DB.PlayerTable.name).where { DB.PlayerTable.name.eq(name) }.firstOrNull()
         } != null
     }
 
@@ -913,14 +913,14 @@ class Trigger {
 
                 Main.daemon.submit(Thread {
                     transaction {
-                        DB.Player.selectAll().where { DB.Player.banTime neq null }.forEach { data ->
-                            val banTime = data[DB.Player.banTime]
-                            val uuid = data[DB.Player.uuid]
-                            val name = data[DB.Player.name]
+                        DB.PlayerTable.selectAll().where { DB.PlayerTable.banTime neq null }.forEach { data ->
+                            val banTime = data[DB.PlayerTable.banTime]
+                            val uuid = data[DB.PlayerTable.uuid]
+                            val name = data[DB.PlayerTable.name]
 
                             if (LocalDateTime.now().isAfter(LocalDateTime.parse(banTime))) {
-                                DB.Player.update({ DB.Player.uuid eq uuid }) {
-                                    it[DB.Player.banTime] = null
+                                DB.PlayerTable.update({ DB.PlayerTable.uuid eq uuid }) {
+                                    it[DB.PlayerTable.banTime] = null
                                 }
                                 Events.fire(CustomEvents.PlayerTempUnbanned(name))
                             }

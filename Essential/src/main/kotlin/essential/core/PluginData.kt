@@ -164,12 +164,12 @@ class PluginData {
 
         transaction {
             if (first) {
-                DB.ServiceData.insert {
-                    it[DB.ServiceData.data] = data.toString()
+                DB.ServiceTable.insert {
+                    it[DB.ServiceTable.data] = data.toString()
                 }
             } else {
-                DB.ServiceData.update {
-                    it[DB.ServiceData.data] = data.toString()
+                DB.ServiceTable.update {
+                    it[DB.ServiceTable.data] = data.toString()
                 }
             }
         }
@@ -185,7 +185,7 @@ class PluginData {
     fun load() {
         try {
             transaction {
-                if (DB.ServiceData.selectAll().firstOrNull() == null) {
+                if (DB.ServiceTable.selectAll().firstOrNull() == null) {
                     save(true)
                 } else {
                     warpZones = arrayListOf()
@@ -196,14 +196,14 @@ class PluginData {
                     banned = arrayListOf()
                     status = arrayListOf()
 
-                    DB.ServiceData.selectAll().first().run {
+                    DB.ServiceTable.selectAll().first().run {
                         // upgrade
                         var isOldVersion = false
                         val data = try {
-                            JsonObject.readJSON(this[DB.ServiceData.data]).asObject()
+                            JsonObject.readJSON(this[DB.ServiceTable.data]).asObject()
                         } catch (e: Exception) {
                             isOldVersion = true
-                            JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.ServiceData.data].toString()))).asObject()
+                            JsonObject.readJSON(String(Base64.getDecoder().decode(this[DB.ServiceTable.data].toString()))).asObject()
                         }
 
                         data["warpZones"].asArray().forEach {

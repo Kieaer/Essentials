@@ -109,7 +109,7 @@ class Commands {
     fun changeName(player: Playerc, playerData: DB.PlayerData, arg: Array<out String>) {
         fun change(data: DB.PlayerData) {
             transaction {
-                if (DB.Player.select(DB.Player.name).where(DB.Player.name eq (arg[1])).toList().isNotEmpty()) {
+                if (DB.PlayerTable.select(DB.PlayerTable.name).where(DB.PlayerTable.name eq (arg[1])).toList().isNotEmpty()) {
                     data.err("command.changename.exists", arg[1])
                 } else {
                     Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
@@ -1464,46 +1464,46 @@ class Commands {
 
                 transaction {
                     if (arg[0].lowercase() == "pvp") {
-                        DB.Player.select(
-                            DB.Player.name,
-                            DB.Player.uuid,
-                            DB.Player.hideRanking,
-                            DB.Player.pvpVictoriesCount,
-                            DB.Player.pvpDefeatCount,
-                            DB.Player.pvpEliminationTeamCount
+                        DB.PlayerTable.select(
+                            DB.PlayerTable.name,
+                            DB.PlayerTable.uuid,
+                            DB.PlayerTable.hideRanking,
+                            DB.PlayerTable.pvpVictoriesCount,
+                            DB.PlayerTable.pvpDefeatCount,
+                            DB.PlayerTable.pvpEliminationTeamCount
                         ).map {
-                            if (!it[DB.Player.hideRanking]) {
-                                pvp[Pair(it[DB.Player.name], it[DB.Player.uuid])] = Triple(
-                                    it[DB.Player.pvpVictoriesCount],
-                                    it[DB.Player.pvpDefeatCount],
-                                    it[DB.Player.pvpEliminationTeamCount]
+                            if (!it[DB.PlayerTable.hideRanking]) {
+                                pvp[Pair(it[DB.PlayerTable.name], it[DB.PlayerTable.uuid])] = Triple(
+                                    it[DB.PlayerTable.pvpVictoriesCount],
+                                    it[DB.PlayerTable.pvpDefeatCount],
+                                    it[DB.PlayerTable.pvpEliminationTeamCount]
                                 )
                             }
                         }
                     } else {
                         val type = when (arg[0].lowercase()) {
-                            "time" -> DB.Player.totalPlayTime
-                            "exp" -> DB.Player.exp
-                            "attack" -> DB.Player.attackModeClear
-                            "place" -> DB.Player.blockPlaceCount
-                            "break" -> DB.Player.blockBreakCount
-                            else -> DB.Player.uuid // dummy
+                            "time" -> DB.PlayerTable.totalPlayTime
+                            "exp" -> DB.PlayerTable.exp
+                            "attack" -> DB.PlayerTable.attackModeClear
+                            "place" -> DB.PlayerTable.blockPlaceCount
+                            "break" -> DB.PlayerTable.blockBreakCount
+                            else -> DB.PlayerTable.uuid // dummy
                         }
-                        DB.Player.select(DB.Player.name, DB.Player.uuid, DB.Player.hideRanking, type).map {
-                            if (!it[DB.Player.hideRanking]) {
+                        DB.PlayerTable.select(DB.PlayerTable.name, DB.PlayerTable.uuid, DB.PlayerTable.hideRanking, type).map {
+                            if (!it[DB.PlayerTable.hideRanking]) {
                                 when (arg[0].lowercase()) {
-                                    "time" -> time[Pair(it[DB.Player.name], it[DB.Player.uuid])] =
-                                        it[DB.Player.totalPlayTime]
+                                    "time" -> time[Pair(it[DB.PlayerTable.name], it[DB.PlayerTable.uuid])] =
+                                        it[DB.PlayerTable.totalPlayTime]
 
-                                    "exp" -> exp[Pair(it[DB.Player.name], it[DB.Player.uuid])] = it[DB.Player.exp]
-                                    "attack" -> attack[Pair(it[DB.Player.name], it[DB.Player.uuid])] =
-                                        it[DB.Player.attackModeClear]
+                                    "exp" -> exp[Pair(it[DB.PlayerTable.name], it[DB.PlayerTable.uuid])] = it[DB.PlayerTable.exp]
+                                    "attack" -> attack[Pair(it[DB.PlayerTable.name], it[DB.PlayerTable.uuid])] =
+                                        it[DB.PlayerTable.attackModeClear]
 
-                                    "place" -> placeBlock[Pair(it[DB.Player.name], it[DB.Player.uuid])] =
-                                        it[DB.Player.blockPlaceCount]
+                                    "place" -> placeBlock[Pair(it[DB.PlayerTable.name], it[DB.PlayerTable.uuid])] =
+                                        it[DB.PlayerTable.blockPlaceCount]
 
-                                    "break" -> breakBlock[Pair(it[DB.Player.name], it[DB.Player.uuid])] =
-                                        it[DB.Player.blockBreakCount]
+                                    "break" -> breakBlock[Pair(it[DB.PlayerTable.name], it[DB.PlayerTable.uuid])] =
+                                        it[DB.PlayerTable.blockBreakCount]
                                 }
                             }
                         }

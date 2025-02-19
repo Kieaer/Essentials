@@ -5,6 +5,7 @@ import arc.files.Fi
 import arc.util.Log
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.daemon
+import essential.core.Main.Companion.pluginData
 import essential.core.exception.DatabaseNotSupportedException
 import mindustry.gen.Playerc
 import mindustry.net.Administration.PlayerInfo
@@ -73,8 +74,7 @@ class DB {
                 if (driver != null) {
                     val f = File(cacheDir, driver.first.substring(driver.first.lastIndexOf('/') + 1)).toURI().toURL()
                     val d = Class.forName(driver.third, true, URLClassLoader(arrayOf(f), this.javaClass.classLoader))
-                        .getDeclaredConstructor()
-                        .newInstance() as Driver
+                        .getDeclaredConstructor().newInstance() as Driver
                     DriverManager.registerDriver(DriverLoader(d))
                 } else {
                     throw DatabaseNotSupportedException("$type doesn't supported!")
@@ -104,9 +104,7 @@ class DB {
             if (type != null) {
                 Database.connect({
                     DriverManager.getConnection(
-                        "jdbc:${conf.plugin.database.url}",
-                        conf.plugin.database.username,
-                        conf.plugin.database.password
+                        "jdbc:${conf.plugin.database.url}", conf.plugin.database.username, conf.plugin.database.password
                     )
                 })
             } else {
@@ -117,32 +115,69 @@ class DB {
 
     fun createTable() {
         transaction {
-            SchemaUtils.create(ServiceData, Player, Banned, inBatch = true)
+            SchemaUtils.create(ServiceTable, PlayerTable, BannedTable, inBatch = true)
         }
     }
 
     fun updateDatabase() {
-        val sql = """
-            ALTER TABLE player RENAME TO player_data;
-            ALTER TABLE data RENAME TO service_data;
-            ALTER TABLE banned RENAME TO banned_data;
-            DROP TABLE db;
-        """.trimIndent()
         transaction {
-            exec(sql)
+            if (pluginData.databaseVersion == 3) {
+                // Some linux DBMS doesn't support uppercase column name by default
+                // example) postgresql
+                val sql = """
+                ALTER TABLE player RENAME TO player_data;
+                ALTER TABLE data RENAME TO service_data;
+                ALTER TABLE banned RENAME TO banned_data;
+                
+                ALTER TABLE player_data RENAME COLUMN languageTag to language_tag;
+                ALTER TABLE player_data RENAME COLUMN blockPlaceCount to block_place_count;
+                ALTER TABLE player_data RENAME COLUMN blockBreakCount to block_break_count;
+                ALTER TABLE player_data RENAME COLUMN totalJoinCount to total_join_count;
+                ALTER TABLE player_data RENAME COLUMN firstPlayDate to first_play_date;
+                ALTER TABLE player_data RENAME COLUMN lastLoginTime to last_login_time;
+                ALTER TABLE player_data RENAME COLUMN totalPlayTime to total_play_time;
+                ALTER TABLE player_data RENAME COLUMN attackModeClear to attack_mode_clear;
+                ALTER TABLE player_data RENAME COLUMN pvpVictoriesCount to pvp_victories_count;
+                ALTER TABLE player_data RENAME COLUMN pvpDefeatCount to pvp_defeat_count;
+                ALTER TABLE player_data RENAME COLUMN animatedName to animated_name;
+                ALTER TABLE player_data RENAME COLUMN accountID to account_id;
+                ALTER TABLE player_data RENAME COLUMN accountPW to account_id;
+                ALTER TABLE player_data RENAME COLUMN effectLevel to effect_level;
+                ALTER TABLE player_data RENAME COLUMN effectColor to effect_color;
+                ALTER TABLE player_data RENAME COLUMN hideRanking to hide_ranking;
+                ALTER TABLE player_data RENAME COLUMN tppTeam to tpp_team;
+                ALTER TABLE player_data RENAME COLUMN oldUUID to old_uuid;
+                ALTER TABLE player_data RENAME COLUMN banTime to ban_time;
+                ALTER TABLE player_data RENAME COLUMN duplicateName to duplicate_name;
+                ALTER TABLE player_data RENAME COLUMN joinStacks to join_stacks;
+                ALTER TABLE player_data RENAME COLUMN lastLoginDate to last_login_date;
+                ALTER TABLE player_data RENAME COLUMN lastLeaveDate to last_leave_date;
+                ALTER TABLE player_data RENAME COLUMN showLevelEffects to show_level_effects;
+                ALTER TABLE player_data RENAME COLUMN currentPlayTime to current_play_time;
+                ALTER TABLE player_data RENAME COLUMN isConnected to is_connected;
+                ALTER TABLE player_data RENAME COLUMN lastPlayedWorldName to last_played_world_name;
+                ALTER TABLE player_data RENAME COLUMN lastPlayedWorldMode to last_played_world_mode;
+                ALTER TABLE player_data RENAME COLUMN lastPlayedWorldId to last_played_world_id;
+                ALTER TABLE player_data RENAME COLUMN mvpTime to mvp_time;
+                ALTER TABLE player_data RENAME COLUMN pvpEliminationTeamCount to pvp_elimination_team_count;
+                
+                DROP TABLE db;
+            """.trimIndent()
+                exec(sql)
+            }
         }
     }
 
-    object Banned : Table("banned_data") {
+    object BannedTable : Table("banned_data") {
         val type = integer("type")
         val data = text("data")
     }
 
-    object ServiceData : Table("service_data") {
+    object ServiceTable : Table("service_data") {
         val data = text("data")
     }
 
-    object Player : Table("player_data") {
+    object PlayerTable : Table("player_data") {
         val name = text("name").index()
         val uuid = text("uuid")
         val languageTag = text("languageTag")
@@ -284,7 +319,7 @@ class DB {
             lastSentMessage = text
         }
 
-        fun bundle() : Bundle {
+        fun bundle(): Bundle {
             return if (status.containsKey("language")) {
                 Bundle(status["language"]!!)
             } else {
@@ -359,7 +394,7 @@ class DB {
 
     fun createData(data: PlayerData) {
         transaction {
-            Player.insert {
+            PlayerTable.insert {
                 convertToQueue(it, data)
             }
         }
@@ -367,7 +402,7 @@ class DB {
 
     operator fun get(uuid: String): PlayerData? {
         return transaction {
-            val data = Player.selectAll().where { Player.uuid.eq(uuid) }.firstOrNull()
+            val data = PlayerTable.selectAll().where { PlayerTable.uuid.eq(uuid) }.firstOrNull()
             if (data != null) {
                 convertToData(data)
             } else {
@@ -380,7 +415,7 @@ class DB {
         val d = ArrayList<PlayerData>()
 
         transaction {
-            Player.selectAll().forEach {
+            PlayerTable.selectAll().forEach {
                 d.add(convertToData(it))
             }
         }
@@ -391,7 +426,7 @@ class DB {
         val d = ArrayList<PlayerData>()
 
         transaction {
-            Player.selectAll().orderBy(Player.exp, SortOrder.DESC).forEach {
+            PlayerTable.selectAll().orderBy(PlayerTable.exp, SortOrder.DESC).forEach {
                 d.add(convertToData(it))
             }
         }
@@ -400,7 +435,7 @@ class DB {
 
     fun getByDiscord(discord: String): PlayerData? {
         return transaction {
-            val data = Player.selectAll().where { Player.discord eq discord }.firstOrNull()
+            val data = PlayerTable.selectAll().where { PlayerTable.discord eq discord }.firstOrNull()
             if (data != null) {
                 convertToData(data)
             } else {
@@ -411,7 +446,7 @@ class DB {
 
     fun getByName(name: String): PlayerData? {
         return transaction {
-            val data = Player.selectAll().where { Player.name eq name }.firstOrNull()
+            val data = PlayerTable.selectAll().where { PlayerTable.name eq name }.firstOrNull()
             if (data != null) {
                 convertToData(data)
             } else {
@@ -430,14 +465,14 @@ class DB {
 
     fun update(id: String, data: PlayerData) {
         transaction {
-            Player.update({ Player.uuid eq id }) {
+            PlayerTable.update({ PlayerTable.uuid eq id }) {
                 convertToQueue(it, data)
             }
         }
     }
 
     fun search(id: String, pw: String): PlayerData? {
-        return transaction { Player.selectAll().where { Player.accountID eq id }.firstOrNull() }.run {
+        return transaction { PlayerTable.selectAll().where { PlayerTable.accountID eq id }.firstOrNull() }.run {
             if (this != null) {
                 val data = convertToData(this)
                 if (data.accountID == data.accountPW) data else if (BCrypt.checkpw(pw, data.accountPW)) data else null
@@ -447,56 +482,62 @@ class DB {
         }
     }
 
-    fun convertToData(it: ResultRow) : PlayerData {
+    fun convertToData(it: ResultRow): PlayerData {
         val data = PlayerData()
-        data.name = it[Player.name]
-        data.uuid = it[Player.uuid]
-        data.languageTag = it[Player.languageTag]
-        data.blockPlaceCount = it[Player.blockPlaceCount]
-        data.blockBreakCount = it[Player.blockBreakCount]
-        data.totalJoinCount = it[Player.totalJoinCount]
-        data.totalKickCount = it[Player.totalKickCount]
-        data.level = it[Player.level]
-        data.exp = it[Player.exp]
-        data.firstPlayDate = it[Player.firstPlayDate]
-        data.lastLoginTime = it[Player.lastLoginTime]
-        data.totalPlayTime = it[Player.totalPlayTime]
-        data.attackModeClear = it[Player.attackModeClear]
-        data.pvpVictoriesCount = it[Player.pvpVictoriesCount]
-        data.pvpDefeatCount = it[Player.pvpDefeatCount]
-        data.animatedName = it[Player.animatedName]
-        data.permission = it[Player.permission]
-        data.mute = it[Player.mute]
-        data.accountID = it[Player.accountID]
-        data.accountPW = it[Player.accountPW]
-        data.discord = it[Player.discord]
-        data.effectLevel = it[Player.effectLevel]
-        data.effectColor = it[Player.effectColor]
-        data.hideRanking = it[Player.hideRanking]
-        data.freeze = it[Player.freeze]
-        data.hud = it[Player.hud]
-        data.tpp = it[Player.tpp]
-        data.tppTeam = it[Player.tppTeam]
-        data.log = it[Player.log]
-        data.oldUUID = it[Player.oldUUID]
-        data.banTime = it[Player.banTime]
-        data.duplicateName = it[Player.duplicateName]
-        data.tracking = it[Player.tracking]
-        data.joinStacks = it[Player.joinStacks]
-        data.lastLoginDate = if (it[Player.lastLoginDate] == null) null else LocalDate.parse(it[Player.lastLoginDate], DateTimeFormatter.ISO_LOCAL_DATE)
-        data.lastLeaveDate = if (it[Player.lastLeaveDate] == null) null else LocalDateTime.parse(it[Player.lastLeaveDate], DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-        data.showLevelEffects = it[Player.showLevelEffects]
-        data.currentPlayTime = it[Player.currentPlayTime]
-        data.isConnected = it[Player.isConnected]
-        data.lastPlayedWorldName = it[Player.lastPlayedWorldName]
-        data.lastPlayedWorldMode = it[Player.lastPlayedWorldMode]
-        data.lastPlayedWorldId = it[Player.lastPlayedWorldId]
-        data.mvpTime = it[Player.mvpTime]
-        data.pvpEliminationTeamCount = it[Player.pvpEliminationTeamCount]
-        data.strict = it[Player.strict]
+        data.name = it[PlayerTable.name]
+        data.uuid = it[PlayerTable.uuid]
+        data.languageTag = it[PlayerTable.languageTag]
+        data.blockPlaceCount = it[PlayerTable.blockPlaceCount]
+        data.blockBreakCount = it[PlayerTable.blockBreakCount]
+        data.totalJoinCount = it[PlayerTable.totalJoinCount]
+        data.totalKickCount = it[PlayerTable.totalKickCount]
+        data.level = it[PlayerTable.level]
+        data.exp = it[PlayerTable.exp]
+        data.firstPlayDate = it[PlayerTable.firstPlayDate]
+        data.lastLoginTime = it[PlayerTable.lastLoginTime]
+        data.totalPlayTime = it[PlayerTable.totalPlayTime]
+        data.attackModeClear = it[PlayerTable.attackModeClear]
+        data.pvpVictoriesCount = it[PlayerTable.pvpVictoriesCount]
+        data.pvpDefeatCount = it[PlayerTable.pvpDefeatCount]
+        data.animatedName = it[PlayerTable.animatedName]
+        data.permission = it[PlayerTable.permission]
+        data.mute = it[PlayerTable.mute]
+        data.accountID = it[PlayerTable.accountID]
+        data.accountPW = it[PlayerTable.accountPW]
+        data.discord = it[PlayerTable.discord]
+        data.effectLevel = it[PlayerTable.effectLevel]
+        data.effectColor = it[PlayerTable.effectColor]
+        data.hideRanking = it[PlayerTable.hideRanking]
+        data.freeze = it[PlayerTable.freeze]
+        data.hud = it[PlayerTable.hud]
+        data.tpp = it[PlayerTable.tpp]
+        data.tppTeam = it[PlayerTable.tppTeam]
+        data.log = it[PlayerTable.log]
+        data.oldUUID = it[PlayerTable.oldUUID]
+        data.banTime = it[PlayerTable.banTime]
+        data.duplicateName = it[PlayerTable.duplicateName]
+        data.tracking = it[PlayerTable.tracking]
+        data.joinStacks = it[PlayerTable.joinStacks]
+        data.lastLoginDate = if (it[PlayerTable.lastLoginDate] == null) null else LocalDate.parse(
+            it[PlayerTable.lastLoginDate],
+            DateTimeFormatter.ISO_LOCAL_DATE
+        )
+        data.lastLeaveDate = if (it[PlayerTable.lastLeaveDate] == null) null else LocalDateTime.parse(
+            it[PlayerTable.lastLeaveDate],
+            DateTimeFormatter.ISO_LOCAL_DATE_TIME
+        )
+        data.showLevelEffects = it[PlayerTable.showLevelEffects]
+        data.currentPlayTime = it[PlayerTable.currentPlayTime]
+        data.isConnected = it[PlayerTable.isConnected]
+        data.lastPlayedWorldName = it[PlayerTable.lastPlayedWorldName]
+        data.lastPlayedWorldMode = it[PlayerTable.lastPlayedWorldMode]
+        data.lastPlayedWorldId = it[PlayerTable.lastPlayedWorldId]
+        data.mvpTime = it[PlayerTable.mvpTime]
+        data.pvpEliminationTeamCount = it[PlayerTable.pvpEliminationTeamCount]
+        data.strict = it[PlayerTable.strict]
 
         val obj = HashMap<String, String>()
-        JsonObject.readHjson(it[Player.status]).asObject().forEach { member ->
+        JsonObject.readHjson(it[PlayerTable.status]).asObject().forEach { member ->
             obj[member.name] = member.value.asString()
         }
         data.status = obj
@@ -504,69 +545,71 @@ class DB {
     }
 
     fun convertToQueue(it: UpdateBuilder<*>, data: PlayerData): UpdateBuilder<*> {
-        it[Player.name] = data.name
-        it[Player.uuid] = data.uuid
-        it[Player.languageTag] = data.languageTag
-        it[Player.blockPlaceCount] = data.blockPlaceCount
-        it[Player.blockBreakCount] = data.blockBreakCount
-        it[Player.totalJoinCount] = data.totalJoinCount
-        it[Player.totalKickCount] = data.totalKickCount
-        it[Player.level] = data.level
-        it[Player.exp] = data.exp
-        it[Player.firstPlayDate] = data.firstPlayDate
-        it[Player.lastLoginTime] = data.lastLoginTime
-        it[Player.totalPlayTime] = data.totalPlayTime
-        it[Player.attackModeClear] = data.attackModeClear
-        it[Player.pvpVictoriesCount] = data.pvpVictoriesCount
-        it[Player.pvpDefeatCount] = data.pvpDefeatCount
-        it[Player.animatedName] = data.animatedName
-        it[Player.permission] = data.permission
-        it[Player.mute] = data.mute
-        it[Player.accountID] = data.accountID
-        it[Player.accountPW] = data.accountPW
-        it[Player.discord] = data.discord
-        it[Player.effectLevel] = data.effectLevel
-        it[Player.effectColor] = data.effectColor
-        it[Player.hideRanking] = data.hideRanking
-        it[Player.freeze] = data.freeze
-        it[Player.hud] = data.hud
-        it[Player.tpp] = data.tpp
-        it[Player.tppTeam] = data.tppTeam
-        it[Player.log] = data.log
-        it[Player.oldUUID] = data.oldUUID
-        it[Player.banTime] = data.banTime
-        it[Player.duplicateName] = data.duplicateName
-        it[Player.tracking] = data.tracking
-        it[Player.joinStacks] = data.joinStacks
-        it[Player.lastLoginDate] = if (data.lastLoginDate == null) null else data.lastLoginDate!!.format(DateTimeFormatter.ISO_LOCAL_DATE)
-        it[Player.lastLeaveDate] = if (data.lastLeaveDate == null) null else data.lastLeaveDate!!.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-        it[Player.showLevelEffects] = data.showLevelEffects
-        it[Player.currentPlayTime] = data.currentPlayTime
-        it[Player.isConnected] = data.isConnected
-        it[Player.lastPlayedWorldName] = data.lastPlayedWorldName
-        it[Player.lastPlayedWorldMode] = data.lastPlayedWorldMode
-        it[Player.lastPlayedWorldId] = data.lastPlayedWorldId
-        it[Player.mvpTime] = data.mvpTime
-        it[Player.pvpEliminationTeamCount] = data.pvpEliminationTeamCount
-        it[Player.strict] = data.strict
+        it[PlayerTable.name] = data.name
+        it[PlayerTable.uuid] = data.uuid
+        it[PlayerTable.languageTag] = data.languageTag
+        it[PlayerTable.blockPlaceCount] = data.blockPlaceCount
+        it[PlayerTable.blockBreakCount] = data.blockBreakCount
+        it[PlayerTable.totalJoinCount] = data.totalJoinCount
+        it[PlayerTable.totalKickCount] = data.totalKickCount
+        it[PlayerTable.level] = data.level
+        it[PlayerTable.exp] = data.exp
+        it[PlayerTable.firstPlayDate] = data.firstPlayDate
+        it[PlayerTable.lastLoginTime] = data.lastLoginTime
+        it[PlayerTable.totalPlayTime] = data.totalPlayTime
+        it[PlayerTable.attackModeClear] = data.attackModeClear
+        it[PlayerTable.pvpVictoriesCount] = data.pvpVictoriesCount
+        it[PlayerTable.pvpDefeatCount] = data.pvpDefeatCount
+        it[PlayerTable.animatedName] = data.animatedName
+        it[PlayerTable.permission] = data.permission
+        it[PlayerTable.mute] = data.mute
+        it[PlayerTable.accountID] = data.accountID
+        it[PlayerTable.accountPW] = data.accountPW
+        it[PlayerTable.discord] = data.discord
+        it[PlayerTable.effectLevel] = data.effectLevel
+        it[PlayerTable.effectColor] = data.effectColor
+        it[PlayerTable.hideRanking] = data.hideRanking
+        it[PlayerTable.freeze] = data.freeze
+        it[PlayerTable.hud] = data.hud
+        it[PlayerTable.tpp] = data.tpp
+        it[PlayerTable.tppTeam] = data.tppTeam
+        it[PlayerTable.log] = data.log
+        it[PlayerTable.oldUUID] = data.oldUUID
+        it[PlayerTable.banTime] = data.banTime
+        it[PlayerTable.duplicateName] = data.duplicateName
+        it[PlayerTable.tracking] = data.tracking
+        it[PlayerTable.joinStacks] = data.joinStacks
+        it[PlayerTable.lastLoginDate] =
+            if (data.lastLoginDate == null) null else data.lastLoginDate!!.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        it[PlayerTable.lastLeaveDate] =
+            if (data.lastLeaveDate == null) null else data.lastLeaveDate!!.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        it[PlayerTable.showLevelEffects] = data.showLevelEffects
+        it[PlayerTable.currentPlayTime] = data.currentPlayTime
+        it[PlayerTable.isConnected] = data.isConnected
+        it[PlayerTable.lastPlayedWorldName] = data.lastPlayedWorldName
+        it[PlayerTable.lastPlayedWorldMode] = data.lastPlayedWorldMode
+        it[PlayerTable.lastPlayedWorldId] = data.lastPlayedWorldId
+        it[PlayerTable.mvpTime] = data.mvpTime
+        it[PlayerTable.pvpEliminationTeamCount] = data.pvpEliminationTeamCount
+        it[PlayerTable.strict] = data.strict
 
         val json = JsonObject()
         data.status.forEach { entry ->
             json.add(entry.key, entry.value)
         }
-        it[Player.status] = json.toString()
+        it[PlayerTable.status] = json.toString()
 
         return it
     }
 
     fun addBan(info: PlayerInfo) {
         transaction {
-            Banned.insert {
+            BannedTable.insert {
                 it[type] = 0
                 it[data] = info.id
             }
             info.ips.forEach { ip ->
-                Banned.insert {
+                BannedTable.insert {
                     it[type] = 1
                     it[data] = ip
                 }
@@ -577,16 +620,17 @@ class DB {
     fun removeBan(info: PlayerInfo) {
         val ips = info.ips
         transaction {
-            Banned.deleteWhere { type eq 0 and (data eq info.id) }
+            BannedTable.deleteWhere { type eq 0 and (data eq info.id) }
             for (ip in ips) {
-                Banned.deleteWhere { type eq 1 and (data eq ip) }
+                BannedTable.deleteWhere { type eq 1 and (data eq ip) }
             }
         }
     }
 
-    fun isBanned(info: PlayerInfo) : Boolean {
+    fun isBanned(info: PlayerInfo): Boolean {
         transaction {
-            return@transaction Banned.selectAll().where { Banned.type eq 0 and (Banned.data eq info.id) or (Banned.type eq 1 and (Banned.data eq info.lastIP)) }.fetchSize != 0
+            return@transaction BannedTable.selectAll()
+                .where { BannedTable.type eq 0 and (BannedTable.data eq info.id) or (BannedTable.type eq 1 and (BannedTable.data eq info.lastIP)) }.fetchSize != 0
         }
         return false
     }
