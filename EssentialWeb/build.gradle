@@ -1,29 +1,12 @@
 plugins {
-    id "java"
-    id "com.github.johnrengelman.shadow" version "8.1.1"
+    id 'com.gradleup.shadow' version '9.0.0-beta9'
     id "com.github.node-gradle.node" version "5.0.0"
     id 'org.jetbrains.kotlin.jvm' version '2.1.10'
-
 }
 
-repositories{
-    mavenLocal()
-    mavenCentral()
-    maven{ url "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository" }
-    maven{ url 'https://www.jitpack.io' }
-}
-
-ext{
-    mindustryVersion = 'v146'
-    ktor = '3.1.0'
-}
+String ktor = "3.1.0"
 
 dependencies{
-    compileOnly "com.github.Anuken.Arc:arc-core:$mindustryVersion"
-    compileOnly "com.github.Anuken.mindustryjitpack:core:$mindustryVersion"
-    compileOnly project(":Essential")
-
-    // Web server
     implementation "io.ktor:ktor-server-core-jvm:$ktor"
     implementation "io.ktor:ktor-server-netty-jvm:$ktor"
     implementation "io.ktor:ktor-server-content-negotiation:$ktor"
@@ -66,8 +49,8 @@ tasks.register('nodeInstall', NpmTask) {
 tasks.register('web') {
     description = "웹 파일 빌드"
     group = JavaBasePlugin.BUILD_TASK_NAME
-    def build = tasks['nodeBuild']
-    def install = tasks['nodeInstall']
+    def build = tasks.named("nodeBuild")
+    def install = tasks.named("nodeInstall")
     if (!file('./src/www/node_modules').exists()) {
         dependsOn(install)
         dependsOn(build)
@@ -82,16 +65,5 @@ tasks.register('web') {
     copy {
         from('./src/www/dist')
         into('./src/main/resources/www')
-    }
-}
-
-shadowJar {
-    dependsOn shadowJar
-    minimize()
-}
-
-configurations.configureEach {
-    resolutionStrategy.eachDependency { details ->
-        if(details.requested.group == 'com.github.Anuken.Arc') details.useVersion "$mindustryVersion"
     }
 }
