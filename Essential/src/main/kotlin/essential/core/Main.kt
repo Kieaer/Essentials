@@ -50,7 +50,7 @@ class Main : Plugin() {
 
         @JvmField
         val daemon: ExecutorService = ThreadPoolExecutor(
-            0, Runtime.getRuntime().availableProcessors(),
+            0, 6,
             16, TimeUnit.MILLISECONDS,
             SynchronousQueue()
         )
