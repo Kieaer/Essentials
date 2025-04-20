@@ -7,7 +7,8 @@ sequenceOf(
     "Bridge",
     "Discord",
     "Web",
-    "Achievements"
+    "Achievements",
+    "Collect"
 ).forEach {
     include(":Essential$it")
     project(":Essential$it").projectDir = file("Essential$it")

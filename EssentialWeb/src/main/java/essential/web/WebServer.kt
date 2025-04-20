@@ -14,7 +14,7 @@ import io.ktor.server.routing.*
 import kotlin.time.Duration.Companion.seconds
 
 class WebServer {
-    lateinit var server : NettyApplicationEngine
+    lateinit var server : EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
 
     fun start() {
         server = embeddedServer(Netty, conf.port) {
