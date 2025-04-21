@@ -150,7 +150,7 @@ object Event {
     @Event
     fun config() {
         Events.on(ConfigEvent::class.java, Cons<ConfigEvent> {
-            if (it.tile != null && it.tile.block() != null && it.player != null) {
+            if (it.tile != null && it.tile.block != null && it.player != null) {
                 addLog(
                     TileLog(
                         System.currentTimeMillis(),
@@ -524,7 +524,7 @@ object Event {
                 val player = it.unit.player
                 val target = findPlayerData(player.uuid())
 
-                if (!player.unit().isNull && target != null && it.tile.block() != null && player.unit()
+                if (player.unit() != null && target != null && it.tile.block() != null && player.unit()
                         .buildPlan() != null
                 ) {
                     val block = it.tile.block()
@@ -833,7 +833,7 @@ object Event {
                 Blocks.coreNucleus,
                 Blocks.coreShard
             )
-            if (Vars.state.rules.pvp && it.build.closestCore() == null && cores.contains(it.build.block())) {
+            if (Vars.state.rules.pvp && it.build.closestCore() == null && cores.contains(it.build.block)) {
                 for (data in database.players) {
                     if (data.player.team() == it.bullet.team) {
                         data.pvpEliminationTeamCount++

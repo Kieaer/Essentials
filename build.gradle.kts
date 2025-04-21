@@ -72,8 +72,8 @@ allprojects {
 
     dependencies {
         compileOnly("com.github.Anuken.Arc:arc-core:$game")
-        compileOnly("com.github.Anuken.mindustryjitpack:core:$game")
-        compileOnly("com.github.Anuken.mindustryjitpack:server:$game")
+        compileOnly("com.github.Anuken.mindustry:core:$game")
+        compileOnly("com.github.Anuken.mindustry:server:$game")
 
         runtimeOnly("org.slf4j:slf4j-nop:$slf4j")
 
@@ -95,8 +95,8 @@ allprojects {
 
             testImplementation("org.jetbrains.kotlin:kotlin-test")
             testImplementation("com.github.Anuken.Arc:arc-core:$game")
-            testImplementation("com.github.Anuken.mindustryjitpack:server:$game")
-            testImplementation("com.github.Anuken.mindustryjitpack:core:$game")
+            testImplementation("com.github.Anuken.mindustry:server:$game")
+            testImplementation("com.github.Anuken.mindustry:core:$game")
             testImplementation("com.github.Anuken.Arc:backend-headless:$game")
             testImplementation("com.github.stefanbirkner:system-rules:$rules")
             testImplementation("net.datafaker:datafaker:$dataFaker")

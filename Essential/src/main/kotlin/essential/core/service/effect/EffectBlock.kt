@@ -6,7 +6,6 @@ import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.gen.Call
-import mindustry.gen.Nulls
 import mindustry.world.Tile
 import mindustry.world.blocks.logic.LogicBlock
 
@@ -296,14 +295,14 @@ class EffectBlock {
     fun apply() {
         for (it in Vars.world.tiles) {
             if (it.block() !is LogicBlock || effectBlock == null || effectBlock == it) {
-                Call.constructFinish(
+                /*Call.constructFinish(
                     it,
                     Blocks.worldProcessor,
                     Nulls.unit,
                     0,
                     Team.sharded,
                     LogicBlock.compress(config(), Seq())
-                )
+                )*/
                 effectBlock = it
                 break
             }

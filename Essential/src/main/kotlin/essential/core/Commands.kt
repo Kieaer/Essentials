@@ -119,7 +119,7 @@ class Commands {
                         data.send("command.changename.apply.other", data.name, arg[1])
                     }
                     data.name = arg[1]
-                    if (!data.player.isNull) data.player.name(arg[1])
+                    if (data.player != null) data.player.name(arg[1])
                     database.queue(data)
                 }
             }
@@ -1256,7 +1256,7 @@ class Commands {
                         }
 
                         playerData.status["router"] = "true"
-                        while (!player.isNull) {
+                        while (player != null) {
                             loop.forEach {
                                 change(it)
                             }
