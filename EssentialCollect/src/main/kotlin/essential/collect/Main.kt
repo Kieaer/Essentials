@@ -1,425 +1,362 @@
-package essential.collect;
+package essential.collect
 
-import arc.Core;
-import arc.Events;
-import arc.files.Fi;
-import arc.util.Log;
-import essential.core.Bundle;
-import mindustry.game.EventType;
-import mindustry.mod.Plugin;
-import org.hjson.JsonArray;
+import arc.Events
+import arc.files.Fi
+import arc.util.Log
+import arc.util.serialization.Json
+import essential.core.Bundle
+import essential.core.Main.Companion.root
+import mindustry.Vars.state
+import mindustry.content.Planets
+import mindustry.game.EventType.*
+import mindustry.gen.Player
+import mindustry.mod.Plugin
+import org.hjson.JsonArray
+import org.hjson.JsonObject
+import org.hjson.Stringify
 
-public class Main extends Plugin {
-    static Bundle bundle = new Bundle();
-    private JsonArray playerActivities = new JsonArray();
-    private Fi recordFile;
+class Main : Plugin() {
+    private var playerActivities = JsonArray()
+    private var recordFile: Fi? = null
+    private var currentStatus = CurrentStatus("sandbox", "andromeda")
 
+    private data class CurrentStatus(
+        val mode: String,
+        val planet: String,
+    )
 
-    @Override
-    public void init() {
-        bundle.setPrefix("[EssentialCollect]");
+    override fun init() {
+        bundle.prefix = "[EssentialCollect]"
+        Log.debug(bundle["event.plugin.starting"])
+        root.child("collect").mkdirs()
+        setEvents()
+        Log.debug(bundle["event.plugin.loaded"])
+    }
 
-        Log.debug(bundle.get("event.plugin.starting"));
-
-        recordFile = Core.settings.getDataDirectory().child("mods/Essentials/records.json");
-        if (!recordFile.exists()) {
-            recordFile.writeString("[]");
-        } else {
-            try {
-                playerActivities = JsonArray.readJSON(recordFile.readString()).asArray();
-            } catch (Exception e) {
-                Log.err("Failed to read records.json", e);
-                playerActivities = new JsonArray();
-            }
+    private fun setCurrentStatus() {
+        val gameMode = when {
+            state.rules.pvp -> "pvp"
+            state.rules.attackMode -> "attack"
+            state.rules.waves -> "wave"
+            else -> "sandbox"
         }
+        val gameType = when (state.rules.planet) {
+            Planets.serpulo -> "serpulo"
+            Planets.erekir -> "erekir"
+            Planets.sun -> "sun"
+            Planets.gier -> "gier"
+            Planets.notva -> "notva"
+            Planets.tantros -> "tantros"
+            Planets.verilus -> "verilus"
+            else -> "andromeda"
+        }
+        currentStatus = CurrentStatus(gameMode, gameType)
+    }
 
-        setEvents();
+    private fun getPlayerStatus(player: Player) : JsonObject {
+        val json = JsonObject()
+        if (player.unit() != null && !player.unit().dead) {
+            json.add("unit_x", player.unit().x)
+            json.add("unit_y", player.unit().y)
+            json.add("aim_x", player.unit().aimX)
+            json.add("aim_y", player.unit().aimY)
+            val buildPlan = JsonArray()
+            for (plan in player.unit().plans) {
+                val data = JsonObject()
+                data.add("block_name", plan.block.name)
+                data.add("tile_x", plan.tile().x.toInt())
+                data.add("tile_y", plan.tile().y.toInt())
+                data.add("rotation", plan.rotation)
+                data.add("config", Json().toJson(plan.config))
+                buildPlan.add(data)
+            }
+            json.add("build_plan", buildPlan)
+            json.add("team", player.unit().team.name)
+            json.add("item_name", player.unit().stack.item.name)
+            json.add("item_amount", player.unit().stack.amount)
+            json.add("rotation", player.unit().rotation)
+            json.add("health", player.unit().health())
+            json.add("shield", player.unit().shield())
+        }
+        json.add("mouse_x", player.mouseX)
+        json.add("mouse_y", player.mouseY)
+        json.add("name", player.name)
 
-        Log.debug(bundle.get("event.plugin.loaded"));
+        return json
     }
 
     /**
      * Sets up event handlers to record player activities and save them to a JSON file.
      */
-    private void setEvents() {
-        // triggered when map loaded
-        Events.on(EventType.PlayEvent.class, e -> {
-            // Record map load event
-            org.hjson.JsonObject mapLoad = new org.hjson.JsonObject();
-            mapLoad.add("type", "map_load");
-            mapLoad.add("map", mindustry.Vars.state.map.name());
-            mapLoad.add("time", System.currentTimeMillis());
-            playerActivities.add(mapLoad);
+    private fun setEvents() {
+        Events.on(PlayEvent::class.java) { _ ->
+            setCurrentStatus()
+            recordFile = root.child("collect/${System.currentTimeMillis()}_${currentStatus.planet}_${currentStatus.mode}.json")
+            val mapLoad = JsonObject()
+            mapLoad.add("type", "map_load")
+            mapLoad.add("map", state.map.name())
+            mapLoad.add("mode", currentStatus.mode)
+            mapLoad.add("planet", currentStatus.planet)
+            mapLoad.add("time", System.currentTimeMillis())
+            playerActivities.add(mapLoad)
+        }
 
-            // Log that we're recording player activities
-            Log.info(bundle.get("event.recording.started"));
-        });
+        Events.on(PlayerJoin::class.java) { e ->
+            val playerJoin = JsonObject()
+            playerJoin.add("type", "player_join")
+            playerJoin.add("player", getPlayerStatus(e.player))
+            playerJoin.add("time", System.currentTimeMillis())
+            playerActivities.add(playerJoin)
+        }
 
-        // if player joined
-        Events.on(EventType.PlayerJoin.class, e -> {
-            // Record player join event
-            org.hjson.JsonObject playerJoin = new org.hjson.JsonObject();
-            org.hjson.JsonObject player = new org.hjson.JsonObject();
+        Events.on(PlayerLeave::class.java) { e ->
+            val playerLeave = JsonObject()
+            playerLeave.add("type", "player_leave")
+            playerLeave.add("player", getPlayerStatus(e.player))
+            playerLeave.add("time", System.currentTimeMillis())
+            playerActivities.add(playerLeave)
+        }
 
-            // Add player data
-            player.add("name", e.player.name);
-            if (e.player.unit() != null) {
-                player.add("unit_x", e.player.unit().x);
-                player.add("unit_y", e.player.unit().y);
-                player.add("rotation", e.player.unit().rotation);
-            }
-            player.add("mouse_x", e.player.mouseX);
-            player.add("mouse_y", e.player.mouseY);
+        Events.on(WithdrawEvent::class.java) { e ->
+            val withdraw = JsonObject()
+            withdraw.add("type", "withdraw")
+            withdraw.add("player", getPlayerStatus(e.player))
+            withdraw.add("item", e.item.name)
+            withdraw.add("block_name", e.tile.block.name)
+            withdraw.add("amount", e.amount)
+            withdraw.add("time", System.currentTimeMillis())
+            playerActivities.add(withdraw)
+        }
 
-            playerJoin.add("type", "player_join");
-            playerJoin.add("player", player);
-            playerJoin.add("time", System.currentTimeMillis());
-            playerActivities.add(playerJoin);
-        });
+        Events.on(DepositEvent::class.java) { e ->
+            val deposit = JsonObject()
+            deposit.add("type", "deposit")
+            deposit.add("player", getPlayerStatus(e.player))
+            deposit.add("item", e.item.name)
+            deposit.add("amount", e.amount)
+            deposit.add("block_name", e.tile.block.name)
+            deposit.add("time", System.currentTimeMillis())
+            playerActivities.add(deposit)
+        }
 
-        // if player leaved
-        Events.on(EventType.PlayerLeave.class, e -> {
-            // Record player leave event
-            org.hjson.JsonObject playerLeave = new org.hjson.JsonObject();
-            org.hjson.JsonObject player = new org.hjson.JsonObject();
+        Events.on(UnitDestroyEvent::class.java) { e ->
+            val unitDestroy = JsonObject()
+            unitDestroy.add("type", "unit_destroy")
+            unitDestroy.add("unit", e.unit.type.name)
+            unitDestroy.add("team", e.unit.team.name)
+            unitDestroy.add("time", System.currentTimeMillis())
+            playerActivities.add(unitDestroy)
+        }
 
-            // Add player data
-            player.add("name", e.player.name);
-            if (e.player.unit() != null) {
-                player.add("unit_x", e.player.unit().x);
-                player.add("unit_y", e.player.unit().y);
-                player.add("rotation", e.player.unit().rotation);
-            }
-            player.add("mouse_x", e.player.mouseX);
-            player.add("mouse_y", e.player.mouseY);
+        Events.on(ConfigEvent::class.java) { e ->
+            val config = JsonObject()
+            config.add("type", "config")
+            config.add("player", getPlayerStatus(e.player))
+            config.add("config", Json().toJson(e.value))
+            config.add("block", e.tile.block.name)
+            config.add("time", System.currentTimeMillis())
+            playerActivities.add(config)
+        }
 
-            playerLeave.add("type", "player_leave");
-            playerLeave.add("player", player);
-            playerLeave.add("time", System.currentTimeMillis());
-            playerActivities.add(playerLeave);
-        });
-
-        // if player withdraw item from unit
-        Events.on(EventType.WithdrawEvent.class, e -> {
-            // Record withdraw event
-            org.hjson.JsonObject withdraw = new org.hjson.JsonObject();
-            org.hjson.JsonObject player = new org.hjson.JsonObject();
-
-            // Add player data
-            player.add("name", e.player.name);
-            if (e.player.unit() != null) {
-                player.add("unit_x", e.player.unit().x);
-                player.add("unit_y", e.player.unit().y);
-                player.add("rotation", e.player.unit().rotation);
-            }
-            player.add("mouse_x", e.player.mouseX);
-            player.add("mouse_y", e.player.mouseY);
-
-            withdraw.add("type", "withdraw");
-            withdraw.add("player", player);
-            withdraw.add("item", e.item.name);
-            withdraw.add("block_name", e.tile.block().name);
-            withdraw.add("amount", e.amount);
-            withdraw.add("time", System.currentTimeMillis());
-            playerActivities.add(withdraw);
-        });
-
-        // if player deposit item to unit
-        Events.on(EventType.DepositEvent.class, e -> {
-            // Record deposit event
-            org.hjson.JsonObject deposit = new org.hjson.JsonObject();
-            org.hjson.JsonObject player = new org.hjson.JsonObject();
-
-            // Add player data
-            player.add("name", e.player.name);
-            if (e.player.unit() != null) {
-                player.add("unit_x", e.player.unit().x);
-                player.add("unit_y", e.player.unit().y);
-                player.add("rotation", e.player.unit().rotation);
-            }
-            player.add("mouse_x", e.player.mouseX);
-            player.add("mouse_y", e.player.mouseY);
-
-            deposit.add("type", "deposit");
-            deposit.add("player", player);
-            deposit.add("item", e.item.name);
-            deposit.add("amount", e.amount);
-            deposit.add("block_name", e.tile.block().name);
-            deposit.add("time", System.currentTimeMillis());
-            playerActivities.add(deposit);
-        });
-
-        // if any unit destroyed
-        Events.on(EventType.UnitDestroyEvent.class, e -> {
-            // Record unit destroy event
-            org.hjson.JsonObject unitDestroy = new org.hjson.JsonObject();
-            unitDestroy.add("type", "unit_destroy");
-            unitDestroy.add("unit", e.unit.type.name);
-            unitDestroy.add("team", e.unit.team.toString());
-            unitDestroy.add("time", System.currentTimeMillis());
-            playerActivities.add(unitDestroy);
-        });
-
-        // if player configured block
-        Events.on(EventType.ConfigEvent.class, e -> {
-            // Record config event
-            org.hjson.JsonObject config = new org.hjson.JsonObject();
-            config.add("type", "config");
-
-            if (e.player != null) {
-                org.hjson.JsonObject player = new org.hjson.JsonObject();
-
-                // Add player data
-                player.add("name", e.player.name);
-                if (e.player.unit() != null) {
-                    player.add("unit_x", e.player.unit().x);
-                    player.add("unit_y", e.player.unit().y);
-                    player.add("rotation", e.player.unit().rotation);
-                }
-                player.add("mouse_x", e.player.mouseX);
-                player.add("mouse_y", e.player.mouseY);
-
-                config.add("player", player);
-            }
-
-            config.add("config", e.value.toString());
-            config.add("block", e.tile.block().name);
-            config.add("time", System.currentTimeMillis());
-            playerActivities.add(config);
-        });
-
-        // if game over
-        Events.on(EventType.GameOverEvent.class, e -> {
-            // Save player activities to JSON file when game is over
+        Events.on(GameOverEvent::class.java) { e ->
             try {
-                recordFile.writeString(playerActivities.toString());
-                Log.info(bundle.get("event.records.saved"));
-                // Reset player activities for next game
-                playerActivities = new JsonArray();
-            } catch (Exception ex) {
-                Log.err("Failed to save records.json", ex);
+                recordFile?.writeString(playerActivities.toString(Stringify.PLAIN))
+                playerActivities = JsonArray()
+            } catch (ex: Exception) {
+                Log.err("Failed to save records.json", ex)
             }
-        });
+        }
 
-        // if player tap block
-        Events.on(EventType.TapEvent.class, e -> {
-            // Record tap event
-            org.hjson.JsonObject tap = new org.hjson.JsonObject();
-            org.hjson.JsonObject player = new org.hjson.JsonObject();
-            if (e.player.unit() != null) {
-                player.add("unit_x", e.player.unit().x);
-                player.add("unit_y", e.player.unit().y);
-                player.add("rotation", e.player.unit().rotation);
-                player.add("tile_on", e.player.tileOn().block().name);
-                player.add("is_builder", e.player.isBuilder());
-                player.add("is_dead", e.player.unit().dead);
-                player.add("shooting", e.player.unit().isShooting);
-            }
-            player.add("mouse_x", e.player.mouseX);
-            player.add("mouse_y", e.player.mouseY);
-            player.add("boosting", e.player.boosting);
+        Events.on(TapEvent::class.java) { e ->
+            val tap = JsonObject()
+            tap.add("player", getPlayerStatus(e.player))
+            tap.add("type", "tap")
+            tap.add("tile_x", e.tile.x.toInt())
+            tap.add("tile_y", e.tile.y.toInt())
+            tap.add("time", System.currentTimeMillis())
+            playerActivities.add(tap)
+        }
 
-            tap.add("player", player);
-            tap.add("type", "tap");
-            tap.add("tile_x", e.tile.x);
-            tap.add("tile_y", e.tile.y);
-            tap.add("time", System.currentTimeMillis());
-            playerActivities.add(tap);
-        });
-
-        // if player or unit picked other blocks or units
-        Events.on(EventType.PickupEvent.class, e -> {
-            // Record pickup event
-            org.hjson.JsonObject pickup = new org.hjson.JsonObject();
-            pickup.add("type", "pickup");
-
-            if (e.carrier != null && e.carrier.isPlayer()) {
-                org.hjson.JsonObject player = new org.hjson.JsonObject();
-                mindustry.gen.Player p = e.carrier.getPlayer();
-
-                // Add player data
-                player.add("name", p.name);
-                if (p.unit() != null) {
-                    player.add("unit_x", e.unit.x);
-                    player.add("unit_y", e.unit.y);
-                    player.add("rotation", e.unit.rotation);
-                    player.add("tile_on", e.unit.tileOn().block().name);
-                    player.add("is_dead", e.unit.dead);
-                    player.add("shooting", e.unit.isShooting);
+        Events.on(PickupEvent::class.java) { e ->
+            if (e.carrier != null && e.carrier.isPlayer) {
+                val pickup = JsonObject()
+                val p = e.carrier.player
+                if (e.unit != null) {
+                    pickup.add("unit_name", e.unit.type.name)
                 }
-                player.add("mouse_x", p.mouseX);
-                player.add("mouse_y", p.mouseY);
-
-                pickup.add("player", player);
-            }
-
-            pickup.add("time", System.currentTimeMillis());
-            playerActivities.add(pickup);
-        });
-
-        // if any unit created
-        Events.on(EventType.UnitCreateEvent.class, e -> {
-            // Record unit create event
-            org.hjson.JsonObject unitCreate = new org.hjson.JsonObject();
-            unitCreate.add("type", "unit_create");
-            unitCreate.add("unit", e.unit.type.name);
-            unitCreate.add("team", e.unit.team.toString());
-            unitCreate.add("time", System.currentTimeMillis());
-            playerActivities.add(unitCreate);
-        });
-
-        // if unit controlled by player or processor block
-        Events.on(EventType.UnitControlEvent.class, e -> {
-            // Record unit control event
-            org.hjson.JsonObject unitControl = new org.hjson.JsonObject();
-            unitControl.add("type", "unit_control");
-
-            if (e.player != null) {
-                org.hjson.JsonObject player = new org.hjson.JsonObject();
-
-                // Add player data
-                player.add("name", e.player.name);
-                if (e.player.unit() != null) {
-                    player.add("unit_x", e.player.unit().x);
-                    player.add("unit_y", e.player.unit().y);
-                    player.add("rotation", e.player.unit().rotation);
+                if (e.build != null) {
+                    pickup.add("block_name", e.build.block.name)
                 }
-                player.add("mouse_x", e.player.mouseX);
-                player.add("mouse_y", e.player.mouseY);
 
-                unitControl.add("player", player);
+                pickup.add("type", "pickup")
+                pickup.add("player", getPlayerStatus(p))
+                pickup.add("time", System.currentTimeMillis())
+                playerActivities.add(pickup)
+            }
+        }
+
+        Events.on(UnitCreateEvent::class.java) { e ->
+            val unitCreate = JsonObject()
+            unitCreate.add("type", "unit_create")
+            unitCreate.add("unit", e.unit.type.name)
+            unitCreate.add("team", e.unit.team.toString())
+            unitCreate.add("time", System.currentTimeMillis())
+            playerActivities.add(unitCreate)
+        }
+
+        Events.on(UnitControlEvent::class.java) { e ->
+            val unitControl = JsonObject()
+            unitControl.add("type", "unit_control")
+            unitControl.add("player", getPlayerStatus(e.player))
+            unitControl.add("target_x", e.unit.command().targetPos.x)
+            unitControl.add("target_y", e.unit.command().targetPos.y)
+            unitControl.add("unit", e.unit.type.name)
+            unitControl.add("time", System.currentTimeMillis())
+            playerActivities.add(unitControl)
+        }
+
+        Events.on(BlockBuildBeginEvent::class.java) { e ->
+            val blockBuildBegin = JsonObject()
+            blockBuildBegin.add("type", "block_build_begin")
+
+            if (e!!.unit != null && e.unit.isPlayer) {
+                blockBuildBegin.add("player", getPlayerStatus(e.unit.player))
             }
 
-            unitControl.add("unit", e.unit.type.name);
-            unitControl.add("time", System.currentTimeMillis());
-            playerActivities.add(unitControl);
-        });
+            blockBuildBegin.add("block", e.tile.block().name)
+            blockBuildBegin.add("tile_x", e.tile.x.toInt())
+            blockBuildBegin.add("tile_y", e.tile.y.toInt())
+            blockBuildBegin.add("is_breaking", e.breaking)
+            blockBuildBegin.add("time", System.currentTimeMillis())
+            playerActivities.add(blockBuildBegin)
+        }
 
-        // if player command building
-        Events.on(EventType.BuildingCommandEvent.class, e -> {
-            // Record building command event
-            org.hjson.JsonObject buildingCommand = new org.hjson.JsonObject();
-            buildingCommand.add("type", "building_command");
+        Events.on(BlockBuildEndEvent::class.java) { e: BlockBuildEndEvent? ->
+            val blockBuildEnd = JsonObject()
+            blockBuildEnd.add("type", "block_build_end")
 
-            if (e.player != null) {
-                org.hjson.JsonObject player = new org.hjson.JsonObject();
-
-                // Add player data
-                player.add("name", e.player.name);
-                if (e.player.unit() != null) {
-                    player.add("unit_x", e.player.unit().x);
-                    player.add("unit_y", e.player.unit().y);
-                    player.add("rotation", e.player.unit().rotation);
-                }
-                player.add("mouse_x", e.player.mouseX);
-                player.add("mouse_y", e.player.mouseY);
-
-                buildingCommand.add("player", player);
+            if (e!!.unit != null && e.unit.isPlayer) {
+                blockBuildEnd.add("player", getPlayerStatus(e.unit.player))
             }
 
-            buildingCommand.add("building", e.building.block.name);
-            buildingCommand.add("time", System.currentTimeMillis());
-            playerActivities.add(buildingCommand);
-        });
-
-        // if player or unit is building unit
-        Events.on(EventType.BlockBuildBeginEvent.class, e -> {
-            // Record block build begin event
-            org.hjson.JsonObject blockBuildBegin = new org.hjson.JsonObject();
-            blockBuildBegin.add("type", "block_build_begin");
-
-            if (e.unit != null && e.unit.isPlayer()) {
-                org.hjson.JsonObject player = new org.hjson.JsonObject();
-                mindustry.gen.Player p = e.unit.getPlayer();
-
-                // Add player data
-                player.add("name", p.name);
-                if (p.unit() != null) {
-                    player.add("unit_x", p.unit().x);
-                    player.add("unit_y", p.unit().y);
-                    player.add("rotation", p.unit().rotation);
-                }
-                player.add("mouse_x", p.mouseX);
-                player.add("mouse_y", p.mouseY);
-
-                blockBuildBegin.add("player", player);
-            }
-
-            blockBuildBegin.add("block", e.tile.block().name);
-            blockBuildBegin.add("tile_x", e.tile.x);
-            blockBuildBegin.add("tile_y", e.tile.y);
-            blockBuildBegin.add("time", System.currentTimeMillis());
-            playerActivities.add(blockBuildBegin);
-        });
-
-        // if player or unit is block build end
-        Events.on(EventType.BlockBuildEndEvent.class, e -> {
-            // Record block build end event
-            org.hjson.JsonObject blockBuildEnd = new org.hjson.JsonObject();
-            blockBuildEnd.add("type", "block_build_end");
-
-            if (e.unit != null && e.unit.isPlayer()) {
-                org.hjson.JsonObject player = new org.hjson.JsonObject();
-                mindustry.gen.Player p = e.unit.getPlayer();
-
-                // Add player data
-                player.add("name", p.name);
-                if (p.unit() != null) {
-                    player.add("unit_x", p.unit().x);
-                    player.add("unit_y", p.unit().y);
-                    player.add("rotation", p.unit().rotation);
-                }
-                player.add("mouse_x", p.mouseX);
-                player.add("mouse_y", p.mouseY);
-
-                blockBuildEnd.add("player", player);
-            }
-
-            blockBuildEnd.add("block", e.tile.block().name);
-            blockBuildEnd.add("tile_x", e.tile.x);
-            blockBuildEnd.add("tile_y", e.tile.y);
-            blockBuildEnd.add("time", System.currentTimeMillis());
-            playerActivities.add(blockBuildEnd);
-        });
+            blockBuildEnd.add("block", e.tile.block().name)
+            blockBuildEnd.add("tile_x", e.tile.x.toInt())
+            blockBuildEnd.add("tile_y", e.tile.y.toInt())
+            blockBuildEnd.add("is_breaking", e.breaking)
+            blockBuildEnd.add("time", System.currentTimeMillis())
+            playerActivities.add(blockBuildEnd)
+        }
 
         // if player or unit rotated the target block
-        Events.on(EventType.BuildRotateEvent.class, e -> {
-
-        });
+        Events.on(BuildRotateEvent::class.java) { e ->
+            val buildRotate = JsonObject()
+            buildRotate.add("type", "build_rotate")
+            if (e.unit != null && e.unit.isPlayer) {
+                buildRotate.add("player", getPlayerStatus(e.unit.player))
+                val buildPlan = JsonArray()
+                for (plan in e.unit.plans) {
+                    val data = JsonObject()
+                    data.add("block_name", plan.block.name)
+                    data.add("tile_x", plan.tile().x.toInt())
+                    data.add("tile_y", plan.tile().y.toInt())
+                    data.add("rotation", plan.rotation)
+                    data.add("config", Json().toJson(plan.config))
+                    buildPlan.add(data)
+                }
+            }
+            buildRotate.add("block", e.build.block.name)
+            buildRotate.add("previous", e.previous)
+            buildRotate.add("current", e.build.rotation)
+            buildRotate.add("time", System.currentTimeMillis())
+            playerActivities.add(buildRotate)
+        }
 
         // if player or unit is block remove or selected
-        Events.on(EventType.BuildSelectEvent.class, e -> {
-
-        });
+        Events.on(BuildSelectEvent::class.java) { e ->
+            val buildSelect = JsonObject()
+            buildSelect.add("type", "build_select")
+            buildSelect.add("name", e.tile.block().name)
+            buildSelect.add("is_breaking", e.breaking)
+            buildSelect.add("tile_x", e.tile.x.toInt())
+            buildSelect.add("tile_y", e.tile.y.toInt())
+            if (e.builder.isPlayer) {
+                val buildPlan = JsonArray()
+                for (plan in e.builder.plans) {
+                    val data = JsonObject()
+                    data.add("block_name", plan.block.name)
+                    data.add("tile_x", plan.tile().x.toInt())
+                    data.add("tile_y", plan.tile().y.toInt())
+                    data.add("rotation", plan.rotation)
+                    data.add("config", Json().toJson(plan.config))
+                    buildPlan.add(data)
+                }
+            }
+            buildSelect.add("time", System.currentTimeMillis())
+            playerActivities.add(buildSelect)
+        }
 
         // if power generator exploded by pressure
-        Events.on(EventType.GeneratorPressureExplodeEvent.class, e -> {
-
-        });
+        Events.on(GeneratorPressureExplodeEvent::class.java) { e: GeneratorPressureExplodeEvent? -> }
 
         // if building destroyed by bullet
-        Events.on(EventType.BuildingBulletDestroyEvent.class, e -> {
-
-        });
+        Events.on(BuildingBulletDestroyEvent::class.java) { e ->
+            val buildingDestroy = JsonObject()
+            buildingDestroy.add("type", "bullet_destroy")
+            buildingDestroy.add("build_name", e.build.block.name)
+            buildingDestroy.add("health", e.build.health())
+            buildingDestroy.add("destroyed", e.build.dead)
+            buildingDestroy.add("team", e.build.team.name)
+            buildingDestroy.add("bullet_team", e.bullet.team.name)
+            buildingDestroy.add("bullet_unit", e.bullet.owner is mindustry.gen.Unit)
+            buildingDestroy.add("bullet_build", e.bullet.owner is mindustry.world.Block)
+            buildingDestroy.add("time", System.currentTimeMillis())
+            playerActivities.add(buildingDestroy)
+        }
 
         // if unit destroyed by bullet
-        Events.on(EventType.UnitBulletDestroyEvent.class, e -> {
-
-        });
+        Events.on(UnitBulletDestroyEvent::class.java) { e ->
+            val bulletDestroy = JsonObject()
+            bulletDestroy.add("type", "bullet_destroy")
+            bulletDestroy.add("unit_name", e.unit.type.name)
+            bulletDestroy.add("health", e.unit.health())
+            bulletDestroy.add("is_dead", e.unit.dead)
+            bulletDestroy.add("team", e.unit.team.name)
+            bulletDestroy.add("bullet_team", e.bullet.team.name)
+            bulletDestroy.add("bullet_unit", e.bullet.owner is mindustry.gen.Unit)
+            bulletDestroy.add("bullet_build", e.bullet.owner is mindustry.world.Block)
+            bulletDestroy.add("time", System.currentTimeMillis())
+            playerActivities.add(bulletDestroy)
+        }
 
         // if unit taken damage
-        Events.on(EventType.UnitDamageEvent.class, e -> {
-
-        });
+        Events.on(UnitDamageEvent::class.java) { e ->
+            val damaged = JsonObject()
+            damaged.add("type", "bullet_destroy")
+            damaged.add("unit_name", e.unit.type.name)
+            damaged.add("health", e.unit.health())
+            damaged.add("is_dead", e.unit.dead)
+            damaged.add("team", e.unit.team.name)
+            damaged.add("bullet_team", e.bullet.team.name)
+            damaged.add("bullet_unit", e.bullet.owner is mindustry.gen.Unit)
+            damaged.add("bullet_build", e.bullet.owner is mindustry.world.Block)
+            damaged.add("time", System.currentTimeMillis())
+            playerActivities.add(damaged)
+        }
 
         // if unit is drowned
-        Events.on(EventType.UnitDrownEvent.class, e -> {
+        Events.on(UnitDrownEvent::class.java) { e: UnitDrownEvent? ->
+            val drown = JsonObject()
+            drown.add("type", "unit_drown")
+            drown.add("unit_name", e!!.unit.type.name)
+            drown.add("health", e.unit.health())
+            drown.add("is_dead", e.unit.dead)
+            drown.add("team", e.unit.team.name)
+            drown.add("time", System.currentTimeMillis())
+            playerActivities.add(drown)
+        }
+    }
 
-        });
-
-        // if unit is unload from block
-        Events.on(EventType.UnitUnloadEvent.class, e -> {
-
-        });
+    companion object {
+        var bundle: Bundle = Bundle()
     }
 }
