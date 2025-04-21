@@ -151,7 +151,9 @@ class Main : Plugin() {
         Events.on(ConfigEvent::class.java) { e ->
             val config = JsonObject()
             config.add("type", "config")
-            config.add("player", getPlayerStatus(e.player))
+            if (e.player != null) {
+                config.add("player", getPlayerStatus(e.player))
+            }
             config.add("config", Json().toJson(e.value))
             config.add("block", e.tile.block.name)
             config.add("time", System.currentTimeMillis())
@@ -208,8 +210,10 @@ class Main : Plugin() {
             val unitControl = JsonObject()
             unitControl.add("type", "unit_control")
             unitControl.add("player", getPlayerStatus(e.player))
-            unitControl.add("target_x", e.unit.command().targetPos.x)
-            unitControl.add("target_y", e.unit.command().targetPos.y)
+            if(e.unit.isCommandable) {
+                unitControl.add("target_x", e.unit.command().targetPos.x)
+                unitControl.add("target_y", e.unit.command().targetPos.y)
+            }
             unitControl.add("unit", e.unit.type.name)
             unitControl.add("time", System.currentTimeMillis())
             playerActivities.add(unitControl)
