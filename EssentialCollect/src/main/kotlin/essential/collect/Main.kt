@@ -9,6 +9,7 @@ import essential.core.Main.Companion.root
 import mindustry.Vars.state
 import mindustry.content.Planets
 import mindustry.game.EventType.*
+import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.mod.Plugin
 import org.hjson.JsonArray
@@ -67,11 +68,6 @@ class Main : Plugin() {
                 data.add("tile_x", plan.tile().x.toInt())
                 data.add("tile_y", plan.tile().y.toInt())
                 data.add("rotation", plan.rotation)
-                try {
-                    val json = Json()
-                    json.toJson(plan.config)
-                    data.add("config", json.toJson(plan.config))
-                } catch (_: Exception) {}
                 buildPlan.add(data)
             }
             json.add("build_plan", buildPlan)
@@ -268,11 +264,6 @@ class Main : Plugin() {
                     data.add("tile_x", plan.tile().x.toInt())
                     data.add("tile_y", plan.tile().y.toInt())
                     data.add("rotation", plan.rotation)
-                    try {
-                        val json = Json()
-                        json.toJson(plan.config)
-                        data.add("config", json.toJson(plan.config))
-                    } catch (_: Exception) {}
                     buildPlan.add(data)
                 }
             }
@@ -299,11 +290,6 @@ class Main : Plugin() {
                     data.add("tile_x", plan.tile().x.toInt())
                     data.add("tile_y", plan.tile().y.toInt())
                     data.add("rotation", plan.rotation)
-                    try {
-                        val json = Json()
-                        json.toJson(plan.config)
-                        data.add("config", json.toJson(plan.config))
-                    } catch (_: Exception) {}
                     buildPlan.add(data)
                 }
             }
@@ -369,6 +355,37 @@ class Main : Plugin() {
             drown.add("team", e.unit.team.name)
             drown.add("time", System.currentTimeMillis())
             playerActivities.add(drown)
+        }
+
+        var tick = 0
+        Events.on(Trigger.update::class.java) {
+            if (tick == 60) {
+                val current = JsonObject()
+                current.add("type", "current_status")
+                current.add("time", System.currentTimeMillis())
+
+                val list = JsonArray()
+
+                Groups.unit.forEach {
+                    val currentStatus = JsonObject()
+                    currentStatus.add("unit_name", it.type.name)
+                    currentStatus.add("team", it.team.name)
+                    currentStatus.add("unit_x", it.x)
+                    currentStatus.add("unit_y", it.y)
+                    currentStatus.add("aim_x", it.aimX)
+                    currentStatus.add("aim_y", it.aimY)
+                    currentStatus.add("health", it.health())
+                    currentStatus.add("shield", it.shield())
+                    list.add(currentStatus)
+                }
+
+                current.add("units", list)
+
+                playerActivities.add(current)
+                tick = 0
+            } else {
+                tick++
+            }
         }
     }
 
