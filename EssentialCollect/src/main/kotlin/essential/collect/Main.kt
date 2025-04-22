@@ -67,7 +67,11 @@ class Main : Plugin() {
                 data.add("tile_x", plan.tile().x.toInt())
                 data.add("tile_y", plan.tile().y.toInt())
                 data.add("rotation", plan.rotation)
-                data.add("config", Json().toJson(plan.config))
+                try {
+                    val json = Json()
+                    json.toJson(plan.config)
+                    data.add("config", json.toJson(plan.config))
+                } catch (_: Exception) {}
                 buildPlan.add(data)
             }
             json.add("build_plan", buildPlan)
@@ -264,7 +268,11 @@ class Main : Plugin() {
                     data.add("tile_x", plan.tile().x.toInt())
                     data.add("tile_y", plan.tile().y.toInt())
                     data.add("rotation", plan.rotation)
-                    data.add("config", Json().toJson(plan.config))
+                    try {
+                        val json = Json()
+                        json.toJson(plan.config)
+                        data.add("config", json.toJson(plan.config))
+                    } catch (_: Exception) {}
                     buildPlan.add(data)
                 }
             }
@@ -291,7 +299,11 @@ class Main : Plugin() {
                     data.add("tile_x", plan.tile().x.toInt())
                     data.add("tile_y", plan.tile().y.toInt())
                     data.add("rotation", plan.rotation)
-                    data.add("config", Json().toJson(plan.config))
+                    try {
+                        val json = Json()
+                        json.toJson(plan.config)
+                        data.add("config", json.toJson(plan.config))
+                    } catch (_: Exception) {}
                     buildPlan.add(data)
                 }
             }
