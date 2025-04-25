@@ -1,292 +1,261 @@
-package essential.achievements;
+package essential.achievements
 
 /*
 public enum Achievement {
-    Builder, Deconstructor,
-    // Specific
-    Creator, Eliminator, Defender, Aggressor, Serpulo, Erekir,
-    // Time
-    TurbidWater, BlackWater, Oil,
-    // PvP
-    Lord,
-    */
-/*Iron, Bronze, Silver, Gold, Platinum, Master, GrandMaster*//*
+   Builder, Deconstructor,
+   // Specific
+   Creator, Eliminator, Defender, Aggressor, Serpulo, Erekir,
+   // Time
+   TurbidWater, BlackWater, Oil,
+   // PvP
+   Lord,
+   */
+/*Iron, Bronze, Silver, Gold, Platinum, Master, GrandMaster*/ /*
 
     // Wave
     // Attack
 }*/
 
-import arc.Events;
-import essential.core.DB;
-import mindustry.Vars;
+import arc.Events
+import java.io.IOException
+import java.math.BigInteger
+import java.nio.file.Files
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import java.util.*
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.file.Files;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
-public enum Achievement {
+enum class Achievement {
     // int 배열값은 현재 값과 목표 값
     Builder {
-        @Override
-        public int value() {
-            return 100000;
+        override fun value(): Int {
+            return 100000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return data.getBlockPlaceCount();
+        override fun current(data: PlayerData): Int {
+            return data.getBlockPlaceCount()
         }
     },
     Deconstructor {
-        @Override
-        public int value() {
-            return 100000;
+        override fun value(): Int {
+            return 100000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return data.getBlockBreakCount();
+        override fun current(data: PlayerData): Int {
+            return data.getBlockBreakCount()
         }
     },
 
     Creator {
-        @Override
-        public int value() {
-            return 360000;
+        override fun value(): Int {
+            return 360000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return Integer.parseInt(data.getStatus().getOrDefault("record.time.sandbox", "0"));
+        override fun current(data: PlayerData): Int {
+            return data.getStatus().getOrDefault("record.time.sandbox", "0").toInt()
         }
     },
     Eliminator {
-        @Override
-        public int value() {
-            return 100;
+        override fun value(): Int {
+            return 100
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return data.getPvpVictoriesCount();
+        override fun current(data: PlayerData): Int {
+            return data.getPvpVictoriesCount()
         }
     },
     Defender {
-        @Override
-        public int value() {
-            return 10000;
+        override fun value(): Int {
+            return 10000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return Integer.parseInt(data.getStatus().getOrDefault("record.wave", "0"));
+        override fun current(data: PlayerData): Int {
+            return data.getStatus().getOrDefault("record.wave", "0").toInt()
         }
     },
     Aggressor {
-        @Override
-        public int value() {
-            return 50;
+        override fun value(): Int {
+            return 50
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return data.getAttackModeClear();
+        override fun current(data: PlayerData): Int {
+            return data.getAttackModeClear()
         }
     },
     Serpulo {
-        @Override
-        public int value() {
-            return 360000;
+        override fun value(): Int {
+            return 360000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return Integer.parseInt(data.getStatus().getOrDefault("record.time.serpulo", "0"));
+        override fun current(data: PlayerData): Int {
+            return data.getStatus().getOrDefault("record.time.serpulo", "0").toInt()
         }
     },
     Erekir {
-        @Override
-        public int value() {
-            return 360000;
+        override fun value(): Int {
+            return 360000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return Integer.parseInt(data.getStatus().getOrDefault("record.time.erekir", "0"));
+        override fun current(data: PlayerData): Int {
+            return data.getStatus().getOrDefault("record.time.erekir", "0").toInt()
         }
     },
 
     TurbidWater {
-        @Override
-        public int value() {
-            return 360000;
+        override fun value(): Int {
+            return 360000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return (int) data.getTotalPlayTime();
+        override fun current(data: PlayerData): Int {
+            return data.getTotalPlayTime() as Int
         }
     },
     BlackWater {
-        @Override
-        public int value() {
-            return 720000;
+        override fun value(): Int {
+            return 720000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return (int) data.getTotalPlayTime();
+        override fun current(data: PlayerData): Int {
+            return data.getTotalPlayTime() as Int
         }
     },
     Oil {
-        @Override
-        public int value() {
-            return 1080000;
+        override fun value(): Int {
+            return 1080000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return (int) data.getTotalPlayTime();
+        override fun current(data: PlayerData): Int {
+            return data.getTotalPlayTime() as Int
         }
     },
 
     Lord {
-        @Override
-        public int value() {
-            return 70;
+        override fun value(): Int {
+            return 70
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            int result;
+        override fun current(data: PlayerData): Int {
+            var result: Int
             try {
-                int total = data.getPvpVictoriesCount() + data.getPvpDefeatCount();
+                val total: Int = data.getPvpVictoriesCount() + data.getPvpDefeatCount()
                 if (total < 50) {
-                    result = 0;
+                    result = 0
                 } else {
-                    result = data.getPvpVictoriesCount() * 100 / total;
+                    result = data.getPvpVictoriesCount() * 100 / total
                 }
-            } catch (ArithmeticException e) {
-                result = 0;
+            } catch (e: ArithmeticException) {
+                result = 0
             }
-            return result;
+            return result
         }
     },
 
     Chatter {
-        @Override
-        public int value() {
-            return 10000;
+        override fun value(): Int {
+            return 10000
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return Integer.parseInt(data.getStatus().getOrDefault("record.time.chat", "0"));
+        override fun current(data: PlayerData): Int {
+            return data.getStatus().getOrDefault("record.time.chat", "0").toInt()
         }
     },
 
     // ??
     MeetOwner {
-        @Override
-        public int value() {
-            return 1;
+        override fun value(): Int {
+            return 1
         }
 
-        @Override
-        public boolean isHidden() {
-            return true;
+        override fun isHidden(): Boolean {
+            return true
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return Integer.parseInt(data.getStatus().getOrDefault("record.time.meetowner", "0"));
+        override fun current(data: PlayerData): Int {
+            return data.getStatus().getOrDefault("record.time.meetowner", "0").toInt()
         }
     },
 
     // Specific map clear achievements
     Asteroids {
-        @Override
-        public int value() {
-            return 1;
+        override fun value(): Int {
+            return 1
         }
 
-        @Override
-        public boolean isHidden() {
-            return true;
+        override fun isHidden(): Boolean {
+            return true
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return Integer.parseInt(data.getStatus().getOrDefault("record.map.clear.asteroids", "0"));
+        override fun current(data: PlayerData): Int {
+            return data.getStatus().getOrDefault("record.map.clear.asteroids", "0").toInt()
         }
 
-        @Override
-        public boolean success(DB.PlayerData data) {
-            String mapHash = "7b032cc7815022be644d00a877ae0388";
-            if (getMapHash().equals(mapHash)) {
-                data.getStatus().put("record.map.clear.asteroids", "1");
-                return true;
+        override fun success(data: PlayerData): Boolean {
+            val mapHash = "7b032cc7815022be644d00a877ae0388"
+            if (Achievement.Companion.mapHash == mapHash) {
+                data.getStatus().put("record.map.clear.asteroids", "1")
+                return true
             } else {
-                return false;
+                return false
             }
         }
     },
 
     Transcendence {
-        @Override
-        public int value() {
-            return 1;
+        override fun value(): Int {
+            return 1
         }
 
-        @Override
-        public boolean isHidden() {
-            return true;
+        override fun isHidden(): Boolean {
+            return true
         }
 
-        @Override
-        public int current(DB.PlayerData data) {
-            return Integer.parseInt(data.getStatus().getOrDefault("record.map.clear.transcendence", "0"));
+        override fun current(data: PlayerData): Int {
+            return data.getStatus().getOrDefault("record.map.clear.transcendence", "0").toInt()
         }
 
-        @Override
-        public boolean success(DB.PlayerData data) {
-            String mapHash = "f355b3d91d5d8215e557ff045b3864ef";
-            if (getMapHash().equals(mapHash)) {
-                data.getStatus().put("record.map.clear.transcendence", "1");
-                return true;
+        override fun success(data: PlayerData): Boolean {
+            val mapHash = "f355b3d91d5d8215e557ff045b3864ef"
+            if (Achievement.Companion.mapHash == mapHash) {
+                data.getStatus().put("record.map.clear.transcendence", "1")
+                return true
             } else {
-                return false;
+                return false
             }
         }
-    }
-    ;
+    };
 
-    public abstract int value();
-    public boolean isHidden() {
-        return false;
+    abstract fun value(): Int
+    open val isHidden: Boolean
+        get() = false
+
+    abstract fun current(data: PlayerData?): Int
+    open fun success(data: PlayerData?): Boolean {
+        return current(data) >= value()
     }
-    public abstract int current(DB.PlayerData data);
-    public boolean success(DB.PlayerData data) {
-        return current(data) >= value();
-    }
-    public void set(DB.PlayerData data) {
-        if (!data.getStatus().containsKey("achievement." + this.toString().toLowerCase())) {
-            data.getStatus().put("achievement." + this.toString().toLowerCase(), LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-            Events.fire(new CustomEvents.AchievementClear(this, data));
+
+    fun set(data: PlayerData) {
+        if (!data.getStatus().containsKey("achievement." + this.toString().lowercase(Locale.getDefault()))) {
+            data.getStatus().put(
+                "achievement." + this.toString().lowercase(Locale.getDefault()),
+                LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            )
+            Events.fire(AchievementClear(this, data))
         }
     }
 
-    private static String getMapHash() {
-        try {
-            byte[] data = Files.readAllBytes(Vars.state.map.file.file().toPath());
-            byte[] hash = MessageDigest.getInstance("MD5").digest(data);
-            return new BigInteger(1, hash).toString(16);
-        } catch (NoSuchAlgorithmException | IOException e){
-            return "";
-        }
+    companion object {
+        private val mapHash: String?
+            get() {
+                try {
+                    val data = Files.readAllBytes(Vars.state.map.file.file().toPath())
+                    val hash = MessageDigest.getInstance("MD5").digest(data)
+                    return BigInteger(1, hash).toString(16)
+                } catch (e: NoSuchAlgorithmException) {
+                    return ""
+                } catch (e: IOException) {
+                    return ""
+                }
+            }
     }
 }

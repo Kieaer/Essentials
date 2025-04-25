@@ -1,83 +1,41 @@
+import com.github.jengelman.gradle.plugins.shadow.ShadowJavaPlugin.Companion.shadowJar
+
 plugins {
-    kotlin("jvm") version "2.1.10"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
-    id("com.gradleup.shadow") version "9.0.0-beta9"
+    alias(libs.plugins.kotlin)
+    alias(libs.plugins.kotlinPluginSerialization) apply false
+    alias(libs.plugins.shadowJar) apply false
 }
 
-allprojects {
-    apply(plugin = "java")
+subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "com.gradleup.shadow")
 
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        maven(url = "https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository")
-        maven(url = "https://www.jitpack.io")
-    }
-
-    val game : String by rootProject
-    val kaml : String by rootProject
-    val exposed : String by rootProject
-    val slf4j : String by rootProject
-    val hjson : String by rootProject
-    val jbcrypt : String by rootProject
-    val mavenArtifact : String by rootProject
-    val jackson : String by rootProject
-    val classgraph : String by rootProject
-    val jfiglet : String by rootProject
-    val logback : String by rootProject
-
-    val rules : String by rootProject
-    val dataFaker : String by rootProject
-    val mockito : String by rootProject
-    val jts : String by rootProject
-    val h2 : String by rootProject
-
-    configurations.all {
-        resolutionStrategy.eachDependency {
-            if (this.requested.group == "com.github.Anuken.Arc") {
-                this.useVersion(game)
-            }
-        }
-    }
-
-    tasks.jar {
+    tasks.shadowJar {
         from(sourceSets.main.get().output) {
             exclude("**/mindustry/**")
         }
 
-        from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
+        from(project.configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
             exclude("META-INF/*.SF")
             exclude("META-INF/*.DSA")
             exclude("META-INF/*.RSA")
         }
 
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from(rootDir) {
             include("plugin.json")
         }
-    }
-
-    tasks.shadowJar {
-        dependsOn("jar")
 
         minimize {
             exclude(dependency("org.jetbrains.exposed:.*:.*"))
-            exclude(dependency("org.slf4j:slf4j-api:.*"))
-            exclude(dependency("org.slf4j:slf4j-nop:.*"))
         }
     }
 
     dependencies {
-        compileOnly("com.github.Anuken.Arc:arc-core:$game")
-        compileOnly("com.github.Anuken.mindustry:core:$game")
-        compileOnly("com.github.Anuken.mindustry:server:$game")
+//        compileOnly(libs.bundle.game)
 
-        runtimeOnly("org.slf4j:slf4j-nop:$slf4j")
-
-        if (project.name == "Essential") {
+        /*if (project.name == "Essential") {
             // Main module
             implementation("com.charleskorn.kaml:kaml-jvm:$kaml")
             implementation("org.jetbrains.exposed:exposed-core:$exposed")
@@ -106,6 +64,6 @@ allprojects {
         } else {
             // Sub modules
             compileOnly(project(":Essential"))
-        }
+        }*/
     }
 }

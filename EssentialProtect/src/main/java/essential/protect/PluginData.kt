@@ -1,5 +1,5 @@
-package essential.protect;
+package essential.protect
 
-public class PluginData {
-    String[] vpnList;
+class PluginData {
+    var vpnList: Array<String?>?
 }

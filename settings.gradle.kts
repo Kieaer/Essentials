@@ -1,15 +1,31 @@
 rootProject.name = "Essentials"
 
-sequenceOf(
-    "",
-    "Chat",
-    "Protect",
-    "Bridge",
-    "Discord",
-    "Web",
-    "Achievements",
-    "Collect"
-).forEach {
-    include(":Essential$it")
-    project(":Essential$it").projectDir = file("Essential$it")
+pluginManagement {
+    repositories {
+        google()
+        gradlePluginPortal()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
 }
+
+@Suppress("UnstableApiUsage")
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+
+    repositories {
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+
+include("common")
+include("Essential")
+include("EssentialChat")
+include("EssentialProtect")
+include("EssentialBridge")
+include("EssentialDiscord")
+include("EssentialWeb")
+include("EssentialAchievements")
+include("EssentialCollect")
+include("ksp-processor")

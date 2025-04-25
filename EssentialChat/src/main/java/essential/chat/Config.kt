@@ -1,17 +1,17 @@
-package essential.chat;
+package essential.chat
 
-public class Config {
-    public String chatFormat;
-    public StrictConfig strict;
-    public BlacklistConfig blacklist;
+class Config {
+    var chatFormat: String? = null
+    var strict: StrictConfig? = null
+    var blacklist: BlacklistConfig? = null
 
-    static class StrictConfig {
-        public Boolean enabled;
-        public String language;
+    internal class StrictConfig {
+        var enabled: Boolean? = null
+        var language: String? = null
     }
 
-    static class BlacklistConfig {
-        public Boolean enabled;
-        public Boolean regex;
+    internal class BlacklistConfig {
+        var enabled: Boolean? = null
+        var regex: Boolean? = null
     }
 }

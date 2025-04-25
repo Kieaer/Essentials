@@ -1,20 +1,13 @@
-package essential.discord;
+package essential.discord
 
-import arc.Events;
-import essential.core.CustomEvents;
-import essential.core.DB;
-import essential.core.annotation.ClientCommand;
-import mindustry.gen.Call;
-import mindustry.gen.Playerc;
+import essential.core.CustomEvents
 
-import static essential.discord.Main.conf;
-
-public class Commands {
+class Commands {
     @ClientCommand(name = "discord", description = "Open server discord url")
-    void discord(Playerc player, DB.PlayerData playerData, String[] arg) {
-        if (!conf.getUrl().isEmpty()) {
-            Call.openURI(player.con(), conf.getUrl());
-            Events.fire(new CustomEvents.DiscordURLOpen(playerData));
+    fun discord(player: Playerc, playerData: PlayerData?, arg: kotlin.Array<kotlin.String?>?) {
+        if (!essential.discord.Main.Companion.conf.getUrl().isEmpty()) {
+            mindustry.gen.Call.openURI(player.con(), essential.discord.Main.Companion.conf.getUrl())
+            arc.Events.< T > fire < T ? > (DiscordURLOpen(playerData))
         }
     }
 }

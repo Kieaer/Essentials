@@ -1,9 +1,5 @@
-package essential.discord;
+package essential.discord
 
-public class Config {
-    private String url;
-
-    public String getUrl() {
-        return url;
-    }
+class Config {
+    val url: String? = null
 }

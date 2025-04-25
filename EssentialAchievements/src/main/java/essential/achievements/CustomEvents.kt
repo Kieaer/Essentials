@@ -1,15 +1,13 @@
-package essential.achievements;
+package essential.achievements
 
-import essential.core.DB;
+import essential.core.DB
 
-public class CustomEvents {
-    public static class AchievementClear {
-        public Achievement achievement;
-        public DB.PlayerData playerData;
+class CustomEvents {
+    class AchievementClear(var achievement: Achievement?, playerData: PlayerData?) {
+        var playerData: PlayerData?
 
-        public AchievementClear(Achievement achievement, DB.PlayerData playerData) {
-            this.achievement = achievement;
-            this.playerData = playerData;
+        init {
+            this.playerData = playerData
         }
     }
 }

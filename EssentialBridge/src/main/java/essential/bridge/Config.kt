@@ -1,12 +1,12 @@
-package essential.bridge;
+package essential.bridge
 
-public class Config {
-    public String address;
-    public Integer port;
-    public SharingConfig sharing;
+class Config {
+    var address: String? = null
+    var port: Int? = null
+    var sharing: SharingConfig? = null
 
-    static class SharingConfig {
-        public boolean ban;
-        public boolean broadcast;
+    internal class SharingConfig {
+        var ban: Boolean = false
+        var broadcast: Boolean = false
     }
 }

@@ -1,156 +1,137 @@
-package essential.bridge;
+package essential.bridge
 
-import arc.ApplicationListener;
-import arc.Core;
-import arc.util.CommandHandler;
-import arc.util.Log;
-import essential.core.Bundle;
-import essential.core.Permission;
-import essential.core.annotation.ClientCommand;
-import essential.core.annotation.ServerCommand;
-import mindustry.gen.Player;
-import mindustry.mod.Plugin;
+import arc.ApplicationListener
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+class Main : Plugin() {
+    var daemon: java.util.concurrent.ExecutorService = java.util.concurrent.Executors.newSingleThreadExecutor()
+    public override fun init() {
+        essential.bridge.Main.Companion.bundle.setPrefix("[EssentialBridge]")
 
-import static essential.core.Main.database;
-
-public class Main extends Plugin {
-    static Bundle bundle = new Bundle();
-    static Boolean isServerMode = false;
-    ExecutorService daemon = Executors.newSingleThreadExecutor();
-    static Config conf;
-    static Runnable network;
-
-    @Override
-    public void init() {
-        bundle.setPrefix("[EssentialBridge]");
-
-        Log.debug(bundle.get("event.plugin.starting"));
+        Log.debug(essential.bridge.Main.Companion.bundle.get("event.plugin.starting"))
 
         // 플러그인 설정
-        conf = essential.core.Main.Companion.createAndReadConfig(
-                "config_bridge.yaml",
-                Objects.requireNonNull(this.getClass().getResourceAsStream("/config_bridge.yaml")),
-                Config.class
-        );
+        essential.bridge.Main.Companion.conf = essential.core.Main.Companion.createAndReadConfig(
+            "config_bridge.yaml",
+            java.util.Objects.requireNonNull<T?>(this.javaClass.getResourceAsStream("/config_bridge.yaml")),
+            essential.bridge.Config::class.java
+        )
 
         // 서버간 연결할 포트 생성
-        try (ServerSocket serverSocket = new ServerSocket(conf.port)) {
-            isServerMode = true;
-            network = new Server();
-        } catch (IOException e) {
-            isServerMode = false;
-            network = new Client();
+        try {
+            java.net.ServerSocket(essential.bridge.Main.Companion.conf!!.port).use { serverSocket ->
+                essential.bridge.Main.Companion.isServerMode = true
+                essential.bridge.Main.Companion.network = essential.bridge.Server()
+            }
+        } catch (e: java.io.IOException) {
+            essential.bridge.Main.Companion.isServerMode = false
+            essential.bridge.Main.Companion.network = essential.bridge.Client()
         }
-        daemon.submit(network);
+        daemon.submit(essential.bridge.Main.Companion.network)
 
-        Core.app.addListener(new ApplicationListener() {
-            @Override
-            public void dispose() {
-                if (isServerMode) {
-                    for (Socket socket : ((Server) network).clients) {
+        Core.app.addListener(object : ApplicationListener() {
+            public override fun dispose() {
+                if (essential.bridge.Main.Companion.isServerMode) {
+                    for (socket in (essential.bridge.Main.Companion.network as essential.bridge.Server).clients) {
                         try {
-                            socket.close();
-                        } catch (IOException ignored) {
-
+                            socket.close()
+                        } catch (ignored: java.io.IOException) {
                         }
                     }
-                    ((Server) network).shutdown();
+                    (essential.bridge.Main.Companion.network as essential.bridge.Server).shutdown()
                 } else {
-                    ((Client) network).send("exit");
+                    (essential.bridge.Main.Companion.network as essential.bridge.Client).send("exit")
                 }
-                daemon.shutdown();
+                daemon.shutdown()
             }
-        });
+        })
 
         // 이벤트 실행
-        Event event = new Event();
-        Method[] methods = event.getClass().getDeclaredMethods();
-        for (Method method : methods) {
-            essential.core.annotation.Event annotation = method.getAnnotation(essential.core.annotation.Event.class);
+        val event = essential.bridge.Event()
+        val methods = event.javaClass.getDeclaredMethods()
+        for (method in methods) {
+            val annotation: essential.core.annotation.Event? =
+                method.getAnnotation<T?>(essential.core.annotation.Event::class.java)
             if (annotation != null) {
                 try {
-                    method.invoke(event);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new RuntimeException(e);
+                    method.invoke(event)
+                } catch (e: java.lang.IllegalAccessException) {
+                    throw java.lang.RuntimeException(e)
+                } catch (e: java.lang.reflect.InvocationTargetException) {
+                    throw java.lang.RuntimeException(e)
                 }
             }
         }
 
-        Log.debug(bundle.get("event.plugin.loaded"));
+        Log.debug(essential.bridge.Main.Companion.bundle.get("event.plugin.loaded"))
     }
 
-    @Override
-    public void registerServerCommands(CommandHandler handler) {
-        Commands commands = new Commands();
+    public override fun registerServerCommands(handler: CommandHandler) {
+        val commands = essential.bridge.Commands()
 
-        Method[] methods = commands.getClass().getDeclaredMethods();
+        val methods = commands.javaClass.getDeclaredMethods()
 
-        for (Method method : methods) {
-            ServerCommand annotation = method.getAnnotation(ServerCommand.class);
+        for (method in methods) {
+            val annotation: ServerCommand? = method.getAnnotation<T?>(ServerCommand::class.java)
             if (annotation != null) {
-                handler.register(annotation.name(), annotation.parameter(), annotation.description(), args -> {
+                handler.register(annotation.name(), annotation.parameter(), annotation.description(), { args ->
                     if (args.length > 0) {
                         try {
-                            method.invoke(commands, new Object[]{args});
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            method.invoke(commands, *kotlin.arrayOf<kotlin.Any>(args))
+                        } catch (e: java.lang.Exception) {
+                            e.printStackTrace()
                         }
                     } else {
                         try {
-                            method.invoke(commands, new Object[]{new String[]{}});
-                        } catch (Exception e) {
-                            System.err.println("arg size - " + args.length);
-                            System.err.println("command - " + annotation.name());
-                            e.printStackTrace();
+                            method.invoke(commands, *kotlin.arrayOf<kotlin.Any>(kotlin.arrayOf<kotlin.String?>()))
+                        } catch (e: java.lang.Exception) {
+                            java.lang.System.err.println("arg size - " + args.length)
+                            java.lang.System.err.println("command - " + annotation.name())
+                            e.printStackTrace()
                         }
                     }
-                });
+                })
             }
         }
     }
 
-    @Override
-    public void registerClientCommands(CommandHandler handler) {
-        Commands commands = new Commands();
-        Method[] methods = commands.getClass().getDeclaredMethods();
+    public override fun registerClientCommands(handler: CommandHandler) {
+        val commands = essential.bridge.Commands()
+        val methods = commands.javaClass.getDeclaredMethods()
 
-        for (Method method : methods) {
-            ClientCommand annotation = method.getAnnotation(ClientCommand.class);
+        for (method in methods) {
+            val annotation: ClientCommand? = method.getAnnotation<T?>(ClientCommand::class.java)
             if (annotation != null) {
-                handler.<Player>register(annotation.name(), annotation.parameter(), annotation.description(), (args, player) -> {
-                    essential.core.DB.PlayerData data = findPlayerByUuid(player.uuid());
+                handler.< Player > register < Player ? > (annotation.name(), annotation.parameter(), annotation.description(), { args, player ->
+                    var data: PlayerData? = findPlayerByUuid(player.uuid())
                     if (data == null) {
-                        data = new essential.core.DB.PlayerData();
+                        data = PlayerData()
                     }
-
                     if (Permission.INSTANCE.check(data, annotation.name())) {
                         try {
                             if (args.length > 0) {
-                                method.invoke(commands, player, data, args);
+                                method.invoke(commands, player, data, args)
                             } else {
-                                method.invoke(commands, player, data, new String[]{});
+                                method.invoke(commands, player, data, kotlin.arrayOf<kotlin.String?>())
                             }
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                        } catch (e: java.lang.Exception) {
+                            e.printStackTrace()
                         }
                     } else {
-                        data.send("command.permission.false");
+                        data.send("command.permission.false")
                     }
-                });
+                })
             }
         }
     }
 
-    essential.core.DB.PlayerData findPlayerByUuid(String uuid) {
-        return database.getPlayers().stream().filter( e -> e.getUuid().equals(uuid)).findFirst().orElse(null);
+    fun findPlayerByUuid(uuid: kotlin.String?): PlayerData {
+        return database.getPlayers().stream().filter({ e -> e.getUuid().equals(uuid) }).findFirst().orElse(null)
+    }
+
+    companion object {
+        var bundle: Bundle = Bundle()
+        var isServerMode: kotlin.Boolean = false
+        var conf: essential.bridge.Config? = null
+        var network: java.lang.Runnable? = null
     }
 }

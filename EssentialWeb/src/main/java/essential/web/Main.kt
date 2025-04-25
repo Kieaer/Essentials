@@ -1,27 +1,27 @@
-package essential.web;
+package essential.web
 
-import arc.util.Log;
-import essential.core.Bundle;
-import mindustry.mod.Plugin;
+import arc.util.Log
+import essential.core.Bundle
+import mindustry.mod.Plugin
+import java.util.*
 
-import java.util.Objects;
+class Main : Plugin() {
+    public override fun init() {
+        bundle.setPrefix("[EssentialWeb]")
 
-public class Main extends Plugin {
-    static Bundle bundle = new Bundle();
-    static Config conf;
-
-    @Override
-    public void init() {
-        bundle.setPrefix("[EssentialWeb]");
-
-        Log.debug(bundle.get("event.plugin.starting"));
+        Log.debug(bundle.get("event.plugin.starting"))
 
         conf = essential.core.Main.Companion.createAndReadConfig(
-                "config_web.yaml",
-                Objects.requireNonNull(this.getClass().getResourceAsStream("/config_web.yaml")),
-                Config.class
-        );
+            "config_web.yaml",
+            Objects.requireNonNull<T?>(this.javaClass.getResourceAsStream("/config_web.yaml")),
+            Config::class.java
+        )
 
-        Log.debug(bundle.get("event.plugin.loaded"));
+        Log.debug(bundle.get("event.plugin.loaded"))
+    }
+
+    companion object {
+        var bundle: Bundle = Bundle()
+        var conf: Config? = null
     }
 }

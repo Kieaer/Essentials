@@ -1,56 +1,59 @@
-package essential.protect;
+package essential.protect
 
-public class Config {
-    public Pvp pvp;
-    public Account account;
-    public Protect protect;
-    public Rules rules;
+import java.util.*
 
-    public static class Pvp {
-        public Peace peace;
-        public Border border;
-        public boolean destroyCore;
+class Config {
+    var pvp: Pvp? = null
+    var account: Account? = null
+    var protect: Protect? = null
+    var rules: Rules? = null
 
-        public static class Peace {
-            public boolean enabled;
-            public int time;
+    class Pvp {
+        var peace: Peace? = null
+        var border: Border? = null
+        var destroyCore: Boolean = false
+
+        class Peace {
+            var enabled: Boolean = false
+            var time: Int = 0
         }
 
-        public static class Border {
-            public boolean enabled;
+        class Border {
+            var enabled: Boolean = false
         }
     }
 
-    public static class Account {
-        public enum AuthType {
+    class Account {
+        enum class AuthType {
             None, Password, Discord
         }
-        public boolean enabled;
-        private String authType;
-        public String discordURL;
 
-        public AuthType getAuthType() {
-            return AuthType.valueOf(authType.substring(0, 1).toUpperCase() + authType.substring(1));
+        var enabled: Boolean = false
+        private val authType: String? = null
+        var discordURL: String? = null
+
+        fun getAuthType(): AuthType {
+            return AuthType.valueOf(authType!!.substring(0, 1).uppercase(Locale.getDefault()) + authType.substring(1))
         }
     }
 
-    public static class Protect {
-        public boolean unbreakableCore;
-        public boolean powerDetect;
+    class Protect {
+        var unbreakableCore: Boolean = false
+        var powerDetect: Boolean = false
     }
 
-    public static class Rules {
-        public boolean vpn;
-        public boolean foo;
-        public boolean mobile;
-        public boolean steamOnly;
-        public MinimalNameConfig minimalName;
-        public Boolean strict;
-        public Boolean blockNewUser;
+    class Rules {
+        var vpn: Boolean = false
+        var foo: Boolean = false
+        var mobile: Boolean = false
+        var steamOnly: Boolean = false
+        var minimalName: MinimalNameConfig? = null
+        var strict: Boolean? = null
+        var blockNewUser: Boolean? = null
 
-        static class MinimalNameConfig {
-            public Boolean enabled;
-            public int length;
+        internal class MinimalNameConfig {
+            var enabled: Boolean? = null
+            var length: Int = 0
         }
     }
 }

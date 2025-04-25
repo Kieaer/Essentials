@@ -1,5 +1,3 @@
-package essential.achievements;
+package essential.achievements
 
-public class Config {
-
-}
+class Config 

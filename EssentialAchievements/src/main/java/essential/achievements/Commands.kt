@@ -1,59 +1,57 @@
-package essential.achievements;
+package essential.achievements
 
-import arc.util.Strings;
-import essential.core.DB;
-import essential.core.annotation.ClientCommand;
-import mindustry.gen.Playerc;
+import arc.util.Strings
 
-import java.util.*;
-
-public class Commands {
+class Commands {
     @ClientCommand(name = "achievements", parameter = "[page]", description = "Show your achievements")
-    void achievements(Playerc player, DB.PlayerData playerData, String[] arg) {
-        List<String> temp = new ArrayList<>();
-        ResourceBundle bundle;
+    fun achievements(player: Playerc, playerData: PlayerData, arg: kotlin.Array<kotlin.String?>) {
+        val temp: kotlin.collections.MutableList<kotlin.String?> = java.util.ArrayList<kotlin.String?>()
+        var bundle: java.util.ResourceBundle
         if (playerData.getStatus().containsKey("language")) {
-            bundle = ResourceBundle.getBundle("bundle", new Locale(playerData.getStatus().get("language").split("_")[0]));
+            bundle = java.util.ResourceBundle.getBundle(
+                "bundle",
+                java.util.Locale(playerData.getStatus().get("language").split("_")[0])
+            )
         } else {
             try {
-                bundle = ResourceBundle.getBundle("bundle", new Locale(player.locale().split("_")[0]));
-            } catch (MissingResourceException e) {
-                bundle = ResourceBundle.getBundle("bundle", Locale.ENGLISH);
+                bundle = java.util.ResourceBundle.getBundle("bundle", java.util.Locale(player.locale().split("_")[0]))
+            } catch (e: java.util.MissingResourceException) {
+                bundle = java.util.ResourceBundle.getBundle("bundle", java.util.Locale.ENGLISH)
             }
         }
 
-        for (Achievement ach : Achievement.values()) {
+        for (ach in Achievement.entries) {
             if (!ach.isHidden() || (ach.isHidden() && ach.success(playerData))) {
-                String name = ach.toString().toLowerCase();
-                String cleared = ach.success(playerData) ? "[sky][" + bundle.getString("cleared") + "][] " : "";
-                temp.add(cleared + bundle.getString("achievement." + name) + "[orange] (" + ach.current(playerData) + " / " + ach.value() + ")[][]\n");
-                temp.add("[yellow]" + bundle.getString("description." + name) + "\n");
-                temp.add("\n");
+                val name: kotlin.String? = ach.toString().lowercase(java.util.Locale.getDefault())
+                val cleared = if (ach.success(playerData)) "[sky][" + bundle.getString("cleared") + "][] " else ""
+                temp.add(cleared + bundle.getString("achievement." + name) + "[orange] (" + ach.current(playerData) + " / " + ach.value() + ")[][]\n")
+                temp.add("[yellow]" + bundle.getString("description." + name) + "\n")
+                temp.add("\n")
             }
         }
 
-        StringBuilder result = new StringBuilder();
-        int per = 9;
-        int page = (arg.length == 0) ? 1 : Math.abs(Strings.parseInt(arg[0]));
-        int pages = (int) Math.ceil((float) temp.size() / per);
-        page--;
+        val result = java.lang.StringBuilder()
+        val per = 9
+        var page = if (arg.size == 0) 1 else java.lang.Math.abs(Strings.parseInt(arg[0]))
+        val pages = kotlin.math.ceil((temp.size.toFloat() / per).toDouble()).toInt()
+        page--
 
         if (page >= pages || page < 0) {
-            playerData.err("command.page.range", pages);
-            return;
+            playerData.err("command.page.range", pages)
+            return
         }
 
         result.append("[orange]-- ").append(bundle.getString("command.page"))
-                .append("[lightgray] ").append(page + 1)
-                .append("[gray]/[lightgray]").append(pages)
-                .append("[orange] --[white]\n");
+            .append("[lightgray] ").append(page + 1)
+            .append("[gray]/[lightgray]").append(pages)
+            .append("[orange] --[white]\n")
 
-        for (int a = per * page; a < Math.min(per * (page + 1), temp.size()); a++) {
-            result.append(temp.get(a));
+        for (a in per * page..<kotlin.math.min(per * (page + 1), temp.size)) {
+            result.append(temp.get(a))
         }
 
-        String msg = result.substring(0, result.length() - 1);
-        playerData.setLastSentMessage(msg);
-        player.sendMessage(msg);
+        val msg = result.substring(0, result.length - 1)
+        playerData.setLastSentMessage(msg)
+        player.sendMessage(msg)
     }
 }
