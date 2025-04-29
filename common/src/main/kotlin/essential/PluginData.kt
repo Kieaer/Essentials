@@ -1,13 +1,21 @@
 package essential
 
 import arc.Core
+import essential.bundle.Bundle
 import essential.database.data.PlayerData
 import essential.util.toHString
+import mindustry.Vars
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
 /** 현재 DB 버전 */
 const val DATABASE_VERSION: UByte = 4u
+
+/** 플러그인 버전 */
+val PLUGIN_VERSION: String = Vars.mods.getMod("Essential").meta.version
+
+/** 플러그인 메세지 데이터 */
+val bundle = Bundle()
 
 /** 플러그인 데이터 폴더 경로 */
 val rootPath = Core.settings.dataDirectory.child("mods/Essentials/")

@@ -65,8 +65,6 @@ class DB {
             }
         }
 
-        LoggerFactory.getILoggerFactory()
-
         // DB 드라이버 불러오기
         try {
             fun load(type: String) {

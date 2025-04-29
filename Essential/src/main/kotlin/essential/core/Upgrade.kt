@@ -49,7 +49,7 @@ class Upgrade {
             edit(config, 88, "time: " + features.get("rollbackTime").asInt())
 
             root.child("config/config.yaml").file().writeText(config.joinToString("\n"))
-            conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())
+            conf = Yaml.default.decodeFromString(CoreConfig.serializer(), root.child(CONFIG_PATH).readString())
 
             val permissionFile = root.child("permission.txt")
             if (permissionFile.exists()) {

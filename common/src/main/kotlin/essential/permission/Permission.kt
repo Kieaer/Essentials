@@ -1,19 +1,17 @@
 package essential.permission
 
-import arc.Core
 import arc.files.Fi
-import com.charleskorn.kaml.*
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import essential.bundle.Bundle
-import essential.core.Main.Companion.database
 import essential.database.data.PlayerData
+import essential.database.table.PlayerTable
 import essential.players
-import org.hjson.*
-import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
+import essential.rootPath
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
@@ -21,8 +19,8 @@ object Permission {
     private var main: Map<String, RoleConfig> = mapOf()
     private var user: Map<String, PermissionData>? = mapOf()
     var default = "user"
-    private val mainFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission.yaml")
-    private val userFile: Fi = Core.settings.dataDirectory.child("mods/Essentials/permission_user.yaml")
+    private val mainFile: Fi = rootPath.child("permission.yaml")
+    private val userFile: Fi = rootPath.child("permission_user.yaml")
 
     private val bundle = Bundle(Locale.getDefault().toLanguageTag())
 
@@ -94,25 +92,22 @@ object Permission {
         apply()
     }
 
-    suspend fun apply() {
+    fun apply() {
         if (user != null) {
-            suspendedTransactionAsync {
-                for ((uuid, permissionData) in user!!) {
-                    val c = players.find { e -> e.uuid == uuid }
-                    if (c == null) {
-                        val data = PlayerData.find {  }[uuid]
-                        if (data != null) {
-                            data.permission = permissionData.group
-                            data.name = permissionData.name
-                            database.queue(data)
+            for ((uuid, permissionData) in user!!) {
+                val player = players.find { e -> e.uuid == uuid }
+                if (player == null) {
+                    transaction {
+                        PlayerData.findSingleByAndUpdate(PlayerTable.uuid eq uuid) {
+                            it.permission = permissionData.group
+                            it.name = permissionData.name
                         }
-                    } else {
-                        c.permission = permissionData.group
-                        c.name = permissionData.name
-                        c.player.name(permissionData.name)
-                        c.player.admin(permissionData.admin)
-                        database.queue(c)
                     }
+                } else {
+                    player.permission = permissionData.group
+                    player.name = permissionData.name
+                    player.player.name(permissionData.name)
+                    player.player.admin(permissionData.admin)
                 }
             }
         }
@@ -123,7 +118,7 @@ object Permission {
 
         val u = user?.get(data.uuid)
         if (u != null) {
-            result.name = if (u.name.isEmpty()) data.player.name() else u.name
+            result.name = u.name.ifEmpty { data.player.name() }
             result.group = u.group
             result.admin = u.admin
             result.isAlert = u.isAlert
@@ -141,7 +136,7 @@ object Permission {
         return result
     }
 
-    fun check(data: DB.PlayerData, command: String): Boolean {
+    fun check(data: PlayerData, command: String): Boolean {
         val group = main[this[data].group]
         return if (group != null) {
             group.permission.contains(command) || group.permission.contains("all")
@@ -150,19 +145,19 @@ object Permission {
         }
     }
 
-    data class PermissionData (
+    data class PermissionData(
         var name: String = "",
         var group: String = default,
         var admin: Boolean = false,
         var isAlert: Boolean = false,
         var alertMessage: String = "",
-        var chatFormat: String = ""
+        var chatFormat: String = "",
     )
 
-    data class RoleConfig (
+    data class RoleConfig(
         val admin: Boolean? = null,
         val inheritance: String? = null,
         val permission: MutableList<String> = mutableListOf(),
-        val default: Boolean? = null
+        val default: Boolean? = null,
     )
 }

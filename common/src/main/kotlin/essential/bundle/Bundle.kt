@@ -6,7 +6,7 @@ import java.util.*
 class Bundle {
     val resource: ResourceBundle
     var prefix: String = ""
-    var locale: Locale = Locale.ENGLISH
+    var locale: Locale = Locale.getDefault()
 
     constructor() {
         resource = ResourceBundle.getBundle("bundle", locale)

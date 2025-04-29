@@ -10,10 +10,13 @@ import arc.util.Log
 import com.charleskorn.kaml.Yaml
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import essential.bundle.Bundle
 import essential.core.Event.actionFilter
 import essential.core.Event.findPlayerData
 import essential.core.annotation.ClientCommand
 import essential.core.annotation.ServerCommand
+import essential.core.generated.registerGeneratedServerCommands
+import essential.core.generated.registerGeneratedClientCommands
 import mindustry.Vars
 import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
@@ -23,9 +26,6 @@ import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
 import java.io.InputStream
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.SynchronousQueue
@@ -39,7 +39,7 @@ import kotlin.reflect.full.findAnnotation
 class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
-        lateinit var conf: Config
+        lateinit var conf: CoreConfig
         lateinit var pluginData: PluginData
 
         @JvmField
@@ -54,10 +54,6 @@ class Main : Plugin() {
             16, TimeUnit.MILLISECONDS,
             SynchronousQueue()
         )
-
-        fun currentTime(): String {
-            return ZonedDateTime.now().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL).withLocale(Locale.getDefault()))
-        }
 
         fun <T> createAndReadConfig(name: String, file: InputStream, type: Class<T>): T? {
             if (!root.child("config/$name").exists()) {
@@ -91,7 +87,7 @@ class Main : Plugin() {
             root.child("log/old").mkdirs()
         }
 
-        conf = Yaml.default.decodeFromString(Config.serializer(), root.child(CONFIG_PATH).readString())
+        conf = Yaml.default.decodeFromString(CoreConfig.serializer(), root.child(CONFIG_PATH).readString())
         bundle.locale = Locale(conf.plugin.lang)
 
         if (!root.child("data").exists()) {
@@ -192,6 +188,10 @@ class Main : Plugin() {
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
+        // Call the generated function to register server commands
+        registerGeneratedServerCommands(handler)
+
+        // Legacy code for backward compatibility
         val commands = Commands()
 
         for (function in commands::class.declaredFunctions) {
@@ -222,6 +222,10 @@ class Main : Plugin() {
 
 
     override fun registerClientCommands(handler: CommandHandler) {
+        // Call the generated function to register client commands
+        registerGeneratedClientCommands(handler)
+
+        // Legacy code for backward compatibility
         val commands = Commands()
 
         for (function in commands::class.declaredFunctions) {

@@ -11,6 +11,7 @@ import org.jetbrains.exposed.dao.UIntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
 
 @GenerateUpdate
 class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
@@ -47,10 +48,8 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
     var lastPlayedWorldMode by PlayerTable.lastPlayedWorldMode
     var isConnected by PlayerTable.isConnected
     var isBanned by PlayerTable.isBanned
-    var isHistoryEnabled by PlayerTable.isHistoryEnabled
     var banExpireDate by PlayerTable.banExpireDate
-    var attendanceStacks by PlayerTable.attendanceStacks
-    var mouseTracker by PlayerTable.mouseTracker
+    var attendanceDays by PlayerTable.attendanceDays
 
     var expMultiplier: Double = 1.0
     var currentExp: UInt = 0u
@@ -58,6 +57,8 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
     var afk = false
     var afkTime: UShort = 0u
     var mousePosition: Float = 0F
+    var viewHistoryMode = false
+    var mouseTracking = false
     val player: Playerc = Player.create()
 
     /** Read [message] values from a bundle file and send an error message to player */
@@ -105,5 +106,13 @@ suspend fun getPlayerData(player: Playerc): PlayerData? {
 suspend fun getPlayerData(uuid: String): PlayerData? {
     return newSuspendedTransaction {
         PlayerData.find { PlayerTable.uuid eq uuid }.firstOrNull()
+    }
+}
+
+suspend fun updatePlayerDataByDiscord(discord: String) {
+    transaction {
+        PlayerData.findSingleByAndUpdate(PlayerTable.discordID eq discord) {
+            it.discordID = discord
+        }
     }
 }

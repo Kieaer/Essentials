@@ -868,7 +868,7 @@ object Event {
 
                     "config.yaml" -> {
                         conf = Yaml.default.decodeFromString(
-                            Config.serializer(),
+                            CoreConfig.serializer(),
                             root.child(Main.CONFIG_PATH).readString()
                         )
                         Log.info(Bundle()["config.reloaded"])

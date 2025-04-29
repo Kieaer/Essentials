@@ -6,7 +6,6 @@ import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
-import essential.core.Bundle
 import essential.core.DB
 import essential.core.Main
 import essential.core.Main.Companion.root

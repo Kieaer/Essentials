@@ -2559,7 +2559,7 @@ class Commands {
         try {
             Permission.load()
             Log.info(Bundle()["config.permission.updated"])
-            conf = Yaml.default.decodeFromString(Config.serializer(), root.child(Main.CONFIG_PATH).readString())
+            conf = Yaml.default.decodeFromString(CoreConfig.serializer(), root.child(Main.CONFIG_PATH).readString())
             Log.info(Bundle()["config.reloaded"])
         } catch (e: Exception) {
             e.printStackTrace()

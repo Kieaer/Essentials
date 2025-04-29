@@ -1,87 +1,194 @@
 package essential.database
 
-import arc.util.serialization.Json
-import arc.util.serialization.JsonReader
-import arc.util.serialization.JsonValue
-import com.fasterxml.jackson.databind.util.JSONPObject
+import arc.util.Log
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import essential.DATABASE_VERSION
-import essential.database.data.DisplayData
-import essential.database.data.PlayerData
-import essential.database.data.PluginData
-import essential.database.data.updatePluginData
+import essential.bundle
+import essential.database.data.getPluginData
 import essential.database.table.PlayerBannedTable
 import essential.database.table.PlayerTable
-import essential.database.table.PlayerTable.locale
-import essential.database.table.PlayerTable.name
 import essential.database.table.PluginTable
 import essential.rootPath
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import mindustry.Vars
-import mindustry.gen.Playerc
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
-import org.json.JSONObject
-import org.json.JSONTokener
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
 import java.net.URI
 import java.net.URL
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.nio.channels.Channels
+import java.nio.charset.StandardCharsets
 
-class Database {
-    val datasource = HikariDataSource()
+val datasource = HikariDataSource()
 
-    fun init() {
-        datasource.dataSource = HikariDataSource(HikariConfig().apply {
-            jdbcUrl = "jdbc:sqlite:identifier.sqlite"
-            username = "sa"
-            password = ""
-            maximumPoolSize = 2
-        })
+/** DB 초기 설정 */
+fun init(jdbcUrl: String) {
+    val dbType = extractDatabaseType(jdbcUrl)
+    loadJdbcDriver(dbType)
 
-        Database.connect(datasource)
+    datasource.dataSource = HikariDataSource(HikariConfig().apply {
+        this.jdbcUrl = jdbcUrl
+        username = "sa"
+        password = ""
+        maximumPoolSize = 2
+    })
 
-        transaction {
-            SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable)
-        }
+    Database.connect(datasource)
+
+    transaction {
+        SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable)
     }
 
-    fun downloadDriver() {
-        val driverMap = mapOf(
-            "mysql" to Triple("com.mysql.cj", "mariadb-connector-j", "com.mysql.cj.jdbc.Driver"),
-            "mariadb" to Triple("org.mariadb.jdbc", "mariadb-java-client", "org.mariadb.jdbc.MariaDbDriver"),
-            "postgresql" to Triple("org.postgresql", "postgresql", "org.postgresql.Driver"),
-            "h2" to Triple("com.h2database", "h2", "org.h2.Driver"),
-            "oracle" to Triple("com.oracle.ojdbc", "ojdbc", "com.oracle.jdbc.OracleDriver"), // 되나?
-            "mssql" to Triple("com.microsoft.sqlserver", "mssql-jdbc", "com.microsoft.sqlserver.jdbc.SQLServerDriver"),
-            "sqlite" to Triple("org.xerial", "sqlitejdbc", "org.sqlite.JDBC")
-        )
+    upgradeDatabaseBlocking()
+}
 
-        //https://search.maven.org/remotecontent?filepath=org/xerial/sqlite-jdbc/3.49.1.0/sqlite-jdbc-3.49.1.0.jar
+private fun extractDatabaseType(jdbcUrl: String): String {
+    val pattern = "jdbc:([^:]+):.*".toRegex()
+    val matchResult = pattern.find(jdbcUrl)
 
-//        val url = URL("https://search.maven.org/solrsearch/select?q=g:\"$groupId\" AND a:\"$artifactId\"&rows=1&wt=json")
+    return matchResult?.groupValues?.get(1) ?: "sqlite"
+}
 
-        val url = URL("")
+/** Load the JDBC driver for the specified database type */
+private fun loadJdbcDriver(dbType: String) {
+    val driverMap = getDriverMap()
 
-        val mavenData = url.readText()
-        JsonReader().parse(mavenData)["response"]["docs"][0].getString("latestVersion")
+    val driverInfo = driverMap[dbType]
 
-        url.openStream().use {
-            Files.copy(it, rootPath.child("drivers/${}"))
+    if (driverInfo != null) {
+        val (_, _, driverClass) = driverInfo
+        try {
+            Class.forName(driverClass)
+            Log.info(bundle["database.driver.loaded", dbType, driverClass])
+        } catch (e: ClassNotFoundException) {
+            Log.err(bundle["database.driver.load.failed", dbType, driverClass], e)
+
+            try {
+                downloadSpecificDriver(dbType)
+                Class.forName(driverClass)
+                Log.info(bundle["database.driver.loaded.after.download", dbType, driverClass])
+            } catch (e: Exception) {
+                Log.err(bundle["database.driver.load.failed.after.download", dbType, driverClass], e)
+            }
         }
+    } else {
+        Log.warn(bundle["database.driver.unknown", dbType])
+    }
+}
+
+/** JDBC 드라이버 목록 */
+private fun getDriverMap(): Map<String, Triple<String, String, String>> {
+    return mapOf(
+        "mysql" to Triple("com.mysql.cj", "mariadb-connector-j", "com.mysql.cj.jdbc.Driver"),
+        "mariadb" to Triple("org.mariadb.jdbc", "mariadb-java-client", "org.mariadb.jdbc.MariaDbDriver"),
+        "postgresql" to Triple("org.postgresql", "postgresql", "org.postgresql.Driver"),
+        "h2" to Triple("com.h2database", "h2", "org.h2.Driver"),
+        "oracle" to Triple("com.oracle.ojdbc", "ojdbc", "com.oracle.jdbc.OracleDriver"), // 되나?
+        "mssql" to Triple("com.microsoft.sqlserver", "mssql-jdbc", "com.microsoft.sqlserver.jdbc.SQLServerDriver"),
+        "sqlite" to Triple("org.xerial", "sqlitejdbc", "org.sqlite.JDBC")
+    )
+}
+
+/** JDBC 드라이버 다운로드 */
+fun downloadSpecificDriver(dbType: String) {
+    val driverMap = getDriverMap()
+    val driverInfo = driverMap[dbType] ?: return
+
+    val (groupId, artifactId, _) = driverInfo
+
+    val driversDir = rootPath.child("drivers")
+    if (!driversDir.exists()) {
+        driversDir.mkdirs()
+    }
+
+    try {
+        val groupPath = groupId.replace('.', '/')
+
+        val metadataUrl =
+            URI("https://search.maven.org/solrsearch/select?q=g:$groupId+AND+a:$artifactId&rows=1&wt=json").toURL()
+        val metadataConnection = metadataUrl.openConnection()
+        val metadataReader = metadataConnection.getInputStream().bufferedReader()
+        val metadataResponse = metadataReader.readText()
+
+        val versionRegex = """"latestVersion":"([^"]+)"""".toRegex()
+        val versionMatch = versionRegex.find(metadataResponse)
+
+        if (versionMatch != null) {
+            val latestVersion = versionMatch.groupValues[1]
+            val filePath = "$groupPath/$artifactId/$latestVersion/$artifactId-$latestVersion.jar"
+            val downloadUrl = URI("https://search.maven.org/remotecontent?filepath=$filePath").toURL()
+            val outputFile = rootPath.child("drivers").child("$dbType-driver.jar").file()
+            downloadFile(downloadUrl, outputFile)
+
+            Log.info(bundle["database.download.driver", dbType, artifactId, latestVersion])
+        } else {
+            Log.warn(bundle["database.download.driver.failed", dbType])
+        }
+    } catch (e: Exception) {
+        Log.err(bundle["database.download.driver.failed", dbType], e)
+    }
+}
+
+/** URL 으로부터 파일 다운로드 */
+private fun downloadFile(url: URL, outputFile: File) {
+    url.openStream().use { inputStream ->
+        val readableByteChannel = Channels.newChannel(inputStream)
+        FileOutputStream(outputFile).use { fileOutputStream ->
+            fileOutputStream.channel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE)
+        }
+    }
+}
+
+/**
+ * 필요한 경우 database schema 업데이트
+ * 현재 database 버전과 플러그인의 database 버전을 비교하고 SQL 를 실행 합니다.
+ */
+suspend fun upgradeDatabase() {
+    val pluginData = getPluginData()
+    val currentVersion = pluginData?.databaseVersion?.toUByte() ?: 0u
+
+    if (currentVersion < DATABASE_VERSION) {
+        Log.info(bundle["database.upgrade.start", currentVersion, DATABASE_VERSION])
+
+        for (version in (currentVersion.toUInt() + 1u).toUByte()..DATABASE_VERSION) {
+            val sqlFileName = "v${version}.sql"
+            executeSqlScript(sqlFileName)
+        }
+
+        Log.info(bundle["database.upgrade.end"])
+    } else {
+        Log.info(bundle["database.upgrade.upToDate", DATABASE_VERSION])
+    }
+}
+
+/**
+ * resources/sql 폴더에서 SQL 파일을 실행 합니다.
+ * @param fileName 실행할 SQL 파일 이름
+ */
+private fun executeSqlScript(fileName: String) {
+    val sqlFilePath = "sql/$fileName"
+    val inputStream: InputStream? = Thread.currentThread().contextClassLoader.getResourceAsStream(sqlFilePath)
+
+    if (inputStream != null) {
+        val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+        Log.info(bundle["database.upgrade.execute", fileName])
+
+        transaction {
+            sqlScript.split(";").filter { it.trim().isNotEmpty() }.forEach { statement ->
+                exec(statement)
+            }
+        }
+    } else {
+        Log.warn(bundle["database.upgrade.notFound", fileName])
+    }
+}
+
+/** DB 업데이트 */
+fun upgradeDatabaseBlocking() {
+    runBlocking {
+        upgradeDatabase()
     }
 }

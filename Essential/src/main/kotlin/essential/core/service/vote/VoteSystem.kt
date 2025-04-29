@@ -7,7 +7,6 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.util.Time
 import arc.util.Timer
-import essential.core.CustomEvents
 import essential.core.DB
 import essential.core.Event.earnEXP
 import essential.core.Event.findPlayerData

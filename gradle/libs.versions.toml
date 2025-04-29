@@ -26,6 +26,7 @@ shadowJar = "9.0.0-beta12"
 hikaricp = "6.3.0"
 
 [libraries]
+kotlinxSerializer = { module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxCoroutines"}
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 
@@ -56,7 +57,6 @@ ktor-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "kt
 ktor-host-test = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 thymeleaf = { module = "org.thymeleaf:thymeleaf", version.ref = "thymeleaf" }
 
-
 hjson = { module = "com.github.PersonTheCat:hjson-java", version.ref = "hjson" }
 maven-check = { module = "org.apache.maven:maven-artifact", version.ref = "mavenArtifact" }
 jfiglet = { module = "com.github.lalyos:jfiglet", version.ref = "jfiglet" }
@@ -75,7 +75,7 @@ kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 
 [bundles]
-kotlinxEcosystem = ["kotlinxDatetime", "kotlinxCoroutines"]
+kotlinxEcosystem = ["kotlinxDatetime", "kotlinxCoroutines", "kotlinxSerializer"]
 exposed = ["exposed-core", "exposed-jdbc", "exposed-kotlin-time", "exposed-dao", "exposed-json"]
 game = ["arc", "core", "server"]
 game-test = ["arc", "core", "server", "headless"]

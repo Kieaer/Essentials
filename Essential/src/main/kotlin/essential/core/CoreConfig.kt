@@ -3,7 +3,7 @@ package essential.core
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class Config(
+data class CoreConfig(
     val plugin: Plugin,
     val feature: Feature,
     val command: Command
