@@ -9,6 +9,7 @@ import arc.graphics.Color
 import arc.util.Log
 import arc.util.Strings
 import com.charleskorn.kaml.Yaml
+import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.currentTime
 import essential.core.Main.Companion.daemon
@@ -16,6 +17,7 @@ import essential.core.Main.Companion.database
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.root
 import essential.core.annotation.Event
+import essential.database.data.PlayerData
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -61,16 +63,16 @@ object Event {
     var worldHistory = ArrayList<TileLog>()
 
     private var dateformat = SimpleDateFormat("HH:mm:ss")
-    var blockExp = HashMap<String, Int>()
-    var dosBlacklist : List<String> = listOf()
-    var pvpSpecters = ArrayList<String>()
-    var pvpPlayer = HashMap<String, Team>()
+    var blockExp = mapOf<String, Int>()
+    var dosBlacklist = listOf<String>()
+    var pvpSpecters = listOf<String>()
+    var pvpPlayer = mapOf<String, Team>()
     var isGlobalMute = false
     var dpsBlocks = 0f
     var dpsTile: Tile? = null
     var maxdps: Float? = null
     var unitLimitMessageCooldown = 0
-    var offlinePlayers = ArrayList<DB.PlayerData>()
+    var offlinePlayers = listOf<PlayerData>()
     var apmRanking = ""
 
     val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
@@ -79,7 +81,6 @@ object Event {
 
     private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}\$")
     private val logFiles = HashMap<LogType, FileAppender>()
-    private var effectBlock : Tile? = null
 
     fun init() {
         for(type in LogType.entries) {

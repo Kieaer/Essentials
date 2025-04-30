@@ -1,7 +1,7 @@
 package essential.core
 
-import essential.core.annotation.ServerCommand
-import essential.core.annotation.ClientCommand
+import essential.ksp.ServerCommand
+import essential.ksp.ClientCommand
 import essential.ksp.GenerateServerCommand
 import essential.ksp.GenerateClientCommand
 import mindustry.gen.Playerc

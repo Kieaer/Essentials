@@ -20,6 +20,7 @@ class PlayerBannedData(id: EntityID<UInt>) : UIntEntity(id) {
     var date by PlayerBannedTable.date
 }
 
+/** 차단된 플레이어의 정보를 DB 에 추가 합니다. */
 suspend fun createBanInfo(data: Administration.PlayerInfo, reason: String) {
     return newSuspendedTransaction {
         PlayerBannedData.new {
@@ -32,6 +33,7 @@ suspend fun createBanInfo(data: Administration.PlayerInfo, reason: String) {
     }
 }
 
+/** 해당 플레이어가 차단 되어 있는지 확인 합니다. */
 suspend fun checkPlayerBanned(player: Playerc): Boolean {
     return newSuspendedTransaction {
         PlayerBannedData.find {

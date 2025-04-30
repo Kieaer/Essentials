@@ -21,8 +21,8 @@ import essential.core.Main.Companion.daemon
 import essential.core.Main.Companion.database
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.root
-import essential.core.annotation.ClientCommand
-import essential.core.annotation.ServerCommand
+import essential.ksp.ClientCommand
+import essential.ksp.ServerCommand
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
@@ -48,7 +48,6 @@ import mindustry.ui.Menus
 import mindustry.world.Tile
 import org.hjson.JsonArray
 import org.hjson.JsonObject
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
 import java.sql.Timestamp
@@ -2376,7 +2375,7 @@ class Commands {
                 if (!Permission.check(playerData, "vote.gg")) return
                 if (pluginData.voteCooltime == 0) {
                     val voteData = VoteData(
-                        type = VoteType.Gameover,
+                        type = VoteType.GameOver,
                         starter = playerData,
                     )
                     if (Vars.state.rules.pvp) {

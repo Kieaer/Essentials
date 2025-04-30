@@ -7,26 +7,21 @@ import essential.bundle
 import essential.rootPath
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
-import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 
-/**
- * Utility class for loading and saving configuration files in YAML format.
- * Uses the charleskorn/kaml library for YAML serialization/deserialization.
- */
 object Config {
     val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
 
     /**
-     * Loads a configuration from a YAML file.
+     * yaml 파일으로부터 설정을 불러 옵니다.
      *
-     * @param path The path to the YAML file
-     * @param serializer The serializer for the configuration class
-     * @param createIfNotExists Whether to create a default configuration file if it doesn't exist
-     * @param defaultConfig The default configuration to use if the file doesn't exist
-     * @return The loaded configuration, or null if loading failed
+     * @param name config 폴더에서의 yaml 파일 이름
+     * @param serializer 직렬화가 가능한 설정 class
+     * @param createIfNotExists 파일이 없을 경우 생성 유무
+     * @param defaultConfig 파일이 없을 경우 기본 설정
+     * @return 설정 파일이 불러왔을 경우 해당 설정을 반환하고, 그렇지 않을 경우 null 을 반환
      */
     inline fun <reified T> load(
         name: String,
@@ -69,49 +64,44 @@ object Config {
     }
 
     /**
-     * Saves a configuration to a YAML file.
+     * 설정을 yaml 으로 저장합니다.
      *
-     * @param path The path to the YAML file
-     * @param serializer The serializer for the configuration class
-     * @param config The configuration to save
-     * @return True if saving was successful, false otherwise
+     * @param name config 폴더에서의 yaml 파일 이름
+     * @param serializer 직렬화가 가능한 설정 class
+     * @param config 저장할 설정 class
+     * @return 저장에 성공 할 경우 true, 그렇지 않을 경우 false
      */
-    fun <T> save(path: String, serializer: KSerializer<T>, config: T): Boolean {
-        val file = File(path)
+    fun <T> save(name: String, serializer: KSerializer<T>, config: T): Boolean {
+        val file = rootPath.child("config/${name}")
 
-        // Create parent directories if they don't exist
-        file.parentFile?.mkdirs()
+        file.mkdirs()
 
         return try {
             val content = yaml.encodeToString(serializer, config)
-            Files.writeString(Paths.get(path), content)
-            Log.info(bundle["config.saved", path])
+            file.writeString(content, false)
+            Log.info(bundle["config.saved", name])
             true
         } catch (e: IOException) {
-            Log.err(bundle["config.save.failed", path], e)
+            Log.err(bundle["config.save.failed", name], e)
             false
         } catch (e: SerializationException) {
-            Log.err(bundle["config.serialize.failed", path], e)
+            Log.err(bundle["config.serialize.failed", name], e)
             false
         }
     }
 
     /**
-     * Watches a configuration file for changes and reloads it when it changes.
-     * This is a placeholder for future implementation.
+     * 설정 파일이 변경 되었는지 확인
      *
-     * @param path The path to the YAML file
-     * @param serializer The serializer for the configuration class
-     * @param onReload Callback function to be called when the configuration is reloaded
+     * @param name config 폴더에서의 설정 파일 이름
+     * @param serializer 직렬화가 가능한 설정 class
+     * @param onReload 설정 파일이 수정 되었을 경우 실행할 코드
      */
     inline fun <reified T> watch(
-        path: String,
+        name: String,
         serializer: KSerializer<T>,
         crossinline onReload: (T) -> Unit
     ) {
-        // This is a placeholder for future implementation
-        // The actual implementation would use FileWatchService to watch for file changes
-        // and reload the configuration when it changes
-        Log.info(bundle["config.watch", path])
+        Log.info(bundle["config.watch", name])
     }
 }

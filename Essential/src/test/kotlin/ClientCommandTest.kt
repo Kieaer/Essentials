@@ -9,7 +9,6 @@ import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
-import essential.core.DB
 import essential.core.Event
 import essential.core.Main.Companion.database
 import junit.framework.TestCase.*

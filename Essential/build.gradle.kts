@@ -15,4 +15,5 @@ dependencies {
     compileOnly(libs.bundles.kotlinxEcosystem)
     compileOnly(libs.bundles.jackson)
     compileOnly(libs.bundles.exposed)
+    compileOnly(libs.kaml)
 }

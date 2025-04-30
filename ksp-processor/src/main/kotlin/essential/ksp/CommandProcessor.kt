@@ -19,7 +19,7 @@ class CommandProcessor(
         val unprocessedServer = serverSymbols.filter { !it.validate() }.toList()
         val unprocessedClient = clientSymbols.filter { !it.validate() }.toList()
 
-        // Process server commands
+        // 서버 명령어 생성
         if (serverSymbols.any()) {
             val serverFunctions = serverSymbols
                 .filter { it is KSFunctionDeclaration && it.validate() }
@@ -31,7 +31,7 @@ class CommandProcessor(
             }
         }
 
-        // Process client commands
+        // 클라이언트 명령어 생성
         if (clientSymbols.any()) {
             val clientFunctions = clientSymbols
                 .filter { it is KSFunctionDeclaration && it.validate() }

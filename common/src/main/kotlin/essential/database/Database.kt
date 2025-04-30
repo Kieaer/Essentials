@@ -25,14 +25,14 @@ import java.nio.charset.StandardCharsets
 val datasource = HikariDataSource()
 
 /** DB 초기 설정 */
-fun init(jdbcUrl: String) {
+fun databaseInit(jdbcUrl: String, user: String, pass: String) {
     val dbType = extractDatabaseType(jdbcUrl)
     loadJdbcDriver(dbType)
 
     datasource.dataSource = HikariDataSource(HikariConfig().apply {
         this.jdbcUrl = jdbcUrl
-        username = "sa"
-        password = ""
+        username = user
+        password = pass
         maximumPoolSize = 2
     })
 
@@ -43,6 +43,11 @@ fun init(jdbcUrl: String) {
     }
 
     upgradeDatabaseBlocking()
+}
+
+/** DB 연결 종료 */
+fun databaseClose() {
+    datasource.close()
 }
 
 private fun extractDatabaseType(jdbcUrl: String): String {
@@ -148,7 +153,7 @@ private fun downloadFile(url: URL, outputFile: File) {
  */
 suspend fun upgradeDatabase() {
     val pluginData = getPluginData()
-    val currentVersion = pluginData?.databaseVersion?.toUByte() ?: 0u
+    val currentVersion = pluginData?.databaseVersion ?: 0u
 
     if (currentVersion < DATABASE_VERSION) {
         Log.info(bundle["database.upgrade.start", currentVersion, DATABASE_VERSION])

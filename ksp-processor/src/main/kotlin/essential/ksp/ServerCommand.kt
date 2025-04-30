@@ -1,4 +1,4 @@
-package essential.core.annotation
+package essential.ksp
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)

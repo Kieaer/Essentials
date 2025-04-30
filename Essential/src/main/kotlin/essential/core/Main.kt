@@ -3,20 +3,26 @@ package essential.core
 import arc.ApplicationListener
 import arc.Core
 import arc.Events
-import arc.files.Fi
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
-import com.charleskorn.kaml.Yaml
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import essential.bundle
 import essential.bundle.Bundle
+import essential.config.Config
 import essential.core.Event.actionFilter
 import essential.core.Event.findPlayerData
-import essential.core.annotation.ClientCommand
-import essential.core.annotation.ServerCommand
+import essential.ksp.ClientCommand
+import essential.ksp.ServerCommand
 import essential.core.generated.registerGeneratedServerCommands
 import essential.core.generated.registerGeneratedClientCommands
+import essential.database.data.PlayerData
+import essential.database.databaseInit
+import essential.permission.Permission
+import essential.rootPath
+import essential.service.fileWatchService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
@@ -25,12 +31,7 @@ import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
-import java.io.InputStream
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.SynchronousQueue
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
@@ -40,80 +41,51 @@ class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
         lateinit var conf: CoreConfig
-        lateinit var pluginData: PluginData
 
-        @JvmField
-        val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
-
-        @JvmField
-        val database = DB()
-
-        @JvmField
-        val daemon: ExecutorService = ThreadPoolExecutor(
-            0, 6,
-            16, TimeUnit.MILLISECONDS,
-            SynchronousQueue()
-        )
-
-        fun <T> createAndReadConfig(name: String, file: InputStream, type: Class<T>): T? {
-            if (!root.child("config/$name").exists()) {
-                root.child("config/$name").write(file, false)
-            }
-
-            val mapper = ObjectMapper(YAMLFactory())
-            return try {
-                mapper.readValue(root.child("config/$name").file(), type)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                null
-            }
-        }
+        val scope = CoroutineScope(Dispatchers.IO)
     }
 
-    private val clientCommandCache = mutableMapOf<KFunction<*>, (Commands, Playerc, DB.PlayerData, Array<String>) -> Unit>()
+    private val clientCommandCache = mutableMapOf<KFunction<*>, (Commands, Playerc, PlayerData, Array<String>) -> Unit>()
     private val serverCommandCache = mutableMapOf<KFunction<*>, (Commands, Array<String>) -> Unit>()
 
-    val bundle = Bundle()
-
     override fun init() {
+        // 플러그인 언어 설정 및 태그 추가
         bundle.prefix = "[Essential]"
-        Log.debug(bundle["event.plugin.starting"])
-
-        // 플러그인 설정
-        if (!root.child("config/config.yaml").exists()) {
-            root.child("config/config.yaml").write(this.javaClass.getResourceAsStream("/config.yaml"), false)
-        }
-        if (root.child("log/old").exists()) {
-            root.child("log/old").mkdirs()
-        }
-
-        conf = Yaml.default.decodeFromString(CoreConfig.serializer(), root.child(CONFIG_PATH).readString())
-        bundle.locale = Locale(conf.plugin.lang)
-
-        if (!root.child("data").exists()) {
-            root.child("data").mkdirs()
-        }
-
-        // 설정 및 DB 업그레이드
-        Upgrade().upgrade()
-
-        // DB 설정
-        database.load()
-        database.connect()
-        database.createTable()
-
-        // 데이터 설정
-        pluginData = PluginData()
-        pluginData.load()
+        bundle.locale = Locale.of(conf.plugin.lang)
 
         // 업데이트 확인
         checkUpdate()
+
+        Log.debug(bundle["event.plugin.starting"])
+
+        // 플러그인 설정 불러오기
+        val config = Config.load("config", CoreConfig.serializer(), true, CoreConfig())
+        require(config != null) {
+            Log.err(bundle["event.plugin.load.failed"])
+            return
+        }
+
+        conf = config
+
+        // 기록 및 데이터 폴더 생성
+        rootPath.child("log").mkdirs()
+        rootPath.child("data").mkdirs()
+
+        // DB 설정
+        // todo 이전 버전 db 업그레이드
+        databaseInit(
+            conf.plugin.database.url,
+            conf.plugin.database.username,
+            conf.plugin.database.password
+        )
 
         // 권한 기능 설정
         Permission.load()
 
         // 설정 파일 감시기능
-        daemon.submit(FileWatchService())
+        scope.launch {
+            fileWatchService()
+        }
 
         // 이벤트 등록
         for (functions in Event::class.declaredFunctions) {

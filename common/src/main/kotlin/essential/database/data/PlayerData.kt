@@ -10,6 +10,8 @@ import org.jetbrains.exposed.dao.UIntEntity
 import org.jetbrains.exposed.dao.UIntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -61,35 +63,41 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
     var mouseTracking = false
     val player: Playerc = Player.create()
 
-    /** Read [message] values from a bundle file and send an error message to player */
     fun err(message: String, vararg parameters: Any) {
-        val text = "[scarlet]" + Bundle(player.locale()).get(message, *parameters)
+        val text = "[scarlet]" + bundle()[message, parameters]
         player.sendMessage(text)
     }
 
-    /** Read [message] values from a bundle file and send a message to player */
     fun send(message: String, vararg parameters: Any) {
-        val text = bundle().get(message, *parameters)
+        val text = bundle()[message, parameters]
         player.sendMessage(text)
     }
 
-    /** Read [message] values from an outside bundle file and send a message to player */
     fun send(bundle: Bundle, message: String, vararg parameters: Any) {
-        val text = bundle.get(message, *parameters)
+        val text = bundle[message, parameters]
         player.sendMessage(text)
     }
 
-    fun bundle(): Bundle {
+    private fun bundle(): Bundle {
         return Bundle(player.locale())
+    }
+
+    /** 플레이어의 Discord ID 값을 변경 합니다. */
+    suspend fun updatePlayerDataByDiscord(name: String, discord: String) {
+        newSuspendedTransaction {
+            findSingleByAndUpdate(PlayerTable.name like name and(PlayerTable.discordID eq discord)) {
+                it.discordID = discord
+            }
+        }
     }
 }
 
 /** 플레이어 데이터 생성 */
-suspend fun createPlayerData(player: Playerc) : PlayerData {
-    return createPlayerData(player.name(), player.uuid())
+suspend fun create(player: Playerc) : PlayerData {
+    return create(player.name(), player.uuid())
 }
 
-suspend fun createPlayerData(name: String, uuid: String) : PlayerData {
+suspend fun create(name: String, uuid: String) : PlayerData {
     return newSuspendedTransaction {
         PlayerData.new {
             this.name = name
@@ -106,13 +114,5 @@ suspend fun getPlayerData(player: Playerc): PlayerData? {
 suspend fun getPlayerData(uuid: String): PlayerData? {
     return newSuspendedTransaction {
         PlayerData.find { PlayerTable.uuid eq uuid }.firstOrNull()
-    }
-}
-
-suspend fun updatePlayerDataByDiscord(discord: String) {
-    transaction {
-        PlayerData.findSingleByAndUpdate(PlayerTable.discordID eq discord) {
-            it.discordID = discord
-        }
     }
 }

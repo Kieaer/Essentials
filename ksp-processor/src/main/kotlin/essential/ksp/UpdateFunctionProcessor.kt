@@ -66,7 +66,7 @@ class UpdateFunctionProcessor(
                 .addCode(
                     """
                     newSuspendedTransaction {
-                        PlayerData.findSingleByAndUpdate($tableName.$primaryKeyName eq $primaryKeyName) {
+                        PlayerData.findSingleByAndUpdate($tableName.$primaryKeyName eq this@update.$primaryKeyName) {
                             ${properties.joinToString("\n                            ") { 
                                 "it.${it.simpleName.asString()} = ${it.simpleName.asString()}" 
                             }}

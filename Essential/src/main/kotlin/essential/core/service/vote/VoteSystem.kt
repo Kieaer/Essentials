@@ -7,7 +7,6 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.util.Time
 import arc.util.Timer
-import essential.core.DB
 import essential.core.Event.earnEXP
 import essential.core.Event.findPlayerData
 import essential.core.Main.Companion.database
@@ -50,7 +49,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                     when (voteData.type) {
                         VoteType.Kick -> bundle["command.vote.kick.start", voteData.target!!.plainName(), voteData.reason!!]
                         VoteType.Map -> bundle["command.vote.map.start", voteData.map!!.name(), voteData.reason!!]
-                        VoteType.Gameover -> {
+                        VoteType.GameOver -> {
                             if (!isPvP) {
                                 bundle["command.vote.gg.start"]
                             } else {
@@ -235,7 +234,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                             Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                         }
 
-                        VoteType.Gameover -> {
+                        VoteType.GameOver -> {
                             if (!Permission.check(voteData.starter, "vote.pass")) {
                                 pluginData.voterCooltime[voteData.starter.uuid] = 180
                             }

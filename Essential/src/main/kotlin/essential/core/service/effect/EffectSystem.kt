@@ -3,10 +3,8 @@ package essential.core.service.effect
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.util.Timer
-import essential.core.DB
 import essential.core.Main.Companion.conf
-import essential.core.Main.Companion.database
-import essential.core.Main.Companion.pluginData
+import essential.database.data.PlayerData
 import mindustry.Vars
 import mindustry.content.Fx
 import mindustry.entities.Effect
@@ -18,7 +16,7 @@ class EffectSystem : Timer.Task() {
     inner class EffectPos(val player: Playerc, val effect: Effect, val rotate: Float, val color: Color, vararg val random: IntRange)
     var buffer = ArrayList<EffectPos>()
 
-    fun effect(data: DB.PlayerData) {
+    fun effect(data: PlayerData) {
         val color = if (data.effectColor != null) {
             if (Colors.get(data.effectColor) != null) Colors.get(data.effectColor) else Color.valueOf(
                 data.effectColor
@@ -229,13 +227,7 @@ class EffectSystem : Timer.Task() {
                 runEffectAtRotateAndColor(Fx.colorSpark, rot, customColor)
                 runEffect(Fx.mineHuge)
             }
-
-            else -> {}
         }
-    }
-
-    override fun cancel() {
-        EffectBlock().apply()
     }
 
     override fun run() {
