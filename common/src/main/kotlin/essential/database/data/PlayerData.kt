@@ -3,7 +3,6 @@ package essential.database.data
 import essential.bundle.Bundle
 import essential.database.table.PlayerTable
 import essential.ksp.GenerateUpdate
-import kotlinx.serialization.Serializable
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import org.jetbrains.exposed.dao.UIntEntity
@@ -13,7 +12,6 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
 
 @GenerateUpdate
 class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
@@ -55,13 +53,14 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
 
     var expMultiplier: Double = 1.0
     var currentExp: UInt = 0u
+    var currentPlayTime: UInt = 0u
 
     var afk = false
     var afkTime: UShort = 0u
     var mousePosition: Float = 0F
     var viewHistoryMode = false
     var mouseTracking = false
-    val player: Playerc = Player.create()
+    var player: Playerc = Player.create()
 
     fun err(message: String, vararg parameters: Any) {
         val text = "[scarlet]" + bundle()[message, parameters]
@@ -78,7 +77,7 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
         player.sendMessage(text)
     }
 
-    private fun bundle(): Bundle {
+    fun bundle(): Bundle {
         return Bundle(player.locale())
     }
 

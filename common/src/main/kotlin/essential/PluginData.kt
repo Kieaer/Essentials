@@ -1,10 +1,13 @@
 package essential
 
 import arc.Core
+import arc.files.Fi
 import essential.bundle.Bundle
 import essential.database.data.PlayerData
 import essential.util.toHString
+import kotlinx.datetime.TimeZone
 import mindustry.Vars
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
@@ -18,7 +21,7 @@ val PLUGIN_VERSION: String = Vars.mods.getMod("Essential").meta.version
 val bundle = Bundle()
 
 /** 플러그인 데이터 폴더 경로 */
-val rootPath = Core.settings.dataDirectory.child("mods/Essentials/")
+val rootPath: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
 
 /** Kotlin TimeSource */
 private val timeSource = TimeSource.Monotonic
@@ -54,7 +57,10 @@ var isCheated = false
 var isSurrender = false
 
 /** 플레이어 데이터 목록 */
-val players = listOf<PlayerData>()
+val players = CopyOnWriteArrayList<PlayerData>()
+
+/** 시스템 Time zone */
+val systemTimezone = TimeZone.currentSystemDefault()
 
 /** 플러그인 데이터 출력 */
 fun getPluginDataInfo(): String {

@@ -3,230 +3,151 @@ package essential.core
 import arc.Core
 import arc.Events
 import arc.func.Prov
-import arc.struct.Seq
-import arc.util.Align
 import arc.util.Log
 import arc.util.Time
-import arc.util.Timer
-import essential.core.Event.apmRanking
-import essential.core.Event.coreListeners
-import essential.core.Event.dpsBlocks
-import essential.core.Event.dpsTile
-import essential.core.Event.findPlayerData
-import essential.core.Event.isUnitInside
-import essential.core.Event.maxdps
+import essential.bundle
+import essential.bundle.Bundle
 import essential.core.Event.pvpPlayer
 import essential.core.Event.pvpSpecters
-import essential.core.Event.unitLimitMessageCooldown
 import essential.core.Main.Companion.conf
-import essential.core.Main.Companion.database
-import essential.core.Main.Companion.pluginData
-import essential.core.Main.Companion.root
-import essential.core.service.effect.EffectSystem
+import essential.database.data.PlayerData
+import essential.database.data.PluginData
+import essential.database.data.getPluginData
+import essential.database.data.plugin.WarpCount
+import essential.event.CustomEvents
+import essential.permission.Permission
+import essential.players
+import essential.rootPath
+import essential.systemTimezone
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.datetime.Clock
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.content.Blocks
-import mindustry.game.EventType
-import mindustry.game.EventType.ServerLoadEvent
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
-import mindustry.gen.Player
 import mindustry.gen.Playerc
-import mindustry.io.SaveIO
 import mindustry.net.Host
 import mindustry.net.NetworkIO
 import mindustry.world.Tile
-import org.hjson.JsonArray
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
-import org.mindrot.jbcrypt.BCrypt
-import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
-import java.net.SocketException
 import java.nio.ByteBuffer
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.Period
-import java.util.concurrent.TimeUnit
 import java.util.function.Consumer
-import kotlin.math.floor
-import kotlin.random.Random
+import kotlin.coroutines.coroutineContext
+
 
 class Trigger {
-    fun loadPlayer(player: Playerc, data: DB.PlayerData, login: Boolean) {
-        if (data.duplicateName != null && data.duplicateName == player.name()) {
-            player.kick(Bundle(player.locale())["event.player.duplicate.name"])
+    fun loadPlayer(playerData: PlayerData) {
+        val player = playerData.player
+        val message = StringBuilder()
+
+        // 로그인 날짜 기록
+        val currentTime = Clock.System.now().toLocalDateTime(systemTimezone)
+        val isDayPassed = playerData.lastLoginDate.daysUntil(currentTime.date)
+        if (isDayPassed >= 1) playerData.attendanceDays += 1u
+        playerData.lastLoginDate = currentTime.date
+
+        // 권한 설정에 의한 닉네임 및 admin 권한 설정
+        val permission = Permission[playerData]
+        if (permission.name.isNotEmpty()) {
+            playerData.player.name(Permission[playerData].name)
+        }
+        playerData.player.admin(Permission[playerData].admin)
+
+        // 언어에 따라 각 언어별 motd 불러오기
+        val motd = if (rootPath.child("motd/${player.locale()}.txt").exists()) {
+            rootPath.child("motd/${player.locale()}.txt").readString()
+        } else if (rootPath.child("motd").list().isNotEmpty()) {
+            val file = rootPath.child("motd/en.txt")
+            if (file.exists()) file.readString() else null
         } else {
-            if (data.duplicateName != null && data.duplicateName != player.name()) {
-                data.name = player.name()
-                data.duplicateName = null
-            }
+            null
+        }
 
-            if (data.lastLoginDate != null) {
-                val passed = Period.between(data.lastLoginDate, LocalDate.now()).days
-                if (passed == 1) {
-                    data.joinStacks += 1
-                    when {
-                        data.joinStacks >= 15 -> data.expMultiplier = 5.0
-                        data.joinStacks >= 7 -> data.expMultiplier = 2.5
-                        data.joinStacks >= 3 -> data.expMultiplier = 1.5
-                    }
-                } else if (passed > 1) {
-                    data.joinStacks = 0
-                }
-            }
-            data.lastLoginDate = LocalDate.now()
+        // 오늘의 메세지가 10줄 이상 넘어갈 경우 전체 화면으로 출력
+        if (motd != null) {
+            val count = motd.split("\r\n|\r|\n").toTypedArray().size
+            if (count > 10) Call.infoMessage(player.con(), motd) else message.appendLine(motd)
+        }
 
-            if (data.lastLeaveDate != null && data.lastLeaveDate!!.plusMinutes(30).isBefore(LocalDateTime.now())) {
-                if (data.lastPlayedWorldId == Vars.port && (data.lastPlayedWorldName != Vars.state.map.name() || data.lastPlayedWorldMode != Vars.state.rules.modeName)) {
-                    data.currentPlayTime = 0L
+        // 입장 할 때 특정 메세지가 출력 되도록 설정 되어 있는 경우
+        if (permission.isAlert) {
+            if (permission.alertMessage.isEmpty()) {
+                players.forEach { data ->
+                    data.send("event.player.joined", player.con())
                 }
             } else {
-                data.currentPlayTime = 0L
+                Call.sendMessage(permission.alertMessage)
             }
-
-            val bundle = if (data.status.containsKey("language")) {
-                Bundle(data.status["language"]!!)
-            } else {
-                Bundle(player.locale())
-            }
-
-            Events.fire(CustomEvents.PlayerDataLoaded(data))
-            data.lastLoginTime = System.currentTimeMillis()
-            data.totalJoinCount++
-            data.player = player
-
-            val message = StringBuilder()
-
-            val perm = Permission[data]
-            if (perm.name.isNotEmpty()) player.name(Permission[data].name)
-            player.admin(Permission[data].admin)
-            message.appendLine(bundle[if (login) "event.player.logged" else "event.player.loaded"])
-
-            data.entityid = pluginData.entityOrder
-            pluginData.entityOrder += 1
-
-            if (!login) {
-                val motd = if (root.child("motd/${bundle.locale.toLanguageTag()}.txt").exists()) {
-                    root.child("motd/${bundle.locale.toLanguageTag()}.txt").readString()
-                } else if (root.child("motd").list().isNotEmpty()) {
-                    val file = root.child("motd/en.txt")
-                    if (file.exists()) file.readString() else null
-                } else {
-                    null
-                }
-                if (motd != null) {
-                    val count = motd.split("\r\n|\r|\n").toTypedArray().size
-                    if (count > 10) Call.infoMessage(player.con(), motd) else message.appendLine(motd)
-                }
-            }
-
-            if (perm.isAlert) {
-                if (perm.alertMessage.isEmpty()) {
-                    for (a in database.players) {
-                        a.player.sendMessage(Bundle(a.languageTag)["event.player.joined", player.plainName()])
-                    }
-                } else {
-                    Call.sendMessage(perm.alertMessage)
-                }
-            }
-
-            if (Vars.state.rules.pvp) {
-                when {
-                    pvpPlayer.containsKey(data.uuid) -> {
-                        player.team(pvpPlayer[data.uuid])
-                    }
-
-                    conf.feature.pvp.spector && pvpSpecters.contains(data.uuid) || Permission.check(data, "pvp.spector") -> {
-                        player.team(Team.derelict)
-                    }
-
-                    conf.feature.pvp.autoTeam -> {
-                        fun winPercentage(team: Team): Double {
-                            var players = arrayOf<Pair<Team, Double>>()
-                            database.players.forEach {
-                                val rate =
-                                    it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
-                                players += Pair(it.player.team(), if (rate.isNaN()) 0.0 else rate)
-                            }
-
-                            val targetTeam = players.filter { it.first == team }
-                            val rate = targetTeam.map { it.second }
-                            return rate.average()
-                        }
-
-                        val teamRate = mutableMapOf<Team, Double>()
-                        var teams = arrayOf<Pair<Team, Int>>()
-                        for (a in Vars.state.teams.active) {
-                            val rate = winPercentage(a.team)
-                            teamRate[a.team] = rate
-                            teams += Pair(a.team, a.players.size)
-                        }
-
-                        val teamSorted = teams.toList().sortedByDescending { it.second }
-                        val rateSorted = teamRate.toList().sortedWith(compareBy { it.second })
-                        if ((teamSorted.first().second - teamSorted.last().second) >= 2) {
-                            player.team(teamSorted.last().first)
-                        } else {
-                            player.team(rateSorted.last().first)
-                        }
-                    }
-                }
-            }
-
-
-
-            if (data.expMultiplier != 1.0) {
-                message.appendLine(bundle["event.player.expboost", data.joinStacks, data.expMultiplier])
-            }
-
-            data.isConnected = true
-            database.players.add(data)
-            player.sendMessage(message.toString())
         }
-    }
 
-    fun createPlayer(player: Playerc, id: String?, password: String?) {
-        val data = DB.PlayerData()
-        data.name = player.name()
-        data.uuid = player.uuid()
-        data.firstPlayDate = System.currentTimeMillis()
-        data.lastLoginDate = LocalDate.now()
-        data.accountID = id ?: player.plainName()
-        data.accountPW = if (password == null) player.plainName() else BCrypt.hashpw(password, BCrypt.gensalt())
-        data.permission = "user"
-        data.languageTag = player.locale()
+        // 현재 PvP 모드일 경우
+        if (Vars.state.rules.pvp) {
+            when {
+                // 이 플레이어가 이전에 참여한 팀이 있을 경우, 해당 팀에 다시 투입
+                pvpPlayer.containsKey(playerData.uuid) -> {
+                    player.team(pvpPlayer[playerData.uuid])
+                }
 
-        database.createData(data)
+                // PvP 관전 기능이 켜져 있고, 관전 플레이어 이거나, 해당 플레이어의 권한 목록에 관전 권한이 있는 경우 관전 팀으로 설정
+                conf.feature.pvp.spector && pvpSpecters.contains(playerData.uuid) || Permission.check(
+                    playerData,
+                    "pvp.spector"
+                ) -> {
+                    player.team(Team.derelict)
+                }
 
-        player.sendMessage(Bundle(player.locale())["event.player.data.registered"])
-        loadPlayer(player, data, false)
-    }
 
-    fun checkUserExistsInDatabase(name: String, uuid: String): Boolean {
-        return transaction {
-            DB.PlayerTable.select(DB.PlayerTable.name).where {
-                DB.PlayerTable.accountID.eq(name).and(DB.PlayerTable.uuid.eq(uuid))
-                    .and(DB.PlayerTable.oldUUID.eq(uuid))
-            }.firstOrNull() != null
+                conf.feature.pvp.autoTeam -> {
+                    val teamRate = mutableMapOf<Team, Double>()
+                    var teams = arrayOf<Pair<Team, Int>>()
+                    for (team in Vars.state.teams.active) {
+                        var list = arrayOf<Pair<Team, Double>>()
+
+                        players.forEach {
+                            val rate =
+                                it.pvpWinCount.toDouble() / (it.pvpWinCount + it.pvpLoseCount).toDouble()
+                            list += Pair(it.player.team(), if (rate.isNaN()) 0.0 else rate)
+                        }
+
+                        teamRate[team.team] = list.filter { it.first == team }.map { it.second }.average()
+                        teams += Pair(team.team, team.players.size)
+                    }
+
+                    val teamSorted = teams.toList().sortedByDescending { it.second }
+                    val rate = teamRate.toList().sortedWith(compareBy { it.second })
+                    if ((teamSorted.first().second - teamSorted.last().second) >= 2) {
+                        player.team(teamSorted.last().first)
+                    } else {
+                        player.team(rate.last().first)
+                    }
+                }
+            }
         }
+
+
+
+        if (playerData.expMultiplier != 1.0) {
+            message.appendLine(playerData.bundle()["event.player.expboost", playerData.attendanceDays, playerData.expMultiplier])
+        }
+
+        playerData.isConnected = true
+        players.add(playerData)
+        player.sendMessage(message.toString())
+
+        playerData.send("event.player.loaded")
+        Events.fire(CustomEvents.PlayerDataLoaded(playerData))
     }
 
-    fun checkUserNameExists(name: String): Boolean {
-        return transaction {
-            DB.PlayerTable.select(DB.PlayerTable.name).where { DB.PlayerTable.name.eq(name) }.firstOrNull()
-        } != null
-    }
-
-    class Thread : Runnable {
+    class Thread {
         private var ping = 0.000
-        private val dummy = Player.create()
 
-        private fun caculateCenter(startTile: Tile, endTile: Tile): Pair<Int, Int> {
+        private fun calculateCenter(startTile: Tile, endTile: Tile): Pair<Int, Int> {
             data class Point(val x: Int, val y: Int)
 
             data class Tile(val coordinates: Point, val areaValue: Float)
@@ -283,31 +204,38 @@ class Trigger {
             return findMedianCoordinates(startTile, endTile)
         }
 
-        override fun run() {
-            while (!java.lang.Thread.currentThread().isInterrupted) {
+        suspend fun init() {
+            var isNotTargetMap = false
+            while (coroutineContext.isActive) {
                 try {
-                    var isNotTargetMap = false
-                    pluginData.load()
+                    val pluginData = getPluginData()
 
-                    if (pluginData.warpCounts.none { f -> f.mapName == Vars.state.map.name() } &&
-                        pluginData.warpTotals.none { f -> f.mapName == Vars.state.map.name() } &&
-                        pluginData.warpZones.none { f -> f.mapName == Vars.state.map.name() } &&
-                        pluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name() }
-                    ) {
+                    // 플러그인 데이터는 항상 존재 해야 합니다.
+                    require(pluginData != null) {
+                        bundle["plugin.data.null"]
+                    }
+
+                    val data = pluginData.data
+
+                    isNotTargetMap = false
+                    if (data.warpCount.none { f -> f.mapName == Vars.state.map.name() } &&
+                        data.warpTotal.none { f -> f.mapName == Vars.state.map.name() } &&
+                        data.warpZone.none { f -> f.mapName == Vars.state.map.name() } &&
+                        data.warpBlock.none { f -> f.mapName == Vars.state.map.name() }) {
                         isNotTargetMap = true
                     }
 
                     if (!isNotTargetMap) {
                         var total = 0
-                        val serverInfo = getServerInfo()
+                        val serverInfo = getServerInfo(pluginData)
                         for (a in serverInfo) {
                             total += a.players
                         }
 
                         if (Vars.state.isPlaying) {
-                            for (i in 0 until pluginData.warpCounts.size) {
-                                if (Vars.state.map.name() == pluginData.warpCounts[i].mapName) {
-                                    val value = pluginData.warpCounts[i]
+                            for (i in 0 until data.warpCount.size) {
+                                if (Vars.state.map.name() == data.warpCount[i].mapName) {
+                                    val value = data.warpCount[i]
                                     val info = serverInfo.find { a -> a.address == value.ip && a.port == value.port }
                                     if (info != null) {
                                         val str = info.players.toString()
@@ -318,21 +246,13 @@ class Trigger {
                                             Core.app.post {
                                                 for (px in 0..2) {
                                                     for (py in 0..4) {
-                                                        Call.deconstructFinish(
-                                                            Vars.world.tile(
-                                                                tile.x + 4 + px,
-                                                                tile.y + py
-                                                            ), Blocks.air, dummy.unit()
-                                                        )
+                                                        Vars.world.tile(tile.x + 4 + px, tile.y + py).setBlock(Blocks.air)
                                                     }
                                                 }
                                             }
                                         }
-                                        dummy.x = tile.getX()
-                                        dummy.y = tile.getY()
 
-                                        //Core.app.post { Commands.Client(arrayOf(str), dummy).chars(tile) }
-                                        pluginData.warpCounts[i] = PluginData.WarpCount(
+                                        data.warpCount[i] = WarpCount(
                                             Vars.state.map.name(),
                                             value.tile.pos(),
                                             value.ip,
@@ -340,22 +260,16 @@ class Trigger {
                                             info.players,
                                             digits.size
                                         )
-                                    } else {
-                                        dummy.x = value.tile.getX()
-                                        dummy.y = value.tile.getY()
-                                        Core.app.post {
-                                            //Commands.Client(arrayOf("no"), dummy).chars(value.tile)
-                                        }
                                     }
                                 }
                             }
 
                             val memory = mutableListOf<Pair<Playerc, Triple<String, Float, Float>>>()
-                            for (value in pluginData.warpBlocks) {
+                            for (value in data.warpBlock) {
                                 if (Vars.state.map.name() == value.mapName) {
                                     val tile = Vars.world.tile(value.x, value.y)
                                     if (tile.block() == Blocks.air) {
-                                        pluginData.warpBlocks.remove(value)
+                                        data.warpBlock.remove(value)
                                     } else {
                                         var margin = 0f
                                         var isDup = false
@@ -429,9 +343,9 @@ class Trigger {
                                 }
                             }
 
-                            for (value in pluginData.warpZones) {
+                            for (value in data.warpZone) {
                                 if (Vars.state.map.name() == value.mapName) {
-                                    val center = caculateCenter(value.startTile, value.finishTile)
+                                    val center = calculateCenter(value.startTile, value.finishTile)
 
                                     var alive = false
                                     var alivePlayer = 0
@@ -466,6 +380,7 @@ class Trigger {
                                     }
                                 }
                             }
+
                             for (m in memory) {
                                 Core.app.post {
                                     Call.label(
@@ -478,8 +393,8 @@ class Trigger {
                                 }
                             }
 
-                            for (i in 0 until pluginData.warpTotals.size) {
-                                val value = pluginData.warpTotals[i]
+                            for (i in 0 until data.warpTotal.size) {
+                                val value = data.warpTotal[i]
                                 if (Vars.state.map.name() == value.mapName) {
                                     if (value.totalplayers != total) {
                                         when (total) {
@@ -514,12 +429,6 @@ class Trigger {
                                             }
                                         }
                                     }
-
-                                    dummy.x = value.tile.getX()
-                                    dummy.y = value.tile.getY()
-                                    Core.app.post {
-                                        //Commands.Client(arrayOf(getServerInfo().toString()), dummy).chars(value.tile)
-                                    }
                                 }
                             }
                         }
@@ -530,17 +439,14 @@ class Trigger {
                     }
 
                     ping = 0.000
-                    TimeUnit.SECONDS.sleep(3)
-                } catch (e: InterruptedException) {
-                    java.lang.Thread.currentThread().interrupt()
+                    delay(3000)
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.err(e)
                     Core.app.exit()
                 }
             }
         }
 
-        @Throws(IOException::class, SocketException::class)
         private fun pingHostImpl(address: String, port: Int, listener: Consumer<Host>) {
             val packetSupplier: Prov<DatagramPacket> = Prov<DatagramPacket> { DatagramPacket(ByteArray(512), 512) }
 
@@ -562,17 +468,17 @@ class Trigger {
             }
         }
 
-        private fun getServerInfo(): Seq<Host> {
-            val total = Seq<Host>()
+        private fun getServerInfo(pluginData: PluginData): MutableSet<Host> {
+            val total = mutableSetOf<Host>()
             var buf = arrayOf<Pair<String, Int>>()
 
-            for (it in pluginData.warpBlocks) {
+            for (it in pluginData.data.warpBlock) {
                 buf += Pair(it.ip, it.port)
             }
-            for (it in pluginData.warpCounts) {
+            for (it in pluginData.data.warpCount) {
                 buf += Pair(it.ip, it.port)
             }
-            for (it in pluginData.warpZones) {
+            for (it in pluginData.data.warpZone) {
                 buf += Pair(it.ip, it.port)
             }
             for (a in buf) {
@@ -584,20 +490,6 @@ class Trigger {
             }
 
             return total
-        }
-    }
-
-    class UpdateThread : Runnable {
-        private val queue = Seq<DB.PlayerData>()
-
-        override fun run() {
-            while (!java.lang.Thread.currentThread().isInterrupted) {
-                for (a in queue) {
-                    database.update(a.uuid, a)
-                    queue.remove(a)
-                }
-                java.lang.Thread.sleep(200)
-            }
         }
     }
 
@@ -647,7 +539,7 @@ class Trigger {
 
                 val voterCooltimeIterator = pluginData.voterCooltime.iterator()
                 while (voterCooltimeIterator.hasNext()) {
-                    if(voterCooltimeIterator.next().value == 0){
+                    if (voterCooltimeIterator.next().value == 0) {
                         voterCooltimeIterator.remove()
                     }
                 }
@@ -659,7 +551,13 @@ class Trigger {
                         maxdps = dpsBlocks
                     }
                     for (data in database.players) {
-                        Call.label(data.player.con(), data.bundle().get("command.dps", maxdps!!, dpsBlocks), 1f, dpsTile!!.worldx(), dpsTile!!.worldy())
+                        Call.label(
+                            data.player.con(),
+                            data.bundle().get("command.dps", maxdps!!, dpsBlocks),
+                            1f,
+                            dpsTile!!.worldx(),
+                            dpsTile!!.worldy()
+                        )
                     }
                 } else {
                     maxdps = null
@@ -834,7 +732,9 @@ class Trigger {
 
         Events.run(EventType.Trigger.update) {
             for (data in database.players) {
-                if (Vars.state.rules.pvp && data.player.unit() != null && data.player.team().cores().isEmpty && data.player.team() != Team.derelict && pvpPlayer.containsKey(data.uuid)) {
+                if (Vars.state.rules.pvp && data.player.unit() != null && data.player.team()
+                        .cores().isEmpty && data.player.team() != Team.derelict && pvpPlayer.containsKey(data.uuid)
+                ) {
                     data.pvpDefeatCount += 1
                     if (conf.feature.pvp.spector) {
                         data.player.team(Team.derelict)
@@ -883,7 +783,12 @@ class Trigger {
                 }
 
                 for (two in pluginData.warpZones) {
-                    if (two.mapName == Vars.state.map.name() && !two.click && isUnitInside(data.player.unit().tileOn(), two.startTile, two.finishTile)) {
+                    if (two.mapName == Vars.state.map.name() && !two.click && isUnitInside(
+                            data.player.unit().tileOn(),
+                            two.startTile,
+                            two.finishTile
+                        )
+                    ) {
                         Log.info(Bundle()["log.warp.move", data.player.plainName(), two.ip, two.port.toString()])
                         Call.connect(data.player.con(), two.ip, two.port)
                         break

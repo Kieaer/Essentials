@@ -65,8 +65,11 @@ object Event {
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     var blockExp = mapOf<String, Int>()
     var dosBlacklist = listOf<String>()
+    /** PvP 관전 플레이어 목록 */
     var pvpSpecters = listOf<String>()
+    /** PvP 플레이어 팀 데이터 목록 */
     var pvpPlayer = mapOf<String, Team>()
+    /** 전체 채팅 차단 유무 */
     var isGlobalMute = false
     var dpsBlocks = 0f
     var dpsTile: Tile? = null
@@ -463,7 +466,7 @@ object Event {
                             }
                         })
                     } else {
-                        trigger.loadPlayer(it.player, data, false)
+                        trigger.loadPlayer(data)
                     }
                 }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
             }

@@ -1,6 +1,8 @@
 package essential.database.table
 
 import org.jetbrains.exposed.dao.id.UIntIdTable
+import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
+import org.jetbrains.exposed.sql.kotlin.datetime.date
 
 object PlayerTable : UIntIdTable("players") {
     val name = varchar("name", 50).index()
@@ -28,8 +30,8 @@ object PlayerTable : UIntIdTable("players") {
     val effectColor = varchar("effect_color", 10).nullable().default(null)
     val hideRanking = bool("hide_ranking").default(false)
     val strictMode = bool("strict_mode").default(false)
-    val lastLoginDate = ulong("last_login_date").default(0u)
-    val lastLogoutDate = ulong("last_logout_date").default(0u)
+    val lastLoginDate = date("last_login_date").defaultExpression(CurrentDate)
+    val lastLogoutDate = date("last_logout_date").nullable().default(null)
     val lastPlayedWorldName = varchar("last_played_world_name", 50).nullable().default(null)
     val lastPlayedWorldMode = varchar("last_played_world_mode", 50).nullable().default(null)
     val isConnected = bool("is_connected").default(false)

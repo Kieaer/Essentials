@@ -33,7 +33,7 @@ data class DisplayData(
 suspend fun PluginData.update(displayData: DisplayData) {
     newSuspendedTransaction {
         PluginTable.update {
-            it[PluginTable.pluginVersion] = Vars.mods.getMod("Essential").meta.version.toUByte()
+            it[PluginTable.pluginVersion] = Vars.mods.getMod("Essential").meta.version
             it[PluginTable.databaseVersion] = DATABASE_VERSION
             it[PluginTable.data] = displayData
         }
