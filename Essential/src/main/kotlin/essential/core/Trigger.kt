@@ -10,6 +10,7 @@ import essential.bundle.Bundle
 import essential.core.Event.pvpPlayer
 import essential.core.Event.pvpSpecters
 import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.scope
 import essential.database.data.PlayerData
 import essential.database.data.PluginData
 import essential.database.data.getPluginData
@@ -19,7 +20,10 @@ import essential.permission.Permission
 import essential.players
 import essential.rootPath
 import essential.systemTimezone
+import essential.util.tickerFlow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.datetime.Clock
 import kotlinx.datetime.daysUntil
@@ -39,6 +43,7 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.function.Consumer
 import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration.Companion.seconds
 
 
 class Trigger {
@@ -494,236 +499,234 @@ class Trigger {
     }
 
     fun register() {
-        Timer.schedule(object : Timer.Task() {
-            var colorOffset = 0
-            fun rainbow(name: String): String {
-                val stringBuilder = StringBuilder()
-                val colors = arrayOfNulls<String>(11)
-                colors[0] = "[#ff0000]"
-                colors[1] = "[#ff7f00]"
-                colors[2] = "[#ffff00]"
-                colors[3] = "[#7fff00]"
-                colors[4] = "[#00ff00]"
-                colors[5] = "[#00ff7f]"
-                colors[6] = "[#00ffff]"
-                colors[7] = "[#007fff]"
-                colors[8] = "[#0000ff]"
-                colors[9] = "[#8000ff]"
-                colors[10] = "[#ff00ff]"
-                val newName = arrayOfNulls<String>(name.length)
-                for (i in name.indices) {
-                    val c = name[i]
-                    var colorIndex = (i + colorOffset) % colors.size
-                    if (colorIndex < 0) {
-                        colorIndex += colors.size
-                    }
-                    val new = colors[colorIndex] + c
-                    newName[i] = new
+        var colorOffset = 0
+        fun rainbow(name: String): String {
+            val stringBuilder = StringBuilder()
+            val colors = arrayOfNulls<String>(11)
+            colors[0] = "[#ff0000]"
+            colors[1] = "[#ff7f00]"
+            colors[2] = "[#ffff00]"
+            colors[3] = "[#7fff00]"
+            colors[4] = "[#00ff00]"
+            colors[5] = "[#00ff7f]"
+            colors[6] = "[#00ffff]"
+            colors[7] = "[#007fff]"
+            colors[8] = "[#0000ff]"
+            colors[9] = "[#8000ff]"
+            colors[10] = "[#ff00ff]"
+            val newName = arrayOfNulls<String>(name.length)
+            for (i in name.indices) {
+                val c = name[i]
+                var colorIndex = (i + colorOffset) % colors.size
+                if (colorIndex < 0) {
+                    colorIndex += colors.size
                 }
-                colorOffset--
-                newName.forEach {
-                    stringBuilder.append(it)
-                }
-                return stringBuilder.toString()
+                val new = colors[colorIndex] + c
+                newName[i] = new
+            }
+            colorOffset--
+            newName.forEach {
+                stringBuilder.append(it)
+            }
+            return stringBuilder.toString()
+        }
+
+        tickerFlow(1.seconds).onEach {
+            pluginData.uptime++
+            pluginData.playtime++
+
+            if (pluginData.voteCooltime > 0) pluginData.voteCooltime--
+
+            for ((key, value) in pluginData.voterCooltime) {
+                pluginData.voterCooltime[key] = value - 1
             }
 
-            override fun run() {
-                pluginData.uptime++
-                pluginData.playtime++
+            val voterCooltimeIterator = pluginData.voterCooltime.iterator()
+            while (voterCooltimeIterator.hasNext()) {
+                if (voterCooltimeIterator.next().value == 0) {
+                    voterCooltimeIterator.remove()
+                }
+            }
 
-                if (pluginData.voteCooltime > 0) pluginData.voteCooltime--
+            if (dpsTile != null) {
+                if (maxdps == null) {
+                    maxdps = 0f
+                } else if (dpsBlocks > maxdps!!) {
+                    maxdps = dpsBlocks
+                }
+                for (data in database.players) {
+                    Call.label(
+                        data.player.con(),
+                        data.bundle().get("command.dps", maxdps!!, dpsBlocks),
+                        1f,
+                        dpsTile!!.worldx(),
+                        dpsTile!!.worldy()
+                    )
+                }
+            } else {
+                maxdps = null
+            }
+            dpsBlocks = 0f
 
-                for ((key, value) in pluginData.voterCooltime) {
-                    pluginData.voterCooltime[key] = value - 1
+            apmRanking = "APM\n"
+            val color = arrayOf("[scarlet]", "[orange]", "[yellow]", "[green]", "[white]", "[gray]")
+            val list = LinkedHashMap<String, Int>()
+            database.players.forEach {
+                val total = if (it.apm.size != 0) it.apm.max() else 0
+                list[it.player.plainName()] = total
+            }
+            list.toList().sortedBy { (key, _) -> key }.forEach {
+                val colored = when (it.second) {
+                    in 41..Int.MAX_VALUE -> color[0]
+                    in 21..40 -> color[1]
+                    in 11..20 -> color[2]
+                    in 6..10 -> color[3]
+                    in 1..5 -> color[4]
+                    else -> color[5]
+                }
+                val coloredName = if (it.second >= 41) rainbow(it.first) else it.first
+                apmRanking += "$coloredName[orange] > $colored${it.second}[white]\n"
+            }
+            apmRanking = apmRanking.substring(0, apmRanking.length - 1)
+
+            for (it in database.players) {
+                it.totalPlayTime++
+                it.currentPlayTime++
+
+                if (it.apm.size >= 60) {
+                    it.apm.poll()
+                }
+                it.apm.add(it.currentControlCount)
+                it.currentControlCount = 0
+
+                if (it.animatedName) {
+                    val name = it.name.replace("\\[(.*?)]".toRegex(), "")
+                    it.player.name(rainbow(name))
+                } else if (!it.status.containsKey("router")) {
+                    it.player.name(it.name)
                 }
 
-                val voterCooltimeIterator = pluginData.voterCooltime.iterator()
-                while (voterCooltimeIterator.hasNext()) {
-                    if (voterCooltimeIterator.next().value == 0) {
-                        voterCooltimeIterator.remove()
-                    }
-                }
+                // 잠수 플레이어 카운트
+                if (it.player.unit() != null && !it.player.unit().moving() && !it.player.unit()
+                        .mining() && !Permission.check(
+                        it,
+                        "afk.admin"
+                    ) && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()
+                ) {
+                    it.afkTime++
+                    if (it.afkTime == conf.feature.afk.time) {
+                        it.afk = true
+                        if (conf.feature.afk.enabled) {
+                            if (conf.feature.afk.server == null) {
+                                val bundle = if (it.status.containsKey("language")) {
+                                    Bundle(it.status["language"]!!)
+                                } else {
+                                    Bundle(it.player.locale())
+                                }
 
-                if (dpsTile != null) {
-                    if (maxdps == null) {
-                        maxdps = 0f
-                    } else if (dpsBlocks > maxdps!!) {
-                        maxdps = dpsBlocks
-                    }
-                    for (data in database.players) {
-                        Call.label(
-                            data.player.con(),
-                            data.bundle().get("command.dps", maxdps!!, dpsBlocks),
-                            1f,
-                            dpsTile!!.worldx(),
-                            dpsTile!!.worldy()
-                        )
+                                it.player.kick(bundle["event.player.afk"])
+                                database.players.forEach { data ->
+                                    data.send("event.player.afk.other", it.player.plainName())
+                                }
+                            } else {
+                                val server = conf.feature.afk.server!!.split(":")
+                                val port = if (server.size == 1) {
+                                    6567
+                                } else {
+                                    server[1].toInt()
+                                }
+                                Call.connect(it.player.con(), server[0], port)
+                            }
+                        }
                     }
                 } else {
-                    maxdps = null
+                    it.afkTime = 0
+                    it.afk = false
+                    it.previousMousePosition = it.player.mouseX() + it.player.mouseY()
                 }
-                dpsBlocks = 0f
 
-                apmRanking = "APM\n"
-                val color = arrayOf("[scarlet]", "[orange]", "[yellow]", "[green]", "[white]", "[gray]")
-                val list = LinkedHashMap<String, Int>()
-                database.players.forEach {
-                    val total = if (it.apm.size != 0) it.apm.max() else 0
-                    list[it.player.plainName()] = total
+                val randomResult = (Random.nextInt(7) * it.expMultiplier).toInt()
+                it.exp += randomResult
+                it.currentExp += randomResult
+                Commands.Exp[it]
+
+                if (conf.feature.level.display) {
+                    val message = "${it.exp}/${floor(Commands.Exp.calculateFullTargetXp(it.level)).toInt()}"
+                    Call.infoPopup(it.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                 }
-                list.toList().sortedBy { (key, _) -> key }.forEach {
-                    val colored = when (it.second) {
-                        in 41..Int.MAX_VALUE -> color[0]
-                        in 21..40 -> color[1]
-                        in 11..20 -> color[2]
-                        in 6..10 -> color[3]
-                        in 1..5 -> color[4]
-                        else -> color[5]
-                    }
-                    val coloredName = if (it.second >= 41) rainbow(it.first) else it.first
-                    apmRanking += "$coloredName[orange] > $colored${it.second}[white]\n"
-                }
-                apmRanking = apmRanking.substring(0, apmRanking.length - 1)
 
-                for (it in database.players) {
-                    it.totalPlayTime++
-                    it.currentPlayTime++
+                if (it.hud != null) {
+                    val array = JsonArray.readJSON(it.hud).asArray()
 
-                    if (it.apm.size >= 60) {
-                        it.apm.poll()
-                    }
-                    it.apm.add(it.currentControlCount)
-                    it.currentControlCount = 0
-
-                    if (it.animatedName) {
-                        val name = it.name.replace("\\[(.*?)]".toRegex(), "")
-                        it.player.name(rainbow(name))
-                    } else if (!it.status.containsKey("router")) {
-                        it.player.name(it.name)
-                    }
-
-                    // 잠수 플레이어 카운트
-                    if (it.player.unit() != null && !it.player.unit().moving() && !it.player.unit()
-                            .mining() && !Permission.check(
-                            it,
-                            "afk.admin"
-                        ) && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()
-                    ) {
-                        it.afkTime++
-                        if (it.afkTime == conf.feature.afk.time) {
-                            it.afk = true
-                            if (conf.feature.afk.enabled) {
-                                if (conf.feature.afk.server == null) {
-                                    val bundle = if (it.status.containsKey("language")) {
-                                        Bundle(it.status["language"]!!)
-                                    } else {
-                                        Bundle(it.player.locale())
-                                    }
-
-                                    it.player.kick(bundle["event.player.afk"])
-                                    database.players.forEach { data ->
-                                        data.send("event.player.afk.other", it.player.plainName())
-                                    }
-                                } else {
-                                    val server = conf.feature.afk.server!!.split(":")
-                                    val port = if (server.size == 1) {
-                                        6567
-                                    } else {
-                                        server[1].toInt()
-                                    }
-                                    Call.connect(it.player.con(), server[0], port)
-                                }
-                            }
+                    fun color(current: Float, max: Float): String {
+                        return when (current / max * 100.0) {
+                            in 50.0..100.0 -> "[green]"
+                            in 20.0..49.9 -> "[yellow]"
+                            else -> "[scarlet]"
                         }
-                    } else {
-                        it.afkTime = 0
-                        it.afk = false
-                        it.previousMousePosition = it.player.mouseX() + it.player.mouseY()
                     }
 
-                    val randomResult = (Random.nextInt(7) * it.expMultiplier).toInt()
-                    it.exp += randomResult
-                    it.currentExp += randomResult
-                    Commands.Exp[it]
-
-                    if (conf.feature.level.display) {
-                        val message = "${it.exp}/${floor(Commands.Exp.calculateFullTargetXp(it.level)).toInt()}"
-                        Call.infoPopup(it.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
+                    fun shieldColor(current: Float, max: Float): String {
+                        return when (current / max * 100.0) {
+                            in 50.0..100.0 -> "[#ffffe0]"
+                            in 20.0..49.9 -> "[orange]"
+                            else -> "[#CC5500]"
+                        }
                     }
 
-                    if (it.hud != null) {
-                        val array = JsonArray.readJSON(it.hud).asArray()
+                    array.forEach { value ->
+                        when (value.asString()) {
+                            "health" -> {
+                                Groups.unit.forEach { unit ->
+                                    val msg = StringBuilder()
+                                    val c = color(unit.health, unit.maxHealth)
+                                    if (unit.shield > 0) {
+                                        val shield = shieldColor(unit.health, unit.maxHealth)
+                                        msg.appendLine("$shield${floor(unit.shield.toDouble())}")
+                                    }
+                                    msg.append("$c${floor(unit.health.toDouble())}")
 
-                        fun color(current: Float, max: Float): String {
-                            return when (current / max * 100.0) {
-                                in 50.0..100.0 -> "[green]"
-                                in 20.0..49.9 -> "[yellow]"
-                                else -> "[scarlet]"
-                            }
-                        }
-
-                        fun shieldColor(current: Float, max: Float): String {
-                            return when (current / max * 100.0) {
-                                in 50.0..100.0 -> "[#ffffe0]"
-                                in 20.0..49.9 -> "[orange]"
-                                else -> "[#CC5500]"
-                            }
-                        }
-
-                        array.forEach { value ->
-                            when (value.asString()) {
-                                "health" -> {
-                                    Groups.unit.forEach { unit ->
-                                        val msg = StringBuilder()
-                                        val c = color(unit.health, unit.maxHealth)
-                                        if (unit.shield > 0) {
-                                            val shield = shieldColor(unit.health, unit.maxHealth)
-                                            msg.appendLine("$shield${floor(unit.shield.toDouble())}")
-                                        }
-                                        msg.append("$c${floor(unit.health.toDouble())}")
-
-                                        if (unit.team != it.player.team() && Permission.check(it, "hud.enemy")) {
-                                            Call.label(
-                                                it.player.con(),
-                                                msg.toString(),
-                                                Time.delta,
-                                                unit.getX(),
-                                                unit.getY()
-                                            )
-                                        } else if (unit.team == it.player.team()) {
-                                            Call.label(
-                                                it.player.con(),
-                                                msg.toString(),
-                                                Time.delta,
-                                                unit.getX(),
-                                                unit.getY()
-                                            )
-                                        }
+                                    if (unit.team != it.player.team() && Permission.check(it, "hud.enemy")) {
+                                        Call.label(
+                                            it.player.con(),
+                                            msg.toString(),
+                                            Time.delta,
+                                            unit.getX(),
+                                            unit.getY()
+                                        )
+                                    } else if (unit.team == it.player.team()) {
+                                        Call.label(
+                                            it.player.con(),
+                                            msg.toString(),
+                                            Time.delta,
+                                            unit.getX(),
+                                            unit.getY()
+                                        )
                                     }
                                 }
+                            }
 
-                                "apm" -> {
-                                    Call.infoPopup(
-                                        it.player.con(),
-                                        apmRanking,
-                                        Time.delta,
-                                        Align.left,
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    )
-                                }
+                            "apm" -> {
+                                Call.infoPopup(
+                                    it.player.con(),
+                                    apmRanking,
+                                    Time.delta,
+                                    Align.left,
+                                    0,
+                                    0,
+                                    0,
+                                    0
+                                )
                             }
                         }
                     }
-                }
-
-                if (unitLimitMessageCooldown > 0) {
-                    unitLimitMessageCooldown--
                 }
             }
-        }, 0f, 1f)
+
+            if (unitLimitMessageCooldown > 0) {
+                unitLimitMessageCooldown--
+            }
+        }.launchIn(scope)
 
         // 맵 백업 시간
         var rollbackCount = conf.command.rollback.time
