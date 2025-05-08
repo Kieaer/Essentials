@@ -11,13 +11,9 @@ import arc.util.Strings
 import com.charleskorn.kaml.Yaml
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
-import essential.core.Main.Companion.currentTime
-import essential.core.Main.Companion.daemon
-import essential.core.Main.Companion.database
-import essential.core.Main.Companion.pluginData
-import essential.core.Main.Companion.root
 import essential.core.annotation.Event
 import essential.database.data.PlayerData
+import essential.rootPath
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -32,9 +28,6 @@ import mindustry.net.Administration
 import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
-import org.hjson.JsonArray
-import org.hjson.JsonObject
-import org.hjson.ParseException
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.io.FileInputStream
@@ -87,7 +80,7 @@ object Event {
 
     fun init() {
         for(type in LogType.entries) {
-            logFiles[type] = FileAppender(root.child("log/$type.log").file())
+            logFiles[type] = FileAppender(rootPath.child("log/$type.log").file())
         }
     }
 
@@ -113,10 +106,6 @@ object Event {
                         it.tile.config()
                     )
                 )
-                val p = findPlayerData(it.player.uuid())
-                if (p != null) {
-                    p.currentControlCount++
-                }
             }
         }.also { listener -> eventListeners[WithdrawEvent::class.java] = listener })
     }
@@ -143,10 +132,6 @@ object Event {
                         it.tile.config()
                     )
                 )
-                val p = findPlayerData(it.player.uuid())
-                if (p != null) {
-                    p.currentControlCount++
-                }
             }
         }.also { listener -> eventListeners[DepositEvent::class.java] = listener })
     }
@@ -182,11 +167,6 @@ object Event {
                             it.value
                         )
                     )
-                }
-
-                val p = findPlayerData(it.player.uuid())
-                if (p != null) {
-                    p.currentControlCount++
                 }
             }
         }.also { listener -> eventListeners[ConfigEvent::class.java] = listener })

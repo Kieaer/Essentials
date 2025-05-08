@@ -13,8 +13,8 @@ class CommandProcessor(
 ) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        val serverSymbols = resolver.getSymbolsWithAnnotation(GenerateServerCommand::class.qualifiedName!!)
-        val clientSymbols = resolver.getSymbolsWithAnnotation(GenerateClientCommand::class.qualifiedName!!)
+        val serverSymbols = resolver.getSymbolsWithAnnotation(ServerCommand::class.qualifiedName!!)
+        val clientSymbols = resolver.getSymbolsWithAnnotation(ClientCommand::class.qualifiedName!!)
         
         val unprocessedServer = serverSymbols.filter { !it.validate() }.toList()
         val unprocessedClient = clientSymbols.filter { !it.validate() }.toList()
@@ -51,7 +51,7 @@ class CommandProcessor(
         
         val fileSpec = FileSpec.builder(packageName, "ServerCommandsGenerated")
             .addImport("essential.core", "Commands")
-            .addImport("essential.core.annotation", "ServerCommand")
+            .addImport("essential.ksp", "ServerCommand")
             .addImport("arc.util", "CommandHandler")
             .addFunction(generateRegisterServerCommandsFunction(functions))
             .build()
@@ -64,12 +64,13 @@ class CommandProcessor(
         
         val fileSpec = FileSpec.builder(packageName, "ClientCommandsGenerated")
             .addImport("essential.core", "Commands")
-            .addImport("essential.core.annotation", "ClientCommand")
+            .addImport("essential.ksp", "ClientCommand")
             .addImport("arc.util", "CommandHandler")
             .addImport("mindustry.gen", "Playerc")
             .addImport("essential.core.Event", "findPlayerData")
             .addImport("essential.permission", "Permission")
             .addImport("essential.bundle", "Bundle")
+            .addImport("essential.database.data", "PlayerData")
             .addFunction(generateRegisterClientCommandsFunction(functions))
             .build()
 
@@ -117,6 +118,8 @@ class CommandProcessor(
     }
 
     private fun generateRegisterClientCommandsFunction(functions: List<KSFunctionDeclaration>): FunSpec {
+
+
         return FunSpec.builder("registerGeneratedClientCommands")
             .addParameter("handler", ClassName("arc.util", "CommandHandler"))
             .addCode(
@@ -124,7 +127,7 @@ class CommandProcessor(
                 val commands = Commands()
                 val clientCommands = listOf(
                 ${functions.joinToString(",\n                    ") { 
-                    "{ player: Playerc, data: essential.core.DB.PlayerData, args: Array<String> -> commands.${it.simpleName.asString()}(player, data, args) }" 
+                    "{ player: Playerc, data: PlayerData, args: Array<String> -> commands.${it.simpleName.asString()}(player, data, args) }" 
                 }}
                 )
                 
@@ -139,7 +142,7 @@ class CommandProcessor(
                     val annotation = annotations[i]
                     
                     handler.register<Playerc>(annotation.name, annotation.parameter, annotation.description) { args, player ->
-                        val data = findPlayerData(player.uuid()) ?: essential.core.DB.PlayerData()
+                        val data = findPlayerData(player.uuid()) ?: PlayerData()
                         if (Permission.check(data, annotation.name)) {
                             command(player, data, args)
                         } else {
