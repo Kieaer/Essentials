@@ -17,9 +17,9 @@ import org.hjson.JsonObject
 import org.hjson.Stringify
 
 class Main : Plugin() {
-    private var playerActivities = JsonArray()
     private var recordFile: Fi? = null
     private var currentStatus = CurrentStatus("sandbox", "andromeda")
+    private var isFirstWrite = true
 
     private data class CurrentStatus(
         val mode: String,
@@ -32,6 +32,32 @@ class Main : Plugin() {
         root.child("collect").mkdirs()
         setEvents()
         Log.debug(bundle["event.plugin.loaded"])
+    }
+
+    /**
+     * Writes a JsonObject directly to the record file.
+     * Creates the file if it doesn't exist, and appends to it if it does.
+     */
+    private fun writeToFile(jsonObject: JsonObject) {
+        try {
+            if (recordFile == null) {
+                return
+            }
+
+            // For the first write, write the opening bracket of the JSON array
+            if (isFirstWrite) {
+                recordFile?.writeString("[", false)
+                isFirstWrite = false
+            } else {
+                // For subsequent writes, add a comma before the new object
+                recordFile?.writeString(",", false)
+            }
+
+            // Write the JSON object
+            recordFile?.writeString(jsonObject.toString(Stringify.PLAIN), false)
+        } catch (ex: Exception) {
+            Log.err("Failed to write to record file", ex)
+        }
     }
 
     private fun setCurrentStatus() {
@@ -91,14 +117,17 @@ class Main : Plugin() {
     private fun setEvents() {
         Events.on(PlayEvent::class.java) { _ ->
             setCurrentStatus()
+            // Create a new file for this game session
             recordFile = root.child("collect/${System.currentTimeMillis()}_${currentStatus.planet}_${currentStatus.mode}.json")
+            isFirstWrite = true
+
             val mapLoad = JsonObject()
             mapLoad.add("type", "map_load")
             mapLoad.add("map", state.map.name())
             mapLoad.add("mode", currentStatus.mode)
             mapLoad.add("planet", currentStatus.planet)
             mapLoad.add("time", System.currentTimeMillis())
-            playerActivities.add(mapLoad)
+            writeToFile(mapLoad)
         }
 
         Events.on(PlayerJoin::class.java) { e ->
@@ -106,7 +135,7 @@ class Main : Plugin() {
             playerJoin.add("type", "player_join")
             playerJoin.add("player", getPlayerStatus(e.player))
             playerJoin.add("time", System.currentTimeMillis())
-            playerActivities.add(playerJoin)
+            writeToFile(playerJoin)
         }
 
         Events.on(PlayerLeave::class.java) { e ->
@@ -114,7 +143,7 @@ class Main : Plugin() {
             playerLeave.add("type", "player_leave")
             playerLeave.add("player", getPlayerStatus(e.player))
             playerLeave.add("time", System.currentTimeMillis())
-            playerActivities.add(playerLeave)
+            writeToFile(playerLeave)
         }
 
         Events.on(WithdrawEvent::class.java) { e ->
@@ -125,7 +154,7 @@ class Main : Plugin() {
             withdraw.add("block_name", e.tile.block.name)
             withdraw.add("amount", e.amount)
             withdraw.add("time", System.currentTimeMillis())
-            playerActivities.add(withdraw)
+            writeToFile(withdraw)
         }
 
         Events.on(DepositEvent::class.java) { e ->
@@ -136,7 +165,7 @@ class Main : Plugin() {
             deposit.add("amount", e.amount)
             deposit.add("block_name", e.tile.block.name)
             deposit.add("time", System.currentTimeMillis())
-            playerActivities.add(deposit)
+            writeToFile(deposit)
         }
 
         Events.on(UnitDestroyEvent::class.java) { e ->
@@ -145,7 +174,7 @@ class Main : Plugin() {
             unitDestroy.add("unit", e.unit.type.name)
             unitDestroy.add("team", e.unit.team.name)
             unitDestroy.add("time", System.currentTimeMillis())
-            playerActivities.add(unitDestroy)
+            writeToFile(unitDestroy)
         }
 
         Events.on(ConfigEvent::class.java) { e ->
@@ -157,15 +186,19 @@ class Main : Plugin() {
             config.add("config", Json().toJson(e.value))
             config.add("block", e.tile.block.name)
             config.add("time", System.currentTimeMillis())
-            playerActivities.add(config)
+            writeToFile(config)
         }
 
         Events.on(GameOverEvent::class.java) { e ->
             try {
-                recordFile?.writeString(playerActivities.toString(Stringify.PLAIN))
-                playerActivities = JsonArray()
+                // Write the closing bracket of the JSON array
+                if (recordFile != null && !isFirstWrite) {
+                    recordFile?.writeString("]", false)
+                }
+                // Reset for next game
+                recordFile = null
             } catch (ex: Exception) {
-                Log.err("Failed to save records.json", ex)
+                Log.err("Failed to close record file", ex)
             }
         }
 
@@ -176,7 +209,7 @@ class Main : Plugin() {
             tap.add("tile_x", e.tile.x.toInt())
             tap.add("tile_y", e.tile.y.toInt())
             tap.add("time", System.currentTimeMillis())
-            playerActivities.add(tap)
+            writeToFile(tap)
         }
 
         Events.on(PickupEvent::class.java) { e ->
@@ -193,7 +226,7 @@ class Main : Plugin() {
                 pickup.add("type", "pickup")
                 pickup.add("player", getPlayerStatus(p))
                 pickup.add("time", System.currentTimeMillis())
-                playerActivities.add(pickup)
+                writeToFile(pickup)
             }
         }
 
@@ -203,7 +236,7 @@ class Main : Plugin() {
             unitCreate.add("unit", e.unit.type.name)
             unitCreate.add("team", e.unit.team.toString())
             unitCreate.add("time", System.currentTimeMillis())
-            playerActivities.add(unitCreate)
+            writeToFile(unitCreate)
         }
 
         Events.on(UnitControlEvent::class.java) { e ->
@@ -216,7 +249,7 @@ class Main : Plugin() {
             }
             unitControl.add("unit", e.unit.type.name)
             unitControl.add("time", System.currentTimeMillis())
-            playerActivities.add(unitControl)
+            writeToFile(unitControl)
         }
 
         Events.on(BlockBuildBeginEvent::class.java) { e ->
@@ -232,7 +265,7 @@ class Main : Plugin() {
             blockBuildBegin.add("tile_y", e.tile.y.toInt())
             blockBuildBegin.add("is_breaking", e.breaking)
             blockBuildBegin.add("time", System.currentTimeMillis())
-            playerActivities.add(blockBuildBegin)
+            writeToFile(blockBuildBegin)
         }
 
         Events.on(BlockBuildEndEvent::class.java) { e: BlockBuildEndEvent? ->
@@ -248,7 +281,7 @@ class Main : Plugin() {
             blockBuildEnd.add("tile_y", e.tile.y.toInt())
             blockBuildEnd.add("is_breaking", e.breaking)
             blockBuildEnd.add("time", System.currentTimeMillis())
-            playerActivities.add(blockBuildEnd)
+            writeToFile(blockBuildEnd)
         }
 
         // if player or unit rotated the target block
@@ -271,7 +304,7 @@ class Main : Plugin() {
             buildRotate.add("previous", e.previous)
             buildRotate.add("current", e.build.rotation)
             buildRotate.add("time", System.currentTimeMillis())
-            playerActivities.add(buildRotate)
+            writeToFile(buildRotate)
         }
 
         // if player or unit is block remove or selected
@@ -294,7 +327,7 @@ class Main : Plugin() {
                 }
             }
             buildSelect.add("time", System.currentTimeMillis())
-            playerActivities.add(buildSelect)
+            writeToFile(buildSelect)
         }
 
         // if power generator exploded by pressure
@@ -312,7 +345,7 @@ class Main : Plugin() {
             buildingDestroy.add("bullet_unit", e.bullet.owner is mindustry.gen.Unit)
             buildingDestroy.add("bullet_build", e.bullet.owner is mindustry.world.Block)
             buildingDestroy.add("time", System.currentTimeMillis())
-            playerActivities.add(buildingDestroy)
+            writeToFile(buildingDestroy)
         }
 
         // if unit destroyed by bullet
@@ -327,7 +360,7 @@ class Main : Plugin() {
             bulletDestroy.add("bullet_unit", e.bullet.owner is mindustry.gen.Unit)
             bulletDestroy.add("bullet_build", e.bullet.owner is mindustry.world.Block)
             bulletDestroy.add("time", System.currentTimeMillis())
-            playerActivities.add(bulletDestroy)
+            writeToFile(bulletDestroy)
         }
 
         // if unit taken damage
@@ -342,7 +375,7 @@ class Main : Plugin() {
             damaged.add("bullet_unit", e.bullet.owner is mindustry.gen.Unit)
             damaged.add("bullet_build", e.bullet.owner is mindustry.world.Block)
             damaged.add("time", System.currentTimeMillis())
-            playerActivities.add(damaged)
+            writeToFile(damaged)
         }
 
         // if unit is drowned
@@ -354,7 +387,7 @@ class Main : Plugin() {
             drown.add("is_dead", e.unit.dead)
             drown.add("team", e.unit.team.name)
             drown.add("time", System.currentTimeMillis())
-            playerActivities.add(drown)
+            writeToFile(drown)
         }
 
         var tick = 0
@@ -381,7 +414,7 @@ class Main : Plugin() {
 
                 current.add("units", list)
 
-                playerActivities.add(current)
+                writeToFile(current)
                 tick = 0
             } else {
                 tick++
