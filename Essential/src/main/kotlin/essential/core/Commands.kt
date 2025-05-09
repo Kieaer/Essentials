@@ -15,8 +15,8 @@ import essential.core.Event.findPlayers
 import essential.core.Event.findPlayersByName
 import essential.core.Event.worldHistory
 import essential.core.Main.Companion.conf
-import essential.ksp.ClientCommand
-import essential.ksp.ServerCommand
+import essential.command.ClientCommand
+import essential.command.ServerCommand
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType

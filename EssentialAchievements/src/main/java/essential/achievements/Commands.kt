@@ -1,11 +1,12 @@
 package essential.achievements
 
 import arc.util.Strings
+import essential.database.data.PlayerData
 
 class Commands {
     @ClientCommand(name = "achievements", parameter = "[page]", description = "Show your achievements")
-    fun achievements(player: Playerc, playerData: PlayerData, arg: kotlin.Array<kotlin.String?>) {
-        val temp: kotlin.collections.MutableList<kotlin.String?> = java.util.ArrayList<kotlin.String?>()
+    fun achievements(playerData: PlayerData, arg: Array<String?>) {
+        val temp: MutableList<String?> = java.util.ArrayList<String?>()
         var bundle: java.util.ResourceBundle
         if (playerData.getStatus().containsKey("language")) {
             bundle = java.util.ResourceBundle.getBundle(

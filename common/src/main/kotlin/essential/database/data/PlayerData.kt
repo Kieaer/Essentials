@@ -61,6 +61,7 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
     var viewHistoryMode = false
     var mouseTracking = false
     var player: Playerc = Player.create()
+    val status = mutableMapOf<String, String>()
 
     fun err(message: String, vararg parameters: Any) {
         val text = "[scarlet]" + bundle()[message, parameters]

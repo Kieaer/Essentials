@@ -1,2 +1,2 @@
-essential.ksp.CommandProcessorProvider
+essential.command.CommandProcessorProvider
 essential.ksp.UpdateFunctionProcessorProvider

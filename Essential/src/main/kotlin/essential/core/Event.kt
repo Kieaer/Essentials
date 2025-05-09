@@ -11,9 +11,19 @@ import arc.util.Strings
 import com.charleskorn.kaml.Yaml
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.pluginData
+import essential.core.Main.Companion.scope
 import essential.core.annotation.Event
 import essential.database.data.PlayerData
+import essential.database.data.getPlayerData
+import essential.database.data.plugin.WarpZone
+import essential.database.table.PlayerTable
+import essential.event.CustomEvents
+import essential.permission.Permission
+import essential.players
 import essential.rootPath
+import essential.util.currentTime
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -28,6 +38,7 @@ import mindustry.net.Administration
 import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.io.FileInputStream
@@ -56,19 +67,19 @@ object Event {
     var worldHistory = ArrayList<TileLog>()
 
     private var dateformat = SimpleDateFormat("HH:mm:ss")
-    var blockExp = mapOf<String, Int>()
-    var dosBlacklist = listOf<String>()
+    var blockExp = mutableMapOf<String, UInt>()
+    var dosBlacklist = mutableListOf<String>()
     /** PvP 관전 플레이어 목록 */
-    var pvpSpecters = listOf<String>()
+    var pvpSpecters = mutableListOf<String>()
     /** PvP 플레이어 팀 데이터 목록 */
-    var pvpPlayer = mapOf<String, Team>()
+    var pvpPlayer = mutableMapOf<String, Team>()
     /** 전체 채팅 차단 유무 */
     var isGlobalMute = false
     var dpsBlocks = 0f
     var dpsTile: Tile? = null
     var maxdps: Float? = null
     var unitLimitMessageCooldown = 0
-    var offlinePlayers = listOf<PlayerData>()
+    var offlinePlayers = mutableListOf<PlayerData>()
     var apmRanking = ""
 
     val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
@@ -191,10 +202,10 @@ object Event {
             )
             val data = findPlayerData(it.player.uuid())
             if (data != null) {
-                pluginData.warpBlocks.forEach { two ->
+                pluginData.data.warpBlock.forEach { two ->
                     if (two.mapName == Vars.state.map.name() && it.tile.block().name == two.tileName && it.tile.build.tileX() == two.x && it.tile.build.tileY() == two.y) {
                         if (two.online) {
-                            database.players.forEach { data ->
+                            players.forEach { data ->
                                 data.send("event.tap.server", it.player.plainName(), two.description)
                             }
                             // why?
@@ -212,7 +223,7 @@ object Event {
                     }
                 }
 
-                for (two in pluginData.warpZones) {
+                for (two in pluginData.data.warpZone) {
                     if (two.mapName == Vars.state.map.name() && two.click && isUnitInside(it.tile, two.startTile, two.finishTile)) {
                         Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
                         Call.connect(it.player.con(), two.ip, two.port)
@@ -220,7 +231,7 @@ object Event {
                     }
                 }
 
-                if (data.log) {
+                if (data.viewHistoryMode) {
                     val buf = ArrayList<TileLog>()
                     worldHistory.forEach { two ->
                         if (two.x == it.tile.x && two.y == it.tile.y) {
@@ -228,11 +239,7 @@ object Event {
                         }
                     }
                     val str = StringBuilder()
-                    val bundle = if (data.status.containsKey("language")) {
-                        Bundle(data.status["language"]!!)
-                    } else {
-                        Bundle(it.player.locale())
-                    }
+                    val bundle = data.bundle()
                     // todo 이거 파일 없음
                     val coreBundle = Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.languageTag)))
 
@@ -275,7 +282,7 @@ object Event {
                 if (data.status.containsKey("hub_first") && !data.status.containsKey("hub_second")) {
                     data.status["hub_first"] = "${it.tile.x},${it.tile.y}"
                     data.status["hub_second"] = "true"
-                    data.player.sendMessage(Bundle(data.languageTag)["command.hub.zone.next", "${it.tile.x},${it.tile.y}"])
+                    data.send("command.hub.zone.next", "${it.tile.x},${it.tile.y}")
                 } else if (data.status.containsKey("hub_first") && data.status.containsKey("hub_second")) {
                     val x = data.status["hub_first"]!!.split(",")[0].toInt()
                     val y = data.status["hub_first"]!!.split(",")[1].toInt()
@@ -293,8 +300,8 @@ object Event {
                             0 -> true
                             else -> false
                         }
-                        pluginData.warpZones.add(
-                            PluginData.WarpZone(
+                        pluginData.data.warpZone.add(
+                            WarpZone(
                                 Vars.state.map.plainName(),
                                 Vars.world.tile(x, y).pos(),
                                 it.tile.pos(),
@@ -319,16 +326,13 @@ object Event {
                     data.status.remove("hub_second")
                     data.status.remove("hub_ip")
                     data.status.remove("hub_port")
-
                 }
 
-                database.players.forEach { two ->
-                    if (two.tracking) {
+                players.forEach { two ->
+                    if (two.mouseTracking) {
                         Call.effect(two.player.con(), Fx.bigShockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
                     }
                 }
-
-                data.currentControlCount++
             }
         }.also { listener -> eventListeners[TapEvent::class.java] = listener })
     }
@@ -336,39 +340,25 @@ object Event {
     @Event
     fun pickup() {
         Events.on(PickupEvent::class.java, Cons<PickupEvent> {
-            if (it.unit != null && it.unit.isPlayer) {
-                val p = findPlayerData(it.unit.player.uuid())
-                if (p != null) {
-                    p.currentControlCount++
-                }
-            }
         }.also { listener -> eventListeners[PickupEvent::class.java] = listener })
     }
 
     @Event
     fun unitControl() {
         Events.on(UnitControlEvent::class.java, Cons<UnitControlEvent> {
-            val p = findPlayerData(it.player.uuid())
-            if (p != null) {
-                p.currentControlCount++
-            }
         }.also { listener -> eventListeners[UnitControlEvent::class.java] = listener })
     }
 
     @Event
     fun buildingCommand() {
         Events.on(BuildingCommandEvent::class.java, Cons<BuildingCommandEvent> {
-            val p = findPlayerData(it.player.uuid())
-            if (p != null) {
-                p.currentControlCount++
-            }
         }.also { listener -> eventListeners[BuildingCommandEvent::class.java] = listener })
     }
 
     @Event
     fun wave() {
         Events.on(WaveEvent::class.java, Cons<WaveEvent> {
-            for (data in database.players) {
+            for (data in players) {
                 data.exp += 500
             }
 
@@ -392,7 +382,7 @@ object Event {
                 two.requirements.forEach { item ->
                     buf += item.amount
                 }
-                blockExp.put(two.name, buf)
+                blockExp.put(two.name, buf.toUInt())
             }
 
             dosBlacklist = Vars.netServer.admins.dosBlacklist.toList()
@@ -402,7 +392,7 @@ object Event {
                 return@ChatFilter if (!message.startsWith("/")) {
                     val data = findPlayerData(player.uuid())
                     if (data != null) {
-                        if (!data.mute) {
+                        if (!data.chatMuted) {
                             if (isGlobalMute) {
                                 if (Permission.check(data, "chat.admin")) {
                                     message
@@ -425,14 +415,14 @@ object Event {
 
             if (!Vars.mods.list().contains { mod -> mod.name == "essential-protect" }) {
                 Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
-                    it.player.admin(false)
+                    scope.launch {
+                        it.player.admin(false)
+                        val data = getPlayerData(it.player.uuid())
 
-                    val data = database[it.player.uuid()]
-                    val trigger = Trigger()
-                    if (data == null) {
-                        daemon.submit(Thread {
-                            transaction {
-                                if (DB.PlayerTable.select(DB.PlayerTable.name).where { DB.PlayerTable.name eq it.player.name }
+                        val trigger = Trigger()
+                        if (data == null) {
+                            newSuspendedTransaction {
+                                if (PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }
                                         .empty()) {
                                     Core.app.post { trigger.createPlayer(it.player, null, null) }
                                 } else {
@@ -444,9 +434,9 @@ object Event {
                                     }
                                 }
                             }
-                        })
-                    } else {
-                        trigger.loadPlayer(data)
+                        } else {
+                            trigger.loadPlayer(data)
+                        }
                     }
                 }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
             }
@@ -456,7 +446,6 @@ object Event {
     @Event
     fun playerChat() {
         Events.on(PlayerChatEvent::class.java, Cons<PlayerChatEvent> {
-
         }.also { listener -> eventListeners[PlayerChatEvent::class.java] = listener })
     }
 
@@ -465,19 +454,19 @@ object Event {
         Events.on(GameOverEvent::class.java, Cons<GameOverEvent> {
             if (!Vars.state.rules.infiniteResources) {
                 if (Vars.state.rules.pvp) {
-                    for (data in database.players) {
+                    for (data in players) {
                         if (data.player.team() == it.winner) {
-                            data.pvpVictoriesCount++
+                            data.pvpWinCount++
                         }
                     }
                 } else if (Vars.state.rules.attackMode) {
-                    for (data in database.players) {
+                    for (data in players) {
                         if (data.player.team() == it.winner) {
-                            data.attackModeClear++
+                            data.attackClear++
                         }
                     }
                 }
-                for (data in database.players) {
+                for (data in players) {
                     earnEXP(it.winner, data.player, data, true)
                 }
                 for (data in offlinePlayers) {
@@ -573,8 +562,6 @@ object Event {
                             target.currentExp -= blockExp[player.unit().buildPlan().block.name]!!
                         }
                     }
-
-                    target.currentControlCount++
                 }
             }
         }.also { listener -> eventListeners[BlockBuildEndEvent::class.java] = listener })
@@ -601,10 +588,6 @@ object Event {
                         it.tile.build.config()
                     )
                 )
-                val p = findPlayerData((it.builder as Playerc).uuid())
-                if (p != null) {
-                    p.currentControlCount++
-                }
             }
         }.also { listener -> eventListeners[BuildSelectEvent::class.java] = listener })
     }
@@ -613,7 +596,7 @@ object Event {
     fun blockDestory() {
         Events.on(BlockDestroyEvent::class.java, Cons<BlockDestroyEvent> {
             if (Vars.state.rules.attackMode) {
-                for (a in database.players) {
+                for (a in players) {
                     if (it.tile.team() != Vars.state.rules.defaultTeam) {
                         a.currentBuildAttackCount++
                     } else {
@@ -628,7 +611,7 @@ object Event {
     fun unitDestroy() {
         Events.on(UnitDestroyEvent::class.java, Cons<UnitDestroyEvent> {
             if (!Vars.state.rules.pvp) {
-                for (a in database.players) {
+                for (a in players) {
                     if (it.unit.team() != a.player.team()) {
                         a.currentUnitDestroyedCount++
                     }
@@ -644,7 +627,7 @@ object Event {
                 u.unit.kill()
 
                 if (unitLimitMessageCooldown == 0) {
-                    database.players.forEach {
+                    players.forEach {
                         it.send("config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${conf.feature.unit.limit}")
                     }
                     unitLimitMessageCooldown = 60
@@ -656,10 +639,6 @@ object Event {
     @Event
     fun unitChange() {
         Events.on(UnitChangeEvent::class.java, Cons<UnitChangeEvent> {
-            val p = findPlayerData(it.player.uuid())
-            if (p != null) {
-                p.currentControlCount++
-            }
         }.also { listener -> eventListeners[UnitChangeEvent::class.java] = listener })
     }
 
@@ -677,12 +656,11 @@ object Event {
                 LogType.Player,
                 Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address]
             )
-            val data = database.players.find { e -> e.uuid == it.player.uuid() }
+            val data = players.find { e -> e.uuid == it.player.uuid() }
             if (data != null) {
                 data.lastPlayedWorldName = Vars.state.map.plainName()
                 data.lastPlayedWorldMode = Vars.state.rules.modeName
-                data.lastPlayedWorldId = Vars.port
-                data.lastLeaveDate = LocalDateTime.now()
+                data.lastLogoutDate = LocalDateTime.now()
                 data.isConnected = false
 
                 database.queue(data)
@@ -700,10 +678,10 @@ object Event {
                     if (s.keys.size == 1) {
                         Events.fire(GameOverEvent(b.first().team()))
                     }
-                } else if (database.players.size == 0 && pvpSpecters.isNotEmpty()) {
+                } else if (players.isEmpty() && pvpSpecters.isNotEmpty()) {
                     Events.fire(GameOverEvent(data.player.team()))
                 }
-                database.players.removeAll { e -> e.uuid == data.uuid }
+                players.removeAll { e -> e.uuid == data.uuid }
             }
         }.also { listener -> eventListeners[PlayerLeave::class.java] = listener })
     }
@@ -750,14 +728,14 @@ object Event {
             if (Vars.state.rules.pvp) {
                 pvpSpecters.clear()
 
-                for (data in database.players) {
+                for (data in players) {
                     if (Permission.check(data, "pvp.spector")) {
                         data.player.team(Team.derelict)
                     }
                 }
             }
 
-            for (data in database.players) {
+            for (data in players) {
                 data.currentPlayTime = 0
                 data.currentUnitDestroyedCount = 0
                 data.currentBuildDestroyedCount = 0
@@ -818,7 +796,7 @@ object Event {
                 Blocks.coreShard
             )
             if (Vars.state.rules.pvp && it.build.closestCore() == null && cores.contains(it.build.block)) {
-                for (data in database.players) {
+                for (data in players) {
                     if (data.player.team() == it.bullet.team) {
                         data.pvpEliminationTeamCount++
                     }
@@ -853,7 +831,7 @@ object Event {
                     "config.yaml" -> {
                         conf = Yaml.default.decodeFromString(
                             CoreConfig.serializer(),
-                            root.child(Main.CONFIG_PATH).readString()
+                            rootPath.child(Main.CONFIG_PATH).readString()
                         )
                         Log.info(Bundle()["config.reloaded"])
                     }
@@ -1034,8 +1012,8 @@ object Event {
         }
     }
 
-    fun findPlayerData(uuid: String): DB.PlayerData? {
-        return database.players.find { data -> (data.oldUUID != null && data.oldUUID == uuid) || data.uuid == uuid }
+    fun findPlayerData(uuid: String): PlayerData? {
+        return players.find { data -> data.uuid == uuid }
     }
 
     @JvmStatic

@@ -16,6 +16,8 @@ import essential.ksp.ServerCommand
 import essential.core.generated.registerGeneratedServerCommands
 import essential.core.generated.registerGeneratedClientCommands
 import essential.database.data.PlayerData
+import essential.database.data.PluginData
+import essential.database.data.getPluginData
 import essential.database.databaseInit
 import essential.permission.Permission
 import essential.rootPath
@@ -23,6 +25,7 @@ import essential.service.fileWatchService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
@@ -41,6 +44,7 @@ class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
         lateinit var conf: CoreConfig
+        lateinit var pluginData: PluginData
 
         val scope = CoroutineScope(Dispatchers.IO)
     }
@@ -78,6 +82,15 @@ class Main : Plugin() {
             conf.plugin.database.username,
             conf.plugin.database.password
         )
+
+        // 플러그인 데이터 설정
+        runBlocking {
+            val data = getPluginData()
+            require(data != null) {
+
+            }
+            pluginData = data
+        }
 
         // 권한 기능 설정
         Permission.load()

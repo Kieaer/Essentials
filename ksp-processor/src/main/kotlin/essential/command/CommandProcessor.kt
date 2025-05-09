@@ -1,10 +1,9 @@
-package essential.ksp
+package essential.command
 
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 
 class CommandProcessor(
@@ -15,7 +14,7 @@ class CommandProcessor(
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val serverSymbols = resolver.getSymbolsWithAnnotation(ServerCommand::class.qualifiedName!!)
         val clientSymbols = resolver.getSymbolsWithAnnotation(ClientCommand::class.qualifiedName!!)
-        
+
         val unprocessedServer = serverSymbols.filter { !it.validate() }.toList()
         val unprocessedClient = clientSymbols.filter { !it.validate() }.toList()
 
@@ -25,7 +24,7 @@ class CommandProcessor(
                 .filter { it is KSFunctionDeclaration && it.validate() }
                 .map { it as KSFunctionDeclaration }
                 .toList()
-            
+
             if (serverFunctions.isNotEmpty()) {
                 generateServerCommandsFile(serverFunctions)
             }
@@ -37,7 +36,7 @@ class CommandProcessor(
                 .filter { it is KSFunctionDeclaration && it.validate() }
                 .map { it as KSFunctionDeclaration }
                 .toList()
-            
+
             if (clientFunctions.isNotEmpty()) {
                 generateClientCommandsFile(clientFunctions)
             }
@@ -48,10 +47,10 @@ class CommandProcessor(
 
     private fun generateServerCommandsFile(functions: List<KSFunctionDeclaration>) {
         val packageName = "essential.core.generated"
-        
+
         val fileSpec = FileSpec.builder(packageName, "ServerCommandsGenerated")
             .addImport("essential.core", "Commands")
-            .addImport("essential.ksp", "ServerCommand")
+            .addImport("essential.command", "ServerCommand")
             .addImport("arc.util", "CommandHandler")
             .addFunction(generateRegisterServerCommandsFunction(functions))
             .build()
@@ -61,10 +60,10 @@ class CommandProcessor(
 
     private fun generateClientCommandsFile(functions: List<KSFunctionDeclaration>) {
         val packageName = "essential.core.generated"
-        
+
         val fileSpec = FileSpec.builder(packageName, "ClientCommandsGenerated")
             .addImport("essential.core", "Commands")
-            .addImport("essential.ksp", "ClientCommand")
+            .addImport("essential.command", "ClientCommand")
             .addImport("arc.util", "CommandHandler")
             .addImport("mindustry.gen", "Playerc")
             .addImport("essential.core.Event", "findPlayerData")
@@ -78,6 +77,20 @@ class CommandProcessor(
     }
 
     private fun generateRegisterServerCommandsFunction(functions: List<KSFunctionDeclaration>): FunSpec {
+        // Here get annotation parameter values
+        val annotationValues = functions.map { function ->
+            val annotation = function.annotations.find { 
+                it.shortName.asString() == "ServerCommand" || 
+                it.shortName.asString() == "essential.command.ServerCommand" 
+            }
+
+            val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString() ?: function.simpleName.asString()
+            val parameter = annotation?.arguments?.find { it.name?.asString() == "parameter" }?.value?.toString() ?: ""
+            val description = annotation?.arguments?.find { it.name?.asString() == "description" }?.value?.toString() ?: "Generated server command"
+
+            Triple(name, parameter, description)
+        }
+
         return FunSpec.builder("registerGeneratedServerCommands")
             .addParameter("handler", ClassName("arc.util", "CommandHandler"))
             .addCode(
@@ -88,17 +101,18 @@ class CommandProcessor(
                     "{ args: Array<String> -> commands.${it.simpleName.asString()}(args) }" 
                 }}
                 )
-                
+
                 val annotations = listOf(
-                ${functions.joinToString(",\n                    ") { 
-                    "ServerCommand(\"${it.simpleName.asString()}\", \"\", \"Generated server command\")" 
-                }}
+                ${functions.mapIndexed { index, _ ->
+                    val (name, parameter, description) = annotationValues[index]
+                    "ServerCommand(\"$name\", \"$parameter\", \"$description\")"
+                }.joinToString(",\n                    ")}
                 )
-                
+
                 for (i in serverCommands.indices) {
                     val command = serverCommands[i]
                     val annotation = annotations[i]
-                    
+
                     handler.register(annotation.name, annotation.parameter, annotation.description) { args ->
                         if (args.isNotEmpty()) {
                             command(args)
@@ -118,7 +132,19 @@ class CommandProcessor(
     }
 
     private fun generateRegisterClientCommandsFunction(functions: List<KSFunctionDeclaration>): FunSpec {
+        // Get annotation parameter values
+        val annotationValues = functions.map { function ->
+            val annotation = function.annotations.find { 
+                it.shortName.asString() == "ClientCommand" || 
+                it.shortName.asString() == "essential.command.ClientCommand" 
+            }
 
+            val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString() ?: function.simpleName.asString()
+            val parameter = annotation?.arguments?.find { it.name?.asString() == "parameter" }?.value?.toString() ?: ""
+            val description = annotation?.arguments?.find { it.name?.asString() == "description" }?.value?.toString() ?: "Generated client command"
+
+            Triple(name, parameter, description)
+        }
 
         return FunSpec.builder("registerGeneratedClientCommands")
             .addParameter("handler", ClassName("arc.util", "CommandHandler"))
@@ -130,26 +156,29 @@ class CommandProcessor(
                     "{ player: Playerc, data: PlayerData, args: Array<String> -> commands.${it.simpleName.asString()}(player, data, args) }" 
                 }}
                 )
-                
+
                 val annotations = listOf(
-                ${functions.joinToString(",\n                    ") { 
-                    "ClientCommand(\"${it.simpleName.asString()}\", \"\", \"Generated client command\")" 
-                }}
+                ${functions.mapIndexed { index, _ ->
+                    val (name, parameter, description) = annotationValues[index]
+                    "ClientCommand(\"$name\", \"$parameter\", \"$description\")"
+                }.joinToString(",\n                    ")}
                 )
-                
+
                 for (i in clientCommands.indices) {
                     val command = clientCommands[i]
                     val annotation = annotations[i]
-                    
+
                     handler.register<Playerc>(annotation.name, annotation.parameter, annotation.description) { args, player ->
-                        val data = findPlayerData(player.uuid()) ?: PlayerData()
-                        if (Permission.check(data, annotation.name)) {
-                            command(player, data, args)
-                        } else {
-                            if (annotation.name == "js") {
-                                player.kick(Bundle(player.locale())["command.js.no.permission"])
+                        val data = findPlayerData(player.uuid())
+                        if (data != null) {
+                            if (Permission.check(data, annotation.name)) {
+                                command(player, data, args)
                             } else {
-                                data.send("command.permission.false")
+                                if (annotation.name == "js") {
+                                    player.kick(Bundle(player.locale())["command.js.no.permission"])
+                                } else {
+                                    data.send("command.permission.false")
+                                }
                             }
                         }
                     }
