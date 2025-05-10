@@ -60,6 +60,9 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
     var mousePosition: Float = 0F
     var viewHistoryMode = false
     var mouseTracking = false
+    var animatedName = false
+
+
     var player: Playerc = Player.create()
     val status = mutableMapOf<String, String>()
 

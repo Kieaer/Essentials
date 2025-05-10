@@ -3,13 +3,17 @@ package essential.core
 import arc.Core
 import arc.Events
 import arc.func.Prov
+import arc.util.Align
 import arc.util.Log
 import arc.util.Time
 import essential.bundle
 import essential.bundle.Bundle
+import essential.core.Event.findPlayerData
+import essential.core.Event.isUnitInside
 import essential.core.Event.pvpPlayer
 import essential.core.Event.pvpSpecters
 import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.database.data.PlayerData
 import essential.database.data.PluginData
@@ -20,20 +24,20 @@ import essential.permission.Permission
 import essential.players
 import essential.rootPath
 import essential.systemTimezone
-import essential.util.tickerFlow
+import essential.util.startInfiniteScheduler
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.datetime.Clock
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.content.Blocks
+import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
+import mindustry.io.SaveIO
 import mindustry.net.Host
 import mindustry.net.NetworkIO
 import mindustry.world.Tile
@@ -43,7 +47,8 @@ import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.function.Consumer
 import kotlin.coroutines.coroutineContext
-import kotlin.time.Duration.Companion.seconds
+import kotlin.math.floor
+import kotlin.random.Random
 
 
 class Trigger {
@@ -531,23 +536,7 @@ class Trigger {
             return stringBuilder.toString()
         }
 
-        tickerFlow(1.seconds).onEach {
-            pluginData.uptime++
-            pluginData.playtime++
-
-            if (pluginData.voteCooltime > 0) pluginData.voteCooltime--
-
-            for ((key, value) in pluginData.voterCooltime) {
-                pluginData.voterCooltime[key] = value - 1
-            }
-
-            val voterCooltimeIterator = pluginData.voterCooltime.iterator()
-            while (voterCooltimeIterator.hasNext()) {
-                if (voterCooltimeIterator.next().value == 0) {
-                    voterCooltimeIterator.remove()
-                }
-            }
-
+        scope.startInfiniteScheduler {
             if (dpsTile != null) {
                 if (maxdps == null) {
                     maxdps = 0f
@@ -568,36 +557,9 @@ class Trigger {
             }
             dpsBlocks = 0f
 
-            apmRanking = "APM\n"
-            val color = arrayOf("[scarlet]", "[orange]", "[yellow]", "[green]", "[white]", "[gray]")
-            val list = LinkedHashMap<String, Int>()
-            database.players.forEach {
-                val total = if (it.apm.size != 0) it.apm.max() else 0
-                list[it.player.plainName()] = total
-            }
-            list.toList().sortedBy { (key, _) -> key }.forEach {
-                val colored = when (it.second) {
-                    in 41..Int.MAX_VALUE -> color[0]
-                    in 21..40 -> color[1]
-                    in 11..20 -> color[2]
-                    in 6..10 -> color[3]
-                    in 1..5 -> color[4]
-                    else -> color[5]
-                }
-                val coloredName = if (it.second >= 41) rainbow(it.first) else it.first
-                apmRanking += "$coloredName[orange] > $colored${it.second}[white]\n"
-            }
-            apmRanking = apmRanking.substring(0, apmRanking.length - 1)
-
-            for (it in database.players) {
-                it.totalPlayTime++
+            players.forEach {
+                it.totalPlayed++
                 it.currentPlayTime++
-
-                if (it.apm.size >= 60) {
-                    it.apm.poll()
-                }
-                it.apm.add(it.currentControlCount)
-                it.currentControlCount = 0
 
                 if (it.animatedName) {
                     val name = it.name.replace("\\[(.*?)]".toRegex(), "")
@@ -607,25 +569,21 @@ class Trigger {
                 }
 
                 // 잠수 플레이어 카운트
-                if (it.player.unit() != null && !it.player.unit().moving() && !it.player.unit()
-                        .mining() && !Permission.check(
-                        it,
-                        "afk.admin"
-                    ) && it.previousMousePosition == it.player.mouseX() + it.player.mouseY()
+                if (it.player.unit() != null &&
+                    !it.player.unit().moving() &&
+                    !it.player.unit().mining() &&
+                    !Permission.check(it, "afk.admin") &&
+                    it.mousePosition == it.player.mouseX() + it.player.mouseY()
                 ) {
                     it.afkTime++
-                    if (it.afkTime == conf.feature.afk.time) {
+                    if (it.afkTime == conf.feature.afk.time.toUShort()) {
                         it.afk = true
                         if (conf.feature.afk.enabled) {
                             if (conf.feature.afk.server == null) {
-                                val bundle = if (it.status.containsKey("language")) {
-                                    Bundle(it.status["language"]!!)
-                                } else {
-                                    Bundle(it.player.locale())
-                                }
 
-                                it.player.kick(bundle["event.player.afk"])
-                                database.players.forEach { data ->
+                                it.player.kick(it.bundle()["event.player.afk"])
+
+                                players.forEach { data ->
                                     data.send("event.player.afk.other", it.player.plainName())
                                 }
                             } else {
@@ -640,93 +598,22 @@ class Trigger {
                         }
                     }
                 } else {
-                    it.afkTime = 0
+                    it.afkTime = 0u
                     it.afk = false
-                    it.previousMousePosition = it.player.mouseX() + it.player.mouseY()
+                    it.mousePosition = it.player.mouseX() + it.player.mouseY()
                 }
 
-                val randomResult = (Random.nextInt(7) * it.expMultiplier).toInt()
-                it.exp += randomResult
-                it.currentExp += randomResult
+                val randomResult = (Random.nextInt(7) * it.expMultiplier)
+                it.exp += randomResult.toInt()
+                it.currentExp += randomResult.toUInt()
                 Commands.Exp[it]
 
                 if (conf.feature.level.display) {
                     val message = "${it.exp}/${floor(Commands.Exp.calculateFullTargetXp(it.level)).toInt()}"
                     Call.infoPopup(it.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                 }
-
-                if (it.hud != null) {
-                    val array = JsonArray.readJSON(it.hud).asArray()
-
-                    fun color(current: Float, max: Float): String {
-                        return when (current / max * 100.0) {
-                            in 50.0..100.0 -> "[green]"
-                            in 20.0..49.9 -> "[yellow]"
-                            else -> "[scarlet]"
-                        }
-                    }
-
-                    fun shieldColor(current: Float, max: Float): String {
-                        return when (current / max * 100.0) {
-                            in 50.0..100.0 -> "[#ffffe0]"
-                            in 20.0..49.9 -> "[orange]"
-                            else -> "[#CC5500]"
-                        }
-                    }
-
-                    array.forEach { value ->
-                        when (value.asString()) {
-                            "health" -> {
-                                Groups.unit.forEach { unit ->
-                                    val msg = StringBuilder()
-                                    val c = color(unit.health, unit.maxHealth)
-                                    if (unit.shield > 0) {
-                                        val shield = shieldColor(unit.health, unit.maxHealth)
-                                        msg.appendLine("$shield${floor(unit.shield.toDouble())}")
-                                    }
-                                    msg.append("$c${floor(unit.health.toDouble())}")
-
-                                    if (unit.team != it.player.team() && Permission.check(it, "hud.enemy")) {
-                                        Call.label(
-                                            it.player.con(),
-                                            msg.toString(),
-                                            Time.delta,
-                                            unit.getX(),
-                                            unit.getY()
-                                        )
-                                    } else if (unit.team == it.player.team()) {
-                                        Call.label(
-                                            it.player.con(),
-                                            msg.toString(),
-                                            Time.delta,
-                                            unit.getX(),
-                                            unit.getY()
-                                        )
-                                    }
-                                }
-                            }
-
-                            "apm" -> {
-                                Call.infoPopup(
-                                    it.player.con(),
-                                    apmRanking,
-                                    Time.delta,
-                                    Align.left,
-                                    0,
-                                    0,
-                                    0,
-                                    0
-                                )
-                            }
-                        }
-                    }
-                }
             }
-
-            if (unitLimitMessageCooldown > 0) {
-                unitLimitMessageCooldown--
-            }
-        }.launchIn(scope)
+        }
 
         // 맵 백업 시간
         var rollbackCount = conf.command.rollback.time
@@ -734,11 +621,11 @@ class Trigger {
         var messageOrder = 0
 
         Events.run(EventType.Trigger.update) {
-            for (data in database.players) {
+            for (data in players) {
                 if (Vars.state.rules.pvp && data.player.unit() != null && data.player.team()
                         .cores().isEmpty && data.player.team() != Team.derelict && pvpPlayer.containsKey(data.uuid)
                 ) {
-                    data.pvpDefeatCount += 1
+                    data.pvpLoseCount++
                     if (conf.feature.pvp.spector) {
                         data.player.team(Team.derelict)
                         pvpSpecters.add(data.uuid)
@@ -763,7 +650,7 @@ class Trigger {
                     }
                 }
 
-                if (data.tracking) {
+                if (data.mouseTracking) {
                     Groups.player.forEach { player ->
                         Call.label(
                             data.player.con(),
@@ -775,17 +662,7 @@ class Trigger {
                     }
                 }
 
-                if (data.tpp != null) {
-                    val target = Groups.player.find { p -> p.uuid() == data.tpp }
-                    if (target != null) {
-                        Call.setCameraPosition(data.player.con(), target.x, target.y)
-                    } else {
-                        data.tpp = null
-                        Call.setCameraPosition(data.player.con(), data.player.x, data.player.y)
-                    }
-                }
-
-                for (two in pluginData.warpZones) {
+                for (two in pluginData.data.warpZone) {
                     if (two.mapName == Vars.state.map.name() && !two.click && isUnitInside(
                             data.player.unit().tileOn(),
                             two.startTile,
@@ -812,29 +689,12 @@ class Trigger {
         Timer.schedule(object : Timer.Task() {
             override fun run() {
                 if (Vars.state.rules.pvp) {
-                    database.players.forEach {
+                    players.forEach {
                         if (!pvpPlayer.containsKey(it.uuid) && it.player.team() != Team.derelict && it.player.unit() != null) {
                             pvpPlayer[it.uuid] = it.player.team()
                         }
                     }
                 }
-
-                Main.daemon.submit(Thread {
-                    transaction {
-                        DB.PlayerTable.selectAll().where { DB.PlayerTable.banTime neq null }.forEach { data ->
-                            val banTime = data[DB.PlayerTable.banTime]
-                            val uuid = data[DB.PlayerTable.uuid]
-                            val name = data[DB.PlayerTable.name]
-
-                            if (LocalDateTime.now().isAfter(LocalDateTime.parse(banTime))) {
-                                DB.PlayerTable.update({ DB.PlayerTable.uuid eq uuid }) {
-                                    it[DB.PlayerTable.banTime] = null
-                                }
-                                Events.fire(CustomEvents.PlayerTempUnbanned(name))
-                            }
-                        }
-                    }
-                })
 
                 if (rollbackCount == 0) {
                     SaveIO.save(Vars.saveDirectory.child("rollback.msav"))
@@ -845,11 +705,11 @@ class Trigger {
 
                 if (conf.feature.motd.enabled) {
                     if (messageCount == conf.feature.motd.time) {
-                        database.players.forEach {
-                            val message = if (root.child("messages/${it.languageTag}.txt").exists()) {
-                                root.child("messages/${it.languageTag}.txt").readString()
-                            } else if (root.child("messages").list().isNotEmpty()) {
-                                val file = root.child("messages/en.txt")
+                        players.forEach {
+                            val message = if (rootPath.child("messages/${it.player.locale()}.txt").exists()) {
+                                rootPath.child("messages/${it.player.locale()}.txt").readString()
+                            } else if (rootPath.child("messages").list().isNotEmpty()) {
+                                val file = rootPath.child("messages/en.txt")
                                 if (file.exists()) file.readString() else null
                             } else {
                                 null
@@ -874,7 +734,7 @@ class Trigger {
             }
         }, 0f, 60f)
 
-        Events.on(ServerLoadEvent::class.java) {
+        Events.on(EventType.ServerLoadEvent::class.java) {
             if (conf.feature.level.effect.enabled) {
                 Timer.schedule(EffectSystem(), 0f, 0.05f)
             }

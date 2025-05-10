@@ -7,19 +7,16 @@ import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
 import essential.bundle
-import essential.bundle.Bundle
 import essential.config.Config
 import essential.core.Event.actionFilter
-import essential.core.Event.findPlayerData
-import essential.ksp.ClientCommand
-import essential.ksp.ServerCommand
-import essential.core.generated.registerGeneratedServerCommands
 import essential.core.generated.registerGeneratedClientCommands
+import essential.core.generated.registerGeneratedServerCommands
 import essential.database.data.PlayerData
 import essential.database.data.PluginData
 import essential.database.data.getPluginData
 import essential.database.databaseInit
 import essential.permission.Permission
+import essential.players
 import essential.rootPath
 import essential.service.fileWatchService
 import kotlinx.coroutines.CoroutineScope
@@ -111,7 +108,7 @@ class Main : Plugin() {
         // 스레드 등록
         val trigger = Trigger()
         trigger.register()
-        daemon.submit(Trigger.Thread())
+        scope.launch {Trigger.Thread().init()}
         daemon.submit(Trigger.UpdateThread())
 
         Vars.netServer.admins.addActionFilter(object : Administration.ActionFilter {
@@ -119,17 +116,17 @@ class Main : Plugin() {
 
             init {
                 Events.on(WorldLoadEvent::class.java) {
-                    isNotTargetMap = !isNotTargetMap && pluginData.warpBlocks.none { f -> f.mapName == Vars.state.map.name() }
+                    isNotTargetMap = !isNotTargetMap && pluginData.data.warpBlock.none { f -> f.mapName == Vars.state.map.name() }
                 }
             }
 
             override fun allow(e: Administration.PlayerAction): Boolean {
                 if (e.player == null) return true
-                val data = database.players.find { it.uuid == e.player.uuid() }
+                val data = players.find { it.uuid == e.player.uuid() }
                 val isHub = pluginData["hubMode"]
 
                 if (!isNotTargetMap) {
-                    pluginData.warpBlocks.forEach {
+                    pluginData.data.warpBlock.forEach {
                         if (it.mapName == pluginData.currentMap && e.tile != null && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
                             return false
                         }
@@ -165,7 +162,7 @@ class Main : Plugin() {
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
-                daemon.shutdownNow()
+                scope.
             }
         })
 
@@ -173,69 +170,12 @@ class Main : Plugin() {
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
-        // Call the generated function to register server commands
         registerGeneratedServerCommands(handler)
-
-        // Legacy code for backward compatibility
-        val commands = Commands()
-
-        for (function in commands::class.declaredFunctions) {
-            val annotation = function.findAnnotation<ServerCommand>()
-            if (annotation != null) {
-                val lambda = serverCommandCache.getOrPut(function) {
-                    { instance, args ->
-                        function.call(instance, args)
-                    }
-                }
-
-                handler.register(annotation.name, annotation.parameter, annotation.description) { args ->
-                    if (args.isNotEmpty()) {
-                        lambda(commands, args)
-                        function.call(commands, arrayOf(*args))
-                    } else {
-                        try {
-                            function.call(commands, arrayOf<String>())
-                        } catch (e: Exception) {
-                            Log.err("arg size - ${args.size}")
-                            Log.err("command - ${annotation.name}")
-                        }
-                    }
-                }
-            }
-        }
     }
 
 
     override fun registerClientCommands(handler: CommandHandler) {
-        // Call the generated function to register client commands
         registerGeneratedClientCommands(handler)
-
-        // Legacy code for backward compatibility
-        val commands = Commands()
-
-        for (function in commands::class.declaredFunctions) {
-            val annotation = function.findAnnotation<ClientCommand>()
-            if (annotation != null) {
-                val lambda = clientCommandCache.getOrPut(function) {
-                    { instance, player, data, args ->
-                        function.call(instance, player, data, args)
-                    }
-                }
-
-                handler.register<Playerc>(annotation.name, annotation.parameter, annotation.description) { args, player ->
-                    val data = findPlayerData(player.uuid()) ?: DB.PlayerData()
-                    if (Permission.check(data, annotation.name)) {
-                        lambda(commands, player, data, args)
-                    } else {
-                        if (annotation.name == "js") {
-                            player.kick(Bundle(player.locale())["command.js.no.permission"])
-                        } else {
-                            data.send("command.permission.false")
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private fun checkUpdate() {

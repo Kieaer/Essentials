@@ -39,7 +39,6 @@ import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -922,12 +921,12 @@ object Event {
         Player, Tap, WithDraw, Block, Deposit, Chat, Report
     }
 
-    fun earnEXP(winner: Team, p: Playerc, target: DB.PlayerData, isConnected: Boolean) {
+    fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) {
         val oldLevel = target.level
         var result: Int = target.currentExp
         val time = target.currentPlayTime.toInt()
 
-        if (pluginData.playtime > 300L) {
+        if (pluginData.playTime > 300L) {
             val erekirAttack = if (Vars.state.planet == Planets.erekir) target.currentUnitDestroyedCount else 0
             val erekirPvP = if (Vars.state.planet == Planets.erekir) 5000 else 0
 

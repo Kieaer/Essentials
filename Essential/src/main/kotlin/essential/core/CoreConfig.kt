@@ -31,7 +31,7 @@ data class Feature(
     val afk: Afk = Afk(),
     val vote: Vote = Vote(),
     val unit: UnitFeature = UnitFeature(),
-    val messageOfTheDay: MessageOfTheDay = MessageOfTheDay(),
+    val motd: MessageOfTheDay = MessageOfTheDay(),
     val pvp: PvP = PvP(),
     val level: LevelConfig = LevelConfig(),
     val game: Game = Game(),

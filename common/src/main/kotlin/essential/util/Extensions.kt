@@ -1,5 +1,6 @@
 package essential.util
 
+import kotlinx.coroutines.*
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format
@@ -34,5 +35,14 @@ fun Duration.toHString(): String {
     } + when {
         minutes >= 1L -> " $minutes:"
         else -> ""
+    }
+}
+
+fun CoroutineScope.startInfiniteScheduler(interval: Long = 1000L, task: suspend () -> Unit): Job {
+    return launch {
+        while (isActive) {
+            task()
+            delay(interval)
+        }
     }
 }
