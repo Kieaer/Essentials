@@ -19,10 +19,7 @@ import essential.permission.Permission
 import essential.players
 import essential.rootPath
 import essential.service.fileWatchService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import mindustry.Vars
 import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
@@ -109,7 +106,6 @@ class Main : Plugin() {
         val trigger = Trigger()
         trigger.register()
         scope.launch {Trigger.Thread().init()}
-        daemon.submit(Trigger.UpdateThread())
 
         Vars.netServer.admins.addActionFilter(object : Administration.ActionFilter {
             var isNotTargetMap = false
@@ -162,7 +158,7 @@ class Main : Plugin() {
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
-                scope.
+                scope.cancel()
             }
         })
 

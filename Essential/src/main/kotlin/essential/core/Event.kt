@@ -74,12 +74,8 @@ object Event {
     var pvpPlayer = mutableMapOf<String, Team>()
     /** 전체 채팅 차단 유무 */
     var isGlobalMute = false
-    var dpsBlocks = 0f
-    var dpsTile: Tile? = null
-    var maxdps: Float? = null
     var unitLimitMessageCooldown = 0
     var offlinePlayers = mutableListOf<PlayerData>()
-    var apmRanking = ""
 
     val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
     val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
@@ -476,7 +472,6 @@ object Event {
             worldHistory.clear()
             pvpSpecters.clear()
             pvpPlayer.clear()
-            dpsTile = null
         }.also { listener -> eventListeners[GameOverEvent::class.java] = listener })
     }
 
@@ -721,7 +716,6 @@ object Event {
             pluginData.isSurrender = false
             pluginData.isCheated = false
             pluginData.currentMap = Vars.state.map.name()
-            dpsTile = null
             if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
 
             if (Vars.state.rules.pvp) {

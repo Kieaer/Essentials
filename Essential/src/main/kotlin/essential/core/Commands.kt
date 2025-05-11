@@ -9,14 +9,14 @@ import arc.math.Mathf
 import arc.util.*
 import arc.util.Timer
 import com.charleskorn.kaml.Yaml
+import essential.command.ClientCommand
+import essential.command.ServerCommand
 import essential.core.Event.actionFilter
 import essential.core.Event.findPlayerData
 import essential.core.Event.findPlayers
 import essential.core.Event.findPlayersByName
 import essential.core.Event.worldHistory
 import essential.core.Main.Companion.conf
-import essential.command.ClientCommand
-import essential.command.ServerCommand
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
@@ -209,26 +209,6 @@ class Commands {
     @ClientCommand(name = "color", description = "Enable color nickname")
     fun color(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
         playerData.animatedName = !playerData.animatedName
-    }
-
-    @ClientCommand("dps", description = "Create damage per seconds meter block")
-    fun dps(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
-        if (Event.dpsTile == null) {
-            Call.constructFinish(
-                player.tileOn(),
-                Blocks.thoriumWallLarge,
-                player.unit(),
-                0,
-                Vars.state.rules.waveTeam,
-                null
-            )
-            Event.dpsTile = player.tileOn()
-            playerData.send("command.dps.created")
-        } else {
-            Call.deconstructFinish(Event.dpsTile, Blocks.air, player.unit())
-            Event.dpsTile = null
-            playerData.send("command.dps.deleted")
-        }
     }
 
     @ClientCommand(

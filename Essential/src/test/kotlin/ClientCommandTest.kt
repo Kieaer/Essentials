@@ -9,7 +9,6 @@ import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
-import essential.core.Event
 import essential.core.Main.Companion.database
 import junit.framework.TestCase.*
 import mindustry.Vars
@@ -191,32 +190,6 @@ class ClientCommandTest {
         clientCommand.handleMessage("/discord", player)
 
         // todo mock discord
-    }
-
-    @Test
-    fun client_dps() {
-        // Require admin or above permission
-        setPermission("admin", true)
-
-        // Place damage per seconds meter block
-        clientCommand.handleMessage("/dps", player)
-        assertEquals(Blocks.thoriumWallLarge, player.tileOn().block())
-
-        // Wait for show damage meter
-        sleep(1250)
-
-        // If block deleted
-        Call.deconstructFinish(player.tileOn(), Blocks.air, player.unit())
-        sleep(64)
-        assertNull(Event.dpsTile)
-
-        // Replace damage per seconds meter block
-        clientCommand.handleMessage("/dps", player)
-        assertEquals(Blocks.thoriumWallLarge, player.tileOn().block())
-
-        // Remove damage per seconds meter block
-        clientCommand.handleMessage("/dps", player)
-        assertEquals(Blocks.air, player.tileOn().block())
     }
 
     @Test

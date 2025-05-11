@@ -537,26 +537,6 @@ class Trigger {
         }
 
         scope.startInfiniteScheduler {
-            if (dpsTile != null) {
-                if (maxdps == null) {
-                    maxdps = 0f
-                } else if (dpsBlocks > maxdps!!) {
-                    maxdps = dpsBlocks
-                }
-                for (data in database.players) {
-                    Call.label(
-                        data.player.con(),
-                        data.bundle().get("command.dps", maxdps!!, dpsBlocks),
-                        1f,
-                        dpsTile!!.worldx(),
-                        dpsTile!!.worldy()
-                    )
-                }
-            } else {
-                maxdps = null
-            }
-            dpsBlocks = 0f
-
             players.forEach {
                 it.totalPlayed++
                 it.currentPlayTime++
@@ -675,15 +655,6 @@ class Trigger {
                     }
                 }
             }
-
-            if (dpsTile != null) {
-                if (dpsTile!!.build != null && dpsTile!!.block() != null) {
-                    dpsBlocks += (100000000f - dpsTile!!.build.health)
-                    dpsTile!!.build.health(100000000f)
-                } else {
-                    dpsTile = null
-                }
-            }
         }
 
         Timer.schedule(object : Timer.Task() {
@@ -729,8 +700,6 @@ class Trigger {
                         messageCount++
                     }
                 }
-
-                maxdps = null
             }
         }, 0f, 60f)
 

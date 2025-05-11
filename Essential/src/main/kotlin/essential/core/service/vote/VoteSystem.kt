@@ -9,9 +9,13 @@ import arc.util.Time
 import arc.util.Timer
 import essential.core.Event.earnEXP
 import essential.core.Event.findPlayerData
-import essential.core.Main.Companion.database
 import essential.core.Main.Companion.pluginData
-import essential.core.Permission
+import essential.database.data.PlayerData
+import essential.event.CustomEvents
+import essential.isSurrender
+import essential.isVoting
+import essential.permission.Permission
+import essential.players
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -41,7 +45,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
     private var worldLoadEvent: Cons<WorldLoadEvent>
 
     init {
-        fun sendMessage(playerData: DB.PlayerData?) {
+        fun sendMessage(playerData: PlayerData?) {
             if (playerData != null) {
                 val bundle = playerData.bundle()
                 playerData.send("command.vote.starter", voteData.starter.player.plainName())
@@ -67,7 +71,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
 
         voted.add(voteData.starter.player.uuid())
 
-        database.players.forEach {
+        players.forEach {
             if (isPvP) {
                 if (voteData.team == it.player.team()) {
                     sendMessage(findPlayerData(it.uuid))
@@ -82,7 +86,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                 val data = findPlayerData(player.uuid())
                 if (data != null) {
                     val isAdmin = Permission.check(data, "vote.pass")
-                    if (pluginData.voting && message.equals("y", true) && !voted.contains(player.uuid())) {
+                    if (isVoting && message.equals("y", true) && !voted.contains(player.uuid())) {
                         if (voteData.starter != data) {
                             if (Vars.state.rules.pvp && voteData.team == player.team()) {
                                 voted.add(player.uuid())
@@ -93,10 +97,10 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                             isAdminVote = true
                         }
                         data.send("command.vote.voted")
-                    } else if (pluginData.voting && message.equals("n", true) && isAdmin) {
+                    } else if (isVoting && message.equals("n", true) && isAdmin) {
                         isCanceled = true
                     }
-                    if (pluginData.voting && message.contains("y", true) && !voted.contains(player.uuid())) {
+                    if (isVoting && message.contains("y", true) && !voted.contains(player.uuid())) {
                         return@ChatFilter null
                     } else {
                         return@ChatFilter message
@@ -123,7 +127,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
     }
 
     fun send(message: String, vararg parameter: Any) {
-        database.players.forEach {
+        players.forEach {
             if (voteData.targetUUID != it.uuid) {
                 it.send(message, *parameter)
             }
@@ -132,7 +136,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
 
     fun check(): Int {
         return if (!isPvP) {
-            when (database.players.filterNot { it.afk }.size) {
+            when (players.filterNot { it.afk }.size) {
                 1 -> 1
                 in 2..4 -> 2
                 in 5..6 -> 3
@@ -143,7 +147,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                 else -> 8
             }
         } else {
-            when (database.players.count { a -> a.player.team() == voteData.team && !a.afk }) {
+            when (players.count { a -> a.player.team() == voteData.team && !a.afk }) {
                 1 -> 1
                 in 2..4 -> 2
                 in 5..6 -> 3
@@ -157,7 +161,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
     }
 
     override fun cancel() {
-        pluginData.voting = false
+        isVoting = false
         Vars.netServer.admins.chatFilters.remove(chatFilter)
         Events.remove(GameOverEvent::class.java, gameoverEvent)
         Events.remove(WorldLoadEvent::class.java, worldLoadEvent)
@@ -165,7 +169,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
     }
 
     override fun run() {
-        if (pluginData.voting) {
+        if (isVoting &&) {
             if (Groups.player.find { a -> a.uuid() == voteData.starter.uuid } == null) {
                 send("command.vote.canceled.leave")
                 this.cancel()
@@ -192,7 +196,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                     send("command.vote.success")
 
                     val onlinePlayers = StringBuilder()
-                    database.players.forEach {
+                    players.forEach {
                         onlinePlayers.append("${it.name}, ")
                     }
                     onlinePlayers.substring(0, onlinePlayers.length - 2)
@@ -226,10 +230,10 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         }
 
                         VoteType.Map -> {
-                            for (it in database.players) {
+                            for (it in players) {
                                 earnEXP(Vars.state.rules.waveTeam, it.player, it, true)
                             }
-                            pluginData.isSurrender = true
+                            isSurrender = true
                             Vars.maps.setNextMapOverride(voteData.map)
                             Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                         }
@@ -245,7 +249,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                                     }
                                 }
                             } else {
-                                pluginData.isSurrender = true
+                                isSurrender = true
                                 Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                             }
                         }
@@ -261,7 +265,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         }
 
                         VoteType.Back -> {
-                            pluginData.isSurrender = true
+                            isSurrender = true
                             val savePath: Fi = if (Core.settings.getBool("autosave")) {
                                 Vars.saveDirectory.findAll { f: Fi ->
                                     f.name().startsWith("auto_")
@@ -413,7 +417,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                     this.cancel()
                 } else if ((count == 0 && check() > voted.size) || isCanceled) {
                     if (isPvP) {
-                        database.players.forEach {
+                        players.forEach {
                             if (it.player.team() == voteData.team) {
                                 Core.app.post { it.send("command.vote.failed") }
                             }
