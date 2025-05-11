@@ -228,7 +228,6 @@ class Commands {
                             }
 
                             playerData.effectColor = arg[1]
-                            database.queue(playerData)
                         } catch (_: IllegalArgumentException) {
                             playerData.err("command.effect.no.color")
                         } catch (_: StringIndexOutOfBoundsException) {

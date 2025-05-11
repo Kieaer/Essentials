@@ -24,13 +24,13 @@ val bundle = Bundle()
 val rootPath: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
 
 /** Kotlin TimeSource */
-private val timeSource = TimeSource.Monotonic
+val timeSource = TimeSource.Monotonic
 
 /** 서버 시작 시간 */
 private val startupTime = timeSource.markNow()
 
 /** 맵이 시작된 시간 */
-private var mapStartTime = timeSource.markNow()
+var mapStartTime = timeSource.markNow()
 
 /** 서버가 켜져있는 시간 */
 var uptime = (timeSource.markNow() - startupTime).toHString()

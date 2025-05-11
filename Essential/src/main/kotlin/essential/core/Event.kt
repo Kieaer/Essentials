@@ -3,12 +3,12 @@ package essential.core
 import arc.ApplicationListener
 import arc.Core
 import arc.Events
-import arc.files.Fi
 import arc.func.Cons
 import arc.graphics.Color
 import arc.util.Log
 import arc.util.Strings
 import com.charleskorn.kaml.Yaml
+import essential.*
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.pluginData
@@ -20,8 +20,7 @@ import essential.database.data.plugin.WarpZone
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.permission.Permission
-import essential.players
-import essential.rootPath
+import essential.playTime
 import essential.util.currentTime
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -49,6 +48,7 @@ import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardWatchEventKinds
 import java.text.NumberFormat
+import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -380,8 +380,6 @@ object Event {
                 blockExp.put(two.name, buf.toUInt())
             }
 
-            dosBlacklist = Vars.netServer.admins.dosBlacklist.toList()
-
             Vars.netServer.admins.addChatFilter(Administration.ChatFilter { player, message ->
                 log(LogType.Chat, "${player.plainName()}: $message")
                 return@ChatFilter if (!message.startsWith("/")) {
@@ -712,10 +710,9 @@ object Event {
     @Event
     fun worldLoad() {
         Events.on(WorldLoadEvent::class.java, Cons<WorldLoadEvent> {
-            pluginData.playtime = 0L
-            pluginData.isSurrender = false
-            pluginData.isCheated = false
-            pluginData.currentMap = Vars.state.map.name()
+            mapStartTime = timeSource.markNow()
+            isSurrender = false
+            isCheated = false
             if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
 
             if (Vars.state.rules.pvp) {
@@ -729,12 +726,8 @@ object Event {
             }
 
             for (data in players) {
-                data.currentPlayTime = 0
-                data.currentUnitDestroyedCount = 0
-                data.currentBuildDestroyedCount = 0
-                data.currentBuildAttackCount = 0
-                data.currentControlCount = 0
-                data.currentBuildDeconstructedCount = 0
+                data.currentPlayTime = 0u
+                data.viewHistoryMode = false
             }
         }.also { listener -> eventListeners[WorldLoadEvent::class.java] = listener })
     }
@@ -743,7 +736,7 @@ object Event {
     fun connectPacket() {
         Events.on(ConnectPacketEvent::class.java, Cons<ConnectPacketEvent> {
             if (conf.feature.blacklist.enabled) {
-                pluginData.blacklist.forEach { text ->
+                pluginData.data.blacklistedNames.forEach { text ->
                     val pattern = Regex(text)
                     if ((conf.feature.blacklist.regex && pattern.matches(it.packet.name)) ||
                         !conf.feature.blacklist.regex && it.packet.name.contains(text)
@@ -791,7 +784,7 @@ object Event {
             if (Vars.state.rules.pvp && it.build.closestCore() == null && cores.contains(it.build.block)) {
                 for (data in players) {
                     if (data.player.team() == it.bullet.team) {
-                        data.pvpEliminationTeamCount++
+                        data.pvpEliminatedCount++
                     }
                     data.send("event.bullet.kill", it.bullet.team.coloredName(), it.build.team.coloredName())
                 }
@@ -836,31 +829,30 @@ object Event {
     @JvmStatic
     fun log(type: LogType, text: String, vararg name: String) {
         val maxLogFile = 20
-        val root: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
         val time = DateTimeFormatter.ofPattern("YYYY-MM-dd HH_mm_ss").format(LocalDateTime.now())
 
-        if (!Main.root.child("log/old/$type").exists()) {
-            Main.root.child("log/old/$type").mkdirs()
+        if (!rootPath.child("log/old/$type").exists()) {
+            rootPath.child("log/old/$type").mkdirs()
         }
-        if (!Main.root.child("log/$type.log").exists()) {
-            Main.root.child("log/$type.log").writeString("")
+        if (!rootPath.child("log/$type.log").exists()) {
+            rootPath.child("log/$type.log").writeString("")
         }
 
         if (type != LogType.Report) {
-            val new = Paths.get(root.child("log/$type.log").path())
-            val old = Paths.get(root.child("log/old/$type/$time.log").path())
+            val new = Paths.get(rootPath.child("log/$type.log").path())
+            val old = Paths.get(rootPath.child("log/old/$type/$time.log").path())
             var main = logFiles[type]
-            val folder = root.child("log")
+            val folder = rootPath.child("log")
 
             if (main != null && main.length() > 2048 * 1024) {
                 main.write("end of file. $time")
                 main.close()
                 try {
-                    if (!root.child("log/old/$type").exists()) {
-                        root.child("log/old/$type").mkdirs()
+                    if (!rootPath.child("log/old/$type").exists()) {
+                        rootPath.child("log/old/$type").mkdirs()
                     }
                     Files.move(new, old, StandardCopyOption.REPLACE_EXISTING)
-                    val logFiles = root.child("log/old/$type").file().listFiles { file -> file.name.endsWith(".log") }
+                    val logFiles = rootPath.child("log/old/$type").file().listFiles { file -> file.name.endsWith(".log") }
 
                     if (logFiles != null && logFiles.size >= maxLogFile) {
                         val zipFileName = "$time.zip"
@@ -891,7 +883,7 @@ object Event {
 
                             Files.move(
                                 Path(Core.files.external(zipFileName).absolutePath()),
-                                Path(root.child("log/old/$type/$zipFileName").absolutePath())
+                                Path(rootPath.child("log/old/$type/$zipFileName").absolutePath())
                             )
                         }
                     }
@@ -906,7 +898,7 @@ object Event {
                 main.write("[$time] $text")
             }
         } else {
-            val main = root.child("log/report/$time-${name[0]}.txt")
+            val main = rootPath.child("log/report/$time-${name[0]}.txt")
             main.writeString(text)
         }
     }
@@ -956,10 +948,10 @@ object Event {
                 database.queue(target)
             }
 
-            if (!root.child("data/exp.json").exists()) {
-                root.child("data/exp.json").writeString("[]")
+            if (!rootPath.child("data/exp.json").exists()) {
+                rootPath.child("data/exp.json").writeString("[]")
             }
-            val resultArray = JsonArray.readJSON(root.child("data/exp.json").readString("UTF-8")).asArray()
+            val resultArray = JsonArray.readJSON(rootPath.child("data/exp.json").readString("UTF-8")).asArray()
             val resultJson = JsonObject()
             resultJson.add("name", target.name)
             resultJson.add("uuid", target.uuid)
@@ -976,7 +968,7 @@ object Event {
             resultJson.add("totalScore", score * target.expMultiplier)
 
             resultArray.add(resultJson)
-            root.child("data/exp.json").writeString(resultArray.toString())
+            rootPath.child("data/exp.json").writeString(resultArray.toString())
         }
 
         if (isConnected && conf.feature.level.levelNotify) target.send("event.exp.current", target.exp, result, target.level, target.level - oldLevel)
@@ -1012,7 +1004,7 @@ object Event {
     @JvmStatic
     fun findPlayers(name: String): Playerc? {
         if (name.toIntOrNull() != null) {
-            database.players.forEach {
+            players.forEach {
                 if (it.entityid == name.toInt()) {
                     return it.player
                 }
