@@ -5,6 +5,7 @@ import arc.graphics.Colors
 import arc.util.Timer
 import essential.core.Main.Companion.conf
 import essential.database.data.PlayerData
+import essential.players
 import mindustry.Vars
 import mindustry.content.Fx
 import mindustry.entities.Effect
@@ -13,7 +14,14 @@ import mindustry.gen.Playerc
 import kotlin.random.Random
 
 class EffectSystem : Timer.Task() {
-    inner class EffectPos(val player: Playerc, val effect: Effect, val rotate: Float, val color: Color, vararg val random: IntRange)
+    inner class EffectPos(
+        val player: Playerc,
+        val effect: Effect,
+        val rotate: Float,
+        val color: Color,
+        vararg val random: IntRange
+    )
+
     var buffer = ArrayList<EffectPos>()
 
     fun effect(data: PlayerData) {
@@ -232,18 +240,16 @@ class EffectSystem : Timer.Task() {
 
     override fun run() {
         if (Vars.state.isPlaying) {
-            if (!pluginData.effectLocal) {
+            if (conf.feature.level.effect.enabled) {
                 val target = ArrayList<Playerc>()
-                database.players.forEach {
-                    if (conf.feature.level.effect.enabled) {
-                        if (it.showLevelEffects) {
-                            effect(it)
-                            if (it.player.unit() != null && it.player.unit().health > 0f) {
-                                if (conf.feature.level.effect.moving && it.player.unit().moving()) {
-                                    target.add(it.player)
-                                } else if (!conf.feature.level.effect.moving) {
-                                    target.add(it.player)
-                                }
+                players.forEach {
+                    if (it.effectVisibility) {
+                        effect(it)
+                        if (it.player.unit() != null && it.player.unit().health > 0f) {
+                            if (conf.feature.level.effect.moving && it.player.unit().moving()) {
+                                target.add(it.player)
+                            } else if (!conf.feature.level.effect.moving) {
+                                target.add(it.player)
                             }
                         }
                     }

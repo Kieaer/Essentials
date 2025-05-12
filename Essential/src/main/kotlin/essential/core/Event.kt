@@ -15,8 +15,13 @@ import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.core.annotation.Event
 import essential.database.data.PlayerData
+import essential.database.data.createBanInfo
+import essential.database.data.createPlayerData
 import essential.database.data.getPlayerData
 import essential.database.data.plugin.WarpZone
+import essential.database.data.removeBanInfoByIP
+import essential.database.data.removeBanInfoByUUID
+import essential.database.data.update
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.permission.Permission
@@ -57,6 +62,7 @@ import java.util.regex.Pattern
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
+import kotlin.time.Duration.Companion.minutes
 
 
 object Event {
@@ -66,8 +72,7 @@ object Event {
     var worldHistory = ArrayList<TileLog>()
 
     private var dateformat = SimpleDateFormat("HH:mm:ss")
-    var blockExp = mutableMapOf<String, UInt>()
-    var dosBlacklist = mutableListOf<String>()
+    var blockExp = mutableMapOf<String, Int>()
     /** PvP 관전 플레이어 목록 */
     var pvpSpecters = mutableListOf<String>()
     /** PvP 플레이어 팀 데이터 목록 */
@@ -306,7 +311,9 @@ object Event {
                             )
                         )
                         player.sendMessage(bundle["command.hub.zone.added", "$x:$y", ip, if (touch) bundle["command.hub.zone.clickable"] else bundle["command.hub.zone.enter"]])
-                        pluginData.save(false)
+                        scope.launch {
+                            pluginData.update()
+                        }
                     }
 
                     Call.menu(
@@ -330,24 +337,6 @@ object Event {
                 }
             }
         }.also { listener -> eventListeners[TapEvent::class.java] = listener })
-    }
-
-    @Event
-    fun pickup() {
-        Events.on(PickupEvent::class.java, Cons<PickupEvent> {
-        }.also { listener -> eventListeners[PickupEvent::class.java] = listener })
-    }
-
-    @Event
-    fun unitControl() {
-        Events.on(UnitControlEvent::class.java, Cons<UnitControlEvent> {
-        }.also { listener -> eventListeners[UnitControlEvent::class.java] = listener })
-    }
-
-    @Event
-    fun buildingCommand() {
-        Events.on(BuildingCommandEvent::class.java, Cons<BuildingCommandEvent> {
-        }.also { listener -> eventListeners[BuildingCommandEvent::class.java] = listener })
     }
 
     @Event
@@ -377,7 +366,7 @@ object Event {
                 two.requirements.forEach { item ->
                     buf += item.amount
                 }
-                blockExp.put(two.name, buf.toUInt())
+                blockExp.put(two.name, buf)
             }
 
             Vars.netServer.admins.addChatFilter(Administration.ChatFilter { player, message ->
@@ -415,16 +404,10 @@ object Event {
                         val trigger = Trigger()
                         if (data == null) {
                             newSuspendedTransaction {
-                                if (PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }
-                                        .empty()) {
-                                    Core.app.post { trigger.createPlayer(it.player, null, null) }
+                                if (PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()) {
+                                    createPlayerData(it.player)
                                 } else {
-                                    Core.app.post {
-                                        it.player.con.kick(
-                                            Bundle(it.player.locale)["event.player.name.duplicate"],
-                                            0L
-                                        )
-                                    }
+                                    Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
                                 }
                             }
                         } else {
@@ -687,7 +670,9 @@ object Event {
                     it.uuid
                 ).names.first()]
             )
-            database.addBan(Vars.netServer.admins.getInfo(it.uuid))
+            scope.launch {
+                createBanInfo(Vars.netServer.admins.getInfo(it.uuid), null)
+            }
         }.also { listener -> eventListeners[PlayerBanEvent::class.java] = listener })
     }
 
@@ -695,7 +680,9 @@ object Event {
     fun playerUnban() {
         Events.on(PlayerUnbanEvent::class.java, Cons<PlayerUnbanEvent> {
             Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.getInfo(it.uuid).lastName, currentTime()))
-            database.removeBan(Vars.netServer.admins.getInfo(it.uuid))
+            scope.launch {
+                removeBanInfoByUUID(it.uuid)
+            }
         }.also { listener -> eventListeners[PlayerUnbanEvent::class.java] = listener })
     }
 
@@ -703,7 +690,9 @@ object Event {
     fun playerIpUnban() {
         Events.on(PlayerIpUnbanEvent::class.java, Cons<PlayerIpUnbanEvent> {
             Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.findByIP(it.ip).lastName, currentTime()))
-            database.removeBan(Vars.netServer.admins.findByIP(it.ip))
+            scope.launch {
+                removeBanInfoByIP(it.ip)
+            }
         }.also { listener -> eventListeners[PlayerIpUnbanEvent::class.java] = listener })
     }
 
@@ -858,7 +847,7 @@ object Event {
                         val zipFileName = "$time.zip"
                         val zipOutputStream = ZipOutputStream(FileOutputStream(zipFileName))
 
-                        daemon.submit {
+                        scope.launch {
                             for (logFile in logFiles) {
                                 val entryName = logFile.name
                                 val zipEntry = ZipEntry(entryName)
@@ -910,9 +899,9 @@ object Event {
     fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) {
         val oldLevel = target.level
         var result: Int = target.currentExp
-        val time = target.currentPlayTime.toInt()
+        val time = target.currentPlayTime
 
-        if (pluginData.playTime > 300L) {
+        if (mapStartTime.plus(5.minutes).hasPassedNow()) {
             val erekirAttack = if (Vars.state.planet == Planets.erekir) target.currentUnitDestroyedCount else 0
             val erekirPvP = if (Vars.state.planet == Planets.erekir) 5000 else 0
 
@@ -941,12 +930,6 @@ object Event {
 
             Commands.Exp[target]
             target.currentExp = 0
-
-            if (!isConnected && target.oldUUID != null) {
-                target.uuid = target.oldUUID!!
-                target.oldUUID = null
-                database.queue(target)
-            }
 
             if (!rootPath.child("data/exp.json").exists()) {
                 rootPath.child("data/exp.json").writeString("[]")

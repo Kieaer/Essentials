@@ -9,13 +9,15 @@ import arc.util.Time
 import arc.util.Timer
 import essential.core.Event.earnEXP
 import essential.core.Event.findPlayerData
-import essential.core.Main.Companion.pluginData
 import essential.database.data.PlayerData
 import essential.event.CustomEvents
 import essential.isSurrender
 import essential.isVoting
+import essential.nextVoteAvailable
 import essential.permission.Permission
 import essential.players
+import essential.timeSource
+import essential.voterCooldown
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -26,12 +28,11 @@ import mindustry.game.EventType.WorldLoadEvent
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.io.SaveIO
-import mindustry.maps.Map
 import mindustry.net.Administration
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
-import java.time.LocalTime
 import java.util.*
+import kotlin.time.Duration.Companion.minutes
 
 class VoteSystem(val voteData: VoteData) : Timer.Task() {
     private var count = 60
@@ -169,7 +170,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
     }
 
     override fun run() {
-        if (isVoting &&) {
+        if (isVoting) {
             if (Groups.player.find { a -> a.uuid() == voteData.starter.uuid } == null) {
                 send("command.vote.canceled.leave")
                 this.cancel()
@@ -240,7 +241,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
 
                         VoteType.GameOver -> {
                             if (!Permission.check(voteData.starter, "vote.pass")) {
-                                pluginData.voterCooltime[voteData.starter.uuid] = 180
+                                voterCooldown[voteData.starter.uuid] = timeSource.markNow().plus(3.minutes)
                             }
                             if (isPvP) {
                                 Vars.world.tiles.forEach {
@@ -255,7 +256,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         }
 
                         VoteType.Skip -> {
-                            pluginData.voterCooltime[voteData.starter.uuid] = 180
+                            voterCooldown[voteData.starter.uuid] = timeSource.markNow().plus(3.minutes)
                             for (a in 0..voteData.wave!!) {
                                 Vars.spawner.spawnEnemies()
                                 Vars.state.wave++
@@ -293,13 +294,12 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         }
 
                         VoteType.Random -> {
-                            if (pluginData.lastVoted != null && LocalTime.now().isAfter(pluginData.lastVoted!!.plusMinutes(10L)) && !Permission.check(voteData.starter, "vote.random.bypass")) {
+                            if (nextVoteAvailable.hasPassedNow() && !Permission.check(voteData.starter, "vote.random.bypass")) {
                                 send("command.vote.random.cool")
                             } else {
-                                pluginData.voterCooltime[voteData.starter.uuid] = 420
-                                pluginData.lastVoted = LocalTime.now()
+                                voterCooldown[voteData.starter.uuid] = timeSource.markNow().plus(7.minutes)
+                                nextVoteAvailable = timeSource.markNow().plus(5.minutes)
                                 send("command.vote.random.done")
-                                var map: Map
                                 send("command.vote.random.is")
                                 Time.runTask(180f, object : Timer.Task() {
                                     override fun run() {

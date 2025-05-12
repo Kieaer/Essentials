@@ -17,10 +17,16 @@ import essential.core.Event.findPlayers
 import essential.core.Event.findPlayersByName
 import essential.core.Event.worldHistory
 import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.scope
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
 import essential.database.data.PlayerData
+import essential.database.data.update
+import essential.database.table.PlayerTable
+import essential.event.CustomEvents
+import essential.permission.Permission
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Weathers
@@ -31,7 +37,6 @@ import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
-import mindustry.gen.Playerc
 import mindustry.gen.Unit
 import mindustry.maps.Map
 import mindustry.net.Packets
@@ -41,6 +46,7 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.sql.Timestamp
 import java.time.LocalDateTime
@@ -62,7 +68,7 @@ class Commands {
     }
 
     @ClientCommand("changemap", "<name> [gamemode]", "Change the world or gamemode immediately.")
-    fun changemap(playerData: PlayerData, arg: Array<out String>) {
+    fun changeMap(playerData: PlayerData, arg: Array<out String>) {
         val arr = HashMap<Int, Map>()
         Vars.maps.all().sortedBy { a -> a.name() }.forEachIndexed { index, map ->
             arr[index] = map
@@ -97,7 +103,7 @@ class Commands {
     }
 
     @ClientCommand("changename", "<target> <new_name>", "Change player name")
-    fun changeName(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun changeName(playerData: PlayerData, arg: Array<out String>) {
         fun change(data: PlayerData) {
             transaction {
                 if (PlayerTable.select(PlayerTable.name).where(PlayerTable.name eq (arg[1])).toList().isNotEmpty()) {
@@ -110,8 +116,7 @@ class Commands {
                         data.send("command.changename.apply.other", data.name, arg[1])
                     }
                     data.name = arg[1]
-                    if (data.player != null) data.player.name(arg[1])
-                    database.queue(data)
+                    data.player.name(arg[1])
                 }
             }
             return
@@ -136,22 +141,22 @@ class Commands {
     }
 
     @ClientCommand("changepw", "<new_password> <password_repeat>", "Change account password.")
-    fun changePassword(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun changePassword(playerData: PlayerData, arg: Array<out String>) {
         if (arg[0] != arg[1]) {
             playerData.err("command.changepw.same")
             return
         }
 
-        daemon.submit {
+        scope.launch {
             val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
             playerData.accountPW = password
-            database.queue(playerData)
+            playerData.update()
             Core.app.post { playerData.send("command.changepw.apply") }
         }
     }
 
     @ClientCommand("chat", "<on/off>", "Mute all players without admins")
-    fun chat(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun chat(playerData: PlayerData, arg: Array<out String>) {
         Event.isGlobalMute = arg[0].equals("off", true)
         if (Event.isGlobalMute) {
             playerData.send("command.chat.off")
@@ -172,7 +177,7 @@ class Commands {
     }
 
     @ClientCommand("chars", "<text...>", "Make pixel texts on ground.")
-    fun chars(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun chars(playerData: PlayerData, arg: Array<out String>) {
         if (Vars.world != null) {
             fun convert(text: String): Array<String>? {
                 return try {
@@ -207,7 +212,7 @@ class Commands {
     }
 
     @ClientCommand(name = "color", description = "Enable color nickname")
-    fun color(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun color(playerData: PlayerData, arg: Array<out String>) {
         playerData.animatedName = !playerData.animatedName
     }
 
@@ -216,11 +221,11 @@ class Commands {
         "<on/off/level> [color]",
         "Turn other players' effects on or off, or set effects and colors for each level."
     )
-    fun effect(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun effect(playerData: PlayerData, arg: Array<out String>) {
         when {
-            arg[0].toIntOrNull() != null -> {
+            arg[0].toUShortOrNull() != null -> {
                 if (arg[0].toInt() <= playerData.level) {
-                    playerData.effectLevel = arg[0].toInt()
+                    playerData.effectLevel = arg[0].toUShortOrNull()
                     if (arg.size == 2) {
                         try {
                             if (Colors.get(arg[1]) == null) {
@@ -234,18 +239,19 @@ class Commands {
                             playerData.err("command.effect.no.color")
                         }
                     }
+                    scope.launch { playerData.update() }
                 } else {
                     playerData.err("command.effect.level")
                 }
             }
 
             arg[0] == "off" -> {
-                playerData.showLevelEffects = false
+                playerData.effectVisibility = false
                 playerData.send("command.effect.off")
             }
 
             arg[0] == "on" -> {
-                playerData.showLevelEffects = true
+                playerData.effectVisibility = true
                 playerData.send("command.effect.on")
             }
 
@@ -256,7 +262,7 @@ class Commands {
     }
 
     @ClientCommand("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account exp values")
-    fun exp(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun exp(playerData: PlayerData, arg: Array<out String>) {
         fun set(exp: Int?, type: String) {
             fun set(data: PlayerData) {
                 val previous = data.exp
@@ -265,7 +271,7 @@ class Commands {
                     "add" -> data.exp += arg[1].toInt()
                     "remove" -> data.exp -= arg[1].toInt()
                 }
-                database.queue(data)
+                scope.launch { playerData.update() }
                 playerData.send("command.exp.result", previous, data.exp)
             }
 
@@ -316,7 +322,7 @@ class Commands {
                         val other = findPlayerData(target.uuid())
                         if (other != null) {
                             other.hideRanking = !other.hideRanking
-                            database.queue(other)
+                            scope.launch { other.update() }
                             val msg = if (other.hideRanking) "hide" else "unhide"
                             playerData.send("command.exp.ranking.$msg")
                             return
@@ -328,7 +334,7 @@ class Commands {
                 }
 
                 playerData.hideRanking = !playerData.hideRanking
-                database.queue(playerData)
+                scope.launch { playerData.update() }
                 val msg = if (playerData.hideRanking) "hide" else "unhide"
                 playerData.send("command.exp.ranking.$msg")
             }
@@ -356,7 +362,7 @@ class Commands {
     }
 
     @ClientCommand("fillitems", "[team]", "Fill the core with items.")
-    fun fillItems(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun fillItems(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
             if (Vars.state.teams.cores(player.team()).isEmpty) {
                 playerData.err("command.fillitems.core.empty")
@@ -386,7 +392,7 @@ class Commands {
     }
 
     @ClientCommand("freeze", "<player>", "Stop player unit movement")
-    fun freezeClient(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun freezeClient(playerData: PlayerData, arg: Array<out String>) {
         val target = findPlayers(arg[0])
         if (target != null) {
             val data = findPlayerData(target.uuid())
@@ -433,7 +439,7 @@ class Commands {
     }
 
     @ClientCommand("gg", "[team]", "Make game over immediately.")
-    fun gg(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun gg(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
             Events.fire(EventType.GameOverEvent(Vars.state.rules.waveTeam))
         } else {
@@ -442,13 +448,13 @@ class Commands {
     }
 
     @ClientCommand("god", "[player]", "Set max player health")
-    fun god(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun god(playerData: PlayerData, arg: Array<out String>) {
         player.unit().health(1.0E8f)
         playerData.send("command.god")
     }
 
     @ClientCommand("help", "[page]", "Show command lists")
-    fun help(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun help(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {
             try {
                 playerData.send("command.help.${arg[0]}")
@@ -497,7 +503,7 @@ class Commands {
     }
 
     @ClientCommand("hud", "<health/apm>", "Enable information on screen")
-    fun hud(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun hud(playerData: PlayerData, arg: Array<out String>) {
         val status = if (playerData.hud != null) JsonObject.readJSON(playerData.hud).asArray() else JsonArray()
 
         fun remove(text: String) {
@@ -542,7 +548,7 @@ class Commands {
     }
 
     @ClientCommand("info", "[player...]", "Show player info")
-    fun info(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun info(playerData: PlayerData, arg: Array<out String>) {
         val bundle = if (playerData.status.containsKey("language")) {
             Bundle(playerData.status["language"]!!)
         } else {
@@ -574,18 +580,21 @@ class Commands {
                 ${bundle["command.info.joindate"]}: ${
                 Timestamp(target.firstPlayDate).toLocalDateTime().format(
                     DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss")
-                )}
+                )
+            }
                 ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, timeBundleFormat)}
                 ${bundle["command.info.playtime.current"]}: ${
                 timeFormat(
                     target.currentPlayTime,
                     "$timeBundleFormat.minimal"
-                )}
+                )
+            }
                 ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
                 ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${
                 if (target.pvpVictoriesCount + target.pvpDefeatCount != 0) round(
                     target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100
-                ) else 0}%[white])
+                ) else 0
+            }%[white])
                 ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
                 Discord: ${if (target.discord != null) target.discord else "none"}
                 """.trimIndent()
@@ -690,12 +699,13 @@ class Commands {
                                     val tempBanConfirmMenu = Menus.registerMenu { _, i ->
                                         if (i == 0) {
                                             targetData!!.banTime = time.toString()
-                                            database.queue(targetData!!)
+                                            scope.launch { targetData.update() }
                                             Events.fire(
                                                 CustomEvents.PlayerTempBanned(
                                                     targetData!!.name,
                                                     p.plainName(),
-                                                    LocalDateTime.now().plusMinutes(time.toLong()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                                    LocalDateTime.now().plusMinutes(time.toLong())
+                                                        .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                                                 )
                                             )
                                             banPlayer(targetData)
@@ -749,7 +759,7 @@ class Commands {
                         val unbanConfirmMenu = Menus.registerMenu { _, i ->
                             if (i == 0) {
                                 targetData!!.banTime = null
-                                database.queue(targetData!!)
+                                scope.launch { targetData.update() }
                                 unbanPlayer(targetData)
                                 Events.fire(CustomEvents.PlayerUnbanned(targetData!!.name, currentTime()))
                                 playerData.send("log.player.unbanned", targetData!!.name, targetData!!.uuid)
@@ -774,7 +784,8 @@ class Commands {
 
             // todo 특정 플레이어 조회 안됨
             if (target != null) {
-                isBanned = (Vars.netServer.admins.isIDBanned(target.uuid()) || Vars.netServer.admins.isIPBanned(target.con().address))
+                isBanned =
+                    (Vars.netServer.admins.isIDBanned(target.uuid()) || Vars.netServer.admins.isIPBanned(target.con().address))
                 val banned = "\n${bundle["info.banned"]}: $isBanned"
                 val other = findPlayerData(target.uuid())
                 if (other != null) {
@@ -837,7 +848,7 @@ class Commands {
     }
 
     @ClientCommand("js", "[code...]", "Execute JavaScript code")
-    fun js(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun js(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
             playerData.err("command.js.invalid")
         } else {
@@ -855,7 +866,7 @@ class Commands {
     }
 
     @ClientCommand("kickall", description = "Kick all players without you.")
-    fun kickAll(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun kickAll(playerData: PlayerData, arg: Array<out String>) {
         Groups.player.forEach {
             if (!it.admin) it.kick(Packets.KickReason.kick)
         }
@@ -873,7 +884,7 @@ class Commands {
     }
 
     @ClientCommand("kill", "[player]", "Kill player's unit.")
-    fun kill(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun kill(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
             player.unit().kill()
             playerData.send("command.kill.self")
@@ -904,7 +915,7 @@ class Commands {
     }
 
     @ClientCommand("killall", "[team]", "Kill all enemy units")
-    fun killAll(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun killAll(playerData: PlayerData, arg: Array<out String>) {
         val count: Int
         if (arg.isEmpty()) {
             count = Groups.unit.size()
@@ -937,7 +948,7 @@ class Commands {
     }
 
     @ClientCommand("killunit", "<name> [amount] [team]", "Destroy specific units")
-    fun killUnit(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun killUnit(playerData: PlayerData, arg: Array<out String>) {
         val unit = Vars.content.units().find { unitType: UnitType -> unitType.name == arg[0] }
 
         fun destroy(team: Team) {
@@ -1023,15 +1034,15 @@ class Commands {
     }
 
     @ClientCommand("lang", description = "Set the plugin language from current game language")
-    fun lang(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun lang(playerData: PlayerData, arg: Array<out String>) {
         playerData.languageTag = player.locale()
         playerData.status["language"] = player.locale()
-        database.queue(playerData)
+        scope.launch { playerData.update() }
         playerData.send("command.language.set", Locale(playerData.languageTag).language)
     }
 
     @ClientCommand("log", description = "Enable block history view mode")
-    fun log(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun log(playerData: PlayerData, arg: Array<out String>) {
         playerData.log = !playerData.log
         val msg = if (playerData.log) {
             "enabled"
@@ -1042,7 +1053,7 @@ class Commands {
     }
 
     @ClientCommand("maps", "[page]", "Show server map lists")
-    fun maps(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun maps(playerData: PlayerData, arg: Array<out String>) {
         val list = Vars.maps.all().sortedBy { a -> a.name() }
         val bundle = if (playerData.status.containsKey("language")) {
             Bundle(playerData.status["language"]!!)
@@ -1098,7 +1109,7 @@ class Commands {
     }
 
     @ClientCommand("meme", "<type>", "Enjoy mindustry meme features!")
-    fun meme(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun meme(playerData: PlayerData, arg: Array<out String>) {
         when (arg[0]) {
             "router" -> {
                 val zero = arrayOf(
@@ -1246,7 +1257,7 @@ class Commands {
     }
 
     @ClientCommand("motd", description = "Show server's message of the day")
-    fun motd(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun motd(playerData: PlayerData, arg: Array<out String>) {
         val motd = if (root.child("motd/${player.locale()}.txt").exists()) {
             root.child("motd/${player.locale()}.txt").readString()
         } else {
@@ -1262,13 +1273,13 @@ class Commands {
     }
 
     @ClientCommand("mute", "<player>", "Mute player")
-    fun mute(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun mute(playerData: PlayerData, arg: Array<out String>) {
         val other = findPlayers(arg[0])
         if (other != null) {
             val target = findPlayerData(other.uuid())
             if (target != null) {
-                target.mute = true
-                database.queue(target)
+                target.chatMuted = true
+                scope.launch { target.update() }
                 playerData.send("command.mute", target.name)
             } else {
                 playerData.err(PLAYER_NOT_FOUND)
@@ -1321,7 +1332,7 @@ class Commands {
     }
 
     @ClientCommand("pause", description = "Pause or Unpause map")
-    fun pause(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun pause(playerData: PlayerData, arg: Array<out String>) {
         if (Vars.state.isPaused) {
             Vars.state.set(GameState.State.playing)
             playerData.send("command.pause.unpaused")
@@ -1332,7 +1343,7 @@ class Commands {
     }
 
     @ClientCommand("players", "[page]", "Show current players list")
-    fun players(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun players(playerData: PlayerData, arg: Array<out String>) {
         val bundle = if (playerData.status.containsKey("language")) {
             Bundle(playerData.status["language"]!!)
         } else {
@@ -1387,7 +1398,7 @@ class Commands {
     }
 
     @ClientCommand("ranking", "<time/exp/attack/place/break/pvp> [page]", "Show player ranking")
-    fun ranking(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun ranking(playerData: PlayerData, arg: Array<out String>) {
         val bundle = if (playerData.status.containsKey("language")) {
             Bundle(playerData.status["language"]!!)
         } else {
@@ -1564,7 +1575,7 @@ class Commands {
     }
 
     @ClientCommand("rollback", "<player>", "Undo all actions taken by the player.")
-    fun rollback(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun rollback(playerData: PlayerData, arg: Array<out String>) {
         val buffer = worldHistory.toTypedArray()
 
         buffer.forEach {
@@ -1600,7 +1611,7 @@ class Commands {
     }
 
     @ClientCommand("hub", "<parameter> [ip] [parameters...]", "Create a server to server point.")
-    fun hub(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun hub(playerData: PlayerData, arg: Array<out String>) {
         val type = arg[0]
         val x = player.tileX()
         val y = player.tileY()
@@ -1704,7 +1715,7 @@ class Commands {
     }
 
     @ClientCommand("setitem", "<item> <amount> [team]", "Set item to team core")
-    fun setItem(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun setItem(playerData: PlayerData, arg: Array<out String>) {
         fun set(item: Item) {
             fun s(team: Team) {
                 team.core().items[item] =
@@ -1741,7 +1752,7 @@ class Commands {
     }
 
     @ClientCommand("setperm", "<player> <group>", "Set the player's permission group.")
-    fun setPerm(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun setPerm(playerData: PlayerData, arg: Array<out String>) {
         // todo permission.yml 같이 수정
         val target = findPlayers(arg[0])
         if (target != null) {
@@ -1800,7 +1811,7 @@ class Commands {
     }
 
     @ClientCommand("skip", "<wave>", "Start n wave immediately")
-    fun skip(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun skip(playerData: PlayerData, arg: Array<out String>) {
         val wave = arg[0].toIntOrNull()
         if (wave != null) {
             if (wave > 0) {
@@ -1826,7 +1837,7 @@ class Commands {
         "<unit/block> <name> [amount(rotate)/block_team] [unit_team]",
         "Spawn units or block at the player's current location."
     )
-    fun spawn(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun spawn(playerData: PlayerData, arg: Array<out String>) {
         val type = arg[0]
         val name = arg[1]
         val parameter = if (arg.size == 3) {
@@ -1883,12 +1894,13 @@ class Commands {
     }
 
     @ClientCommand("status", description = "Show current server status")
-    fun status(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun status(playerData: PlayerData, arg: Array<out String>) {
         val bundle = if (playerData.status.containsKey("language")) {
             Bundle(playerData.status["language"]!!)
         } else {
             Bundle(player.locale())
         }
+
         fun longToTime(seconds: Long): String {
             val min = seconds / 60
             val hour = min / 60
@@ -1952,7 +1964,7 @@ class Commands {
     }
 
     @ClientCommand("strict", "<player>", "Set whether the target player can build or not.")
-    fun strict(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun strict(playerData: PlayerData, arg: Array<out String>) {
         val other = findPlayers(arg[0])
         if (other != null) {
             val target = findPlayerData(other.uuid())
@@ -1995,7 +2007,7 @@ class Commands {
     }
 
     @ClientCommand("t", "<message...>", "Send a meaage only to your teammates.")
-    fun t(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun t(playerData: PlayerData, arg: Array<out String>) {
         if (!playerData.mute) {
             Groups.player.each({ p -> p.team() === player.team() }) { o ->
                 o.sendMessage("[#" + player.team().color.toString() + "]<T>[] ${player.coloredName()} [orange]>[white] ${arg[0]}")
@@ -2004,7 +2016,7 @@ class Commands {
     }
 
     @ClientCommand("team", "<team> [name]", "Set player team")
-    fun team(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun team(playerData: PlayerData, arg: Array<out String>) {
         val team = selectTeam(arg[0])
 
         if (arg.size == 1) {
@@ -2061,7 +2073,7 @@ class Commands {
     }
 
     @ClientCommand("time", description = "Show current server time")
-    fun time(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun time(playerData: PlayerData, arg: Array<out String>) {
         val now = LocalDateTime.now()
         // todo time format 통합
         val dateTimeFormatter =
@@ -2070,7 +2082,7 @@ class Commands {
     }
 
     @ClientCommand("tp", "<player>", "Teleport to other players")
-    fun tp(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun tp(playerData: PlayerData, arg: Array<out String>) {
         val other = findPlayers(arg[0])
 
         if (other == null) {
@@ -2083,7 +2095,7 @@ class Commands {
     }
 
     @ClientCommand("tpp", "[player]", "Lock on camera the target player")
-    fun tpp(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun tpp(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isEmpty() && playerData.tpp != null && playerData.tppTeam != null) {
             player.team(Team.get(playerData.tppTeam!!))
 
@@ -2112,14 +2124,14 @@ class Commands {
     }
 
     @ClientCommand("track", description = "Display the mouse positions of players.")
-    fun track(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun track(playerData: PlayerData, arg: Array<out String>) {
         playerData.tracking = !playerData.tracking
         val msg = if (!playerData.tracking) ".disabled" else ""
         playerData.send("command.track.toggle$msg")
     }
 
     @ClientCommand("unban", "<player>", "Unban player")
-    fun unban(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun unban(playerData: PlayerData, arg: Array<out String>) {
         if (!Vars.netServer.admins.unbanPlayerID(arg[0])) {
             if (!Vars.netServer.admins.unbanPlayerIP(arg[0])) {
                 playerData.err(PLAYER_NOT_FOUND)
@@ -2132,7 +2144,7 @@ class Commands {
     }
 
     @ClientCommand("unmute", "<player>", "Unmute player")
-    fun unmute(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun unmute(playerData: PlayerData, arg: Array<out String>) {
         val other = findPlayers(arg[0])
         if (other != null) {
             val target = findPlayerData(other.uuid())
@@ -2191,7 +2203,7 @@ class Commands {
     }
 
     @ClientCommand("url", "<command>", "Opens a URL contained in a specific command.")
-    fun url(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun url(playerData: PlayerData, arg: Array<out String>) {
         // todo url 목록을 읽고 추가하는 기능 만들기
         when (arg[0]) {
             "effect" -> {
@@ -2206,7 +2218,7 @@ class Commands {
     }
 
     @ClientCommand("weather", "<weather> <seconds>", "Adds a weather effect to the map.")
-    fun weather(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun weather(playerData: PlayerData, arg: Array<out String>) {
         val weather = when (arg[0]) {
             "snow" -> Weathers.snow
             "sandstorm" -> Weathers.sandstorm
@@ -2230,7 +2242,7 @@ class Commands {
     }
 
     @ClientCommand("vote", "<kick/map/gg/skip/back/random> [player/amount/world] [reason]", "Start voting")
-    fun vote(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun vote(playerData: PlayerData, arg: Array<out String>) {
         val cooltime = "command.vote.cooltime"
         val noReason = "command.vote.no.reason"
         val mapNotFound = "command.vote.map.not.exists"
@@ -2432,7 +2444,7 @@ class Commands {
     }
 
     @ClientCommand("votekick", "<player>", "Start kick voting")
-    fun votekick(player: Playerc, playerData: PlayerData, arg: Array<out String>) {
+    fun votekick(playerData: PlayerData, arg: Array<out String>) {
         if (arg[0].contains("#")) {
             val target = database.players.find { e ->
                 e.uuid == Groups.player.find { p -> p.id() == arg[0].substring(1).toInt() }.uuid()
@@ -2504,7 +2516,8 @@ class Commands {
             for (functions in this::class.declaredFunctions) {
                 val annotation = functions.findAnnotation<ClientCommand>()
                 if (annotation != null) {
-                    val temp = "| ${annotation.name} | ${StringUtils().encodeHtml(annotation.parameter)} | ${annotation.description} |\n"
+                    val temp =
+                        "| ${annotation.name} | ${StringUtils().encodeHtml(annotation.parameter)} | ${annotation.description} |\n"
                     result.append(temp)
                 }
             }
@@ -2515,7 +2528,8 @@ class Commands {
             for (functions in this::class.declaredFunctions) {
                 val annotation = functions.findAnnotation<ServerCommand>()
                 if (annotation != null) {
-                    val temp = "| ${annotation.name} | ${StringUtils().encodeHtml(annotation.parameter)} | ${annotation.description} |\n"
+                    val temp =
+                        "| ${annotation.name} | ${StringUtils().encodeHtml(annotation.parameter)} | ${annotation.description} |\n"
                     result.append(temp)
                 }
             }

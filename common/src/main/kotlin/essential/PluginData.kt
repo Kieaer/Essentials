@@ -38,14 +38,11 @@ var uptime = (timeSource.markNow() - startupTime).toHString()
 /** 현재 플레이 중인 맵 시간 */
 var playTime = (timeSource.markNow() - mapStartTime).toHString()
 
-/** 마지막으로 투표 한 시간 */
-var lastVoted: TimeMark = timeSource.markNow()
-
 /** 투표 가능 유무 */
-var nextVoteAvailable = lastVoted.hasPassedNow()
+var nextVoteAvailable : TimeMark = timeSource.markNow()
 
 /** 플레이어별 남은 투표 시간 (UUID, Time) */
-var voterCooldown = mapOf<String, TimeMark>()
+var voterCooldown = mutableMapOf<String, TimeMark>()
 
 /** 현재 투표 진행 유무 */
 var isVoting = false
@@ -69,7 +66,6 @@ fun getPluginDataInfo(): String {
         |startupTime: $startupTime
         |uptime: $uptime
         |playTime: $playTime
-        |lastVoted: $lastVoted
         |nextVoteAvailable: $nextVoteAvailable
         |voterCooldown: $voterCooldown
         |isVoting: $isVoting

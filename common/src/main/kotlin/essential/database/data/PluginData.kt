@@ -30,7 +30,8 @@ data class DisplayData(
 )
 
 /** 플러그인 데이터 업데이트 */
-suspend fun PluginData.update(displayData: DisplayData) {
+suspend fun PluginData.update() {
+    val displayData = this.data
     newSuspendedTransaction {
         PluginTable.update {
             it[PluginTable.pluginVersion] = Vars.mods.getMod("Essential").meta.version

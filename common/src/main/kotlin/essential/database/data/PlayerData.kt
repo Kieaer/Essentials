@@ -52,8 +52,8 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
     var attendanceDays by PlayerTable.attendanceDays
 
     var expMultiplier: Double = 1.0
-    var currentExp: UInt = 0u
-    var currentPlayTime: UInt = 0u
+    var currentExp: Int = 0
+    var currentPlayTime: Int = 0
 
     var afk = false
     var afkTime: UShort = 0u
@@ -96,11 +96,11 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
 }
 
 /** 플레이어 데이터 생성 */
-suspend fun create(player: Playerc) : PlayerData {
-    return create(player.name(), player.uuid())
+suspend fun createPlayerData(player: Playerc) : PlayerData {
+    return createPlayerData(player.name(), player.uuid())
 }
 
-suspend fun create(name: String, uuid: String) : PlayerData {
+suspend fun createPlayerData(name: String, uuid: String) : PlayerData {
     return newSuspendedTransaction {
         PlayerData.new {
             this.name = name

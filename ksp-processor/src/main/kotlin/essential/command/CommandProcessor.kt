@@ -153,7 +153,7 @@ class CommandProcessor(
                 val commands = Commands()
                 val clientCommands = listOf(
                 ${functions.joinToString(",\n                    ") { 
-                    "{ player: Playerc, data: PlayerData, args: Array<String> -> commands.${it.simpleName.asString()}(player, data, args) }" 
+                    "{ data: PlayerData, args: Array<String> -> commands.${it.simpleName.asString()}(data, args) }" 
                 }}
                 )
 
@@ -172,7 +172,7 @@ class CommandProcessor(
                         val data = findPlayerData(player.uuid())
                         if (data != null) {
                             if (Permission.check(data, annotation.name)) {
-                                command(player, data, args)
+                                command(data, args)
                             } else {
                                 if (annotation.name == "js") {
                                     player.kick(Bundle(player.locale())["command.js.no.permission"])

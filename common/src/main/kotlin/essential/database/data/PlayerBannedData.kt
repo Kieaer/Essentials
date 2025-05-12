@@ -21,14 +21,32 @@ class PlayerBannedData(id: EntityID<UInt>) : UIntEntity(id) {
 }
 
 /** 차단된 플레이어의 정보를 DB 에 추가 합니다. */
-suspend fun createBanInfo(data: Administration.PlayerInfo, reason: String) {
+suspend fun createBanInfo(data: Administration.PlayerInfo, reason: String?) {
     return newSuspendedTransaction {
         PlayerBannedData.new {
             names = data.names.toList()
             ips = data.ips.toList()
             uuid = data.id
-            this.reason = reason
+            this.reason = reason ?: "Banned by an administrator."
             date = System.currentTimeMillis()
+        }
+    }
+}
+
+/** 플레이어의 UUID를 차단 해제 합니다. */
+suspend fun removeBanInfoByUUID(uuid: String) {
+    return newSuspendedTransaction {
+        PlayerBannedData.find {
+            PlayerBannedTable.uuid eq uuid
+        }.firstOrNull()?.delete()
+    }
+}
+
+/** 플레이어의 IP 차단을 해제 합니다. */
+suspend fun removeBanInfoByIP(ip: String) {
+    return newSuspendedTransaction {
+        PlayerBannedData.find {
+            PlayerBannedTable.ips.contains(ip)
         }
     }
 }

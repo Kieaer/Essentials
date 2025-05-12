@@ -11,7 +11,6 @@ import essential.config.Config
 import essential.core.Event.actionFilter
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedServerCommands
-import essential.database.data.PlayerData
 import essential.database.data.PluginData
 import essential.database.data.getPluginData
 import essential.database.databaseInit
@@ -23,13 +22,11 @@ import kotlinx.coroutines.*
 import mindustry.Vars
 import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
-import mindustry.gen.Playerc
 import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import org.hjson.JsonValue
 import java.util.*
-import kotlin.reflect.KFunction
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
 
@@ -43,8 +40,8 @@ class Main : Plugin() {
         val scope = CoroutineScope(Dispatchers.IO)
     }
 
-    private val clientCommandCache = mutableMapOf<KFunction<*>, (Commands, Playerc, PlayerData, Array<String>) -> Unit>()
-    private val serverCommandCache = mutableMapOf<KFunction<*>, (Commands, Array<String>) -> Unit>()
+    private val clientCommandCache = CommandHandler("/")
+    private val serverCommandCache = CommandHandler("")
 
     override fun init() {
         // 플러그인 언어 설정 및 태그 추가
@@ -105,14 +102,15 @@ class Main : Plugin() {
         // 스레드 등록
         val trigger = Trigger()
         trigger.register()
-        scope.launch {Trigger.Thread().init()}
+        scope.launch { Trigger.Thread().init() }
 
         Vars.netServer.admins.addActionFilter(object : Administration.ActionFilter {
             var isNotTargetMap = false
 
             init {
                 Events.on(WorldLoadEvent::class.java) {
-                    isNotTargetMap = !isNotTargetMap && pluginData.data.warpBlock.none { f -> f.mapName == Vars.state.map.name() }
+                    isNotTargetMap =
+                        !isNotTargetMap && pluginData.data.warpBlock.none { f -> f.mapName == Vars.state.map.name() }
                 }
             }
 
@@ -166,12 +164,14 @@ class Main : Plugin() {
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
-        registerGeneratedServerCommands(handler)
+        registerGeneratedServerCommands(serverCommandCache)
+        // todo 명령어 제외 기능 추가
     }
 
 
     override fun registerClientCommands(handler: CommandHandler) {
-        registerGeneratedClientCommands(handler)
+        registerGeneratedClientCommands(clientCommandCache)
+        // todo 명령어 제외 기능 추가
     }
 
     private fun checkUpdate() {
