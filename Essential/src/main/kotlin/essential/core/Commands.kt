@@ -9,6 +9,8 @@ import arc.math.Mathf
 import arc.util.*
 import arc.util.Timer
 import com.charleskorn.kaml.Yaml
+import com.github.lalyos.jfiglet.FigletFont
+import essential.bundle.Bundle
 import essential.command.ClientCommand
 import essential.command.ServerCommand
 import essential.core.Event.actionFilter
@@ -22,11 +24,18 @@ import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
 import essential.database.data.PlayerData
+import essential.database.data.getPlayerData
 import essential.database.data.update
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.permission.Permission
+import essential.players
+import essential.systemTimezone
+import essential.timeSource
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Weathers
@@ -46,8 +55,9 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.mindrot.jbcrypt.BCrypt
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -58,6 +68,7 @@ import kotlin.math.pow
 import kotlin.math.round
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
+import kotlin.time.Duration.Companion.minutes
 
 
 class Commands {
@@ -67,7 +78,7 @@ class Commands {
         const val PLAYER_NOT_REGISTERED = "player.not.registered"
     }
 
-    @ClientCommand("changemap", "<name> [gamemode]", "Change the world or gamemode immediately.")
+    @ClientCommand("changemap", "<name> [gamemode]", "Change the world or game mode immediately.")
     fun changeMap(playerData: PlayerData, arg: Array<out String>) {
         val arr = HashMap<Int, Map>()
         Vars.maps.all().sortedBy { a -> a.name() }.forEachIndexed { index, map ->
@@ -95,47 +106,50 @@ class Commands {
                 Vars.logic.play()
                 reloader.end()
             } catch (_: IllegalArgumentException) {
-                playerData.err("command.changemap.mode.not.found", arg[1])
+                playerData.err("command.changeMap.mode.not.found", arg[1])
             }
         } else {
-            playerData.err("command.changemap.map.not.found", arg[0])
+            playerData.err("command.changeMap.map.not.found", arg[0])
         }
     }
 
     @ClientCommand("changename", "<target> <new_name>", "Change player name")
     fun changeName(playerData: PlayerData, arg: Array<out String>) {
-        fun change(data: PlayerData) {
-            transaction {
-                if (PlayerTable.select(PlayerTable.name).where(PlayerTable.name eq (arg[1])).toList().isNotEmpty()) {
-                    data.err("command.changename.exists", arg[1])
+        suspend fun change(data: PlayerData) {
+            newSuspendedTransaction {
+                val exists = PlayerData.find { PlayerTable.name eq arg[1] }.firstOrNull()
+                if (exists != null) {
+                    data.err("command.changeName.exists", arg[1])
                 } else {
                     Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
                     if (data.uuid == playerData.uuid) {
-                        playerData.send("command.changename.apply")
+                        playerData.send("command.changeName.apply")
                     } else {
-                        data.send("command.changename.apply.other", data.name, arg[1])
+                        data.send("command.changeName.apply.other", data.name, arg[1])
                     }
                     data.name = arg[1]
                     data.player.name(arg[1])
+                    data.update()
                 }
             }
-            return
         }
 
-        val target = findPlayers(arg[0])
-        if (target != null) {
-            val data = findPlayerData(target.uuid())
-            if (data != null) {
-                change(data)
+        scope.launch {
+            val target = findPlayers(arg[0])
+            if (target != null) {
+                val data = findPlayerData(target.uuid())
+                if (data != null) {
+                    change(data)
+                } else {
+                    playerData.err(PLAYER_NOT_REGISTERED)
+                }
             } else {
-                playerData.err(PLAYER_NOT_REGISTERED)
-            }
-        } else {
-            val offline = database[arg[0]]
-            if (offline != null) {
-                change(offline)
-            } else {
-                playerData.err(PLAYER_NOT_FOUND)
+                val offline = getPlayerData(arg[0])
+                if (offline != null) {
+                    change(offline)
+                } else {
+                    playerData.err(PLAYER_NOT_FOUND)
+                }
             }
         }
     }
@@ -143,7 +157,7 @@ class Commands {
     @ClientCommand("changepw", "<new_password> <password_repeat>", "Change account password.")
     fun changePassword(playerData: PlayerData, arg: Array<out String>) {
         if (arg[0] != arg[1]) {
-            playerData.err("command.changepw.same")
+            playerData.err("command.changePw.same")
             return
         }
 
@@ -151,7 +165,7 @@ class Commands {
             val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
             playerData.accountPW = password
             playerData.update()
-            Core.app.post { playerData.send("command.changepw.apply") }
+            Core.app.post { playerData.send("command.changePw.apply") }
         }
     }
 
@@ -184,13 +198,13 @@ class Commands {
                     val art =
                         FigletFont.convertOneLine(Main::class.java.classLoader.getResourceAsStream("6x10.flf"), text)
                     art.split("\n").toTypedArray()
-                } catch (e: ArrayIndexOutOfBoundsException) {
+                } catch (_: ArrayIndexOutOfBoundsException) {
                     null
                 }
             }
 
-            var x = player.tileX()
-            var y = player.tileY()
+            var x = playerData.player.tileX()
+            var y = playerData.player.tileY()
             val text = convert(arg[0])
             if (text != null) {
                 for (line in text) {
@@ -198,12 +212,12 @@ class Commands {
                         if (char == '#' && Vars.world.tile(x, y).block() != null && Vars.world.tile(x, y)
                                 .block() == Blocks.air
                         ) {
-                            Call.setTile(Vars.world.tile(x, y), Blocks.scrapWall, player.team(), 0)
+                            Call.setTile(Vars.world.tile(x, y), Blocks.scrapWall, playerData.player.team(), 0)
                         }
                         x++
                     }
                     y--
-                    x = player.tileX()
+                    x = playerData.player.tileX()
                 }
             } else {
                 playerData.err("command.char.unsupported")
@@ -222,41 +236,45 @@ class Commands {
         "Turn other players' effects on or off, or set effects and colors for each level."
     )
     fun effect(playerData: PlayerData, arg: Array<out String>) {
-        when {
-            arg[0].toUShortOrNull() != null -> {
-                if (arg[0].toInt() <= playerData.level) {
-                    playerData.effectLevel = arg[0].toUShortOrNull()
-                    if (arg.size == 2) {
-                        try {
-                            if (Colors.get(arg[1]) == null) {
-                                Color.valueOf(arg[1])
+        scope.launch {
+            when {
+                arg[0].toUShortOrNull() != null -> {
+                    if (arg[0].toInt() <= playerData.level) {
+                        playerData.effectLevel = arg[0].toShortOrNull()
+                        if (arg.size == 2) {
+                            try {
+                                if (Colors.get(arg[1]) == null) {
+                                    Color.valueOf(arg[1])
+                                }
+
+                                playerData.effectColor = arg[1]
+                            } catch (_: IllegalArgumentException) {
+                                playerData.err("command.effect.no.color")
+                            } catch (_: StringIndexOutOfBoundsException) {
+                                playerData.err("command.effect.no.color")
                             }
-
-                            playerData.effectColor = arg[1]
-                        } catch (_: IllegalArgumentException) {
-                            playerData.err("command.effect.no.color")
-                        } catch (_: StringIndexOutOfBoundsException) {
-                            playerData.err("command.effect.no.color")
                         }
+                        playerData.update()
+                    } else {
+                        playerData.err("command.effect.level")
                     }
-                    scope.launch { playerData.update() }
-                } else {
-                    playerData.err("command.effect.level")
                 }
-            }
 
-            arg[0] == "off" -> {
-                playerData.effectVisibility = false
-                playerData.send("command.effect.off")
-            }
+                arg[0] == "off" -> {
+                    playerData.effectVisibility = false
+                    playerData.update()
+                    playerData.send("command.effect.off")
+                }
 
-            arg[0] == "on" -> {
-                playerData.effectVisibility = true
-                playerData.send("command.effect.on")
-            }
+                arg[0] == "on" -> {
+                    playerData.effectVisibility = true
+                    playerData.update()
+                    playerData.send("command.effect.on")
+                }
 
-            else -> {
-                playerData.err("command.effect.invalid")
+                else -> {
+                    playerData.err("command.effect.invalid")
+                }
             }
         }
     }
@@ -289,7 +307,7 @@ class Commands {
                     } else {
                         val p = findPlayersByName(arg[2])
                         if (p != null) {
-                            val a = database[p.id]
+                            val a = getPlayerData(p.id)
                             if (a != null) {
                                 set(a)
                             }
@@ -364,20 +382,20 @@ class Commands {
     @ClientCommand("fillitems", "[team]", "Fill the core with items.")
     fun fillItems(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
-            if (Vars.state.teams.cores(player.team()).isEmpty) {
-                playerData.err("command.fillitems.core.empty")
+            if (Vars.state.teams.cores(playerData.player.team()).isEmpty) {
+                playerData.err("command.fillItems.core.empty")
                 return
             }
 
             Vars.content.items().forEach {
-                Vars.state.teams.cores(player.team()).first().items[it] =
-                    Vars.state.teams.cores(player.team()).first().storageCapacity
+                Vars.state.teams.cores(playerData.player.team()).first().items[it] =
+                    Vars.state.teams.cores(playerData.player.team()).first().storageCapacity
             }
-            playerData.send("command.fillitems.core.filled", player.team().coloredName())
+            playerData.send("command.fillItems.core.filled", playerData.player.team().coloredName())
         } else {
             val team = selectTeam(arg[0])
             if (Vars.state.teams.cores(team).isEmpty) {
-                playerData.err("command.fillitems.core.empty")
+                playerData.err("command.fillItems.core.empty")
                 return
             }
 
@@ -387,69 +405,22 @@ class Commands {
                 }
             }
 
-            playerData.send("command.fillitems.core.filled", team.coloredName())
-        }
-    }
-
-    @ClientCommand("freeze", "<player>", "Stop player unit movement")
-    fun freezeClient(playerData: PlayerData, arg: Array<out String>) {
-        val target = findPlayers(arg[0])
-        if (target != null) {
-            val data = findPlayerData(target.uuid())
-            if (data != null) {
-                data.freeze = !data.freeze
-                val msg = if (data.freeze) {
-                    data.status["freeze"] = "${target.x}/${target.y}"
-                    "done"
-                } else {
-                    data.status.remove("freeze")
-                    "undo"
-                }
-                playerData.send("command.freeze.$msg", target.plainName())
-            } else {
-                playerData.err(PLAYER_NOT_REGISTERED)
-            }
-        } else {
-            playerData.err(PLAYER_NOT_FOUND)
-        }
-    }
-
-    @ServerCommand("freeze", "<player>", "Stop player unit movement")
-    fun freezeServer(arg: Array<out String>) {
-        val bundle = Bundle()
-        val target = findPlayers(arg[0])
-        if (target != null) {
-            val data = findPlayerData(target.uuid())
-            if (data != null) {
-                data.freeze = !data.freeze
-                val msg = if (data.freeze) {
-                    data.status["freeze"] = "${target.x}/${target.y}"
-                    "done"
-                } else {
-                    data.status.remove("freeze")
-                    "undo"
-                }
-                Log.info(bundle["command.freeze.$msg", target.plainName()])
-            } else {
-                Log.err(bundle[PLAYER_NOT_REGISTERED])
-            }
-        } else {
-            Log.err(bundle[PLAYER_NOT_FOUND])
+            playerData.send("command.fillItems.core.filled", team.coloredName())
         }
     }
 
     @ClientCommand("gg", "[team]", "Make game over immediately.")
     fun gg(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
-            Events.fire(EventType.GameOverEvent(Vars.state.rules.waveTeam))
+            Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
         } else {
-            Events.fire(EventType.GameOverEvent(selectTeam(arg[0])))
+            Events.fire(GameOverEvent(selectTeam(arg[0])))
         }
     }
 
     @ClientCommand("god", "[player]", "Set max player health")
     fun god(playerData: PlayerData, arg: Array<out String>) {
-        player.unit().health(1.0E8f)
+        playerData.player.unit().health(1.0E8f)
         playerData.send("command.god")
     }
 
@@ -465,16 +436,11 @@ class Commands {
         }
 
         val temp = ArrayList<String>()
-        val bundle = if (playerData.status.containsKey("language")) {
-            Bundle(playerData.status["language"]!!)
-        } else {
-            Bundle(player.locale())
-        }
         for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
             val command = Vars.netServer.clientCommands.commandList[a]
             if (Permission.check(playerData, command.text)) {
                 val description = try {
-                    bundle["command.description." + command.text]
+                    playerData.bundle()["command.description." + command.text.lowercase()]
                 } catch (_: MissingResourceException) {
                     command.description
                 }
@@ -492,71 +458,21 @@ class Commands {
             return
         }
 
-        result.append("[orange]-- ${bundle["command.page"]}[lightgray] ${page + 1}[gray]/[lightgray]${pages}[orange] --\n")
+        result.append("[orange]-- ${playerData.bundle["command.page"]}[lightgray] ${page + 1}[gray]/[lightgray]${pages}[orange] --\n")
         for (a in per * page until (per * (page + 1)).coerceAtMost(temp.size)) {
             result.append(temp[a])
         }
 
         val msg = result.toString().substring(0, result.length - 1)
-        playerData.lastSentMessage = msg
-        player.sendMessage(msg)
-    }
-
-    @ClientCommand("hud", "<health/apm>", "Enable information on screen")
-    fun hud(playerData: PlayerData, arg: Array<out String>) {
-        val status = if (playerData.hud != null) JsonObject.readJSON(playerData.hud).asArray() else JsonArray()
-
-        fun remove(text: String) {
-            var i = 0
-            while (i < status.size()) {
-                if (status[i].asString() == text) {
-                    status.remove(i)
-                    break
-                } else {
-                    i++
-                }
-            }
-        }
-
-        when (arg[0]) {
-            "health" -> {
-                if (status.contains("health")) {
-                    remove("health")
-                    playerData.send("command.hud.health.disabled")
-                } else {
-                    status.add("health")
-                    playerData.send("command.hud.health.enabled")
-                }
-            }
-
-            "apm" -> {
-                if (status.contains("apm")) {
-                    remove("apm")
-                    playerData.send("command.hud.apm.disabled")
-                } else {
-                    status.add("apm")
-                    playerData.send("command.hud.apm.enabled")
-                }
-            }
-
-            else -> {
-                playerData.err("command.hud.not.found")
-            }
-        }
-
-        playerData.hud = if (status.size() != 0) status.toString() else null
+        playerData.player.sendMessage(msg)
     }
 
     @ClientCommand("info", "[player...]", "Show player info")
     fun info(playerData: PlayerData, arg: Array<out String>) {
-        val bundle = if (playerData.status.containsKey("language")) {
-            Bundle(playerData.status["language"]!!)
-        } else {
-            Bundle(player.locale())
-        }
+        val bundle = playerData.bundle()
         val timeBundleFormat = "command.info.time"
 
-        fun timeFormat(seconds: Long, msg: String): String {
+        fun timeFormat(seconds: Int, msg: String): String {
             val days = seconds / (24 * 60 * 60)
             val hours = (seconds % (24 * 60 * 60)) / (60 * 60)
             val minutes = ((seconds % (24 * 60 * 60)) % (60 * 60)) / 60
@@ -573,30 +489,30 @@ class Commands {
         fun show(target: PlayerData): String {
             return """
                 ${bundle["command.info.name"]}: ${target.name}[white]
-                ${bundle["command.info.placecount"]}: ${target.blockPlaceCount}
-                ${bundle["command.info.breakcount"]}: ${target.blockBreakCount}
+                ${bundle["command.info.placeCount"]}: ${target.blockPlaceCount}
+                ${bundle["command.info.breakCount"]}: ${target.blockBreakCount}
                 ${bundle["command.info.level"]}: ${target.level}
                 ${bundle["command.info.exp"]}: ${Exp[target]}
-                ${bundle["command.info.joindate"]}: ${
-                Timestamp(target.firstPlayDate).toLocalDateTime().format(
+                ${bundle["command.info.joinDate"]}: ${
+                Timestamp(target.firstPlayed).toLocalDateTime().format(
                     DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss")
                 )
             }
-                ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayTime, timeBundleFormat)}
+                ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayed, timeBundleFormat)}
                 ${bundle["command.info.playtime.current"]}: ${
                 timeFormat(
                     target.currentPlayTime,
                     "$timeBundleFormat.minimal"
                 )
             }
-                ${bundle["command.info.attackclear"]}: ${target.attackModeClear}
-                ${bundle["command.info.pvpwinrate"]}: [green]${target.pvpVictoriesCount}[white]/[scarlet]${target.pvpDefeatCount}[white]([sky]${
-                if (target.pvpVictoriesCount + target.pvpDefeatCount != 0) round(
-                    target.pvpVictoriesCount.toDouble() / (target.pvpVictoriesCount + target.pvpDefeatCount) * 100
+                ${bundle["command.info.attackClear"]}: ${target.attackClear}
+                ${bundle["command.info.pvpWinRate"]}: [green]${target.pvpWinCount}[white]/[scarlet]${target.pvpLoseCount}[white]([sky]${
+                if (target.pvpWinCount + target.pvpLoseCount != 0) round(
+                    target.pvpWinCount.toDouble() / (target.pvpWinCount + target.pvpLoseCount) * 100
                 ) else 0
             }%[white])
-                ${bundle["command.info.joinstacks"]}: ${target.joinStacks}
-                Discord: ${if (target.discord != null) target.discord else "none"}
+                ${bundle["command.info.joinStacks"]}: ${target.attendanceDays}
+                Discord: ${if (target.discordID != null) target.discordID else "none"}
                 """.trimIndent()
         }
 
@@ -616,8 +532,8 @@ class Commands {
                     Vars.netServer.admins.banPlayer(data.uuid)
 
                     Event.log(Event.LogType.Player, Bundle()["log.player.banned", data.name, ip])
-                    database.players.forEach {
-                        it.send("info.banned.message", player.plainName(), data.name)
+                    players.forEach {
+                        it.send("info.banned.message", data.player.plainName(), data.name)
                     }
                 }
             }
@@ -653,16 +569,16 @@ class Commands {
 
             val banMenus = arrayOf(
                 arrayOf(
-                    bundle["info.button.tempban.10min"],
-                    bundle["info.button.tempban.1hour"],
-                    bundle["info.button.tempban.1day"]
+                    bundle["info.button.tempBan.10min"],
+                    bundle["info.button.tempBan.1hour"],
+                    bundle["info.button.tempBan.1day"]
                 ),
                 arrayOf(
-                    bundle["info.button.tempban.1week"],
-                    bundle["info.button.tempban.2week"],
-                    bundle["info.button.tempban.1month"]
+                    bundle["info.button.tempBan.1week"],
+                    bundle["info.button.tempBan.2week"],
+                    bundle["info.button.tempBan.1month"]
                 ),
-                arrayOf(bundle["info.button.tempban.permanent"]),
+                arrayOf(bundle["info.button.tempBan.permanent"]),
                 arrayOf(bundle[close])
             )
 
@@ -698,7 +614,7 @@ class Commands {
                                 if (s <= 5) {
                                     val tempBanConfirmMenu = Menus.registerMenu { _, i ->
                                         if (i == 0) {
-                                            targetData!!.banTime = time.toString()
+                                            targetData.banExpireDate = Clock.System.now().plus(time.minutes).toLocalDateTime(systemTimezone)
                                             scope.launch { targetData.update() }
                                             Events.fire(
                                                 CustomEvents.PlayerTempBanned(
@@ -714,8 +630,8 @@ class Commands {
                                     Call.menu(
                                         p.con(),
                                         tempBanConfirmMenu,
-                                        bundle["info.tempban.title"],
-                                        bundle["info.tempban.confirm", timeText] + lineBreak,
+                                        bundle["info.tempBan.title"],
+                                        bundle["info.tempBan.confirm", timeText] + lineBreak,
                                         arrayOf(arrayOf(bundle[ban], bundle[cancel]))
                                     )
                                 } else if (s == 6) {
@@ -749,8 +665,8 @@ class Commands {
                         Call.menu(
                             p.con(),
                             innerMenu,
-                            bundle["info.tempban.title"],
-                            bundle["info.tempban.confirm"] + lineBreak,
+                            bundle["info.tempBan.title"],
+                            bundle["info.tempBan.confirm"] + lineBreak,
                             banMenus
                         )
                     }
@@ -871,7 +787,7 @@ class Commands {
             if (!it.admin) it.kick(Packets.KickReason.kick)
         }
         if (player.unit() != null) {
-            playerData.send("command.kickall.done")
+            playerData.send("command.kickAll.done")
         }
     }
 
@@ -880,7 +796,7 @@ class Commands {
         Groups.player.forEach {
             if (!it.admin) it.kick(Packets.KickReason.kick)
         }
-        Log.info(Bundle()["command.kickall.done"])
+        Log.info(Bundle()["command.kickAll.done"])
     }
 
     @ClientCommand("kill", "[player]", "Kill player's unit.")
@@ -975,7 +891,7 @@ class Commands {
                         destroy(player.team())
                     }
                 } else {
-                    playerData.err("command.killunit.invalid.number")
+                    playerData.err("command.killUnit.invalid.number")
                 }
             } else {
                 for (it in Groups.unit) {
@@ -985,7 +901,7 @@ class Commands {
                 }
             }
         } else {
-            playerData.err("command.killunit.not.found")
+            playerData.err("command.killUnit.not.found")
         }
     }
 
@@ -1019,7 +935,7 @@ class Commands {
                         destroy(null)
                     }
                 } else {
-                    Log.err(bundle["command.killunit.invalid.number"])
+                    Log.err(bundle["command.killUnit.invalid.number"])
                 }
             } else {
                 for (it in Groups.unit) {
@@ -1029,7 +945,7 @@ class Commands {
                 }
             }
         } else {
-            Log.err(bundle["command.killunit.not.found"])
+            Log.err(bundle["command.killUnit.not.found"])
         }
     }
 
@@ -1729,13 +1645,13 @@ class Commands {
                     if (team != null) {
                         s(team)
                     } else {
-                        playerData.err("command.setitem.wrong.team")
+                        playerData.err("command.setItem.wrong.team")
                     }
                 } else {
                     s(player.team())
                 }
             } else {
-                playerData.err("command.setitem.wrong.amount")
+                playerData.err("command.setItem.wrong.amount")
             }
         }
 
@@ -1747,7 +1663,7 @@ class Commands {
                 set(it)
             }
         } else {
-            playerData.err("command.setitem.item.not.exists")
+            playerData.err("command.setItem.item.not.exists")
         }
     }
 
@@ -1759,7 +1675,7 @@ class Commands {
             val data = findPlayerData(target.uuid())
             if (data != null) {
                 data.permission = arg[1]
-                playerData.send("command.setperm.success", data.name, arg[1])
+                playerData.send("command.setPerm.success", data.name, arg[1])
             } else {
                 playerData.err(PLAYER_NOT_REGISTERED)
             }
@@ -1770,7 +1686,7 @@ class Commands {
                 if (a != null) {
                     a.permission = arg[1]
                     database.queue(a)
-                    playerData.send("command.setperm.success", a.name, arg[1])
+                    playerData.send("command.setPerm.success", a.name, arg[1])
                 } else {
                     playerData.err(PLAYER_NOT_REGISTERED)
                 }
@@ -1789,7 +1705,7 @@ class Commands {
             val data = findPlayerData(target.uuid())
             if (data != null) {
                 data.permission = arg[1]
-                Log.info(bundle["command.setperm.success", data.name, arg[1]])
+                Log.info(bundle["command.setPerm.success", data.name, arg[1]])
             } else {
                 Log.warn(bundle[PLAYER_NOT_REGISTERED])
             }
@@ -1800,7 +1716,7 @@ class Commands {
                 if (a != null) {
                     a.permission = arg[1]
                     database.queue(a)
-                    Log.info(bundle["command.setperm.success", a.name, arg[1]])
+                    Log.info(bundle["command.setPerm.success", a.name, arg[1]])
                 } else {
                     Log.warn(bundle[PLAYER_NOT_REGISTERED])
                 }
@@ -2053,7 +1969,7 @@ class Commands {
         } else {
             val d = findPlayerData(other.uuid())
             if (d == null) {
-                Log.info(bundle["command.tempban.not.registered"])
+                Log.info(bundle["command.tempBan.not.registered"])
                 Vars.netServer.admins.banPlayer(other.uuid())
                 other.kick(Packets.KickReason.banned)
             } else {
@@ -2066,7 +1982,7 @@ class Commands {
                     Vars.netServer.admins.banPlayer(other.uuid())
                     other.kick(reason)
                 } else {
-                    Log.err(bundle["command.tempban.not.number"])
+                    Log.err(bundle["command.tempBan.not.number"])
                 }
             }
         }
@@ -2243,7 +2159,7 @@ class Commands {
 
     @ClientCommand("vote", "<kick/map/gg/skip/back/random> [player/amount/world] [reason]", "Start voting")
     fun vote(playerData: PlayerData, arg: Array<out String>) {
-        val cooltime = "command.vote.cooltime"
+        val cooltime = "command.vote.coolTime"
         val noReason = "command.vote.no.reason"
         val mapNotFound = "command.vote.map.not.exists"
 
@@ -2378,7 +2294,7 @@ class Commands {
                     playerData.send("command.vote.skip.wrong")
                 } else if (arg[1].toIntOrNull() != null) {
                     if (arg[1].toInt() > conf.command.skip.limit) {
-                        playerData.send("command.vote.skip.toomany")
+                        playerData.send("command.vote.skip.tooMany")
                     } else {
                         if (pluginData.voteCooltime == 0) {
                             val voteData = VoteData(

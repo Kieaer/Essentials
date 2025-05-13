@@ -65,7 +65,7 @@ class Event {
                     if (kotlin.math.abs(oldGraphCount - newGraphCount) > 10) {
                         database.getPlayers().forEach({ a ->
                             a.send(
-                                "event.antigrief.node",
+                                "event.antiGrief.node",
                                 e.player.name,
                                 kotlin.math.max(oldGraphCount, newGraphCount),
                                 kotlin.math.min(oldGraphCount, newGraphCount),

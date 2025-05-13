@@ -34,7 +34,7 @@ object Permission {
         # admin:${bundle["permission.usage.admin"]}
         # isAlert:${bundle["permission.usage.isAlert"]}
         # alertMessage:${bundle["permission.usage.alertMessage"]}
-        # chatFormat:${bundle["permission.usage.chatformat"]}
+        # chatFormat:${bundle["permission.usage.chatFormat"]}
         
         #${bundle["permission.example"]}
         # uuid123:

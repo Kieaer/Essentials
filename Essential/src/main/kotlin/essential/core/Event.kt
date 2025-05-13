@@ -25,7 +25,6 @@ import essential.database.data.update
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.permission.Permission
-import essential.playTime
 import essential.util.currentTime
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -603,7 +602,7 @@ object Event {
 
                 if (unitLimitMessageCooldown == 0) {
                     players.forEach {
-                        it.send("config.spawnlimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${conf.feature.unit.limit}")
+                        it.send("config.spawnLimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${conf.feature.unit.limit}")
                     }
                     unitLimitMessageCooldown = 60
                 }
@@ -715,7 +714,7 @@ object Event {
             }
 
             for (data in players) {
-                data.currentPlayTime = 0u
+                data.currentPlayTime = 0
                 data.viewHistoryMode = false
             }
         }.also { listener -> eventListeners[WorldLoadEvent::class.java] = listener })

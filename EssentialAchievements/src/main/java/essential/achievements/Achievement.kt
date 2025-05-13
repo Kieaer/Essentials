@@ -29,113 +29,113 @@ import java.util.*
 enum class Achievement {
     // int 배열값은 현재 값과 목표 값
     Builder {
-        override fun value(): UInt{
-            return 100000u
+        override fun value(): Int{
+            return 100000
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.blockPlaceCount
         }
     },
     Deconstructor {
-        override fun value(): UInt{
-            return 100000u
+        override fun value(): Int{
+            return 100000
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getBlockBreakCount()
         }
     },
 
     Creator {
-        override fun value(): UInt{
-            return 360000u
+        override fun value(): Int{
+            return 360000
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getStatus().getOrDefault("record.time.sandbox", "0").toInt()
         }
     },
     Eliminator {
-        override fun value(): UInt{
-            return 100u
+        override fun value(): Int{
+            return 100
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getPvpVictoriesCount()
         }
     },
     Defender {
-        override fun value(): UInt{
-            return 10000u
+        override fun value(): Int{
+            return 10000
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getStatus().getOrDefault("record.wave", "0").toInt()
         }
     },
     Aggressor {
-        override fun value(): UInt{
-            return 50u
+        override fun value(): Int{
+            return 50
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getAttackModeClear()
         }
     },
     Serpulo {
-        override fun value(): UInt{
+        override fun value(): Int{
             return 360000u
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getStatus().getOrDefault("record.time.serpulo", "0").toInt()
         }
     },
     Erekir {
-        override fun value(): UInt{
-            return 360000u
+        override fun value(): Int{
+            return 360000
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getStatus().getOrDefault("record.time.erekir", "0").toInt()
         }
     },
 
     TurbidWater {
-        override fun value(): UInt{
-            return 360000u
+        override fun value(): Int{
+            return 360000
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getTotalPlayTime() as Int
         }
     },
     BlackWater {
-        override fun value(): UInt{
-            return 720000u
+        override fun value(): Int{
+            return 720000
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getTotalPlayTime() as Int
         }
     },
     Oil {
-        override fun value(): UInt{
-            return 1080000u
+        override fun value(): Int{
+            return 1080000
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getTotalPlayTime() as Int
         }
     },
 
     Lord {
-        override fun value(): UInt{
-            return 70u
+        override fun value(): Int{
+            return 70
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             var result: Int
             try {
                 val total: Int = data.getPvpVictoriesCount() + data.getPvpDefeatCount()
@@ -152,41 +152,41 @@ enum class Achievement {
     },
 
     Chatter {
-        override fun value(): UInt{
-            return 10000u
+        override fun value(): Int{
+            return 10000
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getStatus().getOrDefault("record.time.chat", "0").toInt()
         }
     },
 
     // ??
     MeetOwner {
-        override fun value(): UInt{
-            return 1u
+        override fun value(): Int{
+            return 1
         }
 
         override fun isHidden(): Boolean {
             return true
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getStatus().getOrDefault("record.time.meetowner", "0").toInt()
         }
     },
 
     // Specific map clear achievements
     Asteroids {
-        override fun value(): UInt{
-            return 1u
+        override fun value(): Int{
+            return 1
         }
 
         override fun isHidden(): Boolean {
             return true
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getStatus().getOrDefault("record.map.clear.asteroids", "0").toInt()
         }
 
@@ -202,15 +202,15 @@ enum class Achievement {
     },
 
     Transcendence {
-        override fun value(): UInt{
-            return 1u
+        override fun value(): Int{
+            return 1
         }
 
         override fun isHidden(): Boolean {
             return true
         }
 
-        override fun current(data: PlayerData): UInt{
+        override fun current(data: PlayerData): Int{
             return data.getStatus().getOrDefault("record.map.clear.transcendence", "0").toInt()
         }
 
@@ -225,11 +225,11 @@ enum class Achievement {
         }
     };
 
-    abstract fun value(): UInt
+    abstract fun value(): Int
     open val isHidden: Boolean
         get() = false
 
-    abstract fun current(data: PlayerData): UInt
+    abstract fun current(data: PlayerData): Int
     open fun success(data: PlayerData): Boolean {
         return current(data) >= value()
     }

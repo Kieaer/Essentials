@@ -406,7 +406,7 @@ class Trigger {
                             for (i in 0 until data.warpTotal.size) {
                                 val value = data.warpTotal[i]
                                 if (Vars.state.map.name() == value.mapName) {
-                                    if (value.totalplayers != total) {
+                                    if (value.totalPlayers != total) {
                                         when (total) {
                                             0, 1, 2, 3, 4, 5, 6, 7, 8, 9 -> {
                                                 for (px in 0..2) {

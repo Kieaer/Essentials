@@ -70,7 +70,7 @@ class ClientCommandTest {
 
         // If map not found
         clientCommand.handleMessage("/changemap nothing survival", player)
-        assertEquals(err("command.changemap.map.not.found", "nothing"), playerData.lastSentMessage)
+        assertEquals(err("command.changeMap.map.not.found", "nothing"), playerData.lastSentMessage)
 
         // Number method
         clientCommand.handleMessage("/changemap 0 survival", player)
@@ -84,7 +84,7 @@ class ClientCommandTest {
 
         // If player enter wrong gamemode
         clientCommand.handleMessage("/changemap fork creative", player)
-        assertEquals(err("command.changemap.mode.not.found", "creative"), playerData.lastSentMessage)
+        assertEquals(err("command.changeMap.mode.not.found", "creative"), playerData.lastSentMessage)
 
         // If player enter only map name
         clientCommand.handleMessage("/changemap glacier", player)
@@ -122,11 +122,11 @@ class ClientCommandTest {
         // Change password
         clientCommand.handleMessage("/changepw pass pass", player)
         assertTrue(BCrypt.checkpw("pass", playerData.accountPW))
-        assertEquals(log("command.changepw.apply"), playerData.lastSentMessage)
+        assertEquals(log("command.changePw.apply"), playerData.lastSentMessage)
 
         // If password isn't same
         clientCommand.handleMessage("/changepw pass wd", player)
-        assertEquals(err("command.changepw.same"), playerData.lastSentMessage)
+        assertEquals(err("command.changePw.same"), playerData.lastSentMessage)
     }
 
     @Test
@@ -385,11 +385,11 @@ class ClientCommandTest {
         // If player core doesn't exist
         Call.deconstructFinish(Vars.state.teams.cores(player.team()).first().tile, Blocks.air, player.unit())
         clientCommand.handleMessage("/fillitems", player)
-        assertEquals(err("command.fillitems.core.empty"), playerData.lastSentMessage)
+        assertEquals(err("command.fillItems.core.empty"), playerData.lastSentMessage)
 
         // If target team core doesn't exist
         clientCommand.handleMessage("/fillitems green", player)
-        assertEquals(err("command.fillitems.core.empty"), playerData.lastSentMessage)
+        assertEquals(err("command.fillItems.core.empty"), playerData.lastSentMessage)
 
         // If target team core exists
         Call.constructFinish(player.tileOn(), Blocks.coreShard, player.unit(), 0, Team.green, null)

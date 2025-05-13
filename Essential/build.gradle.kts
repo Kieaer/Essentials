@@ -16,4 +16,7 @@ dependencies {
     compileOnly(libs.bundles.jackson)
     compileOnly(libs.bundles.exposed)
     compileOnly(libs.kaml)
+
+    implementation(libs.jbcrypt)
+    implementation(libs.jfiglet)
 }
