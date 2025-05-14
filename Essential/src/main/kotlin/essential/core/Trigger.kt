@@ -59,7 +59,7 @@ class Trigger {
         // 로그인 날짜 기록
         val currentTime = Clock.System.now().toLocalDateTime(systemTimezone)
         val isDayPassed = playerData.lastLoginDate.daysUntil(currentTime.date)
-        if (isDayPassed >= 1) playerData.attendanceDays += 1u
+        if (isDayPassed >= 1) playerData.attendanceDays += 1
         playerData.lastLoginDate = currentTime.date
 
         // 권한 설정에 의한 닉네임 및 admin 권한 설정
@@ -143,7 +143,7 @@ class Trigger {
 
 
         if (playerData.expMultiplier != 1.0) {
-            message.appendLine(playerData.bundle()["event.player.expboost", playerData.attendanceDays, playerData.expMultiplier])
+            message.appendLine(playerData.bundle["event.player.expboost", playerData.attendanceDays, playerData.expMultiplier])
         }
 
         playerData.isConnected = true
@@ -561,7 +561,7 @@ class Trigger {
                         if (conf.feature.afk.enabled) {
                             if (conf.feature.afk.server == null) {
 
-                                it.player.kick(it.bundle()["event.player.afk"])
+                                it.player.kick(it.bundle["event.player.afk"])
 
                                 players.forEach { data ->
                                     data.send("event.player.afk.other", it.player.plainName())
@@ -585,7 +585,7 @@ class Trigger {
 
                 val randomResult = (Random.nextInt(7) * it.expMultiplier)
                 it.exp += randomResult.toInt()
-                it.currentExp += randomResult.toUInt()
+                it.currentExp += randomResult.toInt()
                 Commands.Exp[it]
 
                 if (conf.feature.level.display) {

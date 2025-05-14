@@ -33,10 +33,10 @@ private val startupTime = timeSource.markNow()
 var mapStartTime = timeSource.markNow()
 
 /** 서버가 켜져있는 시간 */
-var uptime = (timeSource.markNow() - startupTime).toHString()
+val uptime : String get() = (timeSource.markNow() - startupTime).toHString()
 
 /** 현재 플레이 중인 맵 시간 */
-var playTime = (timeSource.markNow() - mapStartTime).toHString()
+val playTime : String get() = (timeSource.markNow() - mapStartTime).toHString()
 
 /** 투표 가능 유무 */
 var nextVoteAvailable : TimeMark = timeSource.markNow()

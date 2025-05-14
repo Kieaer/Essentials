@@ -48,7 +48,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
     init {
         fun sendMessage(playerData: PlayerData?) {
             if (playerData != null) {
-                val bundle = playerData.bundle()
+                val bundle = playerData.bundle
                 playerData.send("command.vote.starter", voteData.starter.player.plainName())
                 playerData.player.sendMessage(
                     when (voteData.type) {

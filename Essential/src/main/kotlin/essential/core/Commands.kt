@@ -30,8 +30,11 @@ import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.permission.Permission
 import essential.players
+import essential.rootPath
 import essential.systemTimezone
 import essential.timeSource
+import essential.util.currentTime
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -440,7 +443,7 @@ class Commands {
             val command = Vars.netServer.clientCommands.commandList[a]
             if (Permission.check(playerData, command.text)) {
                 val description = try {
-                    playerData.bundle()["command.description." + command.text.lowercase()]
+                    playerData.bundle["command.description." + command.text.lowercase()]
                 } catch (_: MissingResourceException) {
                     command.description
                 }
@@ -469,7 +472,7 @@ class Commands {
 
     @ClientCommand("info", "[player...]", "Show player info")
     fun info(playerData: PlayerData, arg: Array<out String>) {
-        val bundle = playerData.bundle()
+        val bundle = playerData.bundle
         val timeBundleFormat = "command.info.time"
 
         fun timeFormat(seconds: Int, msg: String): String {
@@ -674,7 +677,7 @@ class Commands {
                     select == 1 -> {
                         val unbanConfirmMenu = Menus.registerMenu { _, i ->
                             if (i == 0) {
-                                targetData!!.banTime = null
+                                targetData!!.banExpireDate = null
                                 scope.launch { targetData.update() }
                                 unbanPlayer(targetData)
                                 Events.fire(CustomEvents.PlayerUnbanned(targetData!!.name, currentTime()))
@@ -888,14 +891,14 @@ class Commands {
                         val team = selectTeam(arg[2])
                         destroy(team)
                     } else {
-                        destroy(player.team())
+                        destroy(playerData.player.team())
                     }
                 } else {
                     playerData.err("command.killUnit.invalid.number")
                 }
             } else {
                 for (it in Groups.unit) {
-                    if (it.type() == unit && it.team == player.team()) {
+                    if (it.type() == unit && it.team == playerData.player.team()) {
                         it.kill()
                     }
                 }
@@ -949,18 +952,10 @@ class Commands {
         }
     }
 
-    @ClientCommand("lang", description = "Set the plugin language from current game language")
-    fun lang(playerData: PlayerData, arg: Array<out String>) {
-        playerData.languageTag = player.locale()
-        playerData.status["language"] = player.locale()
-        scope.launch { playerData.update() }
-        playerData.send("command.language.set", Locale(playerData.languageTag).language)
-    }
-
     @ClientCommand("log", description = "Enable block history view mode")
     fun log(playerData: PlayerData, arg: Array<out String>) {
-        playerData.log = !playerData.log
-        val msg = if (playerData.log) {
+        playerData.viewHistoryMode = !playerData.viewHistoryMode
+        val msg = if (playerData.viewHistoryMode) {
             "enabled"
         } else {
             "disabled"
@@ -971,11 +966,7 @@ class Commands {
     @ClientCommand("maps", "[page]", "Show server map lists")
     fun maps(playerData: PlayerData, arg: Array<out String>) {
         val list = Vars.maps.all().sortedBy { a -> a.name() }
-        val bundle = if (playerData.status.containsKey("language")) {
-            Bundle(playerData.status["language"]!!)
-        } else {
-            Bundle(player.locale())
-        }
+        val bundle = playerData.bundle
         val prebuilt = ArrayList<Pair<String, Array<Array<String>>>>()
         val buffer = Mathf.ceil(list.size.toFloat() / 6)
         val pages = if (buffer > 1.0) buffer - 1 else 0
@@ -1021,7 +1012,7 @@ class Commands {
             }
             playerData.status["page"] = page.toString()
         }
-        Call.menu(player.con(), mainMenu, title, prebuilt[0].first, prebuilt[0].second)
+        Call.menu(playerData.player.con(), mainMenu, title, prebuilt[0].first, prebuilt[0].second)
     }
 
     @ClientCommand("meme", "<type>", "Enjoy mindustry meme features!")
@@ -1146,19 +1137,19 @@ class Commands {
                     playerData.status.remove("router")
                 } else {
                     // todo thread 개선
-                    daemon.submit {
+                    scope.launch {
                         fun change(name: String) {
-                            player.name(name)
+                            playerData.player.name(name)
                             Threads.sleep(500)
                         }
 
                         playerData.status["router"] = "true"
-                        while (player != null) {
+                        while (!playerData.player.unit().dead) {
                             loop.forEach {
                                 change(it)
                             }
                             if (!playerData.status.containsKey("router")) break
-                            Threads.sleep(5000)
+                            delay(5000)
                             loop.reversed().forEach {
                                 change(it)
                             }
@@ -1174,15 +1165,15 @@ class Commands {
 
     @ClientCommand("motd", description = "Show server's message of the day")
     fun motd(playerData: PlayerData, arg: Array<out String>) {
-        val motd = if (root.child("motd/${player.locale()}.txt").exists()) {
-            root.child("motd/${player.locale()}.txt").readString()
+        val motd = if (rootPath.child("motd/${playerData.player.locale()}.txt").exists()) {
+            rootPath.child("motd/${playerData.player.locale()}.txt").readString()
         } else {
-            val file = root.child("motd/en.txt")
+            val file = rootPath.child("motd/en.txt")
             if (file.exists()) file.readString() else ""
         }
         if (motd.isNotEmpty()) {
             val count = motd.split("\r\n|\r|\n").toTypedArray().size
-            if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
+            if (count > 10) Call.infoMessage(playerData.player.con(), motd) else playerData.player.sendMessage(motd)
         } else {
             playerData.send("command.motd.not-found")
         }
@@ -1203,10 +1194,10 @@ class Commands {
         } else {
             val p = findPlayersByName(arg[0])
             if (p != null) {
-                val a = database[p.id]
+                val a = getPlayerData(p.id)
                 if (a != null) {
-                    a.mute = true
-                    database.queue(a)
+                    a.chatMuted = true
+                    a.update()
                     playerData.send("command.mute", a.name)
                 } else {
                     playerData.err(PLAYER_NOT_REGISTERED)
@@ -1224,8 +1215,8 @@ class Commands {
         if (other != null) {
             val target = findPlayerData(other.uuid())
             if (target != null) {
-                target.mute = true
-                database.queue(target)
+                target.chatMuted = true
+                target.update()
                 Log.info(bundle["command.mute", target.name])
             } else {
                 Log.err(bundle[PLAYER_NOT_FOUND])
@@ -1233,10 +1224,10 @@ class Commands {
         } else {
             val p = findPlayersByName(arg[0])
             if (p != null) {
-                val a = database[p.id]
+                val a = getPlayerData(p.id)
                 if (a != null) {
-                    a.mute = true
-                    database.queue(a)
+                    a.chatMuted = true
+                    a.update()
                     Log.info(bundle["command.mute", a.name])
                 } else {
                     Log.err(bundle[PLAYER_NOT_REGISTERED])
@@ -1260,20 +1251,16 @@ class Commands {
 
     @ClientCommand("players", "[page]", "Show current players list")
     fun players(playerData: PlayerData, arg: Array<out String>) {
-        val bundle = if (playerData.status.containsKey("language")) {
-            Bundle(playerData.status["language"]!!)
-        } else {
-            Bundle(player.locale())
-        }
+        val bundle = playerData.bundle
         val prebuilt = ArrayList<Pair<String, Array<Array<String>>>>()
-        val buffer = Mathf.ceil(database.players.size.toFloat() / 6)
+        val buffer = Mathf.ceil(players.size.toFloat() / 6)
         val pages = if (buffer > 1.0) buffer - 1 else 0
         val title = bundle["command.page.server"]
 
         for (page in 0..pages) {
             val build = StringBuilder()
-            for (a in 6 * page until (6 * (page + 1)).coerceAtMost(database.players.size)) {
-                build.append("ID: [gray]${database.players[a].entityid} ${database.players[a].player.coloredName()}\n")
+            for (a in 6 * page until (6 * (page + 1)).coerceAtMost(players.size)) {
+                build.append("ID: [gray]${players[a].entityid} ${players[a].player.coloredName()}\n")
             }
 
             val options = arrayOf(
@@ -1310,21 +1297,13 @@ class Commands {
             }
             playerData.status["page"] = page.toString()
         }
-        Call.menu(player.con(), mainMenu, title, prebuilt[0].first, prebuilt[0].second)
+        Call.menu(playerData.player.con(), mainMenu, title, prebuilt[0].first, prebuilt[0].second)
     }
 
     @ClientCommand("ranking", "<time/exp/attack/place/break/pvp> [page]", "Show player ranking")
     fun ranking(playerData: PlayerData, arg: Array<out String>) {
-        val bundle = if (playerData.status.containsKey("language")) {
-            Bundle(playerData.status["language"]!!)
-        } else {
-            Bundle(player.locale())
-        }
-        if (pluginData.isRankingWorking) {
-            playerData.err("command.ranking.working")
-            return
-        }
-        daemon.submit(Thread {
+        val bundle = playerData.bundle
+        scope.launch {
             try {
                 fun timeFormat(seconds: Long): String {
                     val days = seconds / (24 * 60 * 60)
@@ -1347,17 +1326,16 @@ class Commands {
 
                 if (firstMessage == null) {
                     playerData.err("command.ranking.wrong")
-                    return@Thread
+                    return@launch
                 }
 
-                pluginData.isRankingWorking = true
-                Core.app.post { player.sendMessage(bundle["command.ranking.wait"]) }
+                Core.app.post { playerData.player.sendMessage(bundle["command.ranking.wait"]) }
                 val time = mutableMapOf<Pair<String, String>, Long>()
                 val exp = mutableMapOf<Pair<String, String>, Int>()
                 val attack = mutableMapOf<Pair<String, String>, Int>()
                 val placeBlock = mutableMapOf<Pair<String, String>, Int>()
                 val breakBlock = mutableMapOf<Pair<String, String>, Int>()
-                val pvp = mutableMapOf<Pair<String, String>, Triple<Int, Int, Int>>()
+                val pvp = mutableMapOf<Pair<String, String>, Triple<Short, Short, Short>>()
 
                 transaction {
                     if (arg[0].lowercase() == "pvp") {
@@ -1365,23 +1343,23 @@ class Commands {
                             PlayerTable.name,
                             PlayerTable.uuid,
                             PlayerTable.hideRanking,
-                            PlayerTable.pvpVictoriesCount,
-                            PlayerTable.pvpDefeatCount,
-                            PlayerTable.pvpEliminationTeamCount
+                            PlayerTable.pvpWinCount,
+                            PlayerTable.pvpLoseCount,
+                            PlayerTable.pvpEliminatedCount
                         ).map {
                             if (!it[PlayerTable.hideRanking]) {
                                 pvp[Pair(it[PlayerTable.name], it[PlayerTable.uuid])] = Triple(
-                                    it[PlayerTable.pvpVictoriesCount],
-                                    it[PlayerTable.pvpDefeatCount],
-                                    it[PlayerTable.pvpEliminationTeamCount]
+                                    it[PlayerTable.pvpWinCount],
+                                    it[PlayerTable.pvpLoseCount],
+                                    it[PlayerTable.pvpEliminatedCount]
                                 )
                             }
                         }
                     } else {
                         val type = when (arg[0].lowercase()) {
-                            "time" -> PlayerTable.totalPlayTime
+                            "time" -> PlayerTable.totalPlayed
                             "exp" -> PlayerTable.exp
-                            "attack" -> PlayerTable.attackModeClear
+                            "attack" -> PlayerTable.attackClear
                             "place" -> PlayerTable.blockPlaceCount
                             "break" -> PlayerTable.blockBreakCount
                             else -> PlayerTable.uuid // dummy
@@ -1390,11 +1368,11 @@ class Commands {
                             if (!it[PlayerTable.hideRanking]) {
                                 when (arg[0].lowercase()) {
                                     "time" -> time[Pair(it[PlayerTable.name], it[PlayerTable.uuid])] =
-                                        it[PlayerTable.totalPlayTime]
+                                        it[PlayerTable.totalPlayed]
 
                                     "exp" -> exp[Pair(it[PlayerTable.name], it[PlayerTable.uuid])] = it[PlayerTable.exp]
                                     "attack" -> attack[Pair(it[PlayerTable.name], it[PlayerTable.uuid])] =
-                                        it[PlayerTable.attackModeClear]
+                                        it[PlayerTable.attackClear]
 
                                     "place" -> placeBlock[Pair(it[PlayerTable.name], it[PlayerTable.uuid])] =
                                         it[PlayerTable.blockPlaceCount]
@@ -1415,8 +1393,7 @@ class Commands {
                     "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
                     "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.first })
                     else -> {
-                        pluginData.isRankingWorking = false
-                        return@Thread
+                        return
                     }
                 }
 
@@ -1428,8 +1405,7 @@ class Commands {
 
                 if (page >= pages || page < 0) {
                     Core.app.post { playerData.err("command.page.range", pages) }
-                    pluginData.isRankingWorking = false
-                    return@Thread
+                    return
                 }
                 string.append(bundle[firstMessage, page + 1, pages] + "\n")
 
@@ -1456,7 +1432,7 @@ class Commands {
                 if (!playerData.hideRanking) {
                     string.append("[purple]=======================================[]\n")
                     for (a in d.indices) {
-                        if (d[a].first.second == player.uuid()) {
+                        if (d[a].first.second == playerData.player.uuid()) {
                             if (d[a].second is HashMap<*, *>) {
                                 val rank = d[a].second as HashMap<*, *>
                                 val rate = round(
@@ -1479,15 +1455,13 @@ class Commands {
                 }
 
                 Core.app.post {
-                    playerData.lastSentMessage = string.toString()
-                    player.sendMessage(string.toString())
+                    playerData.player.sendMessage(string.toString())
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 Core.app.exit()
             }
-            pluginData.isRankingWorking = false
-        })
+        }
     }
 
     @ClientCommand("rollback", "<player>", "Undo all actions taken by the player.")

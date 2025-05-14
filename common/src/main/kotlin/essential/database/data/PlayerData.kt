@@ -64,24 +64,20 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
 
     var player: Playerc = Player.create()
     val status = mutableMapOf<String, String>()
+    val bundle: Bundle get() = Bundle(player.locale())
 
     fun err(message: String, vararg parameters: Any) {
-        val text = "[scarlet]" + bundle()[message, parameters]
+        val text = "[scarlet]" + bundle[message, parameters]
         player.sendMessage(text)
     }
 
     fun send(message: String, vararg parameters: Any) {
-        val text = bundle()[message, parameters]
-        player.sendMessage(text)
+        send(bundle, message, *parameters)
     }
 
     fun send(bundle: Bundle, message: String, vararg parameters: Any) {
         val text = bundle[message, parameters]
         player.sendMessage(text)
-    }
-
-    fun bundle(): Bundle {
-        return Bundle(player.locale())
     }
 
     /** 플레이어의 Discord ID 값을 변경 합니다. */
