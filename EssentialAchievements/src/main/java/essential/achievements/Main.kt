@@ -1,11 +1,15 @@
 package essential.achievements
 
 import arc.util.CommandHandler
+import arc.util.Log
+import essential.bundle.Bundle
+import mindustry.mod.Plugin
 
 class Main : Plugin() {
     public override fun init() {
-        essential.achievements.Main.Companion.bundle.setPrefix("[EssentialAchievements]")
-        Log.debug(essential.achievements.Main.Companion.bundle.get("event.plugin.starting"))
+        bundle.prefix = "[EssentialAchievements]"
+
+        Log.debug(bundle["event.plugin.starting"])
 
         /*conf = essential.core.Main.Companion.createAndReadConfig(
                 "config_achievements.yaml",
@@ -14,7 +18,7 @@ class Main : Plugin() {
         );
 */
         // 이벤트 실행
-        val event = essential.achievements.Event()
+        val event = Events()
         val methods = event.javaClass.getDeclaredMethods()
         for (method in methods) {
             val annotation: essential.core.annotation.Event? =
@@ -22,7 +26,7 @@ class Main : Plugin() {
             if (annotation != null) {
                 try {
                     method.invoke(event)
-                } catch (e: java.lang.IllegalAccessException) {
+                } catch (e: IllegalAccessException) {
                     throw java.lang.RuntimeException(e)
                 } catch (e: java.lang.reflect.InvocationTargetException) {
                     throw java.lang.RuntimeException(e)
@@ -30,11 +34,11 @@ class Main : Plugin() {
             }
         }
 
-        Log.debug(essential.achievements.Main.Companion.bundle.get("event.plugin.loaded"))
+        Log.debug(bundle["event.plugin.loaded"])
     }
 
     public override fun registerServerCommands(handler: CommandHandler) {
-        val commands = essential.achievements.Commands()
+        val commands = Commands()
 
         val methods = commands.javaClass.getDeclaredMethods()
 
@@ -98,6 +102,6 @@ class Main : Plugin() {
 
     companion object {
         var bundle: Bundle = Bundle()
-        var conf: essential.achievements.Config? = null
+        var conf: Config? = null
     }
 }

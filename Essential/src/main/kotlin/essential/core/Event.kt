@@ -240,7 +240,7 @@ object Event {
                     val str = StringBuilder()
                     val bundle = data.bundle
                     // todo 이거 파일 없음
-                    val coreBundle = Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.languageTag)))
+                    val coreBundle = Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale.of(data.player.locale())))
 
                     buf.forEach { two ->
                         val action = when (two.action) {

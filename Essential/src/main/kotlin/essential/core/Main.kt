@@ -6,6 +6,8 @@ import arc.Events
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.ObjectMapper
 import essential.bundle
 import essential.config.Config
 import essential.core.Event.actionFilter
@@ -20,12 +22,12 @@ import essential.rootPath
 import essential.service.fileWatchService
 import kotlinx.coroutines.*
 import mindustry.Vars
+import mindustry.Vars.state
 import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
 import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
-import org.hjson.JsonValue
 import java.util.*
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
@@ -117,31 +119,27 @@ class Main : Plugin() {
             override fun allow(e: Administration.PlayerAction): Boolean {
                 if (e.player == null) return true
                 val data = players.find { it.uuid == e.player.uuid() }
-                val isHub = pluginData["hubMode"]
+                val isHub = pluginData.hubMapName
 
                 if (!isNotTargetMap) {
                     pluginData.data.warpBlock.forEach {
-                        if (it.mapName == pluginData.currentMap && e.tile != null && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
+                        if (it.mapName == state.map.name() && e.tile != null && it.x.toShort() == e.tile.x && it.y.toShort() == e.tile.y && it.tileName == e.tile.block().name) {
                             return false
                         }
                     }
                 }
 
-                if (Vars.state.rules.pvp && conf.feature.pvp.autoTeam && e.player.team() == Team.derelict) {
+                if (state.rules.pvp && conf.feature.pvp.autoTeam && e.player.team() == Team.derelict) {
                     return false
                 }
 
                 if (data != null) {
-                    if (e.type == Administration.ActionType.commandUnits) {
-                        data.currentControlCount += e.unitIDs.size
-                    }
-
                     return when {
-                        isHub != null && isHub == Vars.state.map.name() -> {
+                        isHub != null && isHub == state.map.name() -> {
                             Permission.check(data, "hub.build")
                         }
 
-                        data.strict -> {
+                        data.strictMode -> {
                             false
                         }
 
@@ -180,15 +178,16 @@ class Main : Plugin() {
                 .error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }
                 .block {
                     if (it.status == Http.HttpStatus.OK) {
-                        val json = JsonValue.readJSON(it.resultAsString).asObject()
-                        pluginData.pluginVersion = JsonValue.readJSON(
-                            this::class.java.getResourceAsStream("/plugin.json")!!.reader().readText()
-                        ).asObject()["version"].asString()
-                        val latest = DefaultArtifactVersion(json.getString("tag_name", pluginData.pluginVersion))
+                        val jsonParser = ObjectMapper().configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
+                        val json = jsonParser.readTree(it.resultAsString)
+                        pluginData.pluginVersion = jsonParser.readTree(
+                            this::class.java.getResourceAsStream("/plugin.json")!!.reader()
+                        ).get("version").asText()
+                        val latest = DefaultArtifactVersion(json.get("tag_name").asText(pluginData.pluginVersion))
                         val current = DefaultArtifactVersion(pluginData.pluginVersion)
 
                         when {
-                            latest > current -> Log.info(bundle["config.update.new", json["assets"].asArray()[0].asObject()["browser_download_url"].asString(), json["body"].asString()])
+                            latest > current -> Log.info(bundle["config.update.new", json.get("assets").get(0).get("browser_download_url").asText(), json.get("body").asText()])
                             latest.compareTo(current) == 0 -> Log.info(bundle["config.update.current"])
                             latest < current -> Log.info(bundle["config.update.devel"])
                         }

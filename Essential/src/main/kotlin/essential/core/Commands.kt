@@ -19,31 +19,44 @@ import essential.core.Event.findPlayers
 import essential.core.Event.findPlayersByName
 import essential.core.Event.worldHistory
 import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
 import essential.database.data.PlayerData
 import essential.database.data.getPlayerData
+import essential.database.data.plugin.WarpBlock
+import essential.database.data.plugin.WarpCount
+import essential.database.data.plugin.WarpTotal
 import essential.database.data.update
+import essential.database.databaseClose
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
+import essential.isCheated
+import essential.isSurrender
+import essential.isVoting
+import essential.nextVoteAvailable
 import essential.permission.Permission
+import essential.playTime
 import essential.players
 import essential.rootPath
 import essential.systemTimezone
 import essential.timeSource
+import essential.uptime
 import essential.util.currentTime
+import essential.voterCooldown
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.format
 import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Weathers
 import mindustry.core.GameState
-import mindustry.game.EventType
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
@@ -61,14 +74,12 @@ import mindustry.world.Tile
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
-import java.sql.Timestamp
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.MissingResourceException
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.math.round
+import kotlin.random.Random
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
 import kotlin.time.Duration.Companion.minutes
@@ -284,100 +295,102 @@ class Commands {
 
     @ClientCommand("exp", "<set/hide/add/remove> [values/player] [player]", "Edit account exp values")
     fun exp(playerData: PlayerData, arg: Array<out String>) {
-        fun set(exp: Int?, type: String) {
-            fun set(data: PlayerData) {
-                val previous = data.exp
-                when (type) {
-                    "set" -> data.exp = arg[1].toInt()
-                    "add" -> data.exp += arg[1].toInt()
-                    "remove" -> data.exp -= arg[1].toInt()
+        scope.launch {
+            suspend fun set(exp: Int?, type: String) {
+                suspend fun set(data: PlayerData) {
+                    val previous = data.exp
+                    when (type) {
+                        "set" -> data.exp = arg[1].toInt()
+                        "add" -> data.exp += arg[1].toInt()
+                        "remove" -> data.exp -= arg[1].toInt()
+                    }
+                    playerData.update()
+                    playerData.send("command.exp.result", previous, data.exp)
                 }
-                scope.launch { playerData.update() }
-                playerData.send("command.exp.result", previous, data.exp)
-            }
 
-            if (exp != null) {
-                if (arg.size == 3) {
-                    val target = findPlayers(arg[2])
-                    if (target != null) {
-                        val data = findPlayerData(target.uuid())
-                        if (data != null) {
-                            set(data)
+                if (exp != null) {
+                    if (arg.size == 3) {
+                        val target = findPlayers(arg[2])
+                        if (target != null) {
+                            val data = findPlayerData(target.uuid())
+                            if (data != null) {
+                                set(data)
+                            } else {
+                                playerData.err(PLAYER_NOT_REGISTERED)
+                                return
+                            }
                         } else {
-                            playerData.err(PLAYER_NOT_REGISTERED)
-                            return
+                            val p = findPlayersByName(arg[2])
+                            if (p != null) {
+                                val a = getPlayerData(p.id)
+                                if (a != null) {
+                                    set(a)
+                                }
+                            } else {
+                                playerData.err(PLAYER_NOT_FOUND)
+                                return
+                            }
                         }
                     } else {
-                        val p = findPlayersByName(arg[2])
-                        if (p != null) {
-                            val a = getPlayerData(p.id)
-                            if (a != null) {
-                                set(a)
+                        set(playerData)
+                    }
+                } else {
+                    playerData.err("command.exp.invalid")
+                }
+            }
+
+            when (arg[0]) {
+                "set" -> {
+                    if (arg.size >= 2) {
+                        set(arg[1].toIntOrNull(), "set")
+                    } else {
+                        playerData.err("command.exp.invalid")
+                    }
+                }
+
+                "hide" -> {
+                    if (arg.size == 2) {
+                        val target = findPlayers(arg[1])
+                        if (target != null) {
+                            val other = findPlayerData(target.uuid())
+                            if (other != null) {
+                                other.hideRanking = !other.hideRanking
+                                scope.launch { other.update() }
+                                val msg = if (other.hideRanking) "hide" else "unhide"
+                                playerData.send("command.exp.ranking.$msg")
+                                return@launch
                             }
                         } else {
                             playerData.err(PLAYER_NOT_FOUND)
-                            return
+                            return@launch
                         }
                     }
-                } else {
-                    set(playerData)
-                }
-            } else {
-                playerData.err("command.exp.invalid")
-            }
-        }
 
-        when (arg[0]) {
-            "set" -> {
-                if (arg.size >= 2) {
-                    set(arg[1].toIntOrNull(), "set")
-                } else {
-                    playerData.err("command.exp.invalid")
+                    playerData.hideRanking = !playerData.hideRanking
+                    playerData.update()
+                    val msg = if (playerData.hideRanking) "hide" else "unhide"
+                    playerData.send("command.exp.ranking.$msg")
                 }
-            }
 
-            "hide" -> {
-                if (arg.size == 2) {
-                    val target = findPlayers(arg[1])
-                    if (target != null) {
-                        val other = findPlayerData(target.uuid())
-                        if (other != null) {
-                            other.hideRanking = !other.hideRanking
-                            scope.launch { other.update() }
-                            val msg = if (other.hideRanking) "hide" else "unhide"
-                            playerData.send("command.exp.ranking.$msg")
-                            return
-                        }
+                "add" -> {
+                    if (arg.size >= 2) {
+                        set(arg[1].toIntOrNull(), "add")
                     } else {
-                        playerData.err(PLAYER_NOT_FOUND)
-                        return
+                        playerData.err("command.exp.invalid")
                     }
                 }
 
-                playerData.hideRanking = !playerData.hideRanking
-                scope.launch { playerData.update() }
-                val msg = if (playerData.hideRanking) "hide" else "unhide"
-                playerData.send("command.exp.ranking.$msg")
-            }
-
-            "add" -> {
-                if (arg.size >= 2) {
-                    set(arg[1].toIntOrNull(), "add")
-                } else {
-                    playerData.err("command.exp.invalid")
+                "remove" -> {
+                    if (arg.size >= 2) {
+                        set(arg[1].toIntOrNull(), "remove")
+                    } else {
+                        playerData.err("command.exp.invalid")
+                    }
                 }
-            }
 
-            "remove" -> {
-                if (arg.size >= 2) {
-                    set(arg[1].toIntOrNull(), "remove")
-                } else {
-                    playerData.err("command.exp.invalid")
+                else -> {
+                    playerData.err("command.exp.invalid.command")
                 }
-            }
-
-            else -> {
-                playerData.err("command.exp.invalid.command")
             }
         }
     }
@@ -497,9 +510,7 @@ class Commands {
                 ${bundle["command.info.level"]}: ${target.level}
                 ${bundle["command.info.exp"]}: ${Exp[target]}
                 ${bundle["command.info.joinDate"]}: ${
-                Timestamp(target.firstPlayed).toLocalDateTime().format(
-                    DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss")
-                )
+                target.firstPlayed.format(LocalDateTime.Formats.ISO)
             }
                 ${bundle["command.info.playtime"]}: ${timeFormat(target.totalPlayed, timeBundleFormat)}
                 ${bundle["command.info.playtime.current"]}: ${
@@ -617,14 +628,16 @@ class Commands {
                                 if (s <= 5) {
                                     val tempBanConfirmMenu = Menus.registerMenu { _, i ->
                                         if (i == 0) {
-                                            targetData.banExpireDate = Clock.System.now().plus(time.minutes).toLocalDateTime(systemTimezone)
-                                            scope.launch { targetData.update() }
+                                            require (targetData != null) {
+                                                "DB error?"
+                                            }
+                                            targetData!!.banExpireDate = Clock.System.now().plus(time.minutes).toLocalDateTime(systemTimezone)
+                                            scope.launch { targetData!!.update() }
                                             Events.fire(
                                                 CustomEvents.PlayerTempBanned(
                                                     targetData!!.name,
                                                     p.plainName(),
-                                                    LocalDateTime.now().plusMinutes(time.toLong())
-                                                        .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                                                    Clock.System.now().plus(time.minutes).toString()
                                                 )
                                             )
                                             banPlayer(targetData)
@@ -678,7 +691,7 @@ class Commands {
                         val unbanConfirmMenu = Menus.registerMenu { _, i ->
                             if (i == 0) {
                                 targetData!!.banExpireDate = null
-                                scope.launch { targetData.update() }
+                                scope.launch { targetData!!.update() }
                                 unbanPlayer(targetData)
                                 Events.fire(CustomEvents.PlayerUnbanned(targetData!!.name, currentTime()))
                                 playerData.send("log.player.unbanned", targetData!!.name, targetData!!.uuid)
@@ -717,7 +730,7 @@ class Commands {
                     }
                     targetData = other
                     Call.menu(
-                        player.con(),
+                        playerData.player.con(),
                         mainMenu,
                         bundle["info.admin.title"],
                         show(other) + banned + lineBreak,
@@ -729,27 +742,30 @@ class Commands {
             } else {
                 val p = findPlayersByName(arg[0])
                 if (p != null) {
-                    isBanned = (Vars.netServer.admins.isIDBanned(p.id) || Vars.netServer.admins.isIPBanned(p.lastIP))
-                    val banned = "\n${bundle["info.banned"]}: $isBanned"
-                    val other = database[p.id]
-                    if (other != null) {
-                        val menu = if (Permission.check(other, "info.other")) {
-                            arrayOf(arrayOf(bundle[close]))
-                        } else if (!isBanned) {
-                            controlMenus
+                    scope.launch {
+                        isBanned =
+                            (Vars.netServer.admins.isIDBanned(p.id) || Vars.netServer.admins.isIPBanned(p.lastIP))
+                        val banned = "\n${bundle["info.banned"]}: $isBanned"
+                        val other = getPlayerData(p.id)
+                        if (other != null) {
+                            val menu = if (Permission.check(other, "info.other")) {
+                                arrayOf(arrayOf(bundle[close]))
+                            } else if (!isBanned) {
+                                controlMenus
+                            } else {
+                                unbanControlMenus
+                            }
+                            targetData = other
+                            Call.menu(
+                                playerData.player.con(),
+                                mainMenu,
+                                bundle["info.admin.title"],
+                                show(other) + banned + lineBreak,
+                                menu
+                            )
                         } else {
-                            unbanControlMenus
+                            playerData.err(PLAYER_NOT_REGISTERED)
                         }
-                        targetData = other
-                        Call.menu(
-                            player.con(),
-                            mainMenu,
-                            bundle["info.admin.title"],
-                            show(other) + banned + lineBreak,
-                            menu
-                        )
-                    } else {
-                        playerData.err(PLAYER_NOT_REGISTERED)
                     }
                 } else {
                     playerData.err(PLAYER_NOT_FOUND)
@@ -757,7 +773,7 @@ class Commands {
             }
         } else {
             Call.menu(
-                player.con(),
+                playerData.player.con(),
                 -1,
                 bundle["info.title"],
                 show(playerData) + lineBreak,
@@ -775,11 +791,10 @@ class Commands {
                 try {
                     val errorName: String = result.substring(0, result.indexOf(' ') - 1)
                     Class.forName("org.mozilla.javascript.$errorName")
-                    player.sendMessage("[scarlet]> $result")
+                    playerData.player.sendMessage("[scarlet]> $result")
                 } catch (e: Throwable) {
-                    player.sendMessage("> $result")
+                    playerData.player.sendMessage("> $result")
                 }
-                playerData.lastSentMessage = result
             }
         }
     }
@@ -789,7 +804,7 @@ class Commands {
         Groups.player.forEach {
             if (!it.admin) it.kick(Packets.KickReason.kick)
         }
-        if (player.unit() != null) {
+        if (playerData.player.unit() != null) {
             playerData.send("command.kickAll.done")
         }
     }
@@ -805,7 +820,7 @@ class Commands {
     @ClientCommand("kill", "[player]", "Kill player's unit.")
     fun kill(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
-            player.unit().kill()
+            playerData.player.unit().kill()
             playerData.send("command.kill.self")
         } else {
             if (Permission.check(playerData, "kill.other")) {
@@ -1182,28 +1197,30 @@ class Commands {
     @ClientCommand("mute", "<player>", "Mute player")
     fun mute(playerData: PlayerData, arg: Array<out String>) {
         val other = findPlayers(arg[0])
-        if (other != null) {
-            val target = findPlayerData(other.uuid())
-            if (target != null) {
-                target.chatMuted = true
-                scope.launch { target.update() }
-                playerData.send("command.mute", target.name)
-            } else {
-                playerData.err(PLAYER_NOT_FOUND)
-            }
-        } else {
-            val p = findPlayersByName(arg[0])
-            if (p != null) {
-                val a = getPlayerData(p.id)
-                if (a != null) {
-                    a.chatMuted = true
-                    a.update()
-                    playerData.send("command.mute", a.name)
+        scope.launch {
+            if (other != null) {
+                val target = findPlayerData(other.uuid())
+                if (target != null) {
+                    target.chatMuted = true
+                    target.update()
+                    playerData.send("command.mute", target.name)
                 } else {
-                    playerData.err(PLAYER_NOT_REGISTERED)
+                    playerData.err(PLAYER_NOT_FOUND)
                 }
             } else {
-                playerData.err(PLAYER_NOT_FOUND)
+                val p = findPlayersByName(arg[0])
+                if (p != null) {
+                    val a = getPlayerData(p.id)
+                    if (a != null) {
+                        a.chatMuted = true
+                        a.update()
+                        playerData.send("command.mute", a.name)
+                    } else {
+                        playerData.err(PLAYER_NOT_REGISTERED)
+                    }
+                } else {
+                    playerData.err(PLAYER_NOT_FOUND)
+                }
             }
         }
     }
@@ -1212,28 +1229,30 @@ class Commands {
     fun mute(arg: Array<out String>) {
         val other = findPlayers(arg[0])
         val bundle = Bundle()
-        if (other != null) {
-            val target = findPlayerData(other.uuid())
-            if (target != null) {
-                target.chatMuted = true
-                target.update()
-                Log.info(bundle["command.mute", target.name])
-            } else {
-                Log.err(bundle[PLAYER_NOT_FOUND])
-            }
-        } else {
-            val p = findPlayersByName(arg[0])
-            if (p != null) {
-                val a = getPlayerData(p.id)
-                if (a != null) {
-                    a.chatMuted = true
-                    a.update()
-                    Log.info(bundle["command.mute", a.name])
+        scope.launch {
+            if (other != null) {
+                val target = findPlayerData(other.uuid())
+                if (target != null) {
+                    target.chatMuted = true
+                    target.update()
+                    Log.info(bundle["command.mute", target.name])
                 } else {
-                    Log.err(bundle[PLAYER_NOT_REGISTERED])
+                    Log.err(bundle[PLAYER_NOT_FOUND])
                 }
             } else {
-                Log.err(bundle[PLAYER_NOT_FOUND])
+                val p = findPlayersByName(arg[0])
+                if (p != null) {
+                    val a = getPlayerData(p.id)
+                    if (a != null) {
+                        a.chatMuted = true
+                        a.update()
+                        Log.info(bundle["command.mute", a.name])
+                    } else {
+                        Log.err(bundle[PLAYER_NOT_REGISTERED])
+                    }
+                } else {
+                    Log.err(bundle[PLAYER_NOT_FOUND])
+                }
             }
         }
     }
@@ -1393,7 +1412,7 @@ class Commands {
                     "break" -> breakBlock.toList().sortedWith(compareBy { -it.second })
                     "pvp" -> pvp.toList().sortedWith(compareBy { -it.second.first })
                     else -> {
-                        return
+                        return@launch
                     }
                 }
 
@@ -1405,7 +1424,7 @@ class Commands {
 
                 if (page >= pages || page < 0) {
                     Core.app.post { playerData.err("command.page.range", pages) }
-                    return
+                    return@launch
                 }
                 string.append(bundle[firstMessage, page + 1, pages] + "\n")
 
@@ -1503,8 +1522,8 @@ class Commands {
     @ClientCommand("hub", "<parameter> [ip] [parameters...]", "Create a server to server point.")
     fun hub(playerData: PlayerData, arg: Array<out String>) {
         val type = arg[0]
-        val x = player.tileX()
-        val y = player.tileY()
+        val x = playerData.player.tileX()
+        val y = playerData.player.tileY()
         val name = Vars.state.map.name()
         var ip = ""
         var port = 6567
@@ -1526,81 +1545,83 @@ class Commands {
             return
         }
 
-        when (type) {
-            "set" -> {
-                if (pluginData["hubMode"] == null) {
-                    pluginData.status.add(Pair("hubMode", Vars.state.map.name()))
-                    playerData.send("command.hub.mode.on")
-                } else if (pluginData["hubMode"] != null && pluginData["hubMode"] != Vars.state.map.name()) {
-                    playerData.send("command.hub.mode.exists")
-                } else {
-                    pluginData.status.removeIf { p -> p.first == "hubMode" }
-                    playerData.send("command.hub.mode.off")
+        scope.launch {
+            when (type) {
+                "set" -> {
+                    if (pluginData.hubMapName == null) {
+                        pluginData.hubMapName = Vars.state.map.name()
+                        playerData.send("command.hub.mode.on")
+                    } else if (pluginData.hubMapName != null && pluginData.hubMapName != Vars.state.map.name()) {
+                        playerData.send("command.hub.mode.exists")
+                    } else {
+                        pluginData.hubMapName = null
+                        playerData.send("command.hub.mode.off")
+                    }
+                    pluginData.update()
                 }
-                pluginData.save(false)
-            }
 
-            "zone" -> {
-                if (!playerData.status.containsKey("hub_first") && !playerData.status.containsKey("hub_second")) {
-                    playerData.status["hub_ip"] = ip
-                    playerData.status["hub_port"] = port.toString()
-                    playerData.status["hub_first"] = "true"
-                    playerData.send("command.hub.zone.first")
-                } else {
-                    playerData.send("command.hub.zone.process")
+                "zone" -> {
+                    if (!playerData.status.containsKey("hub_first") && !playerData.status.containsKey("hub_second")) {
+                        playerData.status["hub_ip"] = ip
+                        playerData.status["hub_port"] = port.toString()
+                        playerData.status["hub_first"] = "true"
+                        playerData.send("command.hub.zone.first")
+                    } else {
+                        playerData.send("command.hub.zone.process")
+                    }
                 }
-            }
 
-            "block" -> if (arg.size != 3) {
-                playerData.err("command.hub.block.parameter")
-            } else {
-                val t: Tile = player.tileOn()
-                pluginData.warpBlocks.add(
-                    PluginData.WarpBlock(
-                        name,
-                        t.build.tileX(),
-                        t.build.tileY(),
-                        t.block().name,
-                        t.block().size,
-                        ip,
-                        port,
-                        arg[2]
+                "block" -> if (arg.size != 3) {
+                    playerData.err("command.hub.block.parameter")
+                } else {
+                    val t: Tile = playerData.player.tileOn()
+                    pluginData.data.warpBlock.add(
+                        WarpBlock(
+                            name,
+                            t.build.tileX(),
+                            t.build.tileY(),
+                            t.block().name,
+                            t.block().size,
+                            ip,
+                            port,
+                            arg[2]
+                        )
                     )
-                )
-                playerData.send("command.hub.block.added", "$x:$y", arg[1])
-                pluginData.save(false)
-            }
-
-            "count" -> {
-                if (arg.size < 2) {
-                    playerData.err("command.hub.count.parameter")
-                } else {
-                    pluginData.warpCounts.add(PluginData.WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 1))
-                    playerData.send("command.hub.count", "$x:$y", arg[1])
-                    pluginData.save(false)
+                    playerData.send("command.hub.block.added", "$x:$y", arg[1])
+                    pluginData.update()
                 }
-            }
 
-            "total" -> {
-                pluginData.warpTotals.add(PluginData.WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 1))
-                playerData.send("command.hub.total", "$x:$y")
-                pluginData.save(false)
-            }
+                "count" -> {
+                    if (arg.size < 2) {
+                        playerData.err("command.hub.count.parameter")
+                    } else {
+                        pluginData.data.warpCount.add(WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 1))
+                        playerData.send("command.hub.count", "$x:$y", arg[1])
+                        pluginData.update()
+                    }
+                }
 
-            "remove" -> {
-                pluginData.warpBlocks.removeAll { a -> a.ip == ip && a.port == port }
-                pluginData.warpZones.removeAll { a -> a.ip == ip && a.port == port }
-                playerData.send("command.hub.removed", arg[1])
-                pluginData.save(false)
-            }
+                "total" -> {
+                    pluginData.data.warpTotal.add(WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 1))
+                    playerData.send("command.hub.total", "$x:$y")
+                    pluginData.update()
+                }
 
-            "reset" -> {
-                pluginData.warpTotals.clear()
-                pluginData.warpCounts.clear()
-                pluginData.save(false)
-            }
+                "remove" -> {
+                    pluginData.data.warpBlock.removeAll { a -> a.ip == ip && a.port == port }
+                    pluginData.data.warpZone.removeAll { a -> a.ip == ip && a.port == port }
+                    playerData.send("command.hub.removed", arg[1])
+                    pluginData.update()
+                }
 
-            else -> playerData.send("command.hub.help")
+                "reset" -> {
+                    pluginData.data.warpTotal.clear()
+                    pluginData.data.warpCount.clear()
+                    pluginData.update()
+                }
+
+                else -> playerData.send("command.hub.help")
+            }
         }
     }
 
@@ -1622,7 +1643,7 @@ class Commands {
                         playerData.err("command.setItem.wrong.team")
                     }
                 } else {
-                    s(player.team())
+                    s(playerData.player.team())
                 }
             } else {
                 playerData.err("command.setItem.wrong.amount")
@@ -1656,13 +1677,15 @@ class Commands {
         } else {
             val p = findPlayersByName(arg[1])
             if (p != null) {
-                val a = database[p.id]
-                if (a != null) {
-                    a.permission = arg[1]
-                    database.queue(a)
-                    playerData.send("command.setPerm.success", a.name, arg[1])
-                } else {
-                    playerData.err(PLAYER_NOT_REGISTERED)
+                scope.launch {
+                    val a = getPlayerData(p.id)
+                    if (a != null) {
+                        a.permission = arg[1]
+                        a.update()
+                        playerData.send("command.setPerm.success", a.name, arg[1])
+                    } else {
+                        playerData.err(PLAYER_NOT_REGISTERED)
+                    }
                 }
             } else {
                 playerData.err(PLAYER_NOT_FOUND)
@@ -1686,13 +1709,15 @@ class Commands {
         } else {
             val p = findPlayersByName(arg[1])
             if (p != null) {
-                val a = database[p.id]
-                if (a != null) {
-                    a.permission = arg[1]
-                    database.queue(a)
-                    Log.info(bundle["command.setPerm.success", a.name, arg[1]])
-                } else {
-                    Log.warn(bundle[PLAYER_NOT_REGISTERED])
+                scope.launch {
+                    val a = getPlayerData(p.id)
+                    if (a != null) {
+                        a.permission = arg[1]
+                        a.update()
+                        Log.info(bundle["command.setPerm.success", a.name, arg[1]])
+                    } else {
+                        Log.warn(bundle[PLAYER_NOT_REGISTERED])
+                    }
                 }
             } else {
                 Log.warn(bundle[PLAYER_NOT_FOUND])
@@ -1745,10 +1770,10 @@ class Commands {
                     if (parameter is Int) {
                         if (!unit.hidden) {
                             unit.useUnitCap = false
-                            pluginData.isCheated = true
+                            isCheated = true
                             for (a in 1..parameter) {
                                 Tmp.v1.rnd(spread)
-                                unit.spawn(team, player.x + Tmp.v1.x, player.y + Tmp.v1.y)
+                                unit.spawn(team, playerData.player.x + Tmp.v1.x, playerData.player.y + Tmp.v1.y)
                             }
                         } else {
                             playerData.err("command.spawn.unit.invalid")
@@ -1763,11 +1788,11 @@ class Commands {
 
             type.equals("block", true) -> {
                 if (Vars.content.blocks().find { a -> a.name == name } != null) {
-                    pluginData.isCheated = true
+                    isCheated = true
                     Call.constructFinish(
-                        player.tileOn(),
+                        playerData.player.tileOn(),
                         Vars.content.blocks().find { a -> a.name.equals(name, true) },
-                        player.unit(),
+                        playerData.player.unit(),
                         0,
                         team,
                         null
@@ -1785,11 +1810,7 @@ class Commands {
 
     @ClientCommand("status", description = "Show current server status")
     fun status(playerData: PlayerData, arg: Array<out String>) {
-        val bundle = if (playerData.status.containsKey("language")) {
-            Bundle(playerData.status["language"]!!)
-        } else {
-            Bundle(player.locale())
-        }
+        val bundle = playerData.bundle
 
         fun longToTime(seconds: Long): String {
             val min = seconds / 60
@@ -1807,8 +1828,8 @@ class Commands {
                 ${bundle["command.status.creator"]}: ${Vars.state.map.author()}[white]
                 TPS: ${Core.graphics.framesPerSecond}/60
                 ${bundle["command.status.banned", Vars.netServer.admins.banned.size]}
-                ${bundle["command.status.playtime"]}: ${longToTime(pluginData.playtime)}
-                ${bundle["command.status.uptime"]}: ${longToTime(pluginData.uptime)}
+                ${bundle["command.status.playtime"]}: $playTime
+                ${bundle["command.status.uptime"]}: $uptime
             """.trimIndent()
         )
 
@@ -1822,13 +1843,13 @@ class Commands {
             )
 
             fun winPercentage(team: Team): Double {
-                var players = arrayOf<Pair<Team, Double>>()
-                database.players.forEach {
-                    val rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
-                    players += Pair(it.player.team(), if (rate.isNaN()) 0.0 else rate)
+                var player = arrayOf<Pair<Team, Double>>()
+                players.forEach {
+                    val rate = it.pvpWinCount.toDouble() / (it.pvpWinCount + it.pvpLoseCount).toDouble()
+                    player += Pair(it.player.team(), if (rate.isNaN()) 0.0 else rate)
                 }
 
-                val targetTeam = players.filter { it.first == team }
+                val targetTeam = player.filter { it.first == team }
                 val rate = targetTeam.map { it.second }
                 return rate.average()
             }
@@ -1845,11 +1866,9 @@ class Commands {
                 message.appendLine("${it.key.coloredName()} : ${round(it.value * 100).toInt()}%")
             }
 
-            playerData.lastSentMessage = message.toString().dropLast(1)
-            player.sendMessage(message.toString().dropLast(1))
+            playerData.player.sendMessage(message.toString().dropLast(1))
         } else {
-            playerData.lastSentMessage = message.toString()
-            player.sendMessage(message.toString())
+            playerData.player.sendMessage(message.toString())
         }
     }
 
@@ -1859,15 +1878,10 @@ class Commands {
         if (other != null) {
             val target = findPlayerData(other.uuid())
             if (target != null) {
-                if (!target.strict) {
-                    target.strict = true
-                    database.queue(target)
-                    playerData.send("command.strict", target.name)
-                } else {
-                    target.strict = false
-                    database.queue(target)
-                    playerData.send("command.strict.undo", target.name)
-                }
+                target.strictMode = !target.strictMode
+                scope.launch { target.update() }
+                val undo = if (target.strictMode) ".undo" else ""
+                playerData.send("command.strict$undo", target.name)
             } else {
                 playerData.err(PLAYER_NOT_FOUND)
             }
@@ -1881,15 +1895,10 @@ class Commands {
         if (other != null) {
             val target = findPlayerData(other.uuid())
             if (target != null) {
-                if (!target.strict) {
-                    target.strict = true
-                    database.queue(target)
-                    Log.info(bundle["command.strict", target.name])
-                } else {
-                    target.strict = false
-                    database.queue(target)
-                    Log.info(bundle["command.strict.undo", target.name])
-                }
+                target.strictMode = !target.strictMode
+                scope.launch { target.update() }
+                val undo = if (target.strictMode) ".undo" else ""
+                Log.info(bundle["command.strict$undo", target.name])
             } else {
                 Log.err(bundle[PLAYER_NOT_FOUND])
             }
@@ -1898,9 +1907,9 @@ class Commands {
 
     @ClientCommand("t", "<message...>", "Send a meaage only to your teammates.")
     fun t(playerData: PlayerData, arg: Array<out String>) {
-        if (!playerData.mute) {
-            Groups.player.each({ p -> p.team() === player.team() }) { o ->
-                o.sendMessage("[#" + player.team().color.toString() + "]<T>[] ${player.coloredName()} [orange]>[white] ${arg[0]}")
+        if (!playerData.chatMuted) {
+            Groups.player.each({ p -> p.team() === playerData.player.team() }) { o ->
+                o.sendMessage("[#" + playerData.player.team().color.toString() + "]<T>[] ${playerData.player.coloredName()} [orange]>[white] ${arg[0]}")
             }
         }
     }
@@ -1910,7 +1919,7 @@ class Commands {
         val team = selectTeam(arg[0])
 
         if (arg.size == 1) {
-            player.team(team)
+            playerData.player.team(team)
         } else if (Permission.check(playerData, "team.other")) {
             val other = findPlayers(arg[1])
             if (other != null) {
@@ -1947,12 +1956,11 @@ class Commands {
                 Vars.netServer.admins.banPlayer(other.uuid())
                 other.kick(Packets.KickReason.banned)
             } else {
-                val time = LocalDateTime.now()
-                val minute = arg[1].toLongOrNull()
+                val minute = arg[1].toIntOrNull()
                 val reason = arg[2]
 
-                if (minute != null) { // todo d h m s 날짜 형식 지원
-                    d.banTime = time.plusMinutes(minute.toLong()).toString()
+                if (minute != null) {
+                    d.banExpireDate = Clock.System.now().plus(minute.minutes).toLocalDateTime(systemTimezone)
                     Vars.netServer.admins.banPlayer(other.uuid())
                     other.kick(reason)
                 } else {
@@ -1964,11 +1972,8 @@ class Commands {
 
     @ClientCommand("time", description = "Show current server time")
     fun time(playerData: PlayerData, arg: Array<out String>) {
-        val now = LocalDateTime.now()
-        // todo time format 통합
-        val dateTimeFormatter =
-            DateTimeFormatter.ofPattern("YYYY-MM-dd a HH:mm:ss").withLocale(Locale(playerData.languageTag))
-        playerData.send("command.time", now.format(dateTimeFormatter))
+        val now = Clock.System.now().toString()
+        playerData.send("command.time", now)
     }
 
     @ClientCommand("tp", "<player>", "Teleport to other players")
@@ -1978,45 +1983,16 @@ class Commands {
         if (other == null) {
             playerData.err(PLAYER_NOT_FOUND)
         } else {
-            player.unit()[other.x] = other.y
-            Call.setPosition(player.con(), other.x, other.y)
-            Call.setCameraPosition(player.con(), other.x, other.y)
-        }
-    }
-
-    @ClientCommand("tpp", "[player]", "Lock on camera the target player")
-    fun tpp(playerData: PlayerData, arg: Array<out String>) {
-        if (arg.isEmpty() && playerData.tpp != null && playerData.tppTeam != null) {
-            player.team(Team.get(playerData.tppTeam!!))
-
-            playerData.send("command.tpp.unfollowing")
-            Call.setCameraPosition(player.con(), player.x, player.y)
-
-            playerData.tppTeam = null
-            playerData.tpp = null
-        } else {
-            val other = findPlayers(arg[0])
-            if (other == null) {
-                playerData.err(PLAYER_NOT_FOUND)
-            } else {
-                playerData.tppTeam = player.team().id
-                playerData.tpp = other.uuid()
-                player.clearUnit()
-                player.team(Team.derelict)
-                playerData.send("command.tpp.following", other.plainName())
-            }
-        }
-
-        if (arg.isEmpty() && playerData.tpp != null) {
-            playerData.tpp = null
-            playerData.tppTeam = 0
+            playerData.player.unit()[other.x] = other.y
+            Call.setPosition(playerData.player.con(), other.x, other.y)
+            Call.setCameraPosition(playerData.player.con(), other.x, other.y)
         }
     }
 
     @ClientCommand("track", description = "Display the mouse positions of players.")
     fun track(playerData: PlayerData, arg: Array<out String>) {
-        playerData.tracking = !playerData.tracking
-        val msg = if (!playerData.tracking) ".disabled" else ""
+        playerData.mouseTracking = !playerData.mouseTracking
+        val msg = if (!playerData.mouseTracking) ".disabled" else ""
         playerData.send("command.track.toggle$msg")
     }
 
@@ -2036,28 +2012,30 @@ class Commands {
     @ClientCommand("unmute", "<player>", "Unmute player")
     fun unmute(playerData: PlayerData, arg: Array<out String>) {
         val other = findPlayers(arg[0])
-        if (other != null) {
-            val target = findPlayerData(other.uuid())
-            if (target != null) {
-                target.mute = false
-                database.queue(target)
-                playerData.send("command.unmute", target.name)
-            } else {
-                playerData.err(PLAYER_NOT_FOUND)
-            }
-        } else {
-            val p = findPlayersByName(arg[0])
-            if (p != null) {
-                val a = database[p.id]
-                if (a != null) {
-                    a.mute = false
-                    database.queue(a)
-                    playerData.send("command.unmute", a.name)
+        scope.launch {
+            if (other != null) {
+                val target = findPlayerData(other.uuid())
+                if (target != null) {
+                    target.chatMuted = false
+                    target.update()
+                    playerData.send("command.unmute", target.name)
                 } else {
-                    playerData.err(PLAYER_NOT_REGISTERED)
+                    playerData.err(PLAYER_NOT_FOUND)
                 }
             } else {
-                playerData.err(PLAYER_NOT_FOUND)
+                val p = findPlayersByName(arg[0])
+                if (p != null) {
+                    val a = getPlayerData(p.id)
+                    if (a != null) {
+                        a.chatMuted = false
+                        a.update()
+                        playerData.send("command.unmute", a.name)
+                    } else {
+                        playerData.err(PLAYER_NOT_REGISTERED)
+                    }
+                } else {
+                    playerData.err(PLAYER_NOT_FOUND)
+                }
             }
         }
     }
@@ -2066,28 +2044,30 @@ class Commands {
     fun unmute(arg: Array<out String>) {
         val bundle = Bundle()
         val other = findPlayers(arg[0])
-        if (other != null) {
-            val target = findPlayerData(other.uuid())
-            if (target != null) {
-                target.mute = false
-                database.queue(target)
-                Log.info(bundle["command.unmute", target.name])
-            } else {
-                Log.warn(bundle[PLAYER_NOT_FOUND])
-            }
-        } else {
-            val p = findPlayersByName(arg[0])
-            if (p != null) {
-                val a = database[p.id]
-                if (a != null) {
-                    a.mute = false
-                    database.queue(a)
-                    Log.info(bundle["command.unmute", a.name])
+        scope.launch {
+            if (other != null) {
+                val target = findPlayerData(other.uuid())
+                if (target != null) {
+                    target.chatMuted = false
+                    target.update()
+                    Log.info(bundle["command.unmute", target.name])
                 } else {
-                    Log.warn(bundle[PLAYER_NOT_REGISTERED])
+                    Log.warn(bundle[PLAYER_NOT_FOUND])
                 }
             } else {
-                Log.warn(bundle[PLAYER_NOT_FOUND])
+                val p = findPlayersByName(arg[0])
+                if (p != null) {
+                    val a = getPlayerData(p.id)
+                    if (a != null) {
+                        a.chatMuted = false
+                        a.update()
+                        Log.info(bundle["command.unmute", a.name])
+                    } else {
+                        Log.warn(bundle[PLAYER_NOT_REGISTERED])
+                    }
+                } else {
+                    Log.warn(bundle[PLAYER_NOT_FOUND])
+                }
             }
         }
     }
@@ -2098,7 +2078,7 @@ class Commands {
         when (arg[0]) {
             "effect" -> {
                 Call.openURI(
-                    player.con(),
+                    playerData.player.con(),
                     "https://github.com/Anuken/Mindustry/blob/master/core/src/mindustry/content/Fx.java"
                 )
             }
@@ -2121,7 +2101,7 @@ class Commands {
             val duration = arg[1].toInt()
             Call.createWeather(
                 weather,
-                (Random().nextDouble() * 100).toFloat(),
+                (Random.nextDouble() * 100).toFloat(),
                 (duration * 8).toFloat(),
                 10f,
                 10f
@@ -2133,13 +2113,13 @@ class Commands {
 
     @ClientCommand("vote", "<kick/map/gg/skip/back/random> [player/amount/world] [reason]", "Start voting")
     fun vote(playerData: PlayerData, arg: Array<out String>) {
-        val cooltime = "command.vote.coolTime"
+        val coolTime = "command.vote.coolTime"
         val noReason = "command.vote.no.reason"
         val mapNotFound = "command.vote.map.not.exists"
 
         fun start(voteData: VoteData) {
-            if (!pluginData.voting) {
-                pluginData.voting = true
+            if (!isVoting) {
+                isVoting = true
                 Timer.schedule(VoteSystem(voteData), 0f, 1f, 60)
             } else {
                 playerData.err("command.vote.process")
@@ -2151,13 +2131,13 @@ class Commands {
             return
         }
 
-        if (pluginData.voterCooltime.containsKey(player.plainName())) {
-            playerData.err(cooltime)
+        if (voterCooldown.containsKey(playerData.player.plainName())) {
+            playerData.err(coolTime)
             return
         }
 
-        val solo = database.players.size == 1 && arg[0] == "map"
-        if (!solo && database.players.filter { !it.afk }.size <= 3 && !Permission.check(playerData, "vote.admin")) {
+        val solo = players.size == 1 && arg[0] == "map"
+        if (!solo && players.filter { !it.afk }.size <= 3 && !Permission.check(playerData, "vote.admin")) {
             playerData.err("command.vote.enough")
             return
         }
@@ -2219,7 +2199,7 @@ class Commands {
                         }
 
                         if (target != null) {
-                            if (database.players.size != 1) {
+                            if (players.size != 1) {
                                 val voteData = VoteData(
                                     type = VoteType.Map,
                                     map = target,
@@ -2228,7 +2208,7 @@ class Commands {
                                 )
                                 start(voteData)
                             } else {
-                                pluginData.isSurrender = true
+                                isSurrender = true
                                 Vars.maps.setNextMapOverride(target)
                                 Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
                             }
@@ -2246,18 +2226,18 @@ class Commands {
             // vote gg
             "gg" -> {
                 if (!Permission.check(playerData, "vote.gg")) return
-                if (pluginData.voteCooltime == 0) {
+                if (nextVoteAvailable.hasPassedNow()) {
                     val voteData = VoteData(
                         type = VoteType.GameOver,
                         starter = playerData,
                     )
                     if (Vars.state.rules.pvp) {
-                        voteData.team = player.team()
-                        pluginData.voteCooltime = 120
+                        voteData.team = playerData.player.team()
+                        nextVoteAvailable = timeSource.markNow().plus(2.minutes)
                     }
                     start(voteData)
                 } else {
-                    playerData.err(cooltime)
+                    playerData.err(coolTime)
                 }
             }
 
@@ -2270,16 +2250,16 @@ class Commands {
                     if (arg[1].toInt() > conf.command.skip.limit) {
                         playerData.send("command.vote.skip.tooMany")
                     } else {
-                        if (pluginData.voteCooltime == 0) {
+                        if (nextVoteAvailable.hasPassedNow()) {
                             val voteData = VoteData(
                                 type = VoteType.Skip,
                                 wave = arg[1].toInt(),
                                 starter = playerData
                             )
-                            pluginData.voteCooltime = 120
+                            nextVoteAvailable = timeSource.markNow().plus(2.minutes)
                             start(voteData)
                         } else {
-                            playerData.send(cooltime)
+                            playerData.send(coolTime)
                         }
                     }
                 }
@@ -2307,23 +2287,23 @@ class Commands {
             // vote random
             "random" -> {
                 if (!Permission.check(playerData, "vote.random")) return
-                if (pluginData.voteCooltime == 0 || Permission.check(playerData, "vote.random.bypass")) {
+                if (nextVoteAvailable.hasPassedNow() || Permission.check(playerData, "vote.random.bypass")) {
                     val voteData = VoteData(
                         type = VoteType.Random,
                         starter = playerData
                     )
-                    pluginData.voteCooltime = 360
+                    nextVoteAvailable = timeSource.markNow().plus(6.minutes)
                     start(voteData)
                 } else {
-                    playerData.err(cooltime)
+                    playerData.err(coolTime)
                 }
             }
 
             "reset" -> {
                 if (!Permission.check(playerData, "vote.reset")) return
-                pluginData.voting = false
-                pluginData.voteCooltime = 0
-                pluginData.voterCooltime.clear()
+                isVoting = false
+                nextVoteAvailable = timeSource.markNow()
+                voterCooldown.clear()
                 playerData.send("command.vote.reset")
             }
 
@@ -2336,7 +2316,7 @@ class Commands {
     @ClientCommand("votekick", "<player>", "Start kick voting")
     fun votekick(playerData: PlayerData, arg: Array<out String>) {
         if (arg[0].contains("#")) {
-            val target = database.players.find { e ->
+            val target = players.find { e ->
                 e.uuid == Groups.player.find { p -> p.id() == arg[0].substring(1).toInt() }.uuid()
             }
             if (target != null) {
@@ -2344,7 +2324,7 @@ class Commands {
                     playerData.err("command.vote.kick.target.admin")
                 } else {
                     val array = arrayOf("kick", target.name, "Kick")
-                    vote(player, playerData, array)
+                    vote(playerData, array)
                 }
             }
         }
@@ -2398,7 +2378,8 @@ class Commands {
             val server = "## Server commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
             val client = "## Client commands\n| Command | Parameter | Description |\n|:---|:---|:--- |\n"
             val time = "README.md Generated time: ${
-                DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now())
+                Clock.System.now().toLocalDateTime(systemTimezone)
+                    .format(LocalDateTime.Formats.ISO)
             }"
 
             val result = StringBuilder()
@@ -2433,7 +2414,7 @@ class Commands {
         try {
             Permission.load()
             Log.info(Bundle()["config.permission.updated"])
-            conf = Yaml.default.decodeFromString(CoreConfig.serializer(), root.child(Main.CONFIG_PATH).readString())
+            conf = Yaml.default.decodeFromString(CoreConfig.serializer(), rootPath.child(Main.CONFIG_PATH).readString())
             Log.info(Bundle()["config.reloaded"])
         } catch (e: Exception) {
             e.printStackTrace()
@@ -2446,7 +2427,7 @@ class Commands {
         Core.app.post {
             Log.info("unloading")
             // 스레드 종료
-            daemon.shutdownNow()
+            scope.cancel()
 
             val commands = Commands()
 
@@ -2477,7 +2458,7 @@ class Commands {
             Vars.netServer.admins.actionFilters.remove(actionFilter)
 
             // DB 연결 해제
-            database.close()
+            databaseClose()
 
             Vars.mods.getMod("essential").dispose()
             Vars.mods.list().remove(Vars.mods.getMod("essential"))
@@ -2491,7 +2472,7 @@ class Commands {
     @ServerCommand("debug", "[parameter...]", "Debug any commands")
     fun debug(arg: Array<out String>) {
         println(pluginData.toString())
-        for (a in database.players) {
+        for (a in players) {
             println(a.toString())
         }
     }

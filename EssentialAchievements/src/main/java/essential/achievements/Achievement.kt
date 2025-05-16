@@ -16,7 +16,9 @@ public enum Achievement {
     // Attack
 }*/
 
+import arc.Events
 import essential.database.data.PlayerData
+import mindustry.Vars
 import java.io.IOException
 import java.math.BigInteger
 import java.nio.file.Files
@@ -43,7 +45,7 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getBlockBreakCount()
+            return data.blockBreakCount
         }
     },
 
@@ -53,7 +55,7 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getStatus().getOrDefault("record.time.sandbox", "0").toInt()
+            return data.status.getOrDefault("record.time.sandbox", "0").toInt()
         }
     },
     Eliminator {
@@ -62,7 +64,7 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getPvpVictoriesCount()
+            return data.pvpWinCount.toInt()
         }
     },
     Defender {
@@ -71,7 +73,7 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getStatus().getOrDefault("record.wave", "0").toInt()
+            return data.status.getOrDefault("record.wave", "0").toInt()
         }
     },
     Aggressor {
@@ -80,16 +82,16 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getAttackModeClear()
+            return data.attackClear
         }
     },
     Serpulo {
         override fun value(): Int{
-            return 360000u
+            return 360000
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getStatus().getOrDefault("record.time.serpulo", "0").toInt()
+            return data.status.getOrDefault("record.time.serpulo", "0").toInt()
         }
     },
     Erekir {
@@ -98,7 +100,7 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getStatus().getOrDefault("record.time.erekir", "0").toInt()
+            return data.status.getOrDefault("record.time.erekir", "0").toInt()
         }
     },
 
@@ -108,7 +110,7 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getTotalPlayTime() as Int
+            return data.totalPlayed
         }
     },
     BlackWater {
@@ -117,7 +119,7 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getTotalPlayTime() as Int
+            return data.totalPlayed
         }
     },
     Oil {
@@ -126,7 +128,7 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getTotalPlayTime() as Int
+            return data.totalPlayed
         }
     },
 
@@ -138,11 +140,11 @@ enum class Achievement {
         override fun current(data: PlayerData): Int{
             var result: Int
             try {
-                val total: Int = data.getPvpVictoriesCount() + data.getPvpDefeatCount()
+                val total: Int = data.pvpWinCount + data.pvpLoseCount
                 if (total < 50) {
                     result = 0
                 } else {
-                    result = data.getPvpVictoriesCount() * 100 / total
+                    result = data.pvpWinCount * 100 / total
                 }
             } catch (e: ArithmeticException) {
                 result = 0
@@ -157,7 +159,7 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            return data.getStatus().getOrDefault("record.time.chat", "0").toInt()
+            return data.status.getOrDefault("record.time.chat", "0").toInt()
         }
     },
 
@@ -167,12 +169,10 @@ enum class Achievement {
             return 1
         }
 
-        override fun isHidden(): Boolean {
-            return true
-        }
+        override val isHidden = true
 
         override fun current(data: PlayerData): Int{
-            return data.getStatus().getOrDefault("record.time.meetowner", "0").toInt()
+            return data.status.getOrDefault("record.time.meetowner", "0").toInt()
         }
     },
 
@@ -182,18 +182,16 @@ enum class Achievement {
             return 1
         }
 
-        override fun isHidden(): Boolean {
-            return true
-        }
+        override val isHidden = true
 
         override fun current(data: PlayerData): Int{
-            return data.getStatus().getOrDefault("record.map.clear.asteroids", "0").toInt()
+            return data.status.getOrDefault("record.map.clear.asteroids", "0").toInt()
         }
 
         override fun success(data: PlayerData): Boolean {
             val mapHash = "7b032cc7815022be644d00a877ae0388"
             if (Achievement.Companion.mapHash == mapHash) {
-                data.getStatus().put("record.map.clear.asteroids", "1")
+                data.status.put("record.map.clear.asteroids", "1")
                 return true
             } else {
                 return false
@@ -206,18 +204,16 @@ enum class Achievement {
             return 1
         }
 
-        override fun isHidden(): Boolean {
-            return true
-        }
+        override val isHidden = true
 
         override fun current(data: PlayerData): Int{
-            return data.getStatus().getOrDefault("record.map.clear.transcendence", "0").toInt()
+            return data.status.getOrDefault("record.map.clear.transcendence", "0").toInt()
         }
 
         override fun success(data: PlayerData): Boolean {
             val mapHash = "f355b3d91d5d8215e557ff045b3864ef"
             if (Achievement.Companion.mapHash == mapHash) {
-                data.getStatus().put("record.map.clear.transcendence", "1")
+                data.status.put("record.map.clear.transcendence", "1")
                 return true
             } else {
                 return false
@@ -226,8 +222,7 @@ enum class Achievement {
     };
 
     abstract fun value(): Int
-    open val isHidden: Boolean
-        get() = false
+    open val isHidden: Boolean = false
 
     abstract fun current(data: PlayerData): Int
     open fun success(data: PlayerData): Boolean {
@@ -235,8 +230,8 @@ enum class Achievement {
     }
 
     fun set(data: PlayerData) {
-        if (!data.getStatus().containsKey("achievement." + this.toString().lowercase(Locale.getDefault()))) {
-            data.getStatus().put(
+        if (!data.status.containsKey("achievement." + this.toString().lowercase(Locale.getDefault()))) {
+            data.status.put(
                 "achievement." + this.toString().lowercase(Locale.getDefault()),
                 LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             )

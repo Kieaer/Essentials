@@ -6,8 +6,10 @@ import arc.func.Prov
 import arc.util.Align
 import arc.util.Log
 import arc.util.Time
+import arc.util.Timer
 import essential.bundle
 import essential.bundle.Bundle
+import essential.core.Event.coreListeners
 import essential.core.Event.findPlayerData
 import essential.core.Event.isUnitInside
 import essential.core.Event.pvpPlayer
@@ -15,6 +17,7 @@ import essential.core.Event.pvpSpecters
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
+import essential.core.service.effect.EffectSystem
 import essential.database.data.PlayerData
 import essential.database.data.PluginData
 import essential.database.data.getPluginData
@@ -58,9 +61,9 @@ class Trigger {
 
         // 로그인 날짜 기록
         val currentTime = Clock.System.now().toLocalDateTime(systemTimezone)
-        val isDayPassed = playerData.lastLoginDate.daysUntil(currentTime.date)
+        val isDayPassed = playerData.lastLoginDate.date.daysUntil(currentTime.date)
         if (isDayPassed >= 1) playerData.attendanceDays += 1
-        playerData.lastLoginDate = currentTime.date
+        playerData.lastLoginDate = currentTime
 
         // 권한 설정에 의한 닉네임 및 admin 권한 설정
         val permission = Permission[playerData]
@@ -602,6 +605,8 @@ class Trigger {
 
         Events.run(EventType.Trigger.update) {
             for (data in players) {
+
+
                 if (Vars.state.rules.pvp && data.player.unit() != null && data.player.team()
                         .cores().isEmpty && data.player.team() != Team.derelict && pvpPlayer.containsKey(data.uuid)
                 ) {

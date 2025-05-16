@@ -18,6 +18,7 @@ class PluginData(id: EntityID<UInt>) : UIntEntity(id) {
 
     var pluginVersion by PluginTable.pluginVersion
     var databaseVersion by PluginTable.databaseVersion
+    var hubMapName by PluginTable.hubMapName
     var data by PluginTable.data
 }
 
@@ -32,10 +33,13 @@ data class DisplayData(
 /** 플러그인 데이터 업데이트 */
 suspend fun PluginData.update() {
     val displayData = this.data
+    val hubPort = this.hubMapName
+
     newSuspendedTransaction {
         PluginTable.update {
             it[PluginTable.pluginVersion] = Vars.mods.getMod("Essential").meta.version
             it[PluginTable.databaseVersion] = DATABASE_VERSION
+            it[PluginTable.hubMapName] = hubPort
             it[PluginTable.data] = displayData
         }
     }
