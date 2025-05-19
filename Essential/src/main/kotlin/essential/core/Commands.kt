@@ -85,7 +85,7 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.time.Duration.Companion.minutes
 
 
-class Commands {
+internal class Commands {
     companion object {
         // 다중 사용 함수
         const val PLAYER_NOT_FOUND = "player.not.found"
@@ -1279,7 +1279,7 @@ class Commands {
         for (page in 0..pages) {
             val build = StringBuilder()
             for (a in 6 * page until (6 * (page + 1)).coerceAtMost(players.size)) {
-                build.append("ID: [gray]${players[a].entityid} ${players[a].player.coloredName()}\n")
+                build.append("ID: [gray]${players[a].entityId} ${players[a].player.coloredName()}\n")
             }
 
             val options = arrayOf(
@@ -1349,7 +1349,7 @@ class Commands {
                 }
 
                 Core.app.post { playerData.player.sendMessage(bundle["command.ranking.wait"]) }
-                val time = mutableMapOf<Pair<String, String>, Long>()
+                val time = mutableMapOf<Pair<String, String>, Int>()
                 val exp = mutableMapOf<Pair<String, String>, Int>()
                 val attack = mutableMapOf<Pair<String, String>, Int>()
                 val placeBlock = mutableMapOf<Pair<String, String>, Int>()

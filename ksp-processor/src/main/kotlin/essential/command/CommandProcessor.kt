@@ -11,6 +11,35 @@ class CommandProcessor(
     private val logger: KSPLogger
 ) : SymbolProcessor {
 
+    /**
+     * Determines the package name for generated code based on the package of the annotated functions.
+     * Extracts the base package from the function's package and appends ".generated" to it.
+     * For example, if the function is in "essential.core", the generated package will be "essential.core.generated".
+     */
+    private fun determinePackageName(functions: List<KSFunctionDeclaration>): String {
+        if (functions.isEmpty()) {
+            return "essential.core.generated" // Default package if no functions
+        }
+
+        // Get the package name from the first function's containing file
+        val firstFunction = functions.first()
+        val packageName = firstFunction.containingFile?.packageName?.asString() ?: ""
+
+        logger.info("Package name: $packageName")
+
+        // Extract the base package (e.g., essential.core, essential.achievements)
+        // The pattern is "essential.X" where X is the module name
+        val regex = "essential\\.[a-zA-Z0-9]+"
+        val pattern = Regex(regex)
+        val matchResult = pattern.find(packageName)
+
+        return if (matchResult != null) {
+            "${matchResult.value}.generated"
+        } else {
+            "essential.core.generated" // Default fallback
+        }
+    }
+
     override fun process(resolver: Resolver): List<KSAnnotated> {
         val serverSymbols = resolver.getSymbolsWithAnnotation(ServerCommand::class.qualifiedName!!)
         val clientSymbols = resolver.getSymbolsWithAnnotation(ClientCommand::class.qualifiedName!!)
@@ -46,10 +75,14 @@ class CommandProcessor(
     }
 
     private fun generateServerCommandsFile(functions: List<KSFunctionDeclaration>) {
-        val packageName = "essential.core.generated"
+        // Determine package name based on the package of the first function
+        val packageName = determinePackageName(functions)
+
+        // Extract the base package (e.g., essential.core, essential.achievements)
+        val basePackage = packageName.substringBeforeLast(".generated")
 
         val fileSpec = FileSpec.builder(packageName, "ServerCommandsGenerated")
-            .addImport("essential.core", "Commands")
+            .addImport(basePackage, "Commands")
             .addImport("essential.command", "ServerCommand")
             .addImport("arc.util", "CommandHandler")
             .addFunction(generateRegisterServerCommandsFunction(functions))
@@ -59,10 +92,14 @@ class CommandProcessor(
     }
 
     private fun generateClientCommandsFile(functions: List<KSFunctionDeclaration>) {
-        val packageName = "essential.core.generated"
+        // Determine package name based on the package of the first function
+        val packageName = determinePackageName(functions)
+
+        // Extract the base package (e.g., essential.core, essential.achievements)
+        val basePackage = packageName.substringBeforeLast(".generated")
 
         val fileSpec = FileSpec.builder(packageName, "ClientCommandsGenerated")
-            .addImport("essential.core", "Commands")
+            .addImport(basePackage, "Commands")
             .addImport("essential.command", "ClientCommand")
             .addImport("arc.util", "CommandHandler")
             .addImport("mindustry.gen", "Playerc")

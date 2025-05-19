@@ -3,6 +3,7 @@ package essential.database.data
 import essential.bundle.Bundle
 import essential.database.table.PlayerTable
 import essential.ksp.GenerateUpdate
+import essential.playerNumber
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import org.jetbrains.exposed.dao.UIntEntity
@@ -51,21 +52,34 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
     var banExpireDate by PlayerTable.banExpireDate
     var attendanceDays by PlayerTable.attendanceDays
 
+    // Exp
     var expMultiplier: Double = 1.0
     var currentExp: Int = 0
     var currentPlayTime: Int = 0
 
+    // AFK
     var afk = false
     var afkTime: UShort = 0u
     var mousePosition: Float = 0F
+
+    // Logging
     var viewHistoryMode = false
     var mouseTracking = false
+
+    // Used by voting
+    val entityId = playerNumber
+
+    // Statistics
+    var currentUnitDestroyedCount = 0
+    var currentBuildDestroyedCount = 0
+    var currentBuildAttackCount = 0
+
     var animatedName = false
 
     var player: Playerc = Player.create()
     val status = mutableMapOf<String, String>()
     val bundle: Bundle get() = Bundle(player.locale())
-
+    
     fun err(message: String, vararg parameters: Any) {
         val text = "[scarlet]" + bundle[message, parameters]
         player.sendMessage(text)

@@ -33,7 +33,7 @@ class Events {
         }
     }
 
-    @essential.core.annotation.Event
+    @Event
     fun gameover() {
         Events.on(EventType.GameOverEvent::class.java, { e ->
             players.forEach { data ->
@@ -83,7 +83,7 @@ class Events {
                         Main::class.java.getClassLoader()
                     )
                 )
-                
+
                 data.send(
                     b,
                     "event.achievement.success.other",
@@ -104,6 +104,21 @@ class Events {
                     data.status.put("record.time.chat", value.toString())
                     if (Achievement.Chatter.success(data)) {
                         Achievement.Chatter.set(data)
+                    }
+                }
+            }
+        })
+    }
+
+    @Event
+    fun unitChange() {
+        Events.on(EventType.UnitChangeEvent::class.java, { e ->
+            if (e.player != null && e.unit != null && state.rules.planet === Planets.serpulo) {
+                val data: PlayerData? = findPlayerByUuid(e.player.uuid())
+                if (data != null && e.unit.type.name.equals("quad", true)) {
+                    data.status.put("record.unit.serpulo.quad", "1")
+                    if (Achievement.SerpuloQuad.success(data)) {
+                        Achievement.SerpuloQuad.set(data)
                     }
                 }
             }

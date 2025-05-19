@@ -5,28 +5,26 @@ import arc.Core
 import arc.Events
 import arc.func.Cons
 import arc.graphics.Color
+import arc.struct.ObjectMap
 import arc.util.Log
 import arc.util.Strings
 import com.charleskorn.kaml.Yaml
+import com.fasterxml.jackson.databind.ObjectMapper
 import essential.*
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.core.annotation.Event
-import essential.database.data.PlayerData
-import essential.database.data.createBanInfo
-import essential.database.data.createPlayerData
-import essential.database.data.getPlayerData
+import essential.database.data.*
 import essential.database.data.plugin.WarpZone
-import essential.database.data.removeBanInfoByIP
-import essential.database.data.removeBanInfoByUUID
-import essential.database.data.update
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.permission.Permission
 import essential.util.currentTime
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -72,10 +70,13 @@ object Event {
 
     private var dateformat = SimpleDateFormat("HH:mm:ss")
     var blockExp = mutableMapOf<String, Int>()
+
     /** PvP 관전 플레이어 목록 */
     var pvpSpecters = mutableListOf<String>()
+
     /** PvP 플레이어 팀 데이터 목록 */
     var pvpPlayer = mutableMapOf<String, Team>()
+
     /** 전체 채팅 차단 유무 */
     var isGlobalMute = false
     var unitLimitMessageCooldown = 0
@@ -89,7 +90,7 @@ object Event {
     private val logFiles = HashMap<LogType, FileAppender>()
 
     fun init() {
-        for(type in LogType.entries) {
+        for (type in LogType.entries) {
             logFiles[type] = FileAppender(rootPath.child("log/$type.log").file())
         }
     }
@@ -223,7 +224,12 @@ object Event {
                 }
 
                 for (two in pluginData.data.warpZone) {
-                    if (two.mapName == Vars.state.map.name() && two.click && isUnitInside(it.tile, two.startTile, two.finishTile)) {
+                    if (two.mapName == Vars.state.map.name() && two.click && isUnitInside(
+                            it.tile,
+                            two.startTile,
+                            two.finishTile
+                        )
+                    ) {
                         Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
                         Call.connect(it.player.con(), two.ip, two.port)
                         continue
@@ -240,7 +246,8 @@ object Event {
                     val str = StringBuilder()
                     val bundle = data.bundle
                     // todo 이거 파일 없음
-                    val coreBundle = Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale.of(data.player.locale())))
+                    val coreBundle =
+                        Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale.of(data.player.locale())))
 
                     buf.forEach { two ->
                         val action = when (two.action) {
@@ -274,7 +281,9 @@ object Event {
                         }
                         it.player.sendMessage(str.toString().trim())
                     } else {
-                        it.player.sendMessage(bundle["event.log.position", it.tile.x, it.tile.y] + "\n" + str.toString().trim())
+                        it.player.sendMessage(
+                            bundle["event.log.position", it.tile.x, it.tile.y] + "\n" + str.toString().trim()
+                        )
                     }
                 }
 
@@ -403,7 +412,8 @@ object Event {
                         val trigger = Trigger()
                         if (data == null) {
                             newSuspendedTransaction {
-                                if (PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()) {
+                                if (PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }
+                                        .empty()) {
                                     createPlayerData(it.player)
                                 } else {
                                     Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
@@ -602,7 +612,10 @@ object Event {
 
                 if (unitLimitMessageCooldown == 0) {
                     players.forEach {
-                        it.send("config.spawnLimit.reach", "[scarlet]${Groups.unit.size()}[white]/[sky]${conf.feature.unit.limit}")
+                        it.send(
+                            "config.spawnLimit.reach",
+                            "[scarlet]${Groups.unit.size()}[white]/[sky]${conf.feature.unit.limit}"
+                        )
                     }
                     unitLimitMessageCooldown = 60
                 }
@@ -634,10 +647,11 @@ object Event {
             if (data != null) {
                 data.lastPlayedWorldName = Vars.state.map.plainName()
                 data.lastPlayedWorldMode = Vars.state.rules.modeName
-                data.lastLogoutDate = LocalDateTime.now()
+                data.lastLogoutDate = Clock.System.now().toLocalDateTime(systemTimezone)
                 data.isConnected = false
-
-                database.queue(data)
+                scope.launch {
+                    data.update()
+                }
                 offlinePlayers.add(data)
 
                 if (Vars.state.rules.pvp) {
@@ -840,7 +854,8 @@ object Event {
                         rootPath.child("log/old/$type").mkdirs()
                     }
                     Files.move(new, old, StandardCopyOption.REPLACE_EXISTING)
-                    val logFiles = rootPath.child("log/old/$type").file().listFiles { file -> file.name.endsWith(".log") }
+                    val logFiles =
+                        rootPath.child("log/old/$type").file().listFiles { file -> file.name.endsWith(".log") }
 
                     if (logFiles != null && logFiles.size >= maxLogFile) {
                         val zipFileName = "$time.zip"
@@ -914,7 +929,7 @@ object Event {
                 }
             } else if (p.team() != Team.derelict) {
                 if (Vars.state.rules.attackMode) {
-                    time - (target.currentBuildDeconstructedCount + target.currentBuildDestroyedCount)
+                    time - target.currentBuildDestroyedCount
                 } else if (Vars.state.rules.pvp) {
                     time + 5000
                 } else {
@@ -933,27 +948,33 @@ object Event {
             if (!rootPath.child("data/exp.json").exists()) {
                 rootPath.child("data/exp.json").writeString("[]")
             }
-            val resultArray = JsonArray.readJSON(rootPath.child("data/exp.json").readString("UTF-8")).asArray()
-            val resultJson = JsonObject()
-            resultJson.add("name", target.name)
-            resultJson.add("uuid", target.uuid)
-            resultJson.add("date", currentTime())
-            resultJson.add("erekirAttack", erekirAttack)
-            resultJson.add("erekirPvP", erekirPvP)
-            resultJson.add("time", time)
-            resultJson.add("enemyBuildingDestroyed", target.currentUnitDestroyedCount)
-            resultJson.add("buildingsDeconstructed", target.currentBuildDeconstructedCount)
-            resultJson.add("buildingsDestroyed", target.currentBuildDestroyedCount)
-            resultJson.add("wave", Vars.state.wave)
-            resultJson.add("multiplier", target.expMultiplier)
-            resultJson.add("score", score)
-            resultJson.add("totalScore", score * target.expMultiplier)
+            val objectMapper = ObjectMapper()
+            val resultArray = objectMapper.readTree(rootPath.child("data/exp.json").readString("UTF-8"))
+            val resultJson = mutableMapOf<String, Any>()
+            resultJson["name"] = target.name
+            resultJson["uuid"] = target.uuid
+            resultJson["date"] = currentTime()
+            resultJson["erekirAttack"] = erekirAttack
+            resultJson["erekirPvP"] = erekirPvP
+            resultJson["time"] = time
+            resultJson["enemyBuildingDestroyed"] = target.currentUnitDestroyedCount
+            resultJson["buildingsDestroyed"] = target.currentBuildDestroyedCount
+            resultJson["wave"] = Vars.state.wave
+            resultJson["multiplier"] = target.expMultiplier
+            resultJson["score"] = score
+            resultJson["totalScore"] = score * target.expMultiplier
 
-            resultArray.add(resultJson)
+            objectMapper.writeValue(rootPath.child("data/exp.json").file(), resultArray.plus(resultJson))
             rootPath.child("data/exp.json").writeString(resultArray.toString())
         }
 
-        if (isConnected && conf.feature.level.levelNotify) target.send("event.exp.current", target.exp, result, target.level, target.level - oldLevel)
+        if (isConnected && conf.feature.level.levelNotify) target.send(
+            "event.exp.current",
+            target.exp,
+            result,
+            target.level,
+            target.level - oldLevel
+        )
     }
 
     class FileAppender(private val file: File) {
@@ -970,7 +991,7 @@ object Event {
             raf.write(("\n$text").toByteArray(StandardCharsets.UTF_8))
         }
 
-        fun length() : Long {
+        fun length(): Long {
             return file.length()
         }
 
@@ -987,7 +1008,7 @@ object Event {
     fun findPlayers(name: String): Playerc? {
         if (name.toIntOrNull() != null) {
             players.forEach {
-                if (it.entityid == name.toInt()) {
+                if (it.entityId == name.toInt()) {
                     return it.player
                 }
             }
@@ -1021,7 +1042,7 @@ object Event {
         val value: Any?
     )
 
-    fun isUnitInside(target: Tile, first: Tile, second: Tile) : Boolean {
+    fun isUnitInside(target: Tile, first: Tile, second: Tile): Boolean {
         val minX = minOf(first.getX(), second.getX())
         val maxX = maxOf(first.getX(), second.getX())
         val minY = minOf(first.getY(), second.getY())

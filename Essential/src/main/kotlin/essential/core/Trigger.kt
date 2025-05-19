@@ -24,6 +24,7 @@ import essential.database.data.getPluginData
 import essential.database.data.plugin.WarpCount
 import essential.event.CustomEvents
 import essential.permission.Permission
+import essential.playerNumber
 import essential.players
 import essential.rootPath
 import essential.systemTimezone
@@ -151,6 +152,7 @@ class Trigger {
 
         playerData.isConnected = true
         players.add(playerData)
+        playerNumber++
         player.sendMessage(message.toString())
 
         playerData.send("event.player.loaded")

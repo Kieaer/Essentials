@@ -2,7 +2,10 @@ package essential.achievements
 
 import arc.util.CommandHandler
 import arc.util.Log
+import essential.achievements.generated.registerGeneratedClientCommands
 import essential.bundle.Bundle
+import essential.database.data.PlayerData
+import essential.players
 import mindustry.mod.Plugin
 
 class Main : Plugin() {
@@ -37,67 +40,12 @@ class Main : Plugin() {
         Log.debug(bundle["event.plugin.loaded"])
     }
 
-    public override fun registerServerCommands(handler: CommandHandler) {
-        val commands = Commands()
-
-        val methods = commands.javaClass.getDeclaredMethods()
-
-        for (method in methods) {
-            val annotation: ServerCommand? = method.getAnnotation<T?>(ServerCommand::class.java)
-            if (annotation != null) {
-                handler.register(annotation.name(), annotation.parameter(), annotation.description(), { args ->
-                    if (args.length > 0) {
-                        try {
-                            method.invoke(commands, *kotlin.arrayOf<kotlin.Any>(args))
-                        } catch (e: java.lang.Exception) {
-                            e.printStackTrace()
-                        }
-                    } else {
-                        try {
-                            method.invoke(commands, *kotlin.arrayOf<kotlin.Any>(kotlin.arrayOf<kotlin.String?>()))
-                        } catch (e: java.lang.Exception) {
-                            java.lang.System.err.println("arg size - " + args.length)
-                            java.lang.System.err.println("command - " + annotation.name())
-                            e.printStackTrace()
-                        }
-                    }
-                })
-            }
-        }
-    }
-
-    public override fun registerClientCommands(handler: CommandHandler) {
-        val commands = essential.achievements.Commands()
-        val methods = commands.javaClass.getDeclaredMethods()
-
-        for (method in methods) {
-            val annotation: ClientCommand? = method.getAnnotation<T?>(ClientCommand::class.java)
-            if (annotation != null) {
-                handler.< Player > register < Player ? > (annotation.name(), annotation.parameter(), annotation.description(), { args, player ->
-                    var data: PlayerData? = findPlayerByUuid(player.uuid())
-                    if (data == null) {
-                        data = PlayerData()
-                    }
-                    if (Permission.INSTANCE.check(data, annotation.name())) {
-                        try {
-                            if (args.length > 0) {
-                                method.invoke(commands, player, data, args)
-                            } else {
-                                method.invoke(commands, player, data, kotlin.arrayOf<kotlin.String?>())
-                            }
-                        } catch (e: java.lang.Exception) {
-                            e.printStackTrace()
-                        }
-                    } else {
-                        data.send("command.permission.false")
-                    }
-                })
-            }
-        }
+    override fun registerClientCommands(handler: CommandHandler) {
+        registerGeneratedClientCommands(handler)
     }
 
     fun findPlayerByUuid(uuid: kotlin.String?): PlayerData {
-        return database.getPlayers().stream().filter({ e -> e.getUuid().equals(uuid) }).findFirst().orElse(null)
+        return players.stream().filter({ e -> e.uuid == uuid }).findFirst().orElse(null)
     }
 
     companion object {

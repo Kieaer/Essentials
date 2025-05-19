@@ -132,6 +132,16 @@ enum class Achievement {
         }
     },
 
+    SerpuloQuad {
+        override fun value(): Int{
+            return 1
+        }
+
+        override fun current(data: PlayerData): Int{
+            return data.status.getOrDefault("record.unit.serpulo.quad", "0").toInt()
+        }
+    },
+
     Lord {
         override fun value(): Int{
             return 70

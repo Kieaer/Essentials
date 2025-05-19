@@ -59,6 +59,9 @@ val players = CopyOnWriteArrayList<PlayerData>()
 /** 시스템 Time zone */
 val systemTimezone = TimeZone.currentSystemDefault()
 
+/** 플레이어 번호 */
+var playerNumber = 0
+
 /** 플러그인 데이터 출력 */
 fun getPluginDataInfo(): String {
     return """
