@@ -86,7 +86,7 @@ object Event {
     val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
     lateinit var actionFilter: Administration.ActionFilter
 
-    private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}\$")
+    private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}$")
     private val logFiles = HashMap<LogType, FileAppender>()
 
     fun init() {
@@ -435,7 +435,7 @@ object Event {
     }
 
     @Event
-    fun gameover() {
+    fun gameOver() {
         Events.on(GameOverEvent::class.java, Cons<GameOverEvent> {
             if (!Vars.state.rules.infiniteResources) {
                 if (Vars.state.rules.pvp) {
@@ -577,7 +577,7 @@ object Event {
     }
 
     @Event
-    fun blockDestory() {
+    fun blockDestroy() {
         Events.on(BlockDestroyEvent::class.java, Cons<BlockDestroyEvent> {
             if (Vars.state.rules.attackMode) {
                 for (a in players) {

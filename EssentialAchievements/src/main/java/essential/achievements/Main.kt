@@ -24,11 +24,26 @@ class Main : Plugin() {
         val event = Events()
         val methods = event.javaClass.getDeclaredMethods()
         for (method in methods) {
-            val annotation: essential.core.annotation.Event? =
-                method.getAnnotation<T?>(essential.core.annotation.Event::class.java)
+            val annotation = method.getAnnotation(essential.core.annotation.Event::class.java)
             if (annotation != null) {
                 try {
                     method.invoke(event)
+                } catch (e: IllegalAccessException) {
+                    throw java.lang.RuntimeException(e)
+                } catch (e: java.lang.reflect.InvocationTargetException) {
+                    throw java.lang.RuntimeException(e)
+                }
+            }
+        }
+
+        // Initialize APMTracker
+        val apmTracker = APMTracker()
+        val apmMethods = apmTracker.javaClass.getDeclaredMethods()
+        for (method in apmMethods) {
+            val annotation = method.getAnnotation(essential.core.annotation.Event::class.java)
+            if (annotation != null) {
+                try {
+                    method.invoke(apmTracker)
                 } catch (e: IllegalAccessException) {
                     throw java.lang.RuntimeException(e)
                 } catch (e: java.lang.reflect.InvocationTargetException) {

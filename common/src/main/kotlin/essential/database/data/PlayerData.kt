@@ -74,12 +74,16 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
     var currentBuildDestroyedCount = 0
     var currentBuildAttackCount = 0
 
+    // APM (Actions Per Minute)
+    var apm = 0
+    var apmTimestamps = mutableListOf<Long>()
+
     var animatedName = false
 
     var player: Playerc = Player.create()
     val status = mutableMapOf<String, String>()
     val bundle: Bundle get() = Bundle(player.locale())
-    
+
     fun err(message: String, vararg parameters: Any) {
         val text = "[scarlet]" + bundle[message, parameters]
         player.sendMessage(text)
