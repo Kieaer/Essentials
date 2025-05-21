@@ -90,6 +90,35 @@ internal class Commands {
         // 다중 사용 함수
         const val PLAYER_NOT_FOUND = "player.not.found"
         const val PLAYER_NOT_REGISTERED = "player.not.registered"
+
+        /**
+         * Calculate the Levenshtein distance between two strings
+         */
+        private fun levenshteinDistance(s1: String, s2: String): Int {
+            val m = s1.length
+            val n = s2.length
+            val dp = Array(m + 1) { IntArray(n + 1) }
+
+            for (i in 0..m) {
+                dp[i][0] = i
+            }
+
+            for (j in 0..n) {
+                dp[0][j] = j
+            }
+
+            for (i in 1..m) {
+                for (j in 1..n) {
+                    dp[i][j] = if (s1[i - 1] == s2[j - 1]) {
+                        dp[i - 1][j - 1]
+                    } else {
+                        minOf(dp[i - 1][j - 1], minOf(dp[i][j - 1], dp[i - 1][j])) + 1
+                    }
+                }
+            }
+
+            return dp[m][n]
+        }
     }
 
     @ClientCommand("changemap", "<name> [gamemode]", "Change the world or game mode immediately.")
@@ -2327,6 +2356,28 @@ internal class Commands {
                     vote(playerData, array)
                 }
             }
+        }
+    }
+
+    @ClientCommand("fuck", "[command]", "Corrects and executes a command with typos")
+    fun fuck(playerData: PlayerData, arg: Array<out String>) {
+        if (arg.isEmpty()) {
+            playerData.err("command.fuck.no.command")
+            return
+        }
+
+        val inputCommand = arg.joinToString(" ")
+
+        val commandParts = inputCommand.split(" ", limit = 2)
+        val commandName = commandParts[0]
+
+        val availableCommands = Vars.netServer.clientCommands.commandList.map { it.text }
+
+        val closestCommand = availableCommands.minByOrNull { levenshteinDistance(commandName, it) }
+        if (closestCommand != null) {
+            val args = if (commandParts.size > 1) " ${commandParts[1]}" else ""
+            val fullCommand = "/$closestCommand$args"
+            Vars.netServer.clientCommands.handleMessage(fullCommand, playerData.player)
         }
     }
 
