@@ -1,3 +1,3 @@
 package essential.achievements
 
-class Config 
+class AchievementConfig

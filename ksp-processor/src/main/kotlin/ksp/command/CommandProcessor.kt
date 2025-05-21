@@ -1,4 +1,4 @@
-package essential.command
+package ksp.command
 
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
@@ -103,7 +103,7 @@ class CommandProcessor(
             .addImport("essential.command", "ClientCommand")
             .addImport("arc.util", "CommandHandler")
             .addImport("mindustry.gen", "Playerc")
-            .addImport("essential.core.Event", "findPlayerData")
+            .addImport("essential.util", "findPlayerData")
             .addImport("essential.permission", "Permission")
             .addImport("essential.bundle", "Bundle")
             .addImport("essential.database.data", "PlayerData")
@@ -184,6 +184,7 @@ class CommandProcessor(
         }
 
         return FunSpec.builder("registerGeneratedClientCommands")
+            .addModifiers(KModifier.INTERNAL)
             .addParameter("handler", ClassName("arc.util", "CommandHandler"))
             .addCode(
                 """

@@ -1,13 +1,18 @@
 package essential.discord
 
-import essential.core.CustomEvents
+import ksp.command.ClientCommand
+import essential.database.data.PlayerData
+import essential.event.CustomEvents.DiscordURLOpen
+import mindustry.gen.Playerc
+import arc.Events
 
 class Commands {
     @ClientCommand(name = "discord", description = "Open server discord url")
-    fun discord(player: Playerc, playerData: PlayerData?, arg: kotlin.Array<kotlin.String?>?) {
-        if (!essential.discord.Main.Companion.conf.getUrl().isEmpty()) {
-            mindustry.gen.Call.openURI(player.con(), essential.discord.Main.Companion.conf.getUrl())
-            arc.Events.< T > fire < T ? > (DiscordURLOpen(playerData))
+    fun discord(player: Playerc, playerData: PlayerData?, arg: Array<String?>?) {
+        val url = Main.Companion.conf?.url
+        if (url != null && url.isNotEmpty()) {
+            mindustry.gen.Call.openURI(player.con(), url)
+            playerData?.let { Events.fire(DiscordURLOpen(it)) }
         }
     }
 }

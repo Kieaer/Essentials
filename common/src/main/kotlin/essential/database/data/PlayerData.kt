@@ -2,7 +2,7 @@ package essential.database.data
 
 import essential.bundle.Bundle
 import essential.database.table.PlayerTable
-import essential.ksp.GenerateUpdate
+import ksp.table.GenerateUpdate
 import essential.playerNumber
 import mindustry.gen.Player
 import mindustry.gen.Playerc

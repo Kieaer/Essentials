@@ -1,4 +1,4 @@
-package essential.ksp
+package ksp.table
 
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*

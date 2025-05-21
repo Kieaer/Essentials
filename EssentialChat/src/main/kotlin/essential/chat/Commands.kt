@@ -1,44 +1,60 @@
 package essential.chat
 
-import essential.core.DB
+import ksp.command.ClientCommand
+import essential.database.data.PlayerData
+import mindustry.gen.Playerc
+import mindustry.gen.Call
+import mindustry.Vars
+import arc.Core
+import essential.util.findPlayers
 
 class Commands {
+    companion object {
+        private const val PLAYER_NOT_FOUND = "player.not.found"
+    }
     @ClientCommand(name = "me", parameter = "<text...>", description = "Chat with special prefix")
-    fun me(player: Playerc, playerData: PlayerData, arg: Array<String?>) {
-        if (playerData.getMute()) return
-        if (Main.Companion.conf.blacklist.enabled) {
-            val file: Array<String> = root.child("chat_blacklist.txt").readString("UTF-8").split("\r\n")
+    fun me(playerData: PlayerData, arg: Array<out String>) {
+        if (playerData.chatMuted) return
+
+        val conf = Main.Companion.conf
+        if (conf?.blacklist?.enabled == true) {
+            val file: Array<String> = Core.settings.dataDirectory.child("chat_blacklist.txt").readString("UTF-8").split("\r\n").toTypedArray()
             for (s in file) {
-                if ((Main.Companion.conf.blacklist.regex && arg[0]!!.matches(s.toRegex())) || (!Main.Companion.conf.blacklist.regex && arg[0]!!.contains(
-                        s
-                    ))
-                ) {
+                val message = arg[0]
+                if ((conf.blacklist?.regex == true && message.matches(s.toRegex())) || 
+                    (conf.blacklist?.regex == false && message.contains(s))) {
                     playerData.err("event.chat.blacklisted")
                     return
                 }
             }
         }
 
-        Call.sendMessage("[orange]*[]" + Vars.netServer.chatFormatter.format(player.`as`(), arg[0]))
+        val message = arg[0]
+        Call.sendMessage("[orange]*[]" + Vars.netServer.chatFormatter.format(playerData.player.`as`(), message))
     }
 
     @ClientCommand(name = "pm", parameter = "<player> <message...>", description = "Send a private message")
-    fun pm(player: Playerc, playerData: PlayerData, arg: Array<String?>) {
-        if (playerData.getMute()) return
-        val target: Playerc? = findPlayers(arg[0])
+    fun pm(playerData: PlayerData, arg: Array<out String>) {
+        if (playerData.chatMuted) return
+
+        val targetName = arg[0]
+        val target: Playerc? = findPlayers(targetName)
+
         if (target == null) {
             playerData.err(PLAYER_NOT_FOUND)
         } else if (arg.size > 1) {
-            player.sendMessage("[green][PM] " + target.plainName() + "[yellow] => [white] " + arg[1])
-            target.sendMessage("[blue][PM] [gray][" + playerData.getEntityid() + "][]" + player.plainName() + "[yellow] => [white] " + arg[1])
-            database.getPlayers().stream().filter({ p ->
-                Permission.INSTANCE.check(p, "pm.other") && !p.getUuid()
-                    .equals(player.uuid()) && (target.uuid() != player.uuid())
-            }).forEach({ p ->
-                p.getPlayer()
-                    .sendMessage("[sky]\${player.plainName()}[][yellow] => [pink]\${target.plainName()} [white]: \${arg[1]}")
+            val message = arg[1]
+            playerData.player.sendMessage("[green][PM] " + target.plainName() + "[yellow] => [white] " + message)
+            target.sendMessage("[blue][PM] [gray][" + playerData.entityId + "][]" + playerData.player.plainName() + "[yellow] => [white] " + message)
+
+            // This part is commented out as it requires access to database and Permission which we don't have proper references for
+            /*
+            database.getPlayers().stream().filter { p ->
+                Permission.INSTANCE.check(p, "pm.other") && p.uuid != player.uuid() && target.uuid() != player.uuid()
+            }.forEach { p ->
+                p.player.sendMessage("[sky]${player.plainName()}[][yellow] => [pink]${target.plainName()} [white]: ${message}")
             }
-            )
+            */
         } else {
             playerData.err("command.pm.message")
         }

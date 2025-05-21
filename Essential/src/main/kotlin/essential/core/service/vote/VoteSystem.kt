@@ -7,8 +7,7 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.util.Time
 import arc.util.Timer
-import essential.core.Event.earnEXP
-import essential.core.Event.findPlayerData
+import essential.core.earnEXP
 import essential.database.data.PlayerData
 import essential.event.CustomEvents
 import essential.isSurrender
@@ -17,6 +16,7 @@ import essential.nextVoteAvailable
 import essential.permission.Permission
 import essential.players
 import essential.timeSource
+import essential.util.findPlayerData
 import essential.voterCooldown
 import mindustry.Vars
 import mindustry.content.Blocks

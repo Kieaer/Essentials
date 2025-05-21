@@ -11,13 +11,8 @@ import arc.util.Timer
 import com.charleskorn.kaml.Yaml
 import com.github.lalyos.jfiglet.FigletFont
 import essential.bundle.Bundle
-import essential.command.ClientCommand
-import essential.command.ServerCommand
-import essential.core.Event.actionFilter
-import essential.core.Event.findPlayerData
-import essential.core.Event.findPlayers
-import essential.core.Event.findPlayersByName
-import essential.core.Event.worldHistory
+import ksp.command.ClientCommand
+import ksp.command.ServerCommand
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
@@ -45,6 +40,9 @@ import essential.systemTimezone
 import essential.timeSource
 import essential.uptime
 import essential.util.currentTime
+import essential.util.findPlayerData
+import essential.util.findPlayers
+import essential.util.findPlayersByName
 import essential.voterCooldown
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -214,8 +212,8 @@ internal class Commands {
 
     @ClientCommand("chat", "<on/off>", "Mute all players without admins")
     fun chat(playerData: PlayerData, arg: Array<out String>) {
-        Event.isGlobalMute = arg[0].equals("off", true)
-        if (Event.isGlobalMute) {
+        isGlobalMute = arg[0].equals("off", true)
+        if (isGlobalMute) {
             playerData.send("command.chat.off")
         } else {
             playerData.send("command.chat.on")
@@ -224,9 +222,9 @@ internal class Commands {
 
     @ServerCommand("chat", "<on/off>", "Mute all players without admins")
     fun chat(arg: Array<out String>) {
-        Event.isGlobalMute = arg[0].equals("off", true)
+        isGlobalMute = arg[0].equals("off", true)
         val bundle = Bundle()
-        if (Event.isGlobalMute) {
+        if (isGlobalMute) {
             Log.info(bundle["command.chat.off"])
         } else {
             Log.info(bundle["command.chat.on"])
@@ -426,17 +424,19 @@ internal class Commands {
 
     @ClientCommand("fillitems", "[team]", "Fill the core with items.")
     fun fillItems(playerData: PlayerData, arg: Array<out String>) {
+        val player = playerData.player
+
         if (arg.isEmpty()) {
-            if (Vars.state.teams.cores(playerData.player.team()).isEmpty) {
+            if (Vars.state.teams.cores(player.team()).isEmpty) {
                 playerData.err("command.fillItems.core.empty")
                 return
             }
 
             Vars.content.items().forEach {
-                Vars.state.teams.cores(playerData.player.team()).first().items[it] =
-                    Vars.state.teams.cores(playerData.player.team()).first().storageCapacity
+                Vars.state.teams.cores(player.team()).first().items[it] =
+                    Vars.state.teams.cores(player.team()).first().storageCapacity
             }
-            playerData.send("command.fillItems.core.filled", playerData.player.team().coloredName())
+            playerData.send("command.fillItems.core.filled", player.team().coloredName())
         } else {
             val team = selectTeam(arg[0])
             if (Vars.state.teams.cores(team).isEmpty) {
@@ -574,7 +574,7 @@ internal class Commands {
                     val ip = Vars.netServer.admins.getInfo(data.uuid).lastIP
                     Vars.netServer.admins.banPlayer(data.uuid)
 
-                    Event.log(Event.LogType.Player, Bundle()["log.player.banned", data.name, ip])
+                    log(LogType.Player, Bundle()["log.player.banned", data.name, ip])
                     players.forEach {
                         it.send("info.banned.message", data.player.plainName(), data.name)
                     }
@@ -596,7 +596,7 @@ internal class Commands {
                         playerData.send("command.unban.id", data.uuid)
                     }
 
-                    Event.log(Event.LogType.Player, Bundle()["log.player.unbanned", name, ip])
+                    log(LogType.Player, Bundle()["log.player.unbanned", name, ip])
                 }
             }
 
@@ -1209,15 +1209,16 @@ internal class Commands {
 
     @ClientCommand("motd", description = "Show server's message of the day")
     fun motd(playerData: PlayerData, arg: Array<out String>) {
-        val motd = if (rootPath.child("motd/${playerData.player.locale()}.txt").exists()) {
-            rootPath.child("motd/${playerData.player.locale()}.txt").readString()
+        val player = playerData.player
+        val motd = if (rootPath.child("motd/${player.locale()}.txt").exists()) {
+            rootPath.child("motd/${player.locale()}.txt").readString()
         } else {
             val file = rootPath.child("motd/en.txt")
             if (file.exists()) file.readString() else ""
         }
         if (motd.isNotEmpty()) {
             val count = motd.split("\r\n|\r|\n").toTypedArray().size
-            if (count > 10) Call.infoMessage(playerData.player.con(), motd) else playerData.player.sendMessage(motd)
+            if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
         } else {
             playerData.send("command.motd.not-found")
         }
@@ -1351,6 +1352,8 @@ internal class Commands {
     @ClientCommand("ranking", "<time/exp/attack/place/break/pvp> [page]", "Show player ranking")
     fun ranking(playerData: PlayerData, arg: Array<out String>) {
         val bundle = playerData.bundle
+        val player = playerData.player
+
         scope.launch {
             try {
                 fun timeFormat(seconds: Long): String {
@@ -1377,7 +1380,7 @@ internal class Commands {
                     return@launch
                 }
 
-                Core.app.post { playerData.player.sendMessage(bundle["command.ranking.wait"]) }
+                Core.app.post { player.sendMessage(bundle["command.ranking.wait"]) }
                 val time = mutableMapOf<Pair<String, String>, Int>()
                 val exp = mutableMapOf<Pair<String, String>, Int>()
                 val attack = mutableMapOf<Pair<String, String>, Int>()
@@ -1480,7 +1483,7 @@ internal class Commands {
                 if (!playerData.hideRanking) {
                     string.append("[purple]=======================================[]\n")
                     for (a in d.indices) {
-                        if (d[a].first.second == playerData.player.uuid()) {
+                        if (d[a].first.second == player.uuid()) {
                             if (d[a].second is HashMap<*, *>) {
                                 val rank = d[a].second as HashMap<*, *>
                                 val rate = round(
@@ -1503,7 +1506,7 @@ internal class Commands {
                 }
 
                 Core.app.post {
-                    playerData.player.sendMessage(string.toString())
+                    player.sendMessage(string.toString())
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -1517,7 +1520,7 @@ internal class Commands {
         val buffer = worldHistory.toTypedArray()
 
         buffer.forEach {
-            val buf = ArrayList<Event.TileLog>()
+            val buf = ArrayList<TileLog>()
             if (it.player.contains(arg[0])) {
                 buffer.forEach { two ->
                     if (two.x == it.x && two.y == it.y) {
@@ -1782,6 +1785,8 @@ internal class Commands {
         "Spawn units or block at the player's current location."
     )
     fun spawn(playerData: PlayerData, arg: Array<out String>) {
+        val player = playerData.player
+
         val type = arg[0]
         val name = arg[1]
         val parameter = if (arg.size == 3) {
@@ -1789,7 +1794,7 @@ internal class Commands {
         } else {
             1
         }
-        val team = if (arg.size == 4) selectTeam(arg[3]) else playerData.player.team()
+        val team = if (arg.size == 4) selectTeam(arg[3]) else player.team()
         val spread = (Vars.tilesize * 1.5).toFloat()
 
         when {
@@ -1802,7 +1807,7 @@ internal class Commands {
                             isCheated = true
                             for (a in 1..parameter) {
                                 Tmp.v1.rnd(spread)
-                                unit.spawn(team, playerData.player.x + Tmp.v1.x, playerData.player.y + Tmp.v1.y)
+                                unit.spawn(team, player.x + Tmp.v1.x, player.y + Tmp.v1.y)
                             }
                         } else {
                             playerData.err("command.spawn.unit.invalid")
@@ -1819,9 +1824,9 @@ internal class Commands {
                 if (Vars.content.blocks().find { a -> a.name == name } != null) {
                     isCheated = true
                     Call.constructFinish(
-                        playerData.player.tileOn(),
+                        player.tileOn(),
                         Vars.content.blocks().find { a -> a.name.equals(name, true) },
-                        playerData.player.unit(),
+                        player.unit(),
                         0,
                         team,
                         null
@@ -2496,13 +2501,13 @@ internal class Commands {
             }
 
             // 이벤트 삭제
-            Event.eventListeners.forEach { (t, u) ->
+            eventListeners.forEach { (t, u) ->
                 // 성공??
                 @Suppress("UNCHECKED_CAST")
                 Events.remove(t as Class<Any>, u as Cons<Any>)
             }
 
-            Event.coreListeners.forEach {
+            coreListeners.forEach {
                 Core.app.removeListener(it)
             }
 

@@ -2,6 +2,6 @@ package essential.achievements
 
 import essential.database.data.PlayerData
 
-class CustomEvents {
+internal class CustomEvents {
     class AchievementClear(var achievement: Achievement?, var playerData: PlayerData)
 }

@@ -1,27 +1,30 @@
 package essential.bridge
 
 import arc.util.Log
+import mindustry.gen.Call
 
-class Client : java.lang.Runnable {
+class Client : Runnable {
     // todo ban 공유 서버 ip
     var socket: java.net.Socket? = java.net.Socket()
-    var lastReceivedMessage: kotlin.String? = ""
+    var lastReceivedMessage: String? = ""
     var writer: java.io.BufferedWriter? = null
     var reader: java.io.BufferedReader? = null
 
     override fun run() {
         try {
-            socket!!.connect(
-                java.net.InetSocketAddress(
-                    essential.bridge.Main.Companion.conf.address,
-                    essential.bridge.Main.Companion.conf.port
-                ), 5000
-            )
+            Main.Companion.conf.port?.let {
+                socket!!.connect(
+                    java.net.InetSocketAddress(
+                        Main.Companion.conf.address,
+                        it
+                    ), 5000
+                )
+            }
 
             reader = java.io.BufferedReader(java.io.InputStreamReader(socket!!.getInputStream()))
             writer = java.io.BufferedWriter(java.io.OutputStreamWriter(socket!!.getOutputStream()))
 
-            while (!java.lang.Thread.currentThread().isInterrupted()) {
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
                     val d = reader!!.readLine()
                     if (d != null) {

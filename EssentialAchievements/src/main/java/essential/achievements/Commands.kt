@@ -1,8 +1,8 @@
 package essential.achievements
 
 import arc.util.Strings
-import essential.command.ClientCommand
-import essential.command.ServerCommand
+import ksp.command.ClientCommand
+import ksp.command.ServerCommand
 import essential.database.data.PlayerData
 import essential.permission.Permission
 import essential.players

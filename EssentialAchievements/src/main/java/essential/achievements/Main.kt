@@ -4,6 +4,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import essential.achievements.generated.registerGeneratedClientCommands
 import essential.bundle.Bundle
+import essential.core.generated.registerGeneratedEventHandlers
 import essential.database.data.PlayerData
 import essential.players
 import mindustry.mod.Plugin
@@ -21,36 +22,10 @@ class Main : Plugin() {
         );
 */
         // 이벤트 실행
-        val event = Events()
-        val methods = event.javaClass.getDeclaredMethods()
-        for (method in methods) {
-            val annotation = method.getAnnotation(essential.core.annotation.Event::class.java)
-            if (annotation != null) {
-                try {
-                    method.invoke(event)
-                } catch (e: IllegalAccessException) {
-                    throw java.lang.RuntimeException(e)
-                } catch (e: java.lang.reflect.InvocationTargetException) {
-                    throw java.lang.RuntimeException(e)
-                }
-            }
-        }
+        registerGeneratedEventHandlers()
 
         // Initialize APMTracker
-        val apmTracker = APMTracker()
-        val apmMethods = apmTracker.javaClass.getDeclaredMethods()
-        for (method in apmMethods) {
-            val annotation = method.getAnnotation(essential.core.annotation.Event::class.java)
-            if (annotation != null) {
-                try {
-                    method.invoke(apmTracker)
-                } catch (e: IllegalAccessException) {
-                    throw java.lang.RuntimeException(e)
-                } catch (e: java.lang.reflect.InvocationTargetException) {
-                    throw java.lang.RuntimeException(e)
-                }
-            }
-        }
+        APMTracker()
 
         Log.debug(bundle["event.plugin.loaded"])
     }
@@ -60,11 +35,11 @@ class Main : Plugin() {
     }
 
     fun findPlayerByUuid(uuid: kotlin.String?): PlayerData {
-        return players.stream().filter({ e -> e.uuid == uuid }).findFirst().orElse(null)
+        return players.stream().filter { e -> e.uuid == uuid }.findFirst().orElse(null)
     }
 
     companion object {
         var bundle: Bundle = Bundle()
-        var conf: Config? = null
+        var conf: AchievementConfig? = null
     }
 }

@@ -1,4 +1,4 @@
-package essential.command
+package ksp.command
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)

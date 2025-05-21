@@ -1,14 +1,11 @@
 package essential.achievements
 
-import arc.Events
 import essential.core.Main.Companion.scope
-import essential.core.annotation.Event
 import essential.database.data.PlayerData
+import ksp.event.Event
 import essential.players
 import essential.util.startInfiniteScheduler
 import mindustry.game.EventType
-import mindustry.gen.Groups
-import mindustry.gen.Call
 
 /**
  * APMTracker handles tracking and calculation of Actions Per Minute (APM) for players.
@@ -24,6 +21,14 @@ class APMTracker {
 
         // Maximum number of action timestamps to store per player
         private const val MAX_ACTION_TIMESTAMPS = 1000
+
+        init {
+            scope.startInfiniteScheduler(APM_UPDATE_INTERVAL.toLong()) {
+                for (data in players) {
+                    updatePlayerAPM(data)
+                }
+            }
+        }
 
         // Track player actions
         fun trackAction(data: PlayerData) {
@@ -96,21 +101,10 @@ class APMTracker {
     }
 
     @Event
-    fun playerJoin() {
-        Events.on(EventType.PlayerJoin::class.java) { e ->
-            val data = findPlayerByUuid(e.player.uuid())
-            if (data != null) {
-                initPlayer(data)
-            }
-        }
-    }
-
-    @Event
-    fun updateAPM() {
-        scope.startInfiniteScheduler(APM_UPDATE_INTERVAL.toLong()) {
-            for (data in players) {
-                updatePlayerAPM(data)
-            }
+    fun playerJoin(it: EventType.PlayerJoin) {
+        val data = findPlayerByUuid(it.player.uuid())
+        if (data != null) {
+            initPlayer(data)
         }
     }
 }

@@ -1,6 +1,8 @@
 package essential.bridge
 
 import arc.util.Log
+import essential.rootPath
+import mindustry.net.Administration
 import java.io.*
 import java.net.ServerSocket
 import java.net.Socket
@@ -15,12 +17,12 @@ class Server : Runnable {
     override fun run() {
         try {
             server = ServerSocket(Main.Companion.conf.port)
-            while (!Thread.currentThread().isInterrupted()) {
+            while (!Thread.currentThread().isInterrupted) {
                 val socket = server!!.accept()
                 Log.debug(
                     Main.Companion.bundle.get(
                         "network.server.connected",
-                        socket.getInetAddress().getHostAddress()
+                        socket.getInetAddress().hostAddress
                     )
                 )
                 clients.add(socket)
@@ -80,7 +82,7 @@ class Server : Runnable {
                     } else {
                         when (d) {
                             "isBanned" -> {
-                                val info: PlayerInfo = Json().fromJson(PlayerInfo::class.java, reader.readLine())
+                                val info: Administration.PlayerInfo = Json().fromJson(PlayerInfo::class.java, reader.readLine())
                                 val banned: Boolean = Vars.netServer.admins.isIDBanned(info.id)
                                 for (ip in info.ips) {
                                     if (Vars.netServer.admins.isIPBanned(ip)) {
@@ -90,7 +92,7 @@ class Server : Runnable {
                                 }
                                 if (banned) {
                                     info.banned = true
-                                    sendAll("banned", Json().toJson(info, PlayerInfo::class.java))
+                                    sendAll("banned", Json().toJson(info, Administration.PlayerInfo::class.java))
                                 }
                             }
 
@@ -102,9 +104,9 @@ class Server : Runnable {
                                 while ((reader.readLine().also { line = it }) != null && line != "null") {
                                     stacktrace.append(line).append("\n")
                                 }
-                                root.child("report/" + LocalDateTime.now().withNano(0) + ".txt")
+                                rootPath.child("report/" + LocalDateTime.now().withNano(0) + ".txt")
                                     .writeString(stacktrace.toString())
-                                Log.info("Crash log received from " + socket.getInetAddress().getHostAddress())
+                                Log.info("Crash log received from " + socket.getInetAddress().hostAddress)
                             }
                         }
                     }

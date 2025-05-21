@@ -10,8 +10,8 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import essential.bundle
 import essential.config.Config
-import essential.core.Event.actionFilter
 import essential.core.generated.registerGeneratedClientCommands
+import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
 import essential.database.data.PluginData
 import essential.database.data.getPluginData
@@ -29,14 +29,11 @@ import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import java.util.*
-import kotlin.reflect.full.declaredFunctions
-import kotlin.reflect.full.findAnnotation
-
 
 class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
-        lateinit var conf: CoreConfig
+        internal lateinit var conf: CoreConfig
         lateinit var pluginData: PluginData
 
         val scope = CoroutineScope(Dispatchers.IO)
@@ -94,12 +91,7 @@ class Main : Plugin() {
         }
 
         // 이벤트 등록
-        for (functions in Event::class.declaredFunctions) {
-            val annotation = functions.findAnnotation<essential.core.annotation.Event>()
-            if (annotation != null) {
-                functions.call(Event)
-            }
-        }
+        registerGeneratedEventHandlers()
 
         // 스레드 등록
         val trigger = Trigger()

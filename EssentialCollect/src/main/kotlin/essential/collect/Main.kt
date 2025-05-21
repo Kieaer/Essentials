@@ -6,6 +6,7 @@ import arc.util.Log
 import arc.util.serialization.Json
 import essential.core.Bundle
 import essential.core.Main.Companion.root
+import kotlinx.serialization.json.JsonObject
 import mindustry.Vars.state
 import mindustry.content.Planets
 import mindustry.game.EventType.*

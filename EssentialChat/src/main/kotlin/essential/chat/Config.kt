@@ -1,17 +1,23 @@
 package essential.chat
 
-class Config {
-    var chatFormat: String? = null
-    var strict: StrictConfig? = null
-    var blacklist: BlacklistConfig? = null
+import kotlinx.serialization.Serializable
+import java.util.Locale
 
-    internal class StrictConfig {
-        var enabled: Boolean? = null
-        var language: String? = null
-    }
+@Serializable
+data class Config(
+    var chatFormat: String = "",
+    var strict: StrictConfig = StrictConfig(),
+    var blacklist: BlacklistConfig = BlacklistConfig()
+)
 
-    internal class BlacklistConfig {
-        var enabled: Boolean? = null
-        var regex: Boolean? = null
-    }
-}
+@Serializable
+data class StrictConfig(
+    var enabled: Boolean = false,
+    var language: String? = Locale.getDefault().toLanguageTag()
+)
+
+@Serializable
+data class BlacklistConfig(
+    var enabled: Boolean = false,
+    var regex: Boolean = false
+)

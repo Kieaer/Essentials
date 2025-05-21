@@ -1,27 +1,39 @@
 package essential.web
 
+import arc.ApplicationListener
+import arc.Core
 import arc.util.Log
-import essential.core.Bundle
+import essential.bundle.Bundle
 import mindustry.mod.Plugin
-import java.util.*
 
 class Main : Plugin() {
-    public override fun init() {
-        bundle.setPrefix("[EssentialWeb]")
+    override fun init() {
+        bundle.prefix = "[EssentialWeb]"
 
-        Log.debug(bundle.get("event.plugin.starting"))
+        Log.debug(bundle["event.plugin.starting"])
 
-        conf = essential.core.Main.Companion.createAndReadConfig(
-            "config_web.yaml",
-            Objects.requireNonNull<T?>(this.javaClass.getResourceAsStream("/config_web.yaml")),
-            Config::class.java
-        )
+        val config = essential.config.Config.load("config_web.yaml", WebConfig.serializer(), true, WebConfig())
+        require(config != null) {
+            Log.err(bundle["event.plugin.load.failed"])
+            return
+        }
 
-        Log.debug(bundle.get("event.plugin.loaded"))
+        conf = config
+
+        val webServer = WebServer()
+        webServer.start()
+
+        Core.app.addListener(object : ApplicationListener {
+            override fun dispose() {
+                webServer.stop()
+            }
+        })
+
+        Log.debug(bundle["event.plugin.loaded"])
     }
 
     companion object {
         var bundle: Bundle = Bundle()
-        var conf: Config? = null
+        lateinit var conf: WebConfig
     }
 }

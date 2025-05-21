@@ -11,7 +11,7 @@ class Event {
                     essential.bridge.Main.Companion.conf = essential.core.Main.Companion.createAndReadConfig(
                         "config_bridge.yaml",
                         java.util.Objects.requireNonNull<T?>(this.javaClass.getResourceAsStream("/config_bridge.yaml")),
-                        essential.bridge.Config::class.java
+                        essential.bridge.BridgeConfig::class.java
                     )
                     Log.info(Bundle().get("config.reloaded"))
                 }

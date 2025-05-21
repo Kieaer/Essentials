@@ -1,13 +1,18 @@
 package essential.chat
 
 import arc.Events
+import com.github.pemistahl.lingua.api.Language.Companion.getByIsoCode639_1
+import com.github.pemistahl.lingua.api.LanguageDetector
+import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
+import essential.bundle.Bundle
+import mindustry.Vars
 
 class Event {
     var detector: LanguageDetector? = null
 
     fun loadDetector() {
         val configs =
-            essential.chat.Main.Companion.conf.strict.language.split(",".toRegex()).dropLastWhile { it.isEmpty() }
+            Main.Companion.conf.strict.language.split(",".toRegex()).dropLastWhile { it.isEmpty() }
                 .toTypedArray()
         val languages = java.util.ArrayList<com.github.pemistahl.lingua.api.Language?>()
         for (a in configs) {
