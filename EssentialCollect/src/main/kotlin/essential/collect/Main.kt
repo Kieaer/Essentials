@@ -4,8 +4,8 @@ import arc.Events
 import arc.files.Fi
 import arc.util.Log
 import arc.util.serialization.Json
-import essential.core.Bundle
-import essential.core.Main.Companion.root
+import essential.bundle.Bundle
+import essential.rootPath
 import kotlinx.serialization.json.JsonObject
 import mindustry.Vars.state
 import mindustry.content.Planets
@@ -13,9 +13,6 @@ import mindustry.game.EventType.*
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.mod.Plugin
-import org.hjson.JsonArray
-import org.hjson.JsonObject
-import org.hjson.Stringify
 
 class Main : Plugin() {
     private var recordFile: Fi? = null
@@ -30,7 +27,7 @@ class Main : Plugin() {
     override fun init() {
         bundle.prefix = "[EssentialCollect]"
         Log.debug(bundle["event.plugin.starting"])
-        root.child("collect").mkdirs()
+        rootPath.child("collect").mkdirs()
         setEvents()
         Log.debug(bundle["event.plugin.loaded"])
     }

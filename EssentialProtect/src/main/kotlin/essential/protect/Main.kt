@@ -2,13 +2,16 @@ package essential.protect
 
 import arc.Events
 import arc.util.CommandHandler
+import arc.util.Http
 import arc.util.Log
 import essential.bundle.Bundle
 import essential.config.Config
 import essential.core.Main
-import essential.core.generated.registerGeneratedServerCommands
 import essential.database.data.PlayerData
+import essential.permission.Permission
 import essential.protect.generated.registerGeneratedClientCommands
+import essential.protect.generated.registerGeneratedEventHandlers
+import essential.rootPath
 import essential.util.findPlayerData
 import mindustry.Vars.netServer
 import mindustry.mod.Plugin
@@ -55,19 +58,19 @@ class Main : Plugin() {
 
         // 계정 설정 유무에 따라 기본 권한 변경
         if (conf.account.getAuthType() != ProtectConfig.AuthType.None) {
-            Permission.INSTANCE.setDefault("user")
+            Permission.default = "user"
         } else {
-            Permission.INSTANCE.setDefault("visitor")
+            Permission.default = "visitor"
         }
 
         // VPN 확인
-        if (conf!!.rules.vpn) {
+        if (conf.rules.vpn) {
             var isUpdate = false
             if (Main.pluginData.get("vpnListDate") == null || java.util.Objects.requireNonNull<T?>(
                     Main.pluginData.get("vpnListDate")
-                ).toLong() + 8.64e7 < java.lang.System.currentTimeMillis()
+                ).toLong() + 8.64e7 < System.currentTimeMillis()
             ) {
-                essential.core.Main.pluginData.getStatus()
+                Main.pluginData.getStatus()
                     .add(kotlin.Pair<A?, B?>("vpnListDate", java.lang.System.currentTimeMillis().toString()))
                 isUpdate = true
             }
@@ -76,66 +79,24 @@ class Main : Plugin() {
                 Http.get("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt")
                     .error({ e -> Log.err("Failed to get vpn list!") })
                     .block({ e ->
-                        val text = kotlin.text.String(java.io.BufferedInputStream(e.getResultAsStream()).readAllBytes())
-                        root.child("data/ipv4.txt").writeString(text)
+                        val text = kotlin.text.String(java.io.BufferedInputStream(e.resultAsStream).readAllBytes())
+                        rootPath.child("data/ipv4.txt").writeString(text)
                     })
             }
 
-            val file: kotlin.String = root.child("data/ipv4.txt").readString()
+            val file: String = rootPath.child("data/ipv4.txt").readString()
             pluginData.vpnList =
                 file.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         }
 
         // 이벤트 설정
-        val event = ProtectEvent()
-        event.start()
+        registerGeneratedEventHandlers()
 
-        Log.debug(bundle.get("event.plugin.loaded"))
-
-        Events.on(WorldLoadEndEvent::class.java, { e -> setNetworkFilter() })
+        Log.debug(bundle["event.plugin.loaded"])
     }
 
-    fun setNetworkFilter() {
-        try {
-            val inner: java.lang.Class<*> = (Vars.platform.getNet() as ArcNetProvider).getClass()
-            val field = inner.getDeclaredField("server")
-            field.setAccessible(true)
 
-            val serverInstance = field.get(Vars.platform.getNet())
-
-            val innerClass: java.lang.Class<*> = field.get(Vars.platform.getNet()).javaClass
-            val method = innerClass.getMethod("setDiscoveryHandler", ServerDiscoveryHandler::class.java)
-
-            val handler: ServerDiscoveryHandler = object : ServerDiscoveryHandler() {
-                @kotlin.Throws(java.io.IOException::class)
-                public override fun onDiscoverReceived(
-                    inetAddress: java.net.InetAddress,
-                    reponseHandler: ReponseHandler
-                ) {
-                    if (!Vars.netServer.admins.isIPBanned(inetAddress.getHostAddress())) {
-                        val buffer: java.nio.ByteBuffer = NetworkIO.writeServerData()
-                        buffer.position(0)
-                        reponseHandler.respond(buffer)
-                    } else {
-                        reponseHandler.respond(java.nio.ByteBuffer.allocate(0))
-                    }
-                }
-            }
-
-            method.invoke(serverInstance, handler)
-        } catch (e: java.lang.Exception) {
-            e.printStackTrace()
-        }
-
-        val filter: ServerConnectFilter = ServerConnectFilter { s -> !Vars.netServer.admins.bannedIPs.contains(s) }
-        Vars.platform.getNet().setConnectFilter(filter)
-    }
-
-    public override fun registerServerCommands(handler: CommandHandler) {
-        registerGeneratedServerCommands(handler)
-    }
-
-    public override fun registerClientCommands(handler: CommandHandler) {
+    override fun registerClientCommands(handler: CommandHandler) {
         registerGeneratedClientCommands(handler)
     }
 

@@ -67,7 +67,7 @@ class EventProcessor(
         val fileSpec = FileSpec.builder(packageName, "EventHandlersGenerated")
             .addImport("arc.Events", "")
             .addImport("arc.func", "Cons")
-            .addImport(basePackage, "eventListeners")
+            .addImport("essential.core", "eventListeners")
             .addFunction(generateRegisterEventHandlersFunction(functions))
             .build()
 
@@ -89,14 +89,21 @@ class EventProcessor(
         }
 
         return FunSpec.builder("registerGeneratedEventHandlers")
+            .addModifiers(KModifier.INTERNAL)
             .addCode(
                 """
                 ${eventTypes.joinToString("\n\n") { (eventType, packageName, functionName) ->
-                    """
-                    Events.on($eventType::class.java, Cons<$eventType> {
-                        $packageName.$functionName(it)
-                    }.also { listener -> eventListeners[$eventType::class.java] = listener })
-                    """.trimIndent()
+                    if (eventType == "Unknown" || eventType == "null") {
+                        """
+                        $packageName.$functionName()
+                        """.trimIndent()
+                    } else {
+                        """
+                        Events.on($eventType::class.java, Cons<$eventType> {
+                            $packageName.$functionName(it)
+                        }.also { listener -> eventListeners[$eventType::class.java] = listener })
+                        """.trimIndent()
+                    }
                 }}
                 """.trimIndent()
             )

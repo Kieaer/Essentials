@@ -18,4 +18,11 @@ dependencies {
     compileOnly(libs.bundles.jackson)
     compileOnly(libs.bundles.exposed)
     compileOnly(libs.kaml)
+
+    testImplementation(project(":common"))
+    testImplementation(kotlin("test"))
+    testImplementation(libs.bundles.game.test)
+    testImplementation(libs.bundles.kotlinxEcosystem)
+    testImplementation(libs.bundles.exposed)
+    testImplementation(libs.sqlite)
 }

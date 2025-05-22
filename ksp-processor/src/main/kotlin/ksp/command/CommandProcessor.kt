@@ -83,7 +83,7 @@ class CommandProcessor(
 
         val fileSpec = FileSpec.builder(packageName, "ServerCommandsGenerated")
             .addImport(basePackage, "Commands")
-            .addImport("essential.command", "ServerCommand")
+            .addImport("ksp.command", "ServerCommand")
             .addImport("arc.util", "CommandHandler")
             .addFunction(generateRegisterServerCommandsFunction(functions))
             .build()
@@ -100,7 +100,7 @@ class CommandProcessor(
 
         val fileSpec = FileSpec.builder(packageName, "ClientCommandsGenerated")
             .addImport(basePackage, "Commands")
-            .addImport("essential.command", "ClientCommand")
+            .addImport("ksp.command", "ClientCommand")
             .addImport("arc.util", "CommandHandler")
             .addImport("mindustry.gen", "Playerc")
             .addImport("essential.util", "findPlayerData")
@@ -118,7 +118,7 @@ class CommandProcessor(
         val annotationValues = functions.map { function ->
             val annotation = function.annotations.find { 
                 it.shortName.asString() == "ServerCommand" || 
-                it.shortName.asString() == "essential.command.ServerCommand" 
+                it.shortName.asString() == "ksp.command.ServerCommand"
             }
 
             val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString() ?: function.simpleName.asString()
@@ -129,13 +129,18 @@ class CommandProcessor(
         }
 
         return FunSpec.builder("registerGeneratedServerCommands")
+            .addModifiers(KModifier.INTERNAL)
             .addParameter("handler", ClassName("arc.util", "CommandHandler"))
             .addCode(
                 """
                 val commands = Commands()
                 val serverCommands = listOf(
-                ${functions.joinToString(",\n                    ") { 
-                    "{ args: Array<String> -> commands.${it.simpleName.asString()}(args) }" 
+                ${functions.joinToString(",\n                    ") { function ->
+                    if (function.parameters.isEmpty()) {
+                        "{ args: Array<String> -> commands.${function.simpleName.asString()}() }"
+                    } else {
+                        "{ args: Array<String> -> commands.${function.simpleName.asString()}(args) }"
+                    }
                 }}
                 )
 
@@ -173,7 +178,7 @@ class CommandProcessor(
         val annotationValues = functions.map { function ->
             val annotation = function.annotations.find { 
                 it.shortName.asString() == "ClientCommand" || 
-                it.shortName.asString() == "essential.command.ClientCommand" 
+                it.shortName.asString() == "ksp.command.ClientCommand"
             }
 
             val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString() ?: function.simpleName.asString()
@@ -190,8 +195,12 @@ class CommandProcessor(
                 """
                 val commands = Commands()
                 val clientCommands = listOf(
-                ${functions.joinToString(",\n                    ") { 
-                    "{ data: PlayerData, args: Array<String> -> commands.${it.simpleName.asString()}(data, args) }" 
+                ${functions.joinToString(",\n                    ") { function ->
+                    if (function.parameters.size == 1) {
+                        "{ data: PlayerData, args: Array<String> -> commands.${function.simpleName.asString()}(data) }"
+                    } else {
+                        "{ data: PlayerData, args: Array<String> -> commands.${function.simpleName.asString()}(data, args) }"
+                    }
                 }}
                 )
 

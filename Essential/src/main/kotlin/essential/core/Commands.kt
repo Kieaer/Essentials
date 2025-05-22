@@ -267,7 +267,7 @@ internal class Commands {
     }
 
     @ClientCommand(name = "color", description = "Enable color nickname")
-    fun color(playerData: PlayerData, arg: Array<out String>) {
+    fun color(playerData: PlayerData) {
         playerData.animatedName = !playerData.animatedName
     }
 
@@ -464,7 +464,7 @@ internal class Commands {
     }
 
     @ClientCommand("god", "[player]", "Set max player health")
-    fun god(playerData: PlayerData, arg: Array<out String>) {
+    fun god(playerData: PlayerData) {
         playerData.player.unit().health(1.0E8f)
         playerData.send("command.god")
     }
@@ -474,7 +474,7 @@ internal class Commands {
         if (arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {
             try {
                 playerData.send("command.help.${arg[0]}")
-            } catch (e: MissingResourceException) {
+            } catch (_: MissingResourceException) {
                 playerData.err("command.help.not.exists")
             }
             return
@@ -821,7 +821,7 @@ internal class Commands {
                     val errorName: String = result.substring(0, result.indexOf(' ') - 1)
                     Class.forName("org.mozilla.javascript.$errorName")
                     playerData.player.sendMessage("[scarlet]> $result")
-                } catch (e: Throwable) {
+                } catch (_: Throwable) {
                     playerData.player.sendMessage("> $result")
                 }
             }
@@ -839,7 +839,7 @@ internal class Commands {
     }
 
     @ServerCommand("kickall", description = "Kick all players.")
-    fun kickAll(arg: Array<out String>) {
+    fun kickAll() {
         Groups.player.forEach {
             if (!it.admin) it.kick(Packets.KickReason.kick)
         }
@@ -997,7 +997,7 @@ internal class Commands {
     }
 
     @ClientCommand("log", description = "Enable block history view mode")
-    fun log(playerData: PlayerData, arg: Array<out String>) {
+    fun log(playerData: PlayerData) {
         playerData.viewHistoryMode = !playerData.viewHistoryMode
         val msg = if (playerData.viewHistoryMode) {
             "enabled"
@@ -1008,7 +1008,7 @@ internal class Commands {
     }
 
     @ClientCommand("maps", "[page]", "Show server map lists")
-    fun maps(playerData: PlayerData, arg: Array<out String>) {
+    fun maps(playerData: PlayerData) {
         val list = Vars.maps.all().sortedBy { a -> a.name() }
         val bundle = playerData.bundle
         val prebuilt = ArrayList<Pair<String, Array<Array<String>>>>()
@@ -1208,7 +1208,7 @@ internal class Commands {
     }
 
     @ClientCommand("motd", description = "Show server's message of the day")
-    fun motd(playerData: PlayerData, arg: Array<out String>) {
+    fun motd(playerData: PlayerData) {
         val player = playerData.player
         val motd = if (rootPath.child("motd/${player.locale()}.txt").exists()) {
             rootPath.child("motd/${player.locale()}.txt").readString()
@@ -1288,7 +1288,7 @@ internal class Commands {
     }
 
     @ClientCommand("pause", description = "Pause or Unpause map")
-    fun pause(playerData: PlayerData, arg: Array<out String>) {
+    fun pause(playerData: PlayerData) {
         if (Vars.state.isPaused) {
             Vars.state.set(GameState.State.playing)
             playerData.send("command.pause.unpaused")
@@ -1299,7 +1299,7 @@ internal class Commands {
     }
 
     @ClientCommand("players", "[page]", "Show current players list")
-    fun players(playerData: PlayerData, arg: Array<out String>) {
+    fun players(playerData: PlayerData) {
         val bundle = playerData.bundle
         val prebuilt = ArrayList<Pair<String, Array<Array<String>>>>()
         val buffer = Mathf.ceil(players.size.toFloat() / 6)
@@ -1805,7 +1805,7 @@ internal class Commands {
                         if (!unit.hidden) {
                             unit.useUnitCap = false
                             isCheated = true
-                            for (a in 1..parameter) {
+                            repeat(parameter) {
                                 Tmp.v1.rnd(spread)
                                 unit.spawn(team, player.x + Tmp.v1.x, player.y + Tmp.v1.y)
                             }
@@ -1843,7 +1843,7 @@ internal class Commands {
     }
 
     @ClientCommand("status", description = "Show current server status")
-    fun status(playerData: PlayerData, arg: Array<out String>) {
+    fun status(playerData: PlayerData) {
         val bundle = playerData.bundle
 
         fun longToTime(seconds: Long): String {
@@ -2005,7 +2005,7 @@ internal class Commands {
     }
 
     @ClientCommand("time", description = "Show current server time")
-    fun time(playerData: PlayerData, arg: Array<out String>) {
+    fun time(playerData: PlayerData) {
         val now = Clock.System.now().toString()
         playerData.send("command.time", now)
     }
@@ -2024,7 +2024,7 @@ internal class Commands {
     }
 
     @ClientCommand("track", description = "Display the mouse positions of players.")
-    fun track(playerData: PlayerData, arg: Array<out String>) {
+    fun track(playerData: PlayerData) {
         playerData.mouseTracking = !playerData.mouseTracking
         val msg = if (!playerData.mouseTracking) ".disabled" else ""
         playerData.send("command.track.toggle$msg")
@@ -2140,7 +2140,7 @@ internal class Commands {
                 10f,
                 10f
             )
-        } catch (e: NumberFormatException) {
+        } catch (_: NumberFormatException) {
             playerData.err("command.weather.not.number")
         }
     }
@@ -2249,7 +2249,7 @@ internal class Commands {
                         } else {
                             playerData.err(mapNotFound)
                         }
-                    } catch (e: IndexOutOfBoundsException) {
+                    } catch (_: IndexOutOfBoundsException) {
                         playerData.err(mapNotFound)
                     }
                 } else {
@@ -2387,7 +2387,7 @@ internal class Commands {
     }
 
     @ServerCommand("gen", description = "Generate wiki docs")
-    fun genDocs(arg: Array<out String>) {
+    fun genDocs() {
         if (System.getenv("DEBUG_KEY") != null) {
             class StringUtils {
                 // Source from https://howtodoinjava.com/java/string/escape-html-encode-string/
@@ -2466,7 +2466,7 @@ internal class Commands {
     }
 
     @ServerCommand("reload", description = "Reload essential plugin configs.")
-    fun reload(arg: Array<out String>) {
+    fun reload() {
         try {
             Permission.load()
             Log.info(Bundle()["config.permission.updated"])
@@ -2478,7 +2478,7 @@ internal class Commands {
     }
 
     @ServerCommand("unload", description = "unload essential plugin (experimental)")
-    fun unload(arg: Array<out String>) {
+    fun unload() {
         // todo unload 만들기
         Core.app.post {
             Log.info("unloading")
@@ -2526,7 +2526,7 @@ internal class Commands {
     }
 
     @ServerCommand("debug", "[parameter...]", "Debug any commands")
-    fun debug(arg: Array<out String>) {
+    fun debug() {
         println(pluginData.toString())
         for (a in players) {
             println(a.toString())

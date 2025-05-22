@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import java.util.Locale
 
 @Serializable
-data class Config(
+data class ChatConfig(
     var chatFormat: String = "",
     var strict: StrictConfig = StrictConfig(),
     var blacklist: BlacklistConfig = BlacklistConfig()
@@ -13,7 +13,7 @@ data class Config(
 @Serializable
 data class StrictConfig(
     var enabled: Boolean = false,
-    var language: String? = Locale.getDefault().toLanguageTag()
+    var language: String = Locale.getDefault().toLanguageTag()
 )
 
 @Serializable

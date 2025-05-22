@@ -5,14 +5,15 @@ import essential.database.data.PlayerData
 import essential.event.CustomEvents.DiscordURLOpen
 import mindustry.gen.Playerc
 import arc.Events
+import mindustry.gen.Call
 
 class Commands {
     @ClientCommand(name = "discord", description = "Open server discord url")
-    fun discord(player: Playerc, playerData: PlayerData?, arg: Array<String?>?) {
-        val url = Main.Companion.conf?.url
-        if (url != null && url.isNotEmpty()) {
-            mindustry.gen.Call.openURI(player.con(), url)
-            playerData?.let { Events.fire(DiscordURLOpen(it)) }
+    fun discord(playerData: PlayerData, args: Array<out String>) {
+        val url = Main.Companion.conf.url
+        if (url.isNotEmpty()) {
+            Call.openURI(playerData.player.con(), url)
+            playerData.let { Events.fire(DiscordURLOpen(it)) }
         }
     }
 }

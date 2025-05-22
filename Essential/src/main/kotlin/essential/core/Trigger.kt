@@ -216,7 +216,7 @@ class Trigger {
         }
 
         suspend fun init() {
-            var isNotTargetMap = false
+            var isNotTargetMap: Boolean
             while (coroutineContext.isActive) {
                 try {
                     val pluginData = getPluginData()
@@ -474,7 +474,7 @@ class Trigger {
                     host.port = port
                     listener.accept(host)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 listener.accept(Host(0, null, null, null, 0, 0, 0, null, null, 0, null, null))
             }
         }

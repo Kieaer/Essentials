@@ -15,7 +15,7 @@ import kotlin.time.TimeSource
 const val DATABASE_VERSION: UByte = 4u
 
 /** 플러그인 버전 */
-val PLUGIN_VERSION: String = Vars.mods.getMod("Essential").meta.version
+val PLUGIN_VERSION: String = Vars.mods.getMod("Essential")?.meta?.version ?: "1.0.0"
 
 /** 플러그인 메세지 데이터 */
 val bundle = Bundle()

@@ -5,10 +5,9 @@ import arc.Core
 import arc.util.CommandHandler
 import arc.util.Log
 import essential.bridge.generated.registerGeneratedClientCommands
+import essential.bridge.generated.registerGeneratedEventHandlers
 import essential.bundle.Bundle
 import essential.config.Config
-import essential.core.generated.registerGeneratedEventHandlers
-import essential.core.generated.registerGeneratedServerCommands
 import mindustry.mod.Plugin
 
 class Main : Plugin() {
@@ -60,10 +59,6 @@ class Main : Plugin() {
         registerGeneratedEventHandlers()
 
         Log.debug(bundle["event.plugin.loaded"])
-    }
-
-    override fun registerServerCommands(handler: CommandHandler) {
-        registerGeneratedServerCommands(handler)
     }
 
     override fun registerClientCommands(handler: CommandHandler) {

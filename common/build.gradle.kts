@@ -12,6 +12,4 @@ dependencies {
     implementation(libs.bundles.exposed)
     implementation(libs.hikariCP)
     implementation(libs.kaml)
-
-    testImplementation(libs.bundles.game.test)
 }

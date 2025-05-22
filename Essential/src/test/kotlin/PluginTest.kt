@@ -6,8 +6,11 @@ import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
+import essential.bundle.Bundle
 import essential.core.Main
-import essential.core.Main.Companion.root
+import essential.database.data.PlayerData
+import essential.players
+import essential.rootPath
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.fail
 import mindustry.Vars
@@ -138,7 +141,7 @@ class PluginTest {
                         testMap = maps.loadInternalMap("groundZero")
                     }
                 }
-                HeadlessApplication(core) { throwable : Throwable? -> exceptionThrown[0] = throwable }
+                HeadlessApplication(core) { throwable: Throwable? -> exceptionThrown[0] = throwable }
                 while (!begins[0]) {
                     if (exceptionThrown[0] != null) {
                         Assert.fail(exceptionThrown[0]!!.stackTraceToString())
@@ -172,8 +175,6 @@ class PluginTest {
         fun loadPlugin() {
             path.child("mods/Essentials").deleteDirectory()
 
-
-
             // todo 설정 바꿔서 테스트 하기
             //Config.databasePW = "pk1450"
             main = Main()
@@ -185,9 +186,6 @@ class PluginTest {
             Config.chatBlacklist = true
             Config.blockfooclient = true
             Config.webServer = true*/
-
-
-            root.child("config/config.yaml").writeString(String(Main.Companion::class.java.getResourceAsStream("/config.yaml").readAllBytes()).replace("sqlite:config/mods/Essentials/data/database.db", "\"h2:mem:testdb;DB_CLOSE_DELAY=-1\""), false)
 
             main.init()
             main.registerClientCommands(clientCommand)
@@ -300,13 +298,13 @@ class PluginTest {
          * DB 에 계정이 등록된 플레이어 생성
          * @return 1번째 값에 플레이어, 2번째 값에 플레이어 정보
          */
-        fun newPlayer() : Pair<Player, DB.PlayerData> {
+        fun newPlayer() : Pair<Player, PlayerData> {
             val player = createPlayer()
             Events.fire(EventType.PlayerJoin(player))
 
             // Wait for database add time
             var time = 0
-            while (Main.database.players.find { data -> data.uuid == player.uuid() } == null) {
+            while (players.find { data -> data.uuid == player.uuid() } == null) {
                 sleep(16)
                 ++time
                 if (time == 500) {
@@ -314,7 +312,7 @@ class PluginTest {
                 }
             }
             // todo 항상 데이터가 있는지 확인
-            return Pair(player, Main.database.players.find { data -> data.uuid == player.uuid() }!!)
+            return Pair(player, players.find { data -> data.uuid == player.uuid() }!!)
         }
 
         /**
@@ -400,7 +398,7 @@ class PluginTest {
 
         // Copy Essentials 18.2 database
         val file = Paths.get("src", "test", "resources", "database-v1.db").toFile()
-        val desc = root.child("database.mv.db").file()
+        val desc = rootPath.child("database.mv.db").file()
         file.copyRecursively(desc, true)
         // todo db 업글 확인
         /*Config.database = "C:/Users/cloud/AppData/Roaming/app/mods/Essentials/database"

@@ -9,8 +9,14 @@ import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
-import essential.core.Main.Companion.database
+import essential.bundle.Bundle
+import essential.database.data.PlayerData
+import essential.database.data.update
+import essential.players
+import essential.test.lastReceivedMessage
+import essential.util.findPlayerData
 import junit.framework.TestCase.*
+import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Items
@@ -30,7 +36,7 @@ import java.lang.Thread.sleep
 class ClientCommandTest {
     companion object {
         private var done = false
-        lateinit var playerData: DB.PlayerData
+        lateinit var playerData: PlayerData
 
         @BeforeClass
         @JvmStatic
@@ -70,7 +76,7 @@ class ClientCommandTest {
 
         // If map not found
         clientCommand.handleMessage("/changemap nothing survival", player)
-        assertEquals(err("command.changeMap.map.not.found", "nothing"), playerData.lastSentMessage)
+        assertEquals(err("command.changeMap.map.not.found", "nothing"), playerData.lastReceivedMessage)
 
         // Number method
         clientCommand.handleMessage("/changemap 0 survival", player)
@@ -84,7 +90,7 @@ class ClientCommandTest {
 
         // If player enter wrong gamemode
         clientCommand.handleMessage("/changemap fork creative", player)
-        assertEquals(err("command.changeMap.mode.not.found", "creative"), playerData.lastSentMessage)
+        assertEquals(err("command.changeMap.mode.not.found", "creative"), playerData.lastReceivedMessage)
 
         // If player enter only map name
         clientCommand.handleMessage("/changemap glacier", player)
@@ -106,12 +112,12 @@ class ClientCommandTest {
         val registeredUser = newPlayer()
         val randomName = Faker().name().lastName()
         clientCommand.handleMessage("/changename ${registeredUser.first.name()} $randomName", player)
-        assertEquals(randomName, database.players.find { p -> p.uuid == registeredUser.second.uuid }!!.name)
+        assertEquals(randomName, players.find { p -> p.uuid == registeredUser.second.uuid }!!.name)
         leavePlayer(registeredUser.first)
 
         // If target player not found
         clientCommand.handleMessage("/changename yammi eat", player)
-        assertEquals(err("player.not.found"), playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
     }
 
     @Test
@@ -122,11 +128,11 @@ class ClientCommandTest {
         // Change password
         clientCommand.handleMessage("/changepw pass pass", player)
         assertTrue(BCrypt.checkpw("pass", playerData.accountPW))
-        assertEquals(log("command.changePw.apply"), playerData.lastSentMessage)
+        assertEquals(log("command.changePw.apply"), playerData.lastReceivedMessage)
 
         // If password isn't same
         clientCommand.handleMessage("/changepw pass wd", player)
-        assertEquals(err("command.changePw.same"), playerData.lastSentMessage)
+        assertEquals(err("command.changePw.same"), playerData.lastReceivedMessage)
     }
 
     @Test
@@ -253,17 +259,19 @@ class ClientCommandTest {
 
         fun assertHide(name: String, condition: Boolean) : Boolean {
             var next = true
-            var buffer = playerData.lastSentMessage
+            var buffer = playerData.lastReceivedMessage
             var count = 0
             var exists = false
             while (next) {
                 clientCommand.handleMessage("/ranking exp $count", player)
                 sleep(200)
-                next = playerData.lastSentMessage != buffer
-                buffer = playerData.lastSentMessage
+                next = playerData.lastReceivedMessage != buffer
+                buffer = playerData.lastReceivedMessage
                 count++
-                if (buffer.contains(name)) {
-                    exists = true
+                buffer?.let {
+                    if (it.contains(name)) {
+                        exists = true
+                    }
                 }
             }
             if (exists && condition) {
@@ -276,9 +284,9 @@ class ClientCommandTest {
 
         fun assertExp(uuid: String, exp: Int) : Boolean {
             for (time in 1..10) {
-                if (database[uuid]!!.exp != exp) {
+                if (findPlayerData(uuid)!!.exp != exp) {
                     sleep(100)
-                } else if (time == 10 && database[uuid]!!.exp != exp) {
+                } else if (time == 10 && findPlayerData(uuid)!!.exp != exp) {
                     return false
                 }
             }
@@ -299,31 +307,31 @@ class ClientCommandTest {
 
         // If player enter wrong value
         clientCommand.handleMessage("/exp set number", player)
-        assertEquals(err("command.exp.invalid"), playerData.lastSentMessage)
+        assertEquals(err("command.exp.invalid"), playerData.lastReceivedMessage)
 
         // Hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
-        database.update(player.uuid(), playerData)
-        assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastSentMessage)
+        runBlocking { playerData.update() }
+        assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastReceivedMessage)
         clientCommand.handleMessage("/ranking exp", player)
-        assertFalse(playerData.lastSentMessage.contains(player.name()))
+        assertFalse(playerData.lastReceivedMessage!!.contains(player.name()))
 
         // Un-hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
-        database.update(player.uuid(), playerData)
-        assertEquals(Bundle()["command.exp.ranking.unhide"], playerData.lastSentMessage)
+        runBlocking { playerData.update() }
+        assertEquals(Bundle()["command.exp.ranking.unhide"], playerData.lastReceivedMessage)
         clientCommand.handleMessage("/ranking exp", player)
-        assertTrue(playerData.lastSentMessage.contains(player.name()))
+        assertTrue(playerData.lastReceivedMessage!!.contains(player.name()))
 
         // Hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.first.name}", player)
-        database.update(dummy.first.uuid(), dummy.second)
-        assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastSentMessage)
+        runBlocking { dummy.second.update() }
+        assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastReceivedMessage)
         assertTrue(assertHide(dummy.first.name, true))
 
         // Un-hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.second.name}", player)
-        database.update(dummy.first.uuid(), dummy.second)
+        runBlocking { dummy.second.update() }
         assertTrue(assertHide(dummy.first.name, false))
 
         // Add exp value
@@ -357,20 +365,20 @@ class ClientCommandTest {
 
         // If target player not found
         clientCommand.handleMessage("/exp set 10 dummy", player)
-        assertEquals(err("player.not.found"), playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
 
         // If target player exist but not registered
         val bot = createPlayer()
         clientCommand.handleMessage("/exp set 10 ${bot.name}", player)
-        assertEquals(err("player.not.registered"), playerData.lastSentMessage)
+        assertEquals(err("player.not.registered"), playerData.lastReceivedMessage)
 
         // If the target player is not logged in and looking for a player that isn't in the database
         clientCommand.handleMessage("/exp hide 냠냠", player)
-        assertEquals(err("player.not.found"), playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
 
         // If player enter wrong command
         clientCommand.handleMessage("/exp wrongCommand", player)
-        assertEquals(err("command.exp.invalid.command"), playerData.lastSentMessage)
+        assertEquals(err("command.exp.invalid.command"), playerData.lastReceivedMessage)
     }
 
     @Test
@@ -385,11 +393,11 @@ class ClientCommandTest {
         // If player core doesn't exist
         Call.deconstructFinish(Vars.state.teams.cores(player.team()).first().tile, Blocks.air, player.unit())
         clientCommand.handleMessage("/fillitems", player)
-        assertEquals(err("command.fillItems.core.empty"), playerData.lastSentMessage)
+        assertEquals(err("command.fillItems.core.empty"), playerData.lastReceivedMessage)
 
         // If target team core doesn't exist
         clientCommand.handleMessage("/fillitems green", player)
-        assertEquals(err("command.fillItems.core.empty"), playerData.lastSentMessage)
+        assertEquals(err("command.fillItems.core.empty"), playerData.lastReceivedMessage)
 
         // If target team core exists
         Call.constructFinish(player.tileOn(), Blocks.coreShard, player.unit(), 0, Team.green, null)
@@ -416,7 +424,7 @@ class ClientCommandTest {
                 fail()
             }
         }
-        assertEquals(log("command.freeze.done", dummy.first.name), playerData.lastSentMessage)
+        assertEquals(log("command.freeze.done", dummy.first.name), playerData.lastReceivedMessage)
 
         // Un-freeze target player
         oldX = dummy.first.unit().x
@@ -431,16 +439,16 @@ class ClientCommandTest {
                 fail()
             }
         }
-        assertEquals(log("command.freeze.undo", dummy.first.name), playerData.lastSentMessage)
+        assertEquals(log("command.freeze.undo", dummy.first.name), playerData.lastReceivedMessage)
 
         // If player exists but not registered
         val bot = createPlayer()
         clientCommand.handleMessage("/freeze ${bot.name}", player)
-        assertEquals(err("player.not.registered"), playerData.lastSentMessage)
+        assertEquals(err("player.not.registered"), playerData.lastReceivedMessage)
 
         // If player not found
         clientCommand.handleMessage("/freeze nothing", player)
-        assertEquals(err("player.not.found"), playerData.lastSentMessage)
+        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
     }
 
     @Test
@@ -515,15 +523,15 @@ class ClientCommandTest {
         setPermission("visitor", true)
 
         clientCommand.handleMessage("/help", player)
-        assertTrue(playerData.lastSentMessage.contains("help"))
+        assertTrue(playerData.lastReceivedMessage!!.contains("help"))
         clientCommand.handleMessage("/help 1", player)
-        assertTrue(playerData.lastSentMessage.contains("help"))
+        assertTrue(playerData.lastReceivedMessage!!.contains("help"))
         clientCommand.handleMessage("/help 3", player)
-        assertFalse(playerData.lastSentMessage.contains("help"))
+        assertFalse(playerData.lastReceivedMessage!!.contains("help"))
 
         setPermission("user", true)
         clientCommand.handleMessage("/help", player)
-        assertTrue(playerData.lastSentMessage.contains("vote"))
+        assertTrue(playerData.lastReceivedMessage!!.contains("vote"))
         clientCommand.handleMessage("/help 3", player)
         clientCommand.handleMessage("/help 5", player)
 
@@ -676,15 +684,15 @@ class ClientCommandTest {
     fun client_setitem() {
         setPermission("owner", true)
         clientCommand.handleMessage("/setitem all 500", player)
-        assertEquals(500, player.team().core().items().get(Items.copper))
-        assertEquals(500, player.team().core().items().get(Items.lead))
+        assertEquals(500, player.team().core().items.get(Items.copper))
+        assertEquals(500, player.team().core().items.get(Items.lead))
 
         clientCommand.handleMessage("/setitem copper 1000", player)
-        assertEquals(1000, player.team().core().items().get(Items.copper))
-        assertEquals(500, player.team().core().items().get(Items.lead))
+        assertEquals(1000, player.team().core().items.get(Items.copper))
+        assertEquals(500, player.team().core().items.get(Items.lead))
 
         clientCommand.handleMessage("/setitem copper 1000 sharded", player)
-        assertEquals(1000, Vars.state.teams.cores(Team.sharded).first().items().get(Items.copper))
+        assertEquals(1000, Vars.state.teams.cores(Team.sharded).first().items.get(Items.copper))
     }
 
     @Test

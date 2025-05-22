@@ -74,8 +74,6 @@ object Config {
     fun <T> save(name: String, serializer: KSerializer<T>, config: T): Boolean {
         val file = rootPath.child("config/${name}")
 
-        file.mkdirs()
-
         return try {
             val content = yaml.encodeToString(serializer, config)
             file.writeString(content, false)

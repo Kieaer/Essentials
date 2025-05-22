@@ -2,6 +2,7 @@ package essential.bridge
 
 import arc.util.Log
 import essential.rootPath
+import mindustry.Vars
 import mindustry.net.Administration
 import java.io.*
 import java.net.ServerSocket
@@ -69,7 +70,7 @@ class Server : Runnable {
         }
     }
 
-    private inner class Handler(private val socket: Socket) : Thread() {
+    private class Handler(private val socket: Socket) : Thread() {
         override fun run() {
             try {
                 val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
@@ -82,7 +83,7 @@ class Server : Runnable {
                     } else {
                         when (d) {
                             "isBanned" -> {
-                                val info: Administration.PlayerInfo = Json().fromJson(PlayerInfo::class.java, reader.readLine())
+                                val info: Administration.PlayerInfo = Json().fromJson(Administration.PlayerInfo::class.java, reader.readLine())
                                 val banned: Boolean = Vars.netServer.admins.isIDBanned(info.id)
                                 for (ip in info.ips) {
                                     if (Vars.netServer.admins.isIPBanned(ip)) {
@@ -100,7 +101,7 @@ class Server : Runnable {
                             "message" -> sendAll("message", reader.readLine())
                             "crash" -> {
                                 val stacktrace = StringBuilder()
-                                val line: String?
+                                var line: String?
                                 while ((reader.readLine().also { line = it }) != null && line != "null") {
                                     stacktrace.append(line).append("\n")
                                 }

@@ -5,7 +5,8 @@ import PluginTest.Companion.loadPlugin
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
-import essential.core.Main.Companion.database
+import essential.database.data.PlayerData
+import essential.players
 import mindustry.Vars
 import mindustry.game.Team
 import mindustry.gen.Groups
@@ -14,7 +15,7 @@ import org.junit.Test
 
 
 class FeatureTest {
-    lateinit var playerData: DB.PlayerData
+    lateinit var playerData: PlayerData
 
     companion object {
         private var done = false
@@ -67,20 +68,20 @@ class FeatureTest {
         }
         println("활성화된 팀 : $s")
 
-        var players = mutableListOf<Pair<Team, Double>>()
-        database.players.forEach {
-            val rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
-            players += Pair(it.player.team(), if (rate.equals(Double.NaN)) 0.0 else rate)
+        var data = mutableListOf<Pair<Team, Double>>()
+        players.forEach {
+            val rate = it.pvpWinCount.toDouble() / (it.pvpWinCount + it.pvpLoseCount).toDouble()
+            data += Pair(it.player.team(), if (rate.equals(Double.NaN)) 0.0 else rate)
         }
 
         fun winPercentage(team : Team) : Double {
-            var players = arrayOf<Pair<Team, Double>>()
-            database.players.forEach {
-                var rate = it.pvpVictoriesCount.toDouble() / (it.pvpVictoriesCount + it.pvpDefeatCount).toDouble()
-                players += Pair(it.player.team(), if (rate.equals(Double.NaN)) 0.0 else rate)
+            var data = arrayOf<Pair<Team, Double>>()
+            players.forEach {
+                var rate = it.pvpWinCount.toDouble() / (it.pvpWinCount + it.pvpLoseCount).toDouble()
+                data += Pair(it.player.team(), if (rate.equals(Double.NaN)) 0.0 else rate)
             }
 
-            val targetTeam = players.filter { it.first == team }
+            val targetTeam = data.filter { it.first == team }
             val rate = targetTeam.map { it.second }
             return rate.average()
         }

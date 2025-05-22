@@ -61,10 +61,6 @@ import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 import kotlin.time.Duration.Companion.minutes
 
-
-var originalBlockMultiplier = 1f
-var originalUnitMultiplier = 1f
-
 internal var worldHistory = ArrayList<TileLog>()
 private var dateformat = SimpleDateFormat("HH:mm:ss")
 private var blockExp = mutableMapOf<String, Int>()
@@ -94,81 +90,81 @@ fun init() {
 }
 
 @Event
-internal fun withdraw(it: WithdrawEvent) {
-    if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
+internal fun withdraw(event: WithdrawEvent) {
+    if (event.tile != null && event.player.unit().item() != null && event.player.name != null) {
         log(
             LogType.WithDraw,
-            Bundle()["log.withdraw", it.player.plainName(), it.player.unit()
-                .item().name, it.amount, it.tile.block.name, it.tile.tileX(), it.tile.tileY()]
+            Bundle()["log.withdraw", event.player.plainName(), event.player.unit()
+                .item().name, event.amount, event.tile.block.name, event.tile.tileX(), event.tile.tileY()]
         )
         addLog(
             TileLog(
                 System.currentTimeMillis(),
-                it.player.name,
+                event.player.name,
                 "withdraw",
-                it.tile.tile.x,
-                it.tile.tile.y,
-                checkValidBlock(it.tile.tile),
-                it.tile.rotation,
-                it.tile.team,
-                it.tile.config()
+                event.tile.tile.x,
+                event.tile.tile.y,
+                checkValidBlock(event.tile.tile),
+                event.tile.rotation,
+                event.tile.team,
+                event.tile.config()
             )
         )
     }
 }
 
 @Event
-internal fun deposit(it: DepositEvent) {
-    if (it.tile != null && it.player.unit().item() != null && it.player.name != null) {
+internal fun deposit(event: DepositEvent) {
+    if (event.tile != null && event.player.unit().item() != null && event.player.name != null) {
         log(
             LogType.Deposit,
-            Bundle()["log.deposit", it.player.plainName(), it.player.unit()
-                .item().name, it.amount, checkValidBlock(it.tile.tile), it.tile.tileX(), it.tile.tileY()]
+            Bundle()["log.deposit", event.player.plainName(), event.player.unit()
+                .item().name, event.amount, checkValidBlock(event.tile.tile), event.tile.tileX(), event.tile.tileY()]
         )
         addLog(
             TileLog(
                 System.currentTimeMillis(),
-                it.player.name,
+                event.player.name,
                 "deposit",
-                it.tile.tile.x,
-                it.tile.tile.y,
-                checkValidBlock(it.tile.tile),
-                it.tile.rotation,
-                it.tile.team,
-                it.tile.config()
+                event.tile.tile.x,
+                event.tile.tile.y,
+                checkValidBlock(event.tile.tile),
+                event.tile.rotation,
+                event.tile.team,
+                event.tile.config()
             )
         )
     }
 }
 
 @Event
-internal fun config(it: ConfigEvent) {
-    if (it.tile != null && it.tile.block != null && it.player != null) {
+internal fun config(event: ConfigEvent) {
+    if (event.tile != null && event.tile.block != null && event.player != null) {
         addLog(
             TileLog(
                 System.currentTimeMillis(),
-                it.player.name,
+                event.player.name,
                 "config",
-                it.tile.tile.x,
-                it.tile.tile.y,
-                checkValidBlock(it.tile.tile),
-                it.tile.rotation,
-                it.tile.team,
-                it.value
+                event.tile.tile.x,
+                event.tile.tile.y,
+                checkValidBlock(event.tile.tile),
+                event.tile.rotation,
+                event.tile.team,
+                event.value
             )
         )
-        if (checkValidBlock(it.tile.tile).contains("message", true)) {
+        if (checkValidBlock(event.tile.tile).contains("message", true)) {
             addLog(
                 TileLog(
                     System.currentTimeMillis(),
-                    it.player.name,
+                    event.player.name,
                     "message",
-                    it.tile.tile.x,
-                    it.tile.tile.y,
-                    checkValidBlock(it.tile.tile),
-                    it.tile.rotation,
-                    it.tile.team,
-                    it.value
+                    event.tile.tile.x,
+                    event.tile.tile.y,
+                    checkValidBlock(event.tile.tile),
+                    event.tile.rotation,
+                    event.tile.team,
+                    event.value
                 )
             )
         }
@@ -176,39 +172,39 @@ internal fun config(it: ConfigEvent) {
 }
 
 @Event
-internal fun tap(it: TapEvent) {
-    log(LogType.Tap, Bundle()["log.tap", it.player.plainName(), checkValidBlock(it.tile)])
+internal fun tap(event: TapEvent) {
+    log(LogType.Tap, Bundle()["log.tap", event.player.plainName(), checkValidBlock(event.tile)])
     addLog(
         TileLog(
             System.currentTimeMillis(),
-            it.player.name,
+            event.player.name,
             "tap",
-            it.tile.x,
-            it.tile.y,
-            checkValidBlock(it.tile),
-            if (it.tile.build != null) it.tile.build.rotation else 0,
-            if (it.tile.build != null) it.tile.build.team else Vars.state.rules.defaultTeam,
+            event.tile.x,
+            event.tile.y,
+            checkValidBlock(event.tile),
+            if (event.tile.build != null) event.tile.build.rotation else 0,
+            if (event.tile.build != null) event.tile.build.team else Vars.state.rules.defaultTeam,
             null
         )
     )
-    val data = findPlayerData(it.player.uuid())
+    val data = findPlayerData(event.player.uuid())
     if (data != null) {
         pluginData.data.warpBlock.forEach { two ->
-            if (two.mapName == Vars.state.map.name() && it.tile.block().name == two.tileName && it.tile.build.tileX() == two.x && it.tile.build.tileY() == two.y) {
+            if (two.mapName == Vars.state.map.name() && event.tile.block().name == two.tileName && event.tile.build.tileX() == two.x && event.tile.build.tileY() == two.y) {
                 if (two.online) {
                     players.forEach { data ->
-                        data.send("event.tap.server", it.player.plainName(), two.description)
+                        data.send("event.tap.server", event.player.plainName(), two.description)
                     }
                     // why?
                     val format = NumberFormat.getNumberInstance(Locale.US)
                     format.isGroupingUsed = false
 
                     Log.info(
-                        Bundle()["log.warp.move.block", it.player.plainName(), Strings.stripColors(two.description), two.ip, format.format(
+                        Bundle()["log.warp.move.block", event.player.plainName(), Strings.stripColors(two.description), two.ip, format.format(
                             two.port
                         )]
                     )
-                    Call.connect(it.player.con(), two.ip, two.port)
+                    Call.connect(event.player.con(), two.ip, two.port)
                 }
                 return@forEach
             }
@@ -216,13 +212,13 @@ internal fun tap(it: TapEvent) {
 
         for (two in pluginData.data.warpZone) {
             if (two.mapName == Vars.state.map.name() && two.click && isUnitInside(
-                    it.tile,
+                    event.tile,
                     two.startTile,
                     two.finishTile
                 )
             ) {
-                Log.info(Bundle()["log.warp.move", it.player.plainName(), two.ip, two.port.toString()])
-                Call.connect(it.player.con(), two.ip, two.port)
+                Log.info(Bundle()["log.warp.move", event.player.plainName(), two.ip, two.port.toString()])
+                Call.connect(event.player.con(), two.ip, two.port)
                 continue
             }
         }
@@ -230,7 +226,7 @@ internal fun tap(it: TapEvent) {
         if (data.viewHistoryMode) {
             val buf = ArrayList<TileLog>()
             worldHistory.forEach { two ->
-                if (two.x == it.tile.x && two.y == it.tile.y) {
+                if (two.x == event.tile.x && two.y == event.tile.y) {
                     buf.add(two)
                 }
             }
@@ -263,25 +259,25 @@ internal fun tap(it: TapEvent) {
                 }
             }
 
-            Call.effect(it.player.con(), Fx.shockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
+            Call.effect(event.player.con(), Fx.shockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
             if (str.toString().lines().size > 10) {
-                str.append(bundle["event.log.position", it.tile.x, it.tile.y] + "\n")
+                str.append(bundle["event.log.position", event.tile.x, event.tile.y] + "\n")
                 val lines: List<String> = str.toString().split("\n").reversed()
                 for (i in 0 until 10) {
                     str.append(lines[i]).append("\n")
                 }
-                it.player.sendMessage(str.toString().trim())
+                event.player.sendMessage(str.toString().trim())
             } else {
-                it.player.sendMessage(
-                    bundle["event.log.position", it.tile.x, it.tile.y] + "\n" + str.toString().trim()
+                event.player.sendMessage(
+                    bundle["event.log.position", event.tile.x, event.tile.y] + "\n" + str.toString().trim()
                 )
             }
         }
 
         if (data.status.containsKey("hub_first") && !data.status.containsKey("hub_second")) {
-            data.status["hub_first"] = "${it.tile.x},${it.tile.y}"
+            data.status["hub_first"] = "${event.tile.x},${event.tile.y}"
             data.status["hub_second"] = "true"
-            data.send("command.hub.zone.next", "${it.tile.x},${it.tile.y}")
+            data.send("command.hub.zone.next", "${event.tile.x},${event.tile.y}")
         } else if (data.status.containsKey("hub_first") && data.status.containsKey("hub_second")) {
             val x = data.status["hub_first"]!!.split(",")[0].toInt()
             val y = data.status["hub_first"]!!.split(",")[1].toInt()
@@ -291,7 +287,7 @@ internal fun tap(it: TapEvent) {
             val bundle = if (data.status.containsKey("language")) {
                 Bundle(data.status["language"]!!)
             } else {
-                Bundle(it.player.locale())
+                Bundle(event.player.locale())
             }
             val options = arrayOf(arrayOf(bundle["command.hub.zone.yes"], bundle["command.hub.zone.no"]))
             val menu = Menus.registerMenu { player, option ->
@@ -303,7 +299,7 @@ internal fun tap(it: TapEvent) {
                     WarpZone(
                         Vars.state.map.plainName(),
                         Vars.world.tile(x, y).pos(),
-                        it.tile.pos(),
+                        event.tile.pos(),
                         touch,
                         ip,
                         port
@@ -331,14 +327,14 @@ internal fun tap(it: TapEvent) {
 
         players.forEach { two ->
             if (two.mouseTracking) {
-                Call.effect(two.player.con(), Fx.bigShockwave, it.tile.getX(), it.tile.getY(), 0f, Color.cyan)
+                Call.effect(two.player.con(), Fx.bigShockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
             }
         }
     }
 }
 
 @Event
-internal fun wave(it: WaveEvent) {
+internal fun wave(event: WaveEvent) {
     for (data in players) {
         data.exp += 500
     }
@@ -355,7 +351,7 @@ internal fun wave(it: WaveEvent) {
 }
 
 @Event
-internal fun serverLoad(it: ServerLoadEvent) {
+internal fun serverLoad(event: ServerLoadEvent) {
     Vars.content.blocks().each { two ->
         var buf = 0
         two.requirements.forEach { item ->
@@ -415,31 +411,26 @@ internal fun serverLoad(it: ServerLoadEvent) {
 }
 
 @Event
-internal fun playerChat(it: PlayerChatEvent) {
-
-}
-
-@Event
-internal fun gameOver(it: GameOverEvent) {
+internal fun gameOver(event: GameOverEvent) {
     if (!Vars.state.rules.infiniteResources) {
         if (Vars.state.rules.pvp) {
             for (data in players) {
-                if (data.player.team() == it.winner) {
+                if (data.player.team() == event.winner) {
                     data.pvpWinCount++
                 }
             }
         } else if (Vars.state.rules.attackMode) {
             for (data in players) {
-                if (data.player.team() == it.winner) {
+                if (data.player.team() == event.winner) {
                     data.attackClear++
                 }
             }
         }
         for (data in players) {
-            earnEXP(it.winner, data.player, data, true)
+            earnEXP(event.winner, data.player, data, true)
         }
         for (data in offlinePlayers) {
-            earnEXP(it.winner, data.player, data, false)
+            earnEXP(event.winner, data.player, data, false)
         }
     }
     offlinePlayers.clear()
@@ -449,38 +440,38 @@ internal fun gameOver(it: GameOverEvent) {
 }
 
 @Event
-internal fun blockBuildBegin(it: BlockBuildBeginEvent) {
+internal fun blockBuildBegin(event: BlockBuildBeginEvent) {
     Events.on(BlockBuildBeginEvent::class.java, Cons<BlockBuildBeginEvent> {
 
     }.also { listener -> eventListeners[BlockBuildEndEvent::class.java] = listener })
 }
 
 @Event
-internal fun blockBuildEnd(it: BlockBuildEndEvent) {
+internal fun blockBuildEnd(event: BlockBuildEndEvent) {
     val isDebug = Core.settings.getBool("debugMode")
 
-    if (it.unit != null && it.unit.isPlayer) {
-        val player = it.unit.player
+    if (event.unit != null && event.unit.isPlayer) {
+        val player = event.unit.player
         val target = findPlayerData(player.uuid())
 
-        if (player.unit() != null && target != null && it.tile.block() != null && player.unit()
+        if (player.unit() != null && target != null && event.tile.block() != null && player.unit()
                 .buildPlan() != null
         ) {
-            val block = it.tile.block()
-            if (!it.breaking) {
+            val block = event.tile.block()
+            if (!event.breaking) {
                 log(
                     LogType.Block,
-                    Bundle()["log.block.place", target.name, checkValidBlock(it.tile), it.tile.x, it.tile.y]
+                    Bundle()["log.block.place", target.name, checkValidBlock(event.tile), event.tile.x, event.tile.y]
                 )
 
                 val buf = ArrayList<TileLog>()
                 worldHistory.forEach { two ->
-                    if (two.x == it.tile.x && two.y == it.tile.y) {
+                    if (two.x == event.tile.x && two.y == event.tile.y) {
                         buf.add(two)
                     }
                 }
 
-                if (!Vars.state.rules.infiniteResources && it.tile != null && it.tile.build != null && it.tile.build.maxHealth() == it.tile.block().health.toFloat() && (!buf.isEmpty() && buf.last().tile != it.tile.block().name)) {
+                if (!Vars.state.rules.infiniteResources && event.tile != null && event.tile.build != null && event.tile.build.maxHealth() == event.tile.block().health.toFloat() && (!buf.isEmpty() && buf.last().tile != event.tile.block().name)) {
                     target.blockPlaceCount++
                     target.exp += blockExp[block.name]!!
                     target.currentExp += blockExp[block.name]!!
@@ -491,34 +482,34 @@ internal fun blockBuildEnd(it: BlockBuildEndEvent) {
                         System.currentTimeMillis(),
                         target.name,
                         "place",
-                        it.tile.x,
-                        it.tile.y,
-                        checkValidBlock(it.tile),
-                        if (it.tile.build != null) it.tile.build.rotation else 0,
-                        if (it.tile.build != null) it.tile.build.team else Vars.state.rules.defaultTeam,
-                        it.config
+                        event.tile.x,
+                        event.tile.y,
+                        checkValidBlock(event.tile),
+                        if (event.tile.build != null) event.tile.build.rotation else 0,
+                        if (event.tile.build != null) event.tile.build.team else Vars.state.rules.defaultTeam,
+                        event.config
                     )
                 )
 
                 if (isDebug) {
-                    Log.info("${player.name} placed ${it.tile.block().name} to ${it.tile.x},${it.tile.y}")
+                    Log.info("${player.name} placed ${event.tile.block().name} to ${event.tile.x},${event.tile.y}")
                 }
-            } else if (it.breaking) {
+            } else {
                 log(
                     LogType.Block,
-                    Bundle()["log.block.break", target.name, checkValidBlock(it.tile), it.tile.x, it.tile.y]
+                    Bundle()["log.block.break", target.name, checkValidBlock(event.tile), event.tile.x, event.tile.y]
                 )
                 addLog(
                     TileLog(
                         System.currentTimeMillis(),
                         target.name,
                         "break",
-                        it.tile.x,
-                        it.tile.y,
+                        event.tile.x,
+                        event.tile.y,
                         checkValidBlock(player.unit().buildPlan().tile()),
-                        if (it.tile.build != null) it.tile.build.rotation else 0,
-                        if (it.tile.build != null) it.tile.build.team else Vars.state.rules.defaultTeam,
-                        it.config
+                        if (event.tile.build != null) event.tile.build.rotation else 0,
+                        if (event.tile.build != null) event.tile.build.team else Vars.state.rules.defaultTeam,
+                        event.config
                     )
                 )
 
@@ -533,33 +524,33 @@ internal fun blockBuildEnd(it: BlockBuildEndEvent) {
 }
 
 @Event
-internal fun buildSelect(it: BuildSelectEvent) {
-    if (it.builder is Playerc && it.builder.buildPlan() != null && it.tile.block() !== Blocks.air && it.breaking) {
+internal fun buildSelect(event: BuildSelectEvent) {
+    if (event.builder is Playerc && event.builder.buildPlan() != null && event.tile.block() !== Blocks.air && event.breaking) {
         log(
             LogType.Block,
-            Bundle()["log.block.remove", (it.builder as Playerc).plainName(), checkValidBlock(it.tile), it.tile.x, it.tile.y]
+            Bundle()["log.block.remove", (event.builder as Playerc).plainName(), checkValidBlock(event.tile), event.tile.x, event.tile.y]
         )
         addLog(
             TileLog(
                 System.currentTimeMillis(),
-                (it.builder as Playerc).plainName(),
+                (event.builder as Playerc).plainName(),
                 "select",
-                it.tile.x,
-                it.tile.y,
+                event.tile.x,
+                event.tile.y,
                 checkValidBlock(Vars.player.unit().buildPlan().tile()),
-                if (it.tile.build != null) it.tile.build.rotation else 0,
-                if (it.tile.build != null) it.tile.build.team else Vars.state.rules.defaultTeam,
-                it.tile.build.config()
+                if (event.tile.build != null) event.tile.build.rotation else 0,
+                if (event.tile.build != null) event.tile.build.team else Vars.state.rules.defaultTeam,
+                event.tile.build.config()
             )
         )
     }
 }
 
 @Event
-internal fun blockDestroy(it: BlockDestroyEvent) {
+internal fun blockDestroy(event: BlockDestroyEvent) {
     if (Vars.state.rules.attackMode) {
         for (a in players) {
-            if (it.tile.team() != Vars.state.rules.defaultTeam) {
+            if (event.tile.team() != Vars.state.rules.defaultTeam) {
                 a.currentBuildAttackCount++
             } else {
                 a.currentBuildDestroyedCount++
@@ -569,10 +560,10 @@ internal fun blockDestroy(it: BlockDestroyEvent) {
 }
 
 @Event
-internal fun unitDestroy(it: UnitDestroyEvent) {
+internal fun unitDestroy(event: UnitDestroyEvent) {
     if (!Vars.state.rules.pvp) {
         for (a in players) {
-            if (it.unit.team() != a.player.team()) {
+            if (event.unit.team() != a.player.team()) {
                 a.currentUnitDestroyedCount++
             }
         }
@@ -580,9 +571,9 @@ internal fun unitDestroy(it: UnitDestroyEvent) {
 }
 
 @Event
-internal fun unitCreate(it: UnitCreateEvent) {
+internal fun unitCreate(event: UnitCreateEvent) {
     if (conf.feature.unit.enabled && Groups.unit.size() > conf.feature.unit.limit) {
-        it.unit.kill()
+        event.unit.kill()
 
         if (unitLimitMessageCooldown == 0) {
             players.forEach {
@@ -597,22 +588,17 @@ internal fun unitCreate(it: UnitCreateEvent) {
 }
 
 @Event
-internal fun unitChange(it: UnitChangeEvent) {
-
+internal fun playerJoin(event: PlayerJoin) {
+    log(LogType.Player, Bundle()["log.joined", event.player.plainName(), event.player.uuid(), event.player.con.address])
 }
 
 @Event
-internal fun playerJoin(it: PlayerJoin) {
-    log(LogType.Player, Bundle()["log.joined", it.player.plainName(), it.player.uuid(), it.player.con.address])
-}
-
-@Event
-internal fun playerLeave(it: PlayerLeave) {
+internal fun playerLeave(event: PlayerLeave) {
     log(
         LogType.Player,
-        Bundle()["log.player.disconnect", it.player.plainName(), it.player.uuid(), it.player.con.address]
+        Bundle()["log.player.disconnect", event.player.plainName(), event.player.uuid(), event.player.con.address]
     )
-    val data = players.find { e -> e.uuid == it.player.uuid() }
+    val data = players.find { e -> e.uuid == event.player.uuid() }
     if (data != null) {
         data.lastPlayedWorldName = Vars.state.map.plainName()
         data.lastPlayedWorldMode = Vars.state.rules.modeName
@@ -625,7 +611,7 @@ internal fun playerLeave(it: PlayerLeave) {
 
         if (Vars.state.rules.pvp) {
             val b = Groups.player.copy()
-            b.remove(it.player)
+            b.remove(event.player)
             val s: HashMap<Team, Playerc> = hashMapOf()
             b.forEach { p ->
                 if (p.team() != Team.derelict) {
@@ -643,36 +629,36 @@ internal fun playerLeave(it: PlayerLeave) {
 }
 
 @Event
-internal fun playerBan(it: PlayerBanEvent) {
+internal fun playerBan(event: PlayerBanEvent) {
     log(
         LogType.Player,
-        Bundle()["log.player.banned", Vars.netServer.admins.getInfo(it.uuid).ips.first(), Vars.netServer.admins.getInfo(
-            it.uuid
+        Bundle()["log.player.banned", Vars.netServer.admins.getInfo(event.uuid).ips.first(), Vars.netServer.admins.getInfo(
+            event.uuid
         ).names.first()]
     )
     scope.launch {
-        createBanInfo(Vars.netServer.admins.getInfo(it.uuid), null)
+        createBanInfo(Vars.netServer.admins.getInfo(event.uuid), null)
     }
 }
 
 @Event
-internal fun playerUnban(it: PlayerUnbanEvent) {
-    Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.getInfo(it.uuid).lastName, currentTime()))
+internal fun playerUnban(event: PlayerUnbanEvent) {
+    Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.getInfo(event.uuid).lastName, currentTime()))
     scope.launch {
-        removeBanInfoByUUID(it.uuid)
+        removeBanInfoByUUID(event.uuid)
     }
 }
 
 @Event
-internal fun playerIpUnban(it: PlayerIpUnbanEvent) {
-    Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.findByIP(it.ip).lastName, currentTime()))
+internal fun playerIpUnban(eent: PlayerIpUnbanEvent) {
+    Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.findByIP(eent.ip).lastName, currentTime()))
     scope.launch {
-        removeBanInfoByIP(it.ip)
+        removeBanInfoByIP(eent.ip)
     }
 }
 
 @Event
-internal fun worldLoad(it: WorldLoadEvent) {
+internal fun worldLoad(event: WorldLoadEvent) {
     mapStartTime = timeSource.markNow()
     isSurrender = false
     isCheated = false
@@ -695,21 +681,21 @@ internal fun worldLoad(it: WorldLoadEvent) {
 }
 
 @Event
-internal fun connectPacket(it: ConnectPacketEvent) {
+internal fun connectPacket(event: ConnectPacketEvent) {
     if (conf.feature.blacklist.enabled) {
         pluginData.data.blacklistedNames.forEach { text ->
             val pattern = Regex(text)
-            if ((conf.feature.blacklist.regex && pattern.matches(it.packet.name)) ||
-                !conf.feature.blacklist.regex && it.packet.name.contains(text)
+            if ((conf.feature.blacklist.regex && pattern.matches(event.packet.name)) ||
+                !conf.feature.blacklist.regex && event.packet.name.contains(text)
             ) {
-                it.connection.kick(Bundle(it.packet.locale)["event.player.name.blacklisted"], 0L)
+                event.connection.kick(Bundle(event.packet.locale)["event.player.name.blacklisted"], 0L)
                 log(
                     LogType.Player,
-                    Bundle()["event.player.kick", it.packet.name, it.packet.uuid, it.connection.address, Bundle()["event.player.kick.reason.blacklisted"]]
+                    Bundle()["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, Bundle()["event.player.kick.reason.blacklisted"]]
                 )
                 Events.fire(
                     CustomEvents.PlayerConnectKicked(
-                        it.packet.name,
+                        event.packet.name,
                         Bundle()["event.player.kick.reason.blacklisted"]
                     )
                 )
@@ -720,15 +706,15 @@ internal fun connectPacket(it: ConnectPacketEvent) {
 }
 
 @Event
-internal fun playerConnect(it: PlayerConnect) {
+internal fun playerConnect(event: PlayerConnect) {
     log(
         LogType.Player,
-        Bundle()["event.player.connected", it.player.plainName(), it.player.uuid(), it.player.con.address]
+        Bundle()["event.player.connected", event.player.plainName(), event.player.uuid(), event.player.con.address]
     )
 }
 
 @Event
-internal fun buildingBulletDestroy(it: BuildingBulletDestroyEvent) {
+internal fun buildingBulletDestroy(event: BuildingBulletDestroyEvent) {
     val cores = listOf(
         Blocks.coreAcropolis,
         Blocks.coreBastion,
@@ -738,12 +724,12 @@ internal fun buildingBulletDestroy(it: BuildingBulletDestroyEvent) {
         Blocks.coreNucleus,
         Blocks.coreShard
     )
-    if (Vars.state.rules.pvp && it.build.closestCore() == null && cores.contains(it.build.block)) {
+    if (Vars.state.rules.pvp && event.build.closestCore() == null && cores.contains(event.build.block)) {
         for (data in players) {
-            if (data.player.team() == it.bullet.team) {
+            if (data.player.team() == event.bullet.team) {
                 data.pvpEliminatedCount++
             }
-            data.send("event.bullet.kill", it.bullet.team.coloredName(), it.build.team.coloredName())
+            data.send("event.bullet.kill", event.bullet.team.coloredName(), event.build.team.coloredName())
         }
         if (Vars.netServer.isWaitingForPlayers) {
             for (t in Vars.state.teams.getActive()) {
@@ -757,9 +743,9 @@ internal fun buildingBulletDestroy(it: BuildingBulletDestroyEvent) {
 }
 
 @Event
-internal fun configFileModified(it: CustomEvents.ConfigFileModified) {
-    if (it.kind == StandardWatchEventKinds.ENTRY_MODIFY) {
-        when (it.paths) {
+internal fun configFileModified(event: CustomEvents.ConfigFileModified) {
+    if (event.kind == StandardWatchEventKinds.ENTRY_MODIFY) {
+        when (event.paths) {
             "permission_user.yaml", "permission.yaml" -> {
                 try {
                     Permission.load()

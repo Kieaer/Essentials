@@ -37,7 +37,7 @@ suspend fun PluginData.update() {
 
     newSuspendedTransaction {
         PluginTable.update {
-            it[PluginTable.pluginVersion] = Vars.mods.getMod("Essential").meta.version
+            it[PluginTable.pluginVersion] = Vars.mods.getMod("Essential")?.meta?.version ?: "1.0.0"
             it[PluginTable.databaseVersion] = DATABASE_VERSION
             it[PluginTable.hubMapName] = hubPort
             it[PluginTable.data] = displayData

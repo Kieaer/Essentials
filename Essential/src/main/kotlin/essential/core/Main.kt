@@ -45,21 +45,22 @@ class Main : Plugin() {
     override fun init() {
         // 플러그인 언어 설정 및 태그 추가
         bundle.prefix = "[Essential]"
-        bundle.locale = Locale.of(conf.plugin.lang)
-
-        // 업데이트 확인
-        checkUpdate()
 
         Log.debug(bundle["event.plugin.starting"])
 
         // 플러그인 설정 불러오기
-        val config = Config.load("config", CoreConfig.serializer(), true, CoreConfig())
+        val config = Config.load("config.yaml", CoreConfig.serializer(), true, CoreConfig())
         require(config != null) {
             Log.err(bundle["event.plugin.load.failed"])
             return
         }
 
         conf = config
+
+        bundle.locale = Locale.of(conf.plugin.lang)
+
+        // 업데이트 확인
+        checkUpdate()
 
         // 기록 및 데이터 폴더 생성
         rootPath.child("log").mkdirs()

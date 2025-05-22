@@ -3,8 +3,8 @@ package essential.achievements
 import arc.util.CommandHandler
 import arc.util.Log
 import essential.achievements.generated.registerGeneratedClientCommands
+import essential.achievements.generated.registerGeneratedEventHandlers
 import essential.bundle.Bundle
-import essential.core.generated.registerGeneratedEventHandlers
 import essential.database.data.PlayerData
 import essential.players
 import mindustry.mod.Plugin
