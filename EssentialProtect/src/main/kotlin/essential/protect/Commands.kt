@@ -5,7 +5,7 @@ import arc.Events
 import arc.util.Log
 import essential.bundle.Bundle
 import ksp.command.ClientCommand
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.event.CustomEvents.PlayerDiscordRequested
 import essential.event.CustomEvents.PlayerReported
 import mindustry.Vars
@@ -16,6 +16,7 @@ import essential.core.Trigger
 import essential.core.log
 import essential.database.table.PlayerTable
 import essential.protect.Main.Companion.conf
+import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch
 import mindustry.net.Administration.PlayerInfo
@@ -27,7 +28,7 @@ class Commands {
         private const val PLAYER_NOT_FOUND = "player.not.found"
     }
     @ClientCommand(name = "login", parameter = "<id> <password>", description = "Log-in to account.")
-    fun login(playerData: PlayerData, arg: Array<out String>) {
+    fun login(playerData: PlayerDataEntity, arg: Array<out String>) {
         val bundle = playerData.bundle
         val player = playerData.player
         if (arg[0] == arg[1]) {
@@ -37,7 +38,7 @@ class Commands {
 
         scope.launch {
             val result = newSuspendedTransaction {
-                PlayerData.find { (PlayerTable.accountID eq arg[0]) and (PlayerTable.accountPW eq arg[1]) }
+                PlayerDataEntity.find { (PlayerTable.accountID eq arg[0]) and (PlayerTable.accountPW eq arg[1]) }
             }
 
             Core.app.post {
@@ -63,7 +64,7 @@ class Commands {
     }
 
     @ClientCommand(name = "reg", parameter = "<id> <password> <password_repeat>", description = "Register account")
-    fun register(playerData: PlayerData, arg: Array<out String>) {
+    fun register(playerData: PlayerDataEntity, arg: Array<out String>) {
         val bundle = playerData.bundle
         val player = playerData.player
         
@@ -93,36 +94,19 @@ class Commands {
     }
 
     @ClientCommand(name = "report", parameter = "<player> <reason...>", description = "Report a player")
-    fun report(playerData: PlayerData, arg: Array<out String>) {
+    fun report(playerData: PlayerDataEntity, arg: Array<out String>) {
         val player = playerData.player
-        val target: ObjectSet<PlayerInfo?>? = Vars.netServer.admins.findByName(arg[0])
-        if (target != null) {
+        val target: ObjectSet<PlayerInfo?> = Vars.netServer.admins.findByName(arg[0])
+        target.first()?.let {
             val reason = arg[1]
-            val infos: PlayerInfo = Vars.netServer.admins.findByName(target.first().plainLastName()).first()
-            val date = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-            val text: String? = Bundle().get(
-                "command.report.texts",
-                target.first().plainLastName(),
-                player.plainName(),
-                reason,
-                infos.lastName,
-                infos.names,
-                infos.id,
-                infos.lastIP,
-                infos.ips
-            )
-            log(LogType.Report, date + text, target.first().plainLastName())
-            Log.info(
-                Bundle().get(
-                    "command.report.received",
-                    player.plainName(),
-                    target.first().plainLastName(),
-                    reason
-                )
-            )
-            playerData.send("command.report.done", target.first().plainLastName())
-            Events.fire(PlayerReported(player.plainName(), target.first().plainLastName(), reason))
-        } else {
+            val infos: PlayerInfo = Vars.netServer.admins.findByName(it.plainLastName()).first()
+            val date = currentTime()
+            val text: String? = Bundle()["command.report.texts", it.plainLastName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
+            log(LogType.Report, date + text, it.plainLastName())
+            Log.info(Bundle()["command.report.received", player.plainName(), it.plainLastName(), reason])
+            playerData.send("command.report.done", it.plainLastName())
+            Events.fire(PlayerReported(player.plainName(), it.plainLastName(), reason))
+        } ?: run {
             playerData.err(PLAYER_NOT_FOUND)
         }
     }

@@ -1,5 +1,8 @@
 package essential.database.table
 
+import essential.systemTimezone
+import kotlinx.datetime.Clock
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.dao.id.UIntIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
@@ -15,7 +18,7 @@ object AchievementTable : UIntIdTable("player_achievements") {
     val achievementName = varchar("achievement_name", 50)
     
     // The date when the achievement was completed
-    val completedAt = datetime("completed_at").defaultExpression(CurrentDateTime)
+    val completedAt = datetime("completed_at").clientDefault { Clock.System.now().toLocalDateTime(systemTimezone) }
     
     // Create a unique index on player_id and achievement_name to prevent duplicates
     init {

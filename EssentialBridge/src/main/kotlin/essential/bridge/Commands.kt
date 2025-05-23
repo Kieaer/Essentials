@@ -1,8 +1,7 @@
 package essential.bridge
 
 import ksp.command.ClientCommand
-import essential.database.data.PlayerData
-import mindustry.gen.Playerc
+import essential.database.data.PlayerDataEntity
 import mindustry.gen.Call
 
 class Commands {
@@ -11,7 +10,7 @@ class Commands {
         parameter = "<message...>",
         description = "Send message to all connected servers"
     )
-    fun broadcast(playerData: PlayerData?, arg: Array<out String>) {
+    fun broadcast(playerData: PlayerDataEntity?, arg: Array<out String>) {
         val message = arg[0]
 
         if (Main.Companion.isServerMode) {

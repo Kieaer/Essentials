@@ -18,13 +18,13 @@ import essential.database.data.*
 import essential.database.data.plugin.WarpZone
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
-import ksp.event.Event
 import essential.permission.Permission
 import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toLocalDateTime
+import ksp.event.Event
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -74,7 +74,7 @@ internal var pvpPlayer = mutableMapOf<String, Team>()
 /** 전체 채팅 차단 유무 */
 internal var isGlobalMute = false
 private var unitLimitMessageCooldown = 0
-var offlinePlayers = mutableListOf<PlayerData>()
+var offlinePlayers = mutableListOf<PlayerDataEntity>()
 
 val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
 val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
@@ -395,9 +395,9 @@ internal fun serverLoad(event: ServerLoadEvent) {
                 val trigger = Trigger()
                 if (data == null) {
                     newSuspendedTransaction {
-                        if (PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }
-                                .empty()) {
-                            createPlayerData(it.player)
+                        if (PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()) {
+                            val data = createPlayerData(it.player)
+                            trigger.loadPlayer(data)
                         } else {
                             Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
                         }
@@ -847,7 +847,7 @@ enum class LogType {
     Player, Tap, WithDraw, Block, Deposit, Chat, Report
 }
 
-fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) {
+fun earnEXP(winner: Team, p: Playerc, target: PlayerDataEntity, isConnected: Boolean) {
     val oldLevel = target.level
     var result: Int = target.currentExp
     val time = target.currentPlayTime

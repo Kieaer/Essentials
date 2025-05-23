@@ -1,7 +1,7 @@
 package essential.achievements
 
 import essential.core.Main.Companion.scope
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import ksp.event.Event
 import essential.players
 import essential.util.startInfiniteScheduler
@@ -31,7 +31,7 @@ class APMTracker {
         }
 
         // Track player actions
-        fun trackAction(data: PlayerData) {
+        fun trackAction(data: PlayerDataEntity) {
             // Add current timestamp to the player's apmTimestamps list
             data.apmTimestamps.add(System.currentTimeMillis())
 
@@ -45,7 +45,7 @@ class APMTracker {
         }
 
         // Calculate APM for a player based on action timestamps
-        fun updatePlayerAPM(data: PlayerData) {
+        fun updatePlayerAPM(data: PlayerDataEntity) {
             val currentTime = System.currentTimeMillis()
 
             if (data.apmTimestamps.isEmpty()) {
@@ -74,18 +74,18 @@ class APMTracker {
         }
 
         // Initialize APM tracking for a player
-        fun initPlayer(data: PlayerData) {
+        fun initPlayer(data: PlayerDataEntity) {
             data.apmTimestamps.clear()
             data.apm = 0
         }
 
         // Find player data by UUID
-        fun findPlayerByUuid(uuid: String?): PlayerData? {
+        fun findPlayerByUuid(uuid: String?): PlayerDataEntity? {
             return players.find { it.uuid == uuid }
         }
 
         // Get detailed APM info for display
-        fun getAPMInfo(data: PlayerData): String {
+        fun getAPMInfo(data: PlayerDataEntity): String {
             if (data.apmTimestamps.isEmpty()) {
                 return "APM: 0 (No actions recorded)"
             }

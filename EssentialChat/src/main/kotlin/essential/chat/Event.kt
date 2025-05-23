@@ -9,8 +9,7 @@ import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essential.bundle.Bundle
 import essential.chat.Main.Companion.conf
 import essential.config.Config
-import essential.core.Main.Companion.pluginData
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.event.CustomEvents
 import essential.isVoting
 import essential.permission.Permission
@@ -93,7 +92,7 @@ fun load() {
 fun serverLoaded(event: EventType.ServerLoadEvent) {
     Vars.netServer.chatFormatter = NetServer.ChatFormatter { player, message ->
         if (player != null) {
-            val data: PlayerData? = findPlayerData(player.uuid())
+            val data: PlayerDataEntity? = findPlayerData(player.uuid())
             if (message != null) {
                 val defaultFormat = "[coral][[" + player.coloredName() + "[coral]]:[white] " + message
                 if (data != null) {

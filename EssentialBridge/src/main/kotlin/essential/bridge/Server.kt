@@ -1,7 +1,11 @@
 package essential.bridge
 
 import arc.util.Log
+import arc.util.serialization.Json
+import essential.core.Main.Companion.scope
 import essential.rootPath
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.net.Administration
 import java.io.*
@@ -9,11 +13,12 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.time.LocalDateTime
+import kotlin.coroutines.coroutineContext
 
 class Server : Runnable {
     private var server: ServerSocket? = null
     var lastSentMessage: String = ""
-    var clients: MutableList<Socket> = ArrayList<Socket>()
+    var clients = ArrayList<Socket>()
 
     override fun run() {
         try {
@@ -21,27 +26,24 @@ class Server : Runnable {
             while (!Thread.currentThread().isInterrupted) {
                 val socket = server!!.accept()
                 Log.debug(
-                    Main.Companion.bundle.get(
-                        "network.server.connected",
-                        socket.getInetAddress().hostAddress
-                    )
+                    Main.Companion.bundle["network.server.connected", socket.getInetAddress().hostAddress]
                 )
                 clients.add(socket)
-                val handler: Handler = Server.Handler(socket)
-                handler.start()
+                scope.launch {
+                    start(socket)
+                }
             }
-        } catch (ignored: SocketException) {
+        } catch (_: SocketException) {
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.err(e)
         }
     }
 
     fun shutdown() {
-        Thread.currentThread().interrupt()
         try {
             server!!.close()
         } catch (e: IOException) {
-            e.printStackTrace()
+            Log.err(e)
         }
     }
 
@@ -57,68 +59,67 @@ class Server : Runnable {
                     b.flush()
                 }
             } catch (e: SocketException) {
-                e.printStackTrace()
+                Log.err(e)
                 try {
                     a.close()
                 } catch (ex: IOException) {
-                    ex.printStackTrace()
+                    Log.err(ex)
                 }
                 clients.remove(a)
             } catch (e: IOException) {
-                e.printStackTrace()
+                Log.err(e)
             }
         }
     }
 
-    private class Handler(private val socket: Socket) : Thread() {
-        override fun run() {
-            try {
-                val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+    suspend fun start(socket: Socket) {
+        try {
+            val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+            var isAlive = true
 
-                while (!currentThread().isInterrupted()) {
-                    val d = reader.readLine()
-                    if (d == null) {
-                        println("reader data received null")
-                        interrupt()
-                    } else {
-                        when (d) {
-                            "isBanned" -> {
-                                val info: Administration.PlayerInfo = Json().fromJson(Administration.PlayerInfo::class.java, reader.readLine())
-                                val banned: Boolean = Vars.netServer.admins.isIDBanned(info.id)
-                                for (ip in info.ips) {
-                                    if (Vars.netServer.admins.isIPBanned(ip)) {
-                                        banned = true
-                                        break
-                                    }
-                                }
-                                if (banned) {
-                                    info.banned = true
-                                    sendAll("banned", Json().toJson(info, Administration.PlayerInfo::class.java))
+            while (isAlive && coroutineContext.isActive) {
+                val d = reader.readLine()
+                if (d == null) {
+                    println("reader data received null")
+                    isAlive = false
+                } else {
+                    when (d) {
+                        "isBanned" -> {
+                            val info: Administration.PlayerInfo = Json().fromJson(Administration.PlayerInfo::class.java, reader.readLine())
+                            var banned: Boolean = Vars.netServer.admins.isIDBanned(info.id)
+                            for (ip in info.ips) {
+                                if (Vars.netServer.admins.isIPBanned(ip)) {
+                                    banned = true
+                                    break
                                 }
                             }
-
-                            "exit" -> interrupt()
-                            "message" -> sendAll("message", reader.readLine())
-                            "crash" -> {
-                                val stacktrace = StringBuilder()
-                                var line: String?
-                                while ((reader.readLine().also { line = it }) != null && line != "null") {
-                                    stacktrace.append(line).append("\n")
-                                }
-                                rootPath.child("report/" + LocalDateTime.now().withNano(0) + ".txt")
-                                    .writeString(stacktrace.toString())
-                                Log.info("Crash log received from " + socket.getInetAddress().hostAddress)
+                            if (banned) {
+                                info.banned = true
+                                sendAll("banned", Json().toJson(info, Administration.PlayerInfo::class.java))
                             }
+                        }
+
+                        "exit" -> isAlive = false
+                        "message" -> sendAll("message", reader.readLine())
+                        "crash" -> {
+                            val stacktrace = StringBuilder()
+                            var line: String?
+                            while ((reader.readLine().also { line = it }) != null && line != "null") {
+                                stacktrace.append(line).append("\n")
+                            }
+                            rootPath.child("report/" + LocalDateTime.now().withNano(0) + ".txt")
+                                .writeString(stacktrace.toString())
+                            Log.info("Crash log received from " + socket.getInetAddress().hostAddress)
                         }
                     }
                 }
-            } catch (e: SocketException) {
-                e.printStackTrace()
-            } catch (e: Exception) {
-                e.printStackTrace()
             }
-            clients.remove(socket)
-            Log.info(Main.Companion.bundle.get("network.server.disconnected", socket.getInetAddress().getHostAddress()))
+        } catch (e: SocketException) {
+            Log.err(e)
+        } catch (e: Exception) {
+            Log.err(e)
         }
+        clients.remove(socket)
+        Log.info(Main.Companion.bundle["network.server.disconnected", socket.getInetAddress().hostAddress])
     }
 }

@@ -1,7 +1,7 @@
 package essential.chat
 
 import ksp.command.ClientCommand
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import mindustry.gen.Playerc
 import mindustry.gen.Call
 import mindustry.Vars
@@ -13,7 +13,7 @@ class Commands {
         private const val PLAYER_NOT_FOUND = "player.not.found"
     }
     @ClientCommand(name = "me", parameter = "<text...>", description = "Chat with special prefix")
-    fun me(playerData: PlayerData, arg: Array<out String>) {
+    fun me(playerData: PlayerDataEntity, arg: Array<out String>) {
         if (playerData.chatMuted) return
 
         val conf = Main.Companion.conf
@@ -34,7 +34,7 @@ class Commands {
     }
 
     @ClientCommand(name = "pm", parameter = "<player> <message...>", description = "Send a private message")
-    fun pm(playerData: PlayerData, arg: Array<out String>) {
+    fun pm(playerData: PlayerDataEntity, arg: Array<out String>) {
         if (playerData.chatMuted) return
 
         val targetName = arg[0]

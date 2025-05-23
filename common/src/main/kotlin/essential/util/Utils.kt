@@ -1,6 +1,6 @@
 package essential.util
 
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.players
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -18,7 +18,7 @@ fun currentTime(): String {
 
 
 /** Get player information by UUID from the plugin */
-fun findPlayerData(uuid: String): PlayerData? {
+fun findPlayerData(uuid: String): PlayerDataEntity? {
     return players.find { data -> data.uuid == uuid }
 }
 

@@ -10,8 +10,8 @@ import org.jetbrains.exposed.sql.json.contains
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
-class PlayerBannedData(id: EntityID<UInt>) : UIntEntity(id) {
-    companion object : UIntEntityClass<PlayerBannedData>(PlayerBannedTable)
+class PlayerBannedDataEntity(id: EntityID<UInt>) : UIntEntity(id) {
+    companion object : UIntEntityClass<PlayerBannedDataEntity>(PlayerBannedTable)
 
     var names by PlayerBannedTable.names
     var ips by PlayerBannedTable.ips
@@ -23,7 +23,7 @@ class PlayerBannedData(id: EntityID<UInt>) : UIntEntity(id) {
 /** 차단된 플레이어의 정보를 DB 에 추가 합니다. */
 suspend fun createBanInfo(data: Administration.PlayerInfo, reason: String?) {
     return newSuspendedTransaction {
-        PlayerBannedData.new {
+        PlayerBannedDataEntity.new {
             names = data.names.toList()
             ips = data.ips.toList()
             uuid = data.id
@@ -36,7 +36,7 @@ suspend fun createBanInfo(data: Administration.PlayerInfo, reason: String?) {
 /** 플레이어의 UUID를 차단 해제 합니다. */
 suspend fun removeBanInfoByUUID(uuid: String) {
     return newSuspendedTransaction {
-        PlayerBannedData.find {
+        PlayerBannedDataEntity.find {
             PlayerBannedTable.uuid eq uuid
         }.firstOrNull()?.delete()
     }
@@ -45,7 +45,7 @@ suspend fun removeBanInfoByUUID(uuid: String) {
 /** 플레이어의 IP 차단을 해제 합니다. */
 suspend fun removeBanInfoByIP(ip: String) {
     return newSuspendedTransaction {
-        PlayerBannedData.find {
+        PlayerBannedDataEntity.find {
             PlayerBannedTable.ips.contains(ip)
         }
     }
@@ -54,7 +54,7 @@ suspend fun removeBanInfoByIP(ip: String) {
 /** 해당 플레이어가 차단 되어 있는지 확인 합니다. */
 suspend fun checkPlayerBanned(player: Playerc): Boolean {
     return newSuspendedTransaction {
-        PlayerBannedData.find {
+        PlayerBannedDataEntity.find {
             (PlayerBannedTable.uuid eq player.uuid()) or
                     (PlayerBannedTable.names.contains(player.name())) or
                     (PlayerBannedTable.ips.contains(player.ip()))

@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import mindustry.Vars
 import mindustry.world.Tile
 
+@Serializable
 data class WarpZone(
     val mapName: String,
     val start: Int,

@@ -11,7 +11,7 @@ import essential.core.LogType
 import essential.core.Main.Companion.scope
 import essential.core.Trigger
 import essential.core.log
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.event.CustomEvents
 import essential.players
 import essential.protect.Main.Companion.conf
@@ -147,7 +147,7 @@ fun playerJoin(e: EventType.PlayerJoin) {
     val trigger = Trigger()
     e.player.admin(false)
 
-    val data: PlayerData? = findPlayerData(e.player.uuid())
+    val data: PlayerDataEntity? = findPlayerData(e.player.uuid())
     if (conf.account.getAuthType() == ProtectConfig.AuthType.None || !conf.account.enabled) {
         if (data == null) {
             scope.launch {
@@ -283,14 +283,14 @@ fun start() {
     }
 }
 
-fun loadPlayer(data: PlayerData) {
+fun loadPlayer(data: PlayerDataEntity) {
     if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord && data.discordID == null) {
         data.send("event.discord.not.registered")
     }
 }
 
 fun enableBlockNewUser() {
-    val list: java.util.ArrayList<PlayerData> = database.getAll()
+    val list: java.util.ArrayList<PlayerDataEntity> = database.getAll()
     coldData = arrayOfNulls<String>(list.size)
 
     var size = 0

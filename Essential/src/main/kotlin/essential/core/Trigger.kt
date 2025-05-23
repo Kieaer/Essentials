@@ -7,22 +7,18 @@ import arc.util.Align
 import arc.util.Log
 import arc.util.Time
 import arc.util.Timer
-import essential.bundle
+import essential.*
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.core.service.effect.EffectSystem
-import essential.database.data.PlayerData
-import essential.database.data.PluginData
+import essential.database.data.PlayerDataEntity
+import essential.database.data.PluginDataEntity
 import essential.database.data.getPluginData
 import essential.database.data.plugin.WarpCount
 import essential.event.CustomEvents
 import essential.permission.Permission
-import essential.playerNumber
-import essential.players
-import essential.rootPath
-import essential.systemTimezone
 import essential.util.findPlayerData
 import essential.util.startInfiniteScheduler
 import kotlinx.coroutines.delay
@@ -52,7 +48,7 @@ import kotlin.random.Random
 
 
 class Trigger {
-    fun loadPlayer(playerData: PlayerData) {
+    fun loadPlayer(playerData: PlayerDataEntity) {
         val player = playerData.player
         val message = StringBuilder()
 
@@ -257,7 +253,8 @@ class Trigger {
                                             Core.app.post {
                                                 for (px in 0..2) {
                                                     for (py in 0..4) {
-                                                        Vars.world.tile(tile.x + 4 + px, tile.y + py).setBlock(Blocks.air)
+                                                        Vars.world.tile(tile.x + 4 + px, tile.y + py)
+                                                            .setBlock(Blocks.air)
                                                     }
                                                 }
                                             }
@@ -479,7 +476,7 @@ class Trigger {
             }
         }
 
-        private fun getServerInfo(pluginData: PluginData): MutableSet<Host> {
+        private fun getServerInfo(pluginData: PluginDataEntity): MutableSet<Host> {
             val total = mutableSetOf<Host>()
             var buf = arrayOf<Pair<String, Int>>()
 

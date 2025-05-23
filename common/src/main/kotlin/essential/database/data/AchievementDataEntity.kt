@@ -1,8 +1,6 @@
 package essential.database.data
 
 import essential.database.table.AchievementTable
-import essential.database.table.PlayerTable
-import kotlinx.datetime.LocalDateTime
 import org.jetbrains.exposed.dao.UIntEntity
 import org.jetbrains.exposed.dao.UIntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
@@ -12,8 +10,8 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 /**
  * Data class for player achievements
  */
-class AchievementData(id: EntityID<UInt>) : UIntEntity(id) {
-    companion object : UIntEntityClass<AchievementData>(AchievementTable)
+class AchievementDataEntity(id: EntityID<UInt>) : UIntEntity(id) {
+    companion object : UIntEntityClass<AchievementDataEntity>(AchievementTable)
 
     var playerId by AchievementTable.playerId
     var achievementName by AchievementTable.achievementName
@@ -23,9 +21,9 @@ class AchievementData(id: EntityID<UInt>) : UIntEntity(id) {
 /**
  * Check if a player has completed an achievement
  */
-suspend fun hasAchievement(playerData: PlayerData, achievementName: String): Boolean {
+suspend fun hasAchievement(playerData: PlayerDataEntity, achievementName: String): Boolean {
     return newSuspendedTransaction {
-        AchievementData.find {
+        AchievementDataEntity.find {
             (AchievementTable.playerId eq playerData.id) and
             (AchievementTable.achievementName eq achievementName)
         }.firstOrNull() != null
@@ -35,17 +33,17 @@ suspend fun hasAchievement(playerData: PlayerData, achievementName: String): Boo
 /**
  * Set an achievement as completed for a player
  */
-suspend fun setAchievement(playerData: PlayerData, achievementName: String) {
+suspend fun setAchievement(playerData: PlayerDataEntity, achievementName: String) {
     newSuspendedTransaction {
         // Check if the achievement is already completed
-        val existing = AchievementData.find {
+        val existing = AchievementDataEntity.find {
             (AchievementTable.playerId eq playerData.id) and
             (AchievementTable.achievementName eq achievementName)
         }.firstOrNull()
 
         // If not, create a new record
         if (existing == null) {
-            AchievementData.new {
+            AchievementDataEntity.new {
                 this.playerId = playerData.id
                 this.achievementName = achievementName
             }
@@ -56,9 +54,9 @@ suspend fun setAchievement(playerData: PlayerData, achievementName: String) {
 /**
  * Get all completed achievements for a player
  */
-suspend fun getPlayerAchievements(playerData: PlayerData): List<AchievementData> {
+suspend fun getPlayerAchievements(playerData: PlayerDataEntity): List<AchievementDataEntity> {
     return newSuspendedTransaction {
-        AchievementData.find {
+        AchievementDataEntity.find {
             AchievementTable.playerId eq playerData.id
         }.toList()
     }

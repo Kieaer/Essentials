@@ -5,7 +5,7 @@ import essential.achievements.APMTracker.Companion.findPlayerByUuid
 import essential.bundle.Bundle
 import essential.core.Main.Companion.scope
 import essential.core.offlinePlayers
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.database.data.getPlayerAchievements
 import essential.players
 import essential.util.startInfiniteScheduler
@@ -18,14 +18,14 @@ import mindustry.game.EventType.*
 import mindustry.gen.Groups
 import java.util.*
 
-private fun incrementActionCount(data: PlayerData) {
+private fun incrementActionCount(data: PlayerDataEntity) {
     APMTracker.trackAction(data)
 }
 
 @Event
 fun blockBuildEnd(event: BlockBuildEndEvent) {
     if (event.unit.isPlayer) {
-        val data: PlayerData? = findPlayerByUuid(event.unit.player.uuid())
+        val data: PlayerDataEntity? = findPlayerByUuid(event.unit.player.uuid())
         if (data != null) {
             // Increment action count for APM calculation
             incrementActionCount(data)
@@ -294,7 +294,7 @@ fun achievementClear(event: CustomEvents.AchievementClear) {
 @Event
 fun playerChat(event: PlayerChatEvent) {
     if (!event.message.startsWith("/")) {
-        val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+        val data: PlayerDataEntity? = findPlayerByUuid(event.player.uuid())
         if (data != null) {
             // Increment action count for APM calculation
             incrementActionCount(data)
@@ -315,7 +315,7 @@ fun playerChat(event: PlayerChatEvent) {
         }
     } else if (event.message.startsWith("/apm")) {
         // Display current APM for testing
-        val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+        val data: PlayerDataEntity? = findPlayerByUuid(event.player.uuid())
         if (data != null) {
             // Use the new APMTracker to get detailed APM info
             val apmInfo = APMTracker.getAPMInfo(data)
@@ -327,7 +327,7 @@ fun playerChat(event: PlayerChatEvent) {
 @Event
 fun unitChange(event: UnitChangeEvent) {
     if (event.player != null && event.unit != null) {
-        val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+        val data: PlayerDataEntity? = findPlayerByUuid(event.player.uuid())
         if (data != null) {
             // Increment action count for APM calculation
             incrementActionCount(data)
@@ -359,7 +359,7 @@ fun unitChange(event: UnitChangeEvent) {
 fun unitDestroy(event: UnitDestroyEvent) {
     // For each player, check if they might have destroyed the unit
     for (player in Groups.player) {
-        val data: PlayerData? = findPlayerByUuid(player.uuid())
+        val data: PlayerDataEntity? = findPlayerByUuid(player.uuid())
 
         if (data != null && event.unit != null && event.unit.team() != player.team()) {
             // Increment action count for APM calculation
@@ -571,7 +571,7 @@ fun updateSecond() {
 
 @Event
 fun playerJoin(event: PlayerJoin) {
-    val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+    val data: PlayerDataEntity? = findPlayerByUuid(event.player.uuid())
     if (data != null) {
         // Load achievements from database
         scope.launch {
@@ -645,7 +645,7 @@ fun playerJoin(event: PlayerJoin) {
 
 @Event
 fun playerLeave(event: PlayerLeave) {
-    val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+    val data: PlayerDataEntity? = findPlayerByUuid(event.player.uuid())
     if (data != null && state.rules.pvp) {
         // Add player to offline players list for LeaveAndLosePvP achievement
         offlinePlayers.add(data)
@@ -666,7 +666,7 @@ fun playerLeave(event: PlayerLeave) {
 
 @Event
 fun withdraw(event: WithdrawEvent) {
-    val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+    val data: PlayerDataEntity? = findPlayerByUuid(event.player.uuid())
     if (data != null) {
         // Increment action count for APM calculation
         incrementActionCount(data)
@@ -675,7 +675,7 @@ fun withdraw(event: WithdrawEvent) {
 
 @Event
 fun deposit(event: DepositEvent) {
-    val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+    val data: PlayerDataEntity? = findPlayerByUuid(event.player.uuid())
     if (data != null) {
         // Increment action count for APM calculation
         incrementActionCount(data)
@@ -684,7 +684,7 @@ fun deposit(event: DepositEvent) {
 
 @Event
 fun config(event: ConfigEvent) {
-    val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+    val data: PlayerDataEntity? = findPlayerByUuid(event.player.uuid())
     if (data != null) {
         // Increment action count for APM calculation
         incrementActionCount(data)
@@ -693,7 +693,7 @@ fun config(event: ConfigEvent) {
 
 @Event
 fun tap(event: TapEvent) {
-    val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+    val data: PlayerDataEntity? = findPlayerByUuid(event.player.uuid())
     if (data != null) {
         // Increment action count for APM calculation
         incrementActionCount(data)
@@ -703,7 +703,7 @@ fun tap(event: TapEvent) {
 @Event
 fun blockBuildBegin(event: BlockBuildBeginEvent) {
     if (event.unit.isPlayer) {
-        val data: PlayerData? = findPlayerByUuid(event.unit.player.uuid())
+        val data: PlayerDataEntity? = findPlayerByUuid(event.unit.player.uuid())
         if (data != null) {
             // Increment action count for APM calculation
             incrementActionCount(data)
@@ -716,7 +716,7 @@ fun blockDestroy(event: BlockDestroyEvent) {
     if (event.tile != null) {
         // Find the player who destroyed the block
         for (player in Groups.player) {
-            val data: PlayerData? = findPlayerByUuid(player.uuid())
+            val data: PlayerDataEntity? = findPlayerByUuid(player.uuid())
             if (data != null && player.team() != event.tile.team()) {
                 // Increment action count for APM calculation
                 incrementActionCount(data)

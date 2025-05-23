@@ -18,8 +18,7 @@ public enum Achievement {
 
 import arc.Events
 import essential.core.Main.Companion.scope
-import essential.database.data.AchievementData
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.database.data.hasAchievement
 import essential.database.data.setAchievement
 import kotlinx.coroutines.launch
@@ -40,7 +39,7 @@ enum class Achievement {
             return 5
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.crawler.block.destroy", "0").toInt()
         }
     },
@@ -50,7 +49,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.solo", "0").toInt()
         }
     },
@@ -60,7 +59,7 @@ enum class Achievement {
             return 18000 // 5 hours in seconds
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.time.noafk", "0").toInt()
         }
     },
@@ -70,7 +69,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.nomining", "0").toInt()
         }
     },
@@ -80,7 +79,7 @@ enum class Achievement {
             return 5
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.pvp.win.serpulo", "0").toInt()
         }
     },
@@ -90,7 +89,7 @@ enum class Achievement {
             return 5
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.pvp.win.erekir", "0").toInt()
         }
     },
@@ -100,7 +99,7 @@ enum class Achievement {
             return 10
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.pvp.win.both", "0").toInt()
         }
     },
@@ -110,7 +109,7 @@ enum class Achievement {
             return 10
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.pvp.leave.lose", "0").toInt()
         }
     },
@@ -120,7 +119,7 @@ enum class Achievement {
             return 300
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.pvpWinCount.toInt()
         }
     },
@@ -130,7 +129,7 @@ enum class Achievement {
             return 10
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.count", "0").toInt()
         }
     },
@@ -140,7 +139,7 @@ enum class Achievement {
             return 5
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.turret.multikill", "0").toInt()
         }
     },
@@ -150,7 +149,7 @@ enum class Achievement {
             return 5
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.turret.quill.kill", "0").toInt()
         }
     },
@@ -160,7 +159,7 @@ enum class Achievement {
             return 30
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.turret.zenith.kill", "0").toInt()
         }
     },
@@ -170,7 +169,7 @@ enum class Achievement {
             return 5
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.omura.horizon.kill", "0").toInt()
         }
     },
@@ -180,7 +179,7 @@ enum class Achievement {
             return 5
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.pvp.win.streak", "0").toInt()
         }
     },
@@ -190,7 +189,7 @@ enum class Achievement {
             return 20
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             var result: Int
             try {
                 val total: Int = data.pvpWinCount + data.pvpLoseCount
@@ -211,7 +210,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.pvp.underdog", "0").toInt()
         }
     },
@@ -221,7 +220,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.warp.disconnect", "0").toInt()
         }
     },
@@ -231,7 +230,7 @@ enum class Achievement {
             return 10
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.explosion.kill", "0").toInt()
         }
     },
@@ -241,7 +240,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.lowpower", "0").toInt()
         }
     },
@@ -251,7 +250,7 @@ enum class Achievement {
             return 5
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.pvp.defeat.streak", "0").toInt()
         }
     },
@@ -261,7 +260,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.nopower", "0").toInt()
         }
     },
@@ -271,7 +270,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.noturrets", "0").toInt()
         }
     },
@@ -281,7 +280,7 @@ enum class Achievement {
             return 100
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.wave.duo", "0").toInt()
         }
     },
@@ -291,7 +290,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.flareonly", "0").toInt()
         }
     },
@@ -301,7 +300,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.voting.ban", "0").toInt()
         }
     },
@@ -311,7 +310,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.pvp.contribution", "0").toInt()
         }
     },
@@ -321,7 +320,7 @@ enum class Achievement {
             return 50
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.apm
         }
     },
@@ -331,7 +330,7 @@ enum class Achievement {
             return 100
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.apm
         }
     },
@@ -341,7 +340,7 @@ enum class Achievement {
             return 200
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.apm
         }
     },
@@ -351,7 +350,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.provider", "0").toInt()
         }
     },
@@ -361,7 +360,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.feedback.provider", "0").toInt()
         }
     },
@@ -371,7 +370,7 @@ enum class Achievement {
             return 100000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.blockPlaceCount
         }
     },
@@ -380,7 +379,7 @@ enum class Achievement {
             return 100000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.blockBreakCount
         }
     },
@@ -390,7 +389,7 @@ enum class Achievement {
             return 360000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.time.sandbox", "0").toInt()
         }
     },
@@ -399,7 +398,7 @@ enum class Achievement {
             return 100
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.pvpWinCount.toInt()
         }
     },
@@ -408,7 +407,7 @@ enum class Achievement {
             return 10000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.wave", "0").toInt()
         }
     },
@@ -417,7 +416,7 @@ enum class Achievement {
             return 50
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.attackClear
         }
     },
@@ -426,7 +425,7 @@ enum class Achievement {
             return 360000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.time.serpulo", "0").toInt()
         }
     },
@@ -435,7 +434,7 @@ enum class Achievement {
             return 360000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.time.erekir", "0").toInt()
         }
     },
@@ -445,7 +444,7 @@ enum class Achievement {
             return 360000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.totalPlayed
         }
     },
@@ -454,7 +453,7 @@ enum class Achievement {
             return 720000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.totalPlayed
         }
     },
@@ -463,7 +462,7 @@ enum class Achievement {
             return 1080000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.totalPlayed
         }
     },
@@ -473,7 +472,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.unit.serpulo.quad", "0").toInt()
         }
     },
@@ -483,7 +482,7 @@ enum class Achievement {
             return 70
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             var result: Int
             try {
                 val total: Int = data.pvpWinCount + data.pvpLoseCount
@@ -504,7 +503,7 @@ enum class Achievement {
             return 10000
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.time.chat", "0").toInt()
         }
     },
@@ -517,7 +516,7 @@ enum class Achievement {
 
         override val isHidden = true
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.time.meetowner", "0").toInt()
         }
     },
@@ -530,11 +529,11 @@ enum class Achievement {
 
         override val isHidden = true
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.asteroids", "0").toInt()
         }
 
-        override fun success(data: PlayerData): Boolean {
+        override fun success(data: PlayerDataEntity): Boolean {
             val mapHash = "7b032cc7815022be644d00a877ae0388"
             if (Achievement.Companion.mapHash == mapHash) {
                 data.status.put("record.map.clear.asteroids", "1")
@@ -552,11 +551,11 @@ enum class Achievement {
 
         override val isHidden = true
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.transcendence", "0").toInt()
         }
 
-        override fun success(data: PlayerData): Boolean {
+        override fun success(data: PlayerDataEntity): Boolean {
             val mapHash = "f355b3d91d5d8215e557ff045b3864ef"
             if (Achievement.Companion.mapHash == mapHash) {
                 data.status.put("record.map.clear.transcendence", "1")
@@ -572,7 +571,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.chat.newyear", "0").toInt()
         }
     },
@@ -582,7 +581,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.login.loyal", "0").toInt()
         }
     },
@@ -592,7 +591,7 @@ enum class Achievement {
             return 10
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.build.waterextractor", "0").toInt()
         }
     },
@@ -602,7 +601,7 @@ enum class Achievement {
             return 100
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.attendanceDays
         }
     },
@@ -612,7 +611,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.login.loyal.sixmonths", "0").toInt()
         }
     },
@@ -622,7 +621,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.login.loyal.oneyearsixmonths", "0").toInt()
         }
     },
@@ -632,7 +631,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return data.status.getOrDefault("record.map.clear.all", "0").toInt()
         }
     },
@@ -642,7 +641,7 @@ enum class Achievement {
             return 1
         }
 
-        override fun current(data: PlayerData): Int{
+        override fun current(data: PlayerDataEntity): Int{
             return if (data.discordID?.isNotEmpty() == true) 1 else 0
         }
     };
@@ -650,8 +649,8 @@ enum class Achievement {
     abstract fun value(): Int
     open val isHidden: Boolean = false
 
-    abstract fun current(data: PlayerData): Int
-    open fun success(data: PlayerData): Boolean {
+    abstract fun current(data: PlayerDataEntity): Int
+    open fun success(data: PlayerDataEntity): Boolean {
         // Prevent achievements from being cleared in sandbox mode
         if (mindustry.Vars.state.rules.infiniteResources) {
             return false
@@ -674,12 +673,12 @@ enum class Achievement {
      * Check if the achievement is completed in the database
      * This is a suspending function and should be called from a coroutine
      */
-    suspend fun isCompletedInDatabase(data: PlayerData): Boolean {
+    suspend fun isCompletedInDatabase(data: PlayerDataEntity): Boolean {
         val achievementName = this.toString().lowercase(Locale.getDefault())
         return hasAchievement(data, achievementName)
     }
 
-    fun set(data: PlayerData) {
+    fun set(data: PlayerDataEntity) {
         val achievementName = this.toString().lowercase(Locale.getDefault())
 
         // Store in status for temporary use during this session

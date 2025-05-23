@@ -1,3 +1,4 @@
 ksp.command.CommandProcessorProvider
 ksp.table.UpdateFunctionProcessorProvider
 ksp.event.EventProcessorProvider
+ksp.table.DataClassProcessorProvider

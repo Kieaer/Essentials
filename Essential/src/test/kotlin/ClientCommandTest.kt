@@ -10,7 +10,7 @@ import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
 import essential.bundle.Bundle
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.database.data.update
 import essential.players
 import essential.test.lastReceivedMessage
@@ -36,7 +36,7 @@ import java.lang.Thread.sleep
 class ClientCommandTest {
     companion object {
         private var done = false
-        lateinit var playerData: PlayerData
+        lateinit var playerData: PlayerDataEntity
 
         @BeforeClass
         @JvmStatic
@@ -127,8 +127,17 @@ class ClientCommandTest {
 
         // Change password
         clientCommand.handleMessage("/changepw pass pass", player)
-        assertTrue(BCrypt.checkpw("pass", playerData.accountPW))
-        assertEquals(log("command.changePw.apply"), playerData.lastReceivedMessage)
+        players.find { p -> p.uuid == player.uuid() }!!.let {
+            var tick = 0
+            while(it.accountPW == null) {
+                sleep(16)
+                if (tick++ > 300) {
+                    fail()
+                }
+            }
+            assertTrue(BCrypt.checkpw("pass", it.accountPW))
+            assertEquals(log("command.changePw.apply"), playerData.lastReceivedMessage)
+        }
 
         // If password isn't same
         clientCommand.handleMessage("/changepw pass wd", player)

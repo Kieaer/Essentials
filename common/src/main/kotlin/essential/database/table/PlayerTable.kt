@@ -1,5 +1,9 @@
 package essential.database.table
 
+import essential.systemTimezone
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.dao.id.UIntIdTable
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
@@ -8,13 +12,13 @@ import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 
 object PlayerTable : UIntIdTable("players") {
     val name = varchar("name", 50).index()
-    val uuid = varchar("uuid", 24)
+    val uuid = varchar("uuid", 25)
     val blockPlaceCount = integer("block_place_count").default(0)
     val blockBreakCount = integer("block_break_count").default(0)
     val level = integer("level").default(0)
     val exp = integer("exp").default(0)
-    val firstPlayed = datetime("first_played").defaultExpression(CurrentDateTime)
-    val lastPlayed = datetime("last_played").defaultExpression(CurrentDateTime)
+    val firstPlayed = datetime("first_played").clientDefault { Clock.System.now().toLocalDateTime(systemTimezone) }
+    val lastPlayed = datetime("last_played").clientDefault { Clock.System.now().toLocalDateTime(systemTimezone) }
     val totalPlayed = integer("total_played").default(0)
     val attackClear = integer("attack_clear").default(0)
     val waveClear = integer("wave_clear").default(0)
@@ -32,7 +36,7 @@ object PlayerTable : UIntIdTable("players") {
     val effectColor = varchar("effect_color", 10).nullable().default(null)
     val hideRanking = bool("hide_ranking").default(false)
     val strictMode = bool("strict_mode").default(false)
-    val lastLoginDate = datetime("last_login_date").defaultExpression(CurrentDateTime)
+    val lastLoginDate = datetime("last_login_date").clientDefault { Clock.System.now().toLocalDateTime(systemTimezone) }
     val lastLogoutDate = datetime("last_logout_date").nullable().default(null)
     val lastPlayedWorldName = varchar("last_played_world_name", 50).nullable().default(null)
     val lastPlayedWorldMode = varchar("last_played_world_mode", 50).nullable().default(null)

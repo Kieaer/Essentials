@@ -6,6 +6,7 @@ import essential.database.data.plugin.WarpCount
 import essential.database.data.plugin.WarpTotal
 import essential.database.data.plugin.WarpZone
 import essential.database.table.PluginTable
+import kotlinx.serialization.Serializable
 import mindustry.Vars
 import org.jetbrains.exposed.dao.UIntEntity
 import org.jetbrains.exposed.dao.UIntEntityClass
@@ -13,8 +14,8 @@ import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.update
 
-class PluginData(id: EntityID<UInt>) : UIntEntity(id) {
-    companion object : UIntEntityClass<PluginData>(PluginTable)
+class PluginDataEntity(id: EntityID<UInt>) : UIntEntity(id) {
+    companion object : UIntEntityClass<PluginDataEntity>(PluginTable)
 
     var pluginVersion by PluginTable.pluginVersion
     var databaseVersion by PluginTable.databaseVersion
@@ -22,6 +23,7 @@ class PluginData(id: EntityID<UInt>) : UIntEntity(id) {
     var data by PluginTable.data
 }
 
+@Serializable
 data class DisplayData(
     val warpZone: ArrayList<WarpZone> = arrayListOf(),
     val warpCount: ArrayList<WarpCount> = arrayListOf(),
@@ -31,13 +33,13 @@ data class DisplayData(
 )
 
 /** 플러그인 데이터 업데이트 */
-suspend fun PluginData.update() {
+suspend fun PluginDataEntity.update() {
     val displayData = this.data
     val hubPort = this.hubMapName
 
     newSuspendedTransaction {
         PluginTable.update {
-            it[PluginTable.pluginVersion] = Vars.mods.getMod("Essential")?.meta?.version ?: "1.0.0"
+            it[PluginTable.pluginVersion] = Vars.mods.getMod("Essential").meta.version
             it[PluginTable.databaseVersion] = DATABASE_VERSION
             it[PluginTable.hubMapName] = hubPort
             it[PluginTable.data] = displayData
@@ -46,8 +48,8 @@ suspend fun PluginData.update() {
 }
 
 /** 플러그인 데이터 읽기 */
-suspend fun getPluginData(): PluginData? {
+suspend fun getPluginData(): PluginDataEntity? {
     return newSuspendedTransaction {
-        PluginData.all().firstOrNull()
+        PluginDataEntity.all().firstOrNull()
     }
 }

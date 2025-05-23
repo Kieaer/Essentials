@@ -20,7 +20,7 @@ data class Plugin(
 /** Database 설정 */
 @Serializable
 data class DatabaseConfig(
-    var url: String = "jdbc:sqlite:config/essential/database.db",
+    var url: String = "jdbc:sqlite:database.db",
     val username: String = "sa",
     val password: String = "",
 )

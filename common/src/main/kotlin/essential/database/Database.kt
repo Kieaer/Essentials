@@ -153,7 +153,7 @@ private fun downloadFile(url: URL, outputFile: File) {
  */
 suspend fun upgradeDatabase() {
     val pluginData = getPluginData()
-    val currentVersion = pluginData?.databaseVersion ?: 0u
+    val currentVersion = pluginData?.databaseVersion ?: DATABASE_VERSION
 
     if (currentVersion < DATABASE_VERSION) {
         Log.info(bundle["database.upgrade.start", currentVersion, DATABASE_VERSION])

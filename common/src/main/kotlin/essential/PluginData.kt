@@ -2,11 +2,13 @@ package essential
 
 import arc.Core
 import arc.files.Fi
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.ObjectMapper
 import essential.bundle.Bundle
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
+import essential.database.data.PluginDataEntity
 import essential.util.toHString
 import kotlinx.datetime.TimeZone
-import mindustry.Vars
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
@@ -15,7 +17,16 @@ import kotlin.time.TimeSource
 const val DATABASE_VERSION: UByte = 4u
 
 /** 플러그인 버전 */
-val PLUGIN_VERSION: String = Vars.mods.getMod("Essential")?.meta?.version ?: "1.0.0"
+val PLUGIN_VERSION: String get() {
+    val file = PluginDataEntity::class.java.getResourceAsStream("/plugin.json")
+    file.use {
+        return ObjectMapper()
+            .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
+            .readTree(it)
+            .get("version")
+            .asText()
+    }
+}
 
 /** 플러그인 메세지 데이터 */
 val bundle = Bundle()
@@ -54,7 +65,7 @@ var isCheated = false
 var isSurrender = false
 
 /** 플레이어 데이터 목록 */
-val players = CopyOnWriteArrayList<PlayerData>()
+val players = CopyOnWriteArrayList<PlayerDataEntity>()
 
 /** 시스템 Time zone */
 val systemTimezone = TimeZone.currentSystemDefault()

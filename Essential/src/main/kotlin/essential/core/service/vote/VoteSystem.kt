@@ -8,7 +8,7 @@ import arc.graphics.Color
 import arc.util.Time
 import arc.util.Timer
 import essential.core.earnEXP
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.event.CustomEvents
 import essential.isSurrender
 import essential.isVoting
@@ -46,7 +46,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
     private var worldLoadEvent: Cons<WorldLoadEvent>
 
     init {
-        fun sendMessage(playerData: PlayerData?) {
+        fun sendMessage(playerData: PlayerDataEntity?) {
             if (playerData != null) {
                 val bundle = playerData.bundle
                 playerData.send("command.vote.starter", voteData.starter.player.plainName())

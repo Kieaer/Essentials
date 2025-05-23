@@ -10,9 +10,8 @@ import arc.util.*
 import arc.util.Timer
 import com.charleskorn.kaml.Yaml
 import com.github.lalyos.jfiglet.FigletFont
+import essential.*
 import essential.bundle.Bundle
-import ksp.command.ClientCommand
-import ksp.command.ServerCommand
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
@@ -20,6 +19,7 @@ import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
 import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.database.data.getPlayerData
 import essential.database.data.plugin.WarpBlock
 import essential.database.data.plugin.WarpCount
@@ -28,22 +28,11 @@ import essential.database.data.update
 import essential.database.databaseClose
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
-import essential.isCheated
-import essential.isSurrender
-import essential.isVoting
-import essential.nextVoteAvailable
 import essential.permission.Permission
-import essential.playTime
-import essential.players
-import essential.rootPath
-import essential.systemTimezone
-import essential.timeSource
-import essential.uptime
 import essential.util.currentTime
 import essential.util.findPlayerData
 import essential.util.findPlayers
 import essential.util.findPlayersByName
-import essential.voterCooldown
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -51,6 +40,8 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format
 import kotlinx.datetime.toLocalDateTime
+import ksp.command.ClientCommand
+import ksp.command.ServerCommand
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Weathers
@@ -158,7 +149,7 @@ internal class Commands {
     fun changeName(playerData: PlayerData, arg: Array<out String>) {
         suspend fun change(data: PlayerData) {
             newSuspendedTransaction {
-                val exists = PlayerData.find { PlayerTable.name eq arg[1] }.firstOrNull()
+                val exists = PlayerDataEntity.find { PlayerTable.name eq arg[1] }.firstOrNull()
                 if (exists != null) {
                     data.err("command.changeName.exists", arg[1])
                 } else {
@@ -202,12 +193,10 @@ internal class Commands {
             return
         }
 
-        scope.launch {
-            val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
-            playerData.accountPW = password
-            playerData.update()
-            Core.app.post { playerData.send("command.changePw.apply") }
-        }
+        val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
+        playerData.accountPW = password
+        scope.launch { playerData.update() }
+        Core.app.post { playerData.send("command.changePw.apply") }
     }
 
     @ClientCommand("chat", "<on/off>", "Mute all players without admins")
@@ -657,10 +646,11 @@ internal class Commands {
                                 if (s <= 5) {
                                     val tempBanConfirmMenu = Menus.registerMenu { _, i ->
                                         if (i == 0) {
-                                            require (targetData != null) {
+                                            require(targetData != null) {
                                                 "DB error?"
                                             }
-                                            targetData!!.banExpireDate = Clock.System.now().plus(time.minutes).toLocalDateTime(systemTimezone)
+                                            targetData!!.banExpireDate =
+                                                Clock.System.now().plus(time.minutes).toLocalDateTime(systemTimezone)
                                             scope.launch { targetData!!.update() }
                                             Events.fire(
                                                 CustomEvents.PlayerTempBanned(

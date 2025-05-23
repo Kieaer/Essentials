@@ -4,7 +4,7 @@ import arc.graphics.Color
 import arc.graphics.Colors
 import arc.util.Timer
 import essential.core.Main.Companion.conf
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.players
 import mindustry.Vars
 import mindustry.content.Fx
@@ -24,7 +24,7 @@ class EffectSystem : Timer.Task() {
 
     var buffer = ArrayList<EffectPos>()
 
-    fun effect(data: PlayerData) {
+    fun effect(data: PlayerDataEntity) {
         val color = if (data.effectColor != null) {
             if (Colors.get(data.effectColor) != null) Colors.get(data.effectColor) else Color.valueOf(
                 data.effectColor

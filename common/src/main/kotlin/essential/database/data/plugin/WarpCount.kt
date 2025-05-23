@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import mindustry.Vars
 import mindustry.world.Tile
 
+@Serializable
 data class WarpCount(
     val mapName: String,
     val pos: Int,

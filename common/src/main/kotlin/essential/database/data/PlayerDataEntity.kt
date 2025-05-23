@@ -1,9 +1,11 @@
 package essential.database.data
 
 import essential.bundle.Bundle
+import essential.database.data.PlayerDataEntity.Companion.findSingleByAndUpdate
 import essential.database.table.PlayerTable
-import ksp.table.GenerateUpdate
 import essential.playerNumber
+import ksp.table.GenerateUpdate
+import ksp.table.GenerateDataClass
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import org.jetbrains.exposed.dao.UIntEntity
@@ -15,8 +17,9 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 @GenerateUpdate
-class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
-    companion object : UIntEntityClass<PlayerData>(PlayerTable)
+@GenerateDataClass
+class PlayerDataEntity(id: EntityID<UInt>) : UIntEntity(id) {
+    companion object : UIntEntityClass<PlayerDataEntity>(PlayerTable)
 
     var name by PlayerTable.name
     var uuid by PlayerTable.uuid
@@ -83,52 +86,37 @@ class PlayerData(id: EntityID<UInt>) : UIntEntity(id) {
     var player: Playerc = Player.create()
     val status = mutableMapOf<String, String>()
     val bundle: Bundle get() = Bundle(player.locale())
+}
 
-    fun err(message: String, vararg parameters: Any) {
-        val text = "[scarlet]" + bundle[message, parameters]
-        player.sendMessage(text)
-    }
-
-    fun send(message: String, vararg parameters: Any) {
-        send(bundle, message, *parameters)
-    }
-
-    fun send(bundle: Bundle, message: String, vararg parameters: Any) {
-        val text = bundle[message, parameters]
-        player.sendMessage(text)
-    }
-
-    /** 플레이어의 Discord ID 값을 변경 합니다. */
-    suspend fun updatePlayerDataByDiscord(name: String, discord: String) {
-        newSuspendedTransaction {
-            findSingleByAndUpdate(PlayerTable.name like name and(PlayerTable.discordID eq discord)) {
-                it.discordID = discord
-            }
+/** 플레이어의 Discord ID 값을 변경 합니다. */
+suspend fun updatePlayerDataByDiscord(name: String, discord: String) {
+    newSuspendedTransaction {
+        findSingleByAndUpdate(PlayerTable.name like name and (PlayerTable.discordID eq discord)) {
+            it.discordID = discord
         }
     }
 }
 
 /** 플레이어 데이터 생성 */
-suspend fun createPlayerData(player: Playerc) : PlayerData {
+fun createPlayerData(player: Playerc): PlayerDataEntity {
     return createPlayerData(player.name(), player.uuid())
 }
 
-suspend fun createPlayerData(name: String, uuid: String) : PlayerData {
-    return newSuspendedTransaction {
-        PlayerData.new {
-            this.name = name
-            this.uuid = uuid
-        }
+fun createPlayerData(name: String, uuid: String): PlayerDataEntity {
+    return PlayerDataEntity.new {
+        this.name = name
+        this.uuid = uuid
     }
+
 }
 
 /** 플레이어 데이터 읽기 */
-suspend fun getPlayerData(player: Playerc): PlayerData? {
+suspend fun getPlayerData(player: Playerc): PlayerDataEntity? {
     return getPlayerData(player.uuid())
 }
 
-suspend fun getPlayerData(uuid: String): PlayerData? {
+suspend fun getPlayerData(uuid: String): PlayerDataEntity? {
     return newSuspendedTransaction {
-        PlayerData.find { PlayerTable.uuid eq uuid }.firstOrNull()
+        PlayerDataEntity.find { PlayerTable.uuid eq uuid }.firstOrNull()
     }
 }

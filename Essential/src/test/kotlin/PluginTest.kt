@@ -8,7 +8,7 @@ import arc.util.Http
 import arc.util.Log
 import essential.bundle.Bundle
 import essential.core.Main
-import essential.database.data.PlayerData
+import essential.database.data.PlayerDataEntity
 import essential.players
 import essential.rootPath
 import junit.framework.TestCase.assertNotNull
@@ -175,53 +175,11 @@ class PluginTest {
         fun loadPlugin() {
             path.child("mods/Essentials").deleteDirectory()
 
-            // todo 설정 바꿔서 테스트 하기
-            //Config.databasePW = "pk1450"
             main = Main()
-
-            /*Config.border = true
-            Config.antiVPN = true
-            Config.antiGrief = true
-            Config.chatlimit = true
-            Config.chatBlacklist = true
-            Config.blockfooclient = true
-            Config.webServer = true*/
 
             main.init()
             main.registerClientCommands(clientCommand)
             main.registerServerCommands(serverCommand)
-
-            /*val achievement = essential.achievements.Main()
-            achievement.init()
-            achievement.registerServerCommands(serverCommand)
-            achievement.registerClientCommands(clientCommand)
-
-            val bridge = essential.bridge.Main()
-            bridge.init()
-            bridge.registerServerCommands(serverCommand)
-            bridge.registerClientCommands(clientCommand)
-
-            val chat = essential.chat.Main()
-            chat.init()
-            chat.registerClientCommands(clientCommand)
-            chat.registerServerCommands(serverCommand)
-
-            val discord = essential.discord.Main()
-            discord.init()
-            discord.registerClientCommands(clientCommand)
-            discord.registerServerCommands(serverCommand)
-
-            val protect = essential.protect.Main()
-            protect.init()
-            protect.registerClientCommands(clientCommand)
-            protect.registerServerCommands(serverCommand)
-
-            val web = essential.web.Main()
-            web.init()
-            web.registerClientCommands(clientCommand)
-            web.registerServerCommands(serverCommand)*/
-
-            //daemon.submit(Trigger.Client)
 
             Events.fire(ServerLoadEvent())
         }
@@ -298,7 +256,7 @@ class PluginTest {
          * DB 에 계정이 등록된 플레이어 생성
          * @return 1번째 값에 플레이어, 2번째 값에 플레이어 정보
          */
-        fun newPlayer() : Pair<Player, PlayerData> {
+        fun newPlayer() : Pair<Player, PlayerDataEntity> {
             val player = createPlayer()
             Events.fire(EventType.PlayerJoin(player))
 

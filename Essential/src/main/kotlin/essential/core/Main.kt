@@ -8,12 +8,15 @@ import arc.util.Http
 import arc.util.Log
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
+import essential.DATABASE_VERSION
+import essential.PLUGIN_VERSION
 import essential.bundle
 import essential.config.Config
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
-import essential.database.data.PluginData
+import essential.database.data.DisplayData
+import essential.database.data.PluginDataEntity
 import essential.database.data.getPluginData
 import essential.database.databaseInit
 import essential.permission.Permission
@@ -28,13 +31,14 @@ import mindustry.game.Team
 import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
 class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
         internal lateinit var conf: CoreConfig
-        lateinit var pluginData: PluginData
+        lateinit var pluginData: PluginDataEntity
 
         val scope = CoroutineScope(Dispatchers.IO)
     }
@@ -76,10 +80,17 @@ class Main : Plugin() {
 
         // 플러그인 데이터 설정
         runBlocking {
-            val data = getPluginData()
-            require(data != null) {
-
+            var data = getPluginData()
+            if (data == null) {
+                data = transaction {
+                    PluginDataEntity.new {
+                        pluginVersion = PLUGIN_VERSION
+                        databaseVersion = DATABASE_VERSION
+                        this.data = DisplayData()
+                    }
+                }
             }
+
             pluginData = data
         }
 
@@ -105,7 +116,7 @@ class Main : Plugin() {
             init {
                 Events.on(WorldLoadEvent::class.java) {
                     isNotTargetMap =
-                        !isNotTargetMap && pluginData.data.warpBlock.none { f -> f.mapName == Vars.state.map.name() }
+                        !isNotTargetMap && pluginData.data.warpBlock.none { f -> f.mapName == state.map.name() }
                 }
             }
 
@@ -173,9 +184,7 @@ class Main : Plugin() {
                     if (it.status == Http.HttpStatus.OK) {
                         val jsonParser = ObjectMapper().configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
                         val json = jsonParser.readTree(it.resultAsString)
-                        pluginData.pluginVersion = jsonParser.readTree(
-                            this::class.java.getResourceAsStream("/plugin.json")!!.reader()
-                        ).get("version").asText()
+                        pluginData.pluginVersion = PLUGIN_VERSION
                         val latest = DefaultArtifactVersion(json.get("tag_name").asText(pluginData.pluginVersion))
                         val current = DefaultArtifactVersion(pluginData.pluginVersion)
 
