@@ -5,7 +5,6 @@ import arc.Events
 import arc.util.Log
 import essential.bundle.Bundle
 import ksp.command.ClientCommand
-import essential.database.data.PlayerDataEntity
 import essential.event.CustomEvents.PlayerDiscordRequested
 import essential.event.CustomEvents.PlayerReported
 import mindustry.Vars
@@ -14,13 +13,19 @@ import essential.core.LogType
 import essential.core.Main.Companion.scope
 import essential.core.Trigger
 import essential.core.log
+import essential.database.data.PlayerData
+import essential.database.data.entity.PlayerDataEntity
+import essential.database.data.entity.createPlayerData
+import essential.database.data.entity.toData
 import essential.database.table.PlayerTable
 import essential.protect.Main.Companion.conf
 import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mindustry.net.Administration.PlayerInfo
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 class Commands {
@@ -28,7 +33,7 @@ class Commands {
         private const val PLAYER_NOT_FOUND = "player.not.found"
     }
     @ClientCommand(name = "login", parameter = "<id> <password>", description = "Log-in to account.")
-    fun login(playerData: PlayerDataEntity, arg: Array<out String>) {
+    fun login(playerData: PlayerData, arg: Array<out String>) {
         val bundle = playerData.bundle
         val player = playerData.player
         if (arg[0] == arg[1]) {
@@ -51,7 +56,7 @@ class Commands {
                         player.sendMessage(bundle["command.login.already"])
                     } else {
                         if (findPlayerData(playerData.uuid) == null) {
-                            Trigger().loadPlayer(playerData)
+                            Trigger().loadPlayer(playerData.toData())
                         } else {
                             player.sendMessage(bundle["command.login.already"])
                         }
@@ -64,7 +69,7 @@ class Commands {
     }
 
     @ClientCommand(name = "reg", parameter = "<id> <password> <password_repeat>", description = "Register account")
-    fun register(playerData: PlayerDataEntity, arg: Array<out String>) {
+    fun register(playerData: PlayerData, arg: Array<out String>) {
         val bundle = playerData.bundle
         val player = playerData.player
         
@@ -74,11 +79,15 @@ class Commands {
             } else if (arg[1] != arg[2]) {
                 player.sendMessage(bundle["command.reg.incorrect"])
             } else {
-                val trigger = Trigger()
-                if (trigger.checkUserExistsInDatabase(player.plainName(), player.uuid())) {
+                val exists = runBlocking {
+                    PlayerDataEntity.find {
+                        (PlayerTable.accountID eq arg[0]) or (PlayerTable.name eq player.plainName())
+                    }.empty()
+                }
+                if (exists) {
                     player.sendMessage(bundle["command.reg.exists"])
                 } else {
-                    trigger.createPlayer(player, arg[0], arg[1])
+                    createPlayerData(player.name(), player.uuid(), arg[0], arg[1])
                     Log.info(bundle["log.data_created", player.plainName()])
                 }
             }
@@ -94,7 +103,7 @@ class Commands {
     }
 
     @ClientCommand(name = "report", parameter = "<player> <reason...>", description = "Report a player")
-    fun report(playerData: PlayerDataEntity, arg: Array<out String>) {
+    fun report(playerData: PlayerData, arg: Array<out String>) {
         val player = playerData.player
         val target: ObjectSet<PlayerInfo?> = Vars.netServer.admins.findByName(arg[0])
         target.first()?.let {

@@ -7,7 +7,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import essential.bundle.Bundle
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
+import essential.database.data.entity.PlayerDataEntity
 import essential.database.table.PlayerTable
 import essential.players
 import essential.rootPath
@@ -113,7 +114,7 @@ object Permission {
         }
     }
 
-    operator fun get(data: PlayerDataEntity): PermissionData {
+    operator fun get(data: PlayerData): PermissionData {
         val result = PermissionData()
 
         val u = user?.get(data.uuid)
@@ -136,7 +137,7 @@ object Permission {
         return result
     }
 
-    fun check(data: PlayerDataEntity, command: String): Boolean {
+    fun check(data: PlayerData, command: String): Boolean {
         val group = main[this[data].group]
         return if (group != null) {
             group.permission.contains(command) || group.permission.contains("all")

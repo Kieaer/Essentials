@@ -1,6 +1,6 @@
 package essential.test
 
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
 import mindustry.gen.Call
 import mindustry.gen.Playerc
 import java.util.concurrent.ConcurrentHashMap
@@ -93,7 +93,7 @@ var Playerc.lastReceivedMessage: String?
  * Extension property to access the last message sent to a player via PlayerData
  * This is used to maintain compatibility with existing tests that use playerData.lastReceivedMessage
  */
-var PlayerDataEntity.lastReceivedMessage: String?
+var PlayerData.lastReceivedMessage: String?
     get() = player.lastReceivedMessage
     set(value) {
         player.lastReceivedMessage = value

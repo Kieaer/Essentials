@@ -10,7 +10,7 @@ import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
 import essential.bundle.Bundle
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
 import essential.database.data.update
 import essential.players
 import essential.test.lastReceivedMessage
@@ -36,7 +36,7 @@ import java.lang.Thread.sleep
 class ClientCommandTest {
     companion object {
         private var done = false
-        lateinit var playerData: PlayerDataEntity
+        lateinit var playerData: PlayerData
 
         @BeforeClass
         @JvmStatic

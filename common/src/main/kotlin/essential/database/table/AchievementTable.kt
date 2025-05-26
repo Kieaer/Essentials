@@ -4,7 +4,6 @@ import essential.systemTimezone
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.dao.id.UIntIdTable
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 
 /**

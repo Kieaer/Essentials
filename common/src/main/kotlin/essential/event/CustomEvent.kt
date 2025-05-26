@@ -1,6 +1,6 @@
 package essential.event
 
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
 import java.nio.file.WatchEvent
 
 object CustomEvents {
@@ -11,10 +11,10 @@ object CustomEvents {
     class PlayerUnbanned(val name: String, val date: String)
     class PlayerBanned(val name: String, val uuid: String, val date: String, val reason: String)
     class PlayerNameChanged(val oldName: String, val newName: String, val uuid: String)
-    class DiscordURLOpen(val playerData: PlayerDataEntity)
+    class DiscordURLOpen(val playerdata: PlayerData)
     class PlayerConnectKicked(val name: String, val reason: String)
     class PlayerReported(val reporter: String, val name: String, val reason: String)
-    class PlayerDataLoaded(val playerData: PlayerDataEntity)
+    class PlayerDataLoaded(val playerdata: PlayerData)
     class ConfigFileModified(val kind: WatchEvent.Kind<out Any>, val paths: String)
     class PlayerDiscordRequested(val uuid: String)
 }

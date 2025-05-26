@@ -2,7 +2,7 @@ package essential.database.table
 
 import essential.DATABASE_VERSION
 import essential.PLUGIN_VERSION
-import essential.database.data.DisplayData
+import essential.database.data.entity.DisplayData
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.UIntIdTable
 import org.jetbrains.exposed.sql.json.json

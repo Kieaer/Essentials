@@ -9,7 +9,7 @@ import com.github.pemistahl.lingua.api.LanguageDetectorBuilder
 import essential.bundle.Bundle
 import essential.chat.Main.Companion.conf
 import essential.config.Config
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
 import essential.event.CustomEvents
 import essential.isVoting
 import essential.permission.Permission
@@ -47,9 +47,9 @@ fun load() {
             Pattern.compile("[!@#$%&*()_+=|<>?{}\\[\\]~-]")
 
         override fun filter(player: Player, message: String): String? {
-            val bundle: Bundle = Bundle(player.locale)
+            val bundle = Bundle(player.locale)
             if (conf.strict.enabled) {
-                val e = detector.detectLanguageOf(message)
+                val e = detector!!.detectLanguageOf(message)
 
                 if (e == Language.UNKNOWN && !specificTextRegex.matcher(
                         message.substring(
@@ -92,7 +92,7 @@ fun load() {
 fun serverLoaded(event: EventType.ServerLoadEvent) {
     Vars.netServer.chatFormatter = NetServer.ChatFormatter { player, message ->
         if (player != null) {
-            val data: PlayerDataEntity? = findPlayerData(player.uuid())
+            val data: PlayerData? = findPlayerData(player.uuid())
             if (message != null) {
                 val defaultFormat = "[coral][[" + player.coloredName() + "[coral]]:[white] " + message
                 if (data != null) {

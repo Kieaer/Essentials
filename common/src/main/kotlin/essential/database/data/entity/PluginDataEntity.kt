@@ -1,4 +1,4 @@
-package essential.database.data
+package essential.database.data.entity
 
 import essential.DATABASE_VERSION
 import essential.database.data.plugin.WarpBlock

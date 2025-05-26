@@ -9,7 +9,6 @@ dependencies {
     implementation(project(":ksp-processor"))
 
     implementation(project(":common"))
-    implementation(libs.jbcrypt)
     implementation(libs.jfiglet)
     implementation(libs.maven.check)
 
@@ -18,6 +17,7 @@ dependencies {
     compileOnly(libs.bundles.jackson)
     compileOnly(libs.bundles.exposed)
     compileOnly(libs.kaml)
+    compileOnly(libs.jbcrypt)
 
     testImplementation(project(":common"))
     testImplementation(kotlin("test"))
@@ -25,4 +25,5 @@ dependencies {
     testImplementation(libs.bundles.kotlinxEcosystem)
     testImplementation(libs.bundles.exposed)
     testImplementation(libs.sqlite)
+    testImplementation(libs.jbcrypt)
 }

@@ -5,7 +5,7 @@ import arc.util.Log
 import essential.achievements.generated.registerGeneratedClientCommands
 import essential.achievements.generated.registerGeneratedEventHandlers
 import essential.bundle.Bundle
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
 import essential.players
 import mindustry.mod.Plugin
 
@@ -34,7 +34,7 @@ class Main : Plugin() {
         registerGeneratedClientCommands(handler)
     }
 
-    fun findPlayerByUuid(uuid: kotlin.String?): PlayerDataEntity {
+    fun findPlayerByUuid(uuid: kotlin.String?): PlayerData {
         return players.stream().filter { e -> e.uuid == uuid }.findFirst().orElse(null)
     }
 

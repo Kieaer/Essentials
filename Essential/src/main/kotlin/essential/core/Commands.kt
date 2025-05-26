@@ -19,8 +19,8 @@ import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
 import essential.database.data.PlayerData
-import essential.database.data.PlayerDataEntity
-import essential.database.data.getPlayerData
+import essential.database.data.entity.PlayerDataEntity
+import essential.database.data.entity.getPlayerData
 import essential.database.data.plugin.WarpBlock
 import essential.database.data.plugin.WarpCount
 import essential.database.data.plugin.WarpTotal
@@ -1579,7 +1579,6 @@ internal class Commands {
                         pluginData.hubMapName = null
                         playerData.send("command.hub.mode.off")
                     }
-                    pluginData.update()
                 }
 
                 "zone" -> {
@@ -1610,7 +1609,6 @@ internal class Commands {
                         )
                     )
                     playerData.send("command.hub.block.added", "$x:$y", arg[1])
-                    pluginData.update()
                 }
 
                 "count" -> {
@@ -1619,27 +1617,23 @@ internal class Commands {
                     } else {
                         pluginData.data.warpCount.add(WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 1))
                         playerData.send("command.hub.count", "$x:$y", arg[1])
-                        pluginData.update()
                     }
                 }
 
                 "total" -> {
                     pluginData.data.warpTotal.add(WarpTotal(name, Vars.world.tile(x, y).pos(), 0, 1))
                     playerData.send("command.hub.total", "$x:$y")
-                    pluginData.update()
                 }
 
                 "remove" -> {
                     pluginData.data.warpBlock.removeAll { a -> a.ip == ip && a.port == port }
                     pluginData.data.warpZone.removeAll { a -> a.ip == ip && a.port == port }
                     playerData.send("command.hub.removed", arg[1])
-                    pluginData.update()
                 }
 
                 "reset" -> {
                     pluginData.data.warpTotal.clear()
                     pluginData.data.warpCount.clear()
-                    pluginData.update()
                 }
 
                 else -> playerData.send("command.hub.help")

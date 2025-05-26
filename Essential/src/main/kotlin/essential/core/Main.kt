@@ -15,9 +15,9 @@ import essential.config.Config
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
-import essential.database.data.DisplayData
-import essential.database.data.PluginDataEntity
-import essential.database.data.getPluginData
+import essential.database.data.entity.DisplayData
+import essential.database.data.entity.PluginDataEntity
+import essential.database.data.entity.getPluginData
 import essential.database.databaseInit
 import essential.permission.Permission
 import essential.players

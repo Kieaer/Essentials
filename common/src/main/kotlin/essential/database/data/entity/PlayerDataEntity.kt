@@ -1,12 +1,8 @@
-package essential.database.data
+package essential.database.data.entity
 
-import essential.bundle.Bundle
-import essential.database.data.PlayerDataEntity.Companion.findSingleByAndUpdate
+import essential.database.data.PlayerData
 import essential.database.table.PlayerTable
-import essential.playerNumber
-import ksp.table.GenerateUpdate
-import ksp.table.GenerateDataClass
-import mindustry.gen.Player
+import ksp.table.GenerateTable
 import mindustry.gen.Playerc
 import org.jetbrains.exposed.dao.UIntEntity
 import org.jetbrains.exposed.dao.UIntEntityClass
@@ -15,9 +11,9 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.mindrot.jbcrypt.BCrypt
 
-@GenerateUpdate
-@GenerateDataClass
+@GenerateTable
 class PlayerDataEntity(id: EntityID<UInt>) : UIntEntity(id) {
     companion object : UIntEntityClass<PlayerDataEntity>(PlayerTable)
 
@@ -54,69 +50,39 @@ class PlayerDataEntity(id: EntityID<UInt>) : UIntEntity(id) {
     var isBanned by PlayerTable.isBanned
     var banExpireDate by PlayerTable.banExpireDate
     var attendanceDays by PlayerTable.attendanceDays
-
-    // Exp
-    var expMultiplier: Double = 1.0
-    var currentExp: Int = 0
-    var currentPlayTime: Int = 0
-
-    // AFK
-    var afk = false
-    var afkTime: UShort = 0u
-    var mousePosition: Float = 0F
-
-    // Logging
-    var viewHistoryMode = false
-    var mouseTracking = false
-
-    // Used by voting
-    val entityId = playerNumber
-
-    // Statistics
-    var currentUnitDestroyedCount = 0
-    var currentBuildDestroyedCount = 0
-    var currentBuildAttackCount = 0
-
-    // APM (Actions Per Minute)
-    var apm = 0
-    var apmTimestamps = mutableListOf<Long>()
-
-    var animatedName = false
-
-    var player: Playerc = Player.create()
-    val status = mutableMapOf<String, String>()
-    val bundle: Bundle get() = Bundle(player.locale())
-}
-
-/** 플레이어의 Discord ID 값을 변경 합니다. */
-suspend fun updatePlayerDataByDiscord(name: String, discord: String) {
-    newSuspendedTransaction {
-        findSingleByAndUpdate(PlayerTable.name like name and (PlayerTable.discordID eq discord)) {
-            it.discordID = discord
-        }
-    }
 }
 
 /** 플레이어 데이터 생성 */
-fun createPlayerData(player: Playerc): PlayerDataEntity {
+fun createPlayerData(player: Playerc): PlayerData {
     return createPlayerData(player.name(), player.uuid())
 }
 
-fun createPlayerData(name: String, uuid: String): PlayerDataEntity {
-    return PlayerDataEntity.new {
+fun createPlayerData(name: String, uuid: String): PlayerData {
+    val entity = PlayerDataEntity.new {
         this.name = name
         this.uuid = uuid
     }
+    return PlayerData(entity)
+}
 
+fun createPlayerData(name: String, uuid: String, accountID: String, accountPW: String): PlayerData {
+    val entity = PlayerDataEntity.new {
+        this.name = name
+        this.uuid = uuid
+        this.accountID = accountID
+        this.accountPW = BCrypt.hashpw(accountPW, BCrypt.gensalt())
+    }
+    return PlayerData(entity)
 }
 
 /** 플레이어 데이터 읽기 */
-suspend fun getPlayerData(player: Playerc): PlayerDataEntity? {
+suspend fun getPlayerData(player: Playerc): PlayerData? {
     return getPlayerData(player.uuid())
 }
 
-suspend fun getPlayerData(uuid: String): PlayerDataEntity? {
+suspend fun getPlayerData(uuid: String): PlayerData? {
     return newSuspendedTransaction {
-        PlayerDataEntity.find { PlayerTable.uuid eq uuid }.firstOrNull()
+        val entity = PlayerDataEntity.find { PlayerTable.uuid eq uuid }.firstOrNull()
+        entity?.let { PlayerData(it) }
     }
 }

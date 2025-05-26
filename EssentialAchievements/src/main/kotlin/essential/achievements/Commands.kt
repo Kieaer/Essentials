@@ -1,9 +1,9 @@
 package essential.achievements
 
 import arc.util.Strings
+import essential.database.data.PlayerData
 import ksp.command.ClientCommand
 import ksp.command.ServerCommand
-import essential.database.data.PlayerDataEntity
 import essential.permission.Permission
 import essential.players
 import java.util.Locale
@@ -13,7 +13,7 @@ import kotlin.math.abs
 
 class Commands {
     @ClientCommand(name = "achievements", parameter = "[page]", description = "Show your achievements")
-    fun achievements(playerData: PlayerDataEntity, args: Array<String>) {
+    fun achievements(playerData: PlayerData, args: Array<String>) {
         val temp: MutableList<String?> = ArrayList<String?>()
         val bundle = try {
             ResourceBundle.getBundle("bundle", Locale.of(playerData.player.locale().split("_")[0]))
@@ -106,7 +106,7 @@ class Commands {
     }
 
     @ClientCommand(name = "setmapprovider", parameter = "<player>", description = "Set the MapProvider achievement for a player")
-    fun clientSetMapProvider(playerData: PlayerDataEntity, args: Array<String>) {
+    fun clientSetMapProvider(playerData: PlayerData, args: Array<String>) {
         // Check if the player has admin permission
         if (!Permission.check(playerData, "admin")) {
             playerData.err("permission.denied")
@@ -137,7 +137,7 @@ class Commands {
     }
 
     @ClientCommand(name = "setfeedbackprovider", parameter = "<player>", description = "Set the FeedbackProvider achievement for a player")
-    fun clientSetFeedbackProvider(playerData: PlayerDataEntity, args: Array<String>) {
+    fun clientSetFeedbackProvider(playerData: PlayerData, args: Array<String>) {
         // Check if the player has admin permission
         if (!Permission.check(playerData, "admin")) {
             playerData.err("permission.denied")

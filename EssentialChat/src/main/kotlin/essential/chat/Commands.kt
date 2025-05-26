@@ -1,11 +1,11 @@
 package essential.chat
 
 import ksp.command.ClientCommand
-import essential.database.data.PlayerDataEntity
 import mindustry.gen.Playerc
 import mindustry.gen.Call
 import mindustry.Vars
 import arc.Core
+import essential.database.data.PlayerData
 import essential.util.findPlayers
 
 class Commands {
@@ -13,16 +13,15 @@ class Commands {
         private const val PLAYER_NOT_FOUND = "player.not.found"
     }
     @ClientCommand(name = "me", parameter = "<text...>", description = "Chat with special prefix")
-    fun me(playerData: PlayerDataEntity, arg: Array<out String>) {
+    fun me(playerData: PlayerData, arg: Array<out String>) {
         if (playerData.chatMuted) return
 
         val conf = Main.Companion.conf
-        if (conf?.blacklist?.enabled == true) {
+        if (conf.blacklist?.enabled == true) {
             val file: Array<String> = Core.settings.dataDirectory.child("chat_blacklist.txt").readString("UTF-8").split("\r\n").toTypedArray()
             for (s in file) {
                 val message = arg[0]
-                if ((conf.blacklist?.regex == true && message.matches(s.toRegex())) || 
-                    (conf.blacklist?.regex == false && message.contains(s))) {
+                if ((conf.blacklist.regex && message.matches(s.toRegex())) || (!conf.blacklist.regex && message.contains(s))) {
                     playerData.err("event.chat.blacklisted")
                     return
                 }
@@ -34,7 +33,7 @@ class Commands {
     }
 
     @ClientCommand(name = "pm", parameter = "<player> <message...>", description = "Send a private message")
-    fun pm(playerData: PlayerDataEntity, arg: Array<out String>) {
+    fun pm(playerData: PlayerData, arg: Array<out String>) {
         if (playerData.chatMuted) return
 
         val targetName = arg[0]

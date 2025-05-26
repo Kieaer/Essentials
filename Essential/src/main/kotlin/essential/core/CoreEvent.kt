@@ -15,6 +15,12 @@ import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.database.data.*
+import essential.database.data.entity.createBanInfo
+import essential.database.data.entity.createPlayerData
+import essential.database.data.entity.getPlayerData
+import essential.database.data.entity.removeBanInfoByIP
+import essential.database.data.entity.removeBanInfoByUUID
+import essential.database.data.entity.update
 import essential.database.data.plugin.WarpZone
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
@@ -74,7 +80,7 @@ internal var pvpPlayer = mutableMapOf<String, Team>()
 /** 전체 채팅 차단 유무 */
 internal var isGlobalMute = false
 private var unitLimitMessageCooldown = 0
-var offlinePlayers = mutableListOf<PlayerDataEntity>()
+var offlinePlayers = mutableListOf<PlayerData>()
 
 val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
 val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
@@ -847,7 +853,7 @@ enum class LogType {
     Player, Tap, WithDraw, Block, Deposit, Chat, Report
 }
 
-fun earnEXP(winner: Team, p: Playerc, target: PlayerDataEntity, isConnected: Boolean) {
+fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) {
     val oldLevel = target.level
     var result: Int = target.currentExp
     val time = target.currentPlayTime

@@ -5,8 +5,8 @@ import arc.files.Fi
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import essential.bundle.Bundle
-import essential.database.data.PlayerDataEntity
-import essential.database.data.PluginDataEntity
+import essential.database.data.PlayerData
+import essential.database.data.entity.PluginDataEntity
 import essential.util.toHString
 import kotlinx.datetime.TimeZone
 import java.util.concurrent.CopyOnWriteArrayList
@@ -65,7 +65,7 @@ var isCheated = false
 var isSurrender = false
 
 /** 플레이어 데이터 목록 */
-val players = CopyOnWriteArrayList<PlayerDataEntity>()
+val players = CopyOnWriteArrayList<PlayerData>()
 
 /** 시스템 Time zone */
 val systemTimezone = TimeZone.currentSystemDefault()

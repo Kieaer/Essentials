@@ -12,4 +12,5 @@ dependencies {
     implementation(libs.bundles.exposed)
     implementation(libs.hikariCP)
     implementation(libs.kaml)
+    implementation(libs.jbcrypt)
 }

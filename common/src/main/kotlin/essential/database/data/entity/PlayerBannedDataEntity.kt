@@ -1,4 +1,4 @@
-package essential.database.data
+package essential.database.data.entity
 
 import essential.database.table.PlayerBannedTable
 import mindustry.gen.Playerc

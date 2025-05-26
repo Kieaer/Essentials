@@ -8,7 +8,7 @@ import arc.util.Http
 import arc.util.Log
 import essential.bundle.Bundle
 import essential.core.Main
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
 import essential.players
 import essential.rootPath
 import junit.framework.TestCase.assertNotNull
@@ -256,7 +256,7 @@ class PluginTest {
          * DB 에 계정이 등록된 플레이어 생성
          * @return 1번째 값에 플레이어, 2번째 값에 플레이어 정보
          */
-        fun newPlayer() : Pair<Player, PlayerDataEntity> {
+        fun newPlayer() : Pair<Player, PlayerData> {
             val player = createPlayer()
             Events.fire(EventType.PlayerJoin(player))
 

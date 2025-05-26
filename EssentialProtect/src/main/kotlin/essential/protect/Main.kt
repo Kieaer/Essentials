@@ -6,7 +6,7 @@ import arc.util.Log
 import essential.bundle.Bundle
 import essential.config.Config
 import essential.core.Main
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
 import essential.permission.Permission
 import essential.protect.generated.registerGeneratedClientCommands
 import essential.protect.generated.registerGeneratedEventHandlers
@@ -32,7 +32,7 @@ class Main : Plugin() {
 
         netServer.admins.addActionFilter({ action ->
             if (action.player == null) return@addActionFilter true
-            val data: PlayerDataEntity? = findPlayerData(action.player.uuid())
+            val data: PlayerData? = findPlayerData(action.player.uuid())
             if (data != null) {
                 // 계정 기능이 켜져있는 경우
                 if (conf.account.enabled) {

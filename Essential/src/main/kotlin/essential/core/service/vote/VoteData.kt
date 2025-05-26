@@ -1,6 +1,6 @@
 package essential.core.service.vote
 
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
 import mindustry.Vars
 import mindustry.game.Team
 import mindustry.gen.Playerc
@@ -13,6 +13,6 @@ data class VoteData (
     var reason: String? = null,
     var map: Map? = null,
     var wave: Int? = null,
-    var starter: PlayerDataEntity,
+    var starter: PlayerData,
     var team: Team = Vars.state.rules.defaultTeam
 )

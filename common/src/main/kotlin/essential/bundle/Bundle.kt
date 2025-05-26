@@ -17,7 +17,7 @@ class Bundle {
     }
 
     constructor(languageTag: String) {
-        locale = Locale(languageTag)
+        locale = Locale.of(languageTag)
         resource = ResourceBundle.getBundle("bundle", locale)
     }
 

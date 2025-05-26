@@ -5,7 +5,7 @@ import PluginTest.Companion.loadPlugin
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
 import essential.players
 import mindustry.Vars
 import mindustry.game.Team
@@ -15,7 +15,7 @@ import org.junit.Test
 
 
 class FeatureTest {
-    lateinit var playerData: PlayerDataEntity
+    lateinit var playerdata: PlayerData
 
     companion object {
         private var done = false

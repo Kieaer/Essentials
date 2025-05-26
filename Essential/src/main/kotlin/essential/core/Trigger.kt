@@ -13,9 +13,9 @@ import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.core.service.effect.EffectSystem
-import essential.database.data.PlayerDataEntity
-import essential.database.data.PluginDataEntity
-import essential.database.data.getPluginData
+import essential.database.data.PlayerData
+import essential.database.data.entity.PluginDataEntity
+import essential.database.data.entity.getPluginData
 import essential.database.data.plugin.WarpCount
 import essential.event.CustomEvents
 import essential.permission.Permission
@@ -48,7 +48,7 @@ import kotlin.random.Random
 
 
 class Trigger {
-    fun loadPlayer(playerData: PlayerDataEntity) {
+    fun loadPlayer(playerData: PlayerData) {
         val player = playerData.player
         val message = StringBuilder()
 

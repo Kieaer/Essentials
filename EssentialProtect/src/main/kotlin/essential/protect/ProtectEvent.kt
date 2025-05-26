@@ -11,7 +11,9 @@ import essential.core.LogType
 import essential.core.Main.Companion.scope
 import essential.core.Trigger
 import essential.core.log
-import essential.database.data.PlayerDataEntity
+import essential.database.data.PlayerData
+import essential.database.data.entity.PlayerDataEntity
+import essential.database.data.entity.createPlayerData
 import essential.event.CustomEvents
 import essential.players
 import essential.protect.Main.Companion.conf
@@ -31,7 +33,6 @@ import mindustry.net.NetworkIO
 import mindustry.net.Packets
 import mindustry.world.Tile
 import mindustry.world.blocks.power.PowerGraph
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
@@ -117,26 +118,17 @@ fun config(e: EventType.ConfigEvent) {
         if (valid) {
             val oldGraph: PowerGraph = entity.power.graph
             val newGraph: PowerGraph = other.build.power.graph
-            val oldGraphCount: Int = Arrays.stream(
-                oldGraph.toString()
-                    .substring(oldGraph.toString().indexOf("all=["), oldGraph.toString().indexOf("], graph"))
-                    .replaceFirst("all=\\[", "").split(",")
-            ).toArray().length
-            val newGraphCount: Int = Arrays.stream(
-                newGraph.toString()
-                    .substring(newGraph.toString().indexOf("all=["), newGraph.toString().indexOf("], graph"))
-                    .replaceFirst("all=\\[", "").split(",")
-            ).toArray().length
-            if (abs(oldGraphCount - newGraphCount) > 10) {
-                players.forEach { a ->
-                    a.send(
-                        "event.antiGrief.node",
-                        e.player.name,
-                        max(oldGraphCount, newGraphCount),
-                        min(oldGraphCount, newGraphCount),
-                        "${e.tile.x},${e.tile.y}"
-                    )
-                }
+            val oldGraphCount: Int = 0
+            val newGraphCount: Int = 0
+
+            players.forEach { a ->
+                a.send(
+                    "event.antiGrief.node",
+                    e.player.name,
+                    max(oldGraphCount, newGraphCount),
+                    min(oldGraphCount, newGraphCount),
+                    "${e.tile.x},${e.tile.y}"
+                )
             }
         }
     }
@@ -147,19 +139,22 @@ fun playerJoin(e: EventType.PlayerJoin) {
     val trigger = Trigger()
     e.player.admin(false)
 
-    val data: PlayerDataEntity? = findPlayerData(e.player.uuid())
+    val data: PlayerData? = findPlayerData(e.player.uuid())
     if (conf.account.getAuthType() == ProtectConfig.AuthType.None || !conf.account.enabled) {
         if (data == null) {
             scope.launch {
                 if (!trigger.checkUserNameExists(e.player.name)) {
-                    Core.app.post({ trigger.createPlayer(e.player, null, null) })
+                    Core.app.post {
+                        val data = createPlayerData(e.player)
+                        loadPlayer(data)
+                    }
                 } else {
-                    Core.app.post({
+                    Core.app.post {
                         e.player.con.kick(
-                            Bundle(e.player.locale).get("event.player.name.duplicate"),
+                            Bundle(e.player.locale)["event.player.name.duplicate"],
                             0L
                         )
-                    })
+                    }
                 }
             }
         } else {
@@ -177,7 +172,10 @@ fun playerJoin(e: EventType.PlayerJoin) {
                             )
                         })
                     } else {
-                        Core.app.post({ trigger.createPlayer(e.player, null, null) })
+                        Core.app.post {
+                            val data = createPlayerData(e.player)
+                            loadPlayer(data)
+                        }
                     }
                 }
             } else {
@@ -283,15 +281,14 @@ fun start() {
     }
 }
 
-fun loadPlayer(data: PlayerDataEntity) {
+fun loadPlayer(data: PlayerData) {
     if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord && data.discordID == null) {
         data.send("event.discord.not.registered")
     }
 }
 
 fun enableBlockNewUser() {
-    val list: java.util.ArrayList<PlayerDataEntity> = database.getAll()
-    coldData = arrayOfNulls<String>(list.size)
+    val list = PlayerDataEntity.all()
 
     var size = 0
     for (playerData in list) {

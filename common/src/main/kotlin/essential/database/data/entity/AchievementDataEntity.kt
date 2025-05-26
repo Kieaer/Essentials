@@ -1,5 +1,6 @@
-package essential.database.data
+package essential.database.data.entity
 
+import essential.database.data.PlayerData
 import essential.database.table.AchievementTable
 import org.jetbrains.exposed.dao.UIntEntity
 import org.jetbrains.exposed.dao.UIntEntityClass
@@ -21,7 +22,7 @@ class AchievementDataEntity(id: EntityID<UInt>) : UIntEntity(id) {
 /**
  * Check if a player has completed an achievement
  */
-suspend fun hasAchievement(playerData: PlayerDataEntity, achievementName: String): Boolean {
+suspend fun hasAchievement(playerData: PlayerData, achievementName: String): Boolean {
     return newSuspendedTransaction {
         AchievementDataEntity.find {
             (AchievementTable.playerId eq playerData.id) and
@@ -33,7 +34,7 @@ suspend fun hasAchievement(playerData: PlayerDataEntity, achievementName: String
 /**
  * Set an achievement as completed for a player
  */
-suspend fun setAchievement(playerData: PlayerDataEntity, achievementName: String) {
+suspend fun setAchievement(playerData: PlayerData, achievementName: String) {
     newSuspendedTransaction {
         // Check if the achievement is already completed
         val existing = AchievementDataEntity.find {
@@ -54,7 +55,7 @@ suspend fun setAchievement(playerData: PlayerDataEntity, achievementName: String
 /**
  * Get all completed achievements for a player
  */
-suspend fun getPlayerAchievements(playerData: PlayerDataEntity): List<AchievementDataEntity> {
+suspend fun getPlayerAchievements(playerData: PlayerData): List<AchievementDataEntity> {
     return newSuspendedTransaction {
         AchievementDataEntity.find {
             AchievementTable.playerId eq playerData.id
