@@ -14,6 +14,8 @@ import essential.rootPath
 import essential.util.findPlayerData
 import mindustry.Vars.netServer
 import mindustry.mod.Plugin
+import java.net.URI
+import java.net.URL
 import java.util.Objects.requireNonNull
 
 class Main : Plugin() {
@@ -64,28 +66,8 @@ class Main : Plugin() {
 
         // VPN 확인
         if (conf.rules.vpn) {
-            var isUpdate = false
-            if (Main.pluginData.get("vpnListDate") == null || java.util.Objects.requireNonNull<T?>(
-                    Main.pluginData.get("vpnListDate")
-                ).toLong() + 8.64e7 < System.currentTimeMillis()
-            ) {
-                Main.pluginData.getStatus()
-                    .add(kotlin.Pair<A?, B?>("vpnListDate", java.lang.System.currentTimeMillis().toString()))
-                isUpdate = true
-            }
-
-            if (isUpdate) {
-                Http.get("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt")
-                    .error({ e -> Log.err("Failed to get vpn list!") })
-                    .block({ e ->
-                        val text = kotlin.text.String(java.io.BufferedInputStream(e.resultAsStream).readAllBytes())
-                        rootPath.child("data/ipv4.txt").writeString(text)
-                    })
-            }
-
-            val file: String = rootPath.child("data/ipv4.txt").readString()
-            pluginData.vpnList =
-                file.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+            val list = URI("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt").toURL().readText()
+            pluginData.vpnList = list.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         }
 
         // 이벤트 설정

@@ -1,6 +1,5 @@
 package essential.protect
 
-import arc.Core
 import arc.Events
 import arc.net.Server
 import arc.net.ServerDiscoveryHandler
@@ -8,18 +7,18 @@ import arc.util.Log
 import essential.bundle.Bundle
 import essential.config.Config
 import essential.core.LogType
-import essential.core.Main.Companion.scope
 import essential.core.Trigger
 import essential.core.log
 import essential.database.data.PlayerData
-import essential.database.data.entity.PlayerDataEntity
-import essential.database.data.entity.createPlayerData
+import essential.database.data.checkPlayerBanned
+import essential.database.data.createPlayerData
+import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.players
 import essential.protect.Main.Companion.conf
 import essential.protect.Main.Companion.pluginData
 import essential.util.findPlayerData
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import ksp.event.Event
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -33,6 +32,9 @@ import mindustry.net.NetworkIO
 import mindustry.net.Packets
 import mindustry.world.Tile
 import mindustry.world.blocks.power.PowerGraph
+import org.jetbrains.exposed.sql.transactions.transaction
+import java.net.InetAddress
+import java.net.UnknownHostException
 import kotlin.math.max
 import kotlin.math.min
 
@@ -42,7 +44,7 @@ internal var originalUnitMultiplier: Float = 0f
 internal var coldData: Array<String> = arrayOf()
 
 @Event
-fun worldLoadEnd(it: EventType.WorldLoadEndEvent) {
+fun worldLoadEnd(event: EventType.WorldLoadEndEvent) {
     try {
         val inner: Class<*> = (Vars.platform.net as ArcNetProvider).javaClass
         val field = inner.getDeclaredField("server")
@@ -142,48 +144,37 @@ fun playerJoin(e: EventType.PlayerJoin) {
     val data: PlayerData? = findPlayerData(e.player.uuid())
     if (conf.account.getAuthType() == ProtectConfig.AuthType.None || !conf.account.enabled) {
         if (data == null) {
-            scope.launch {
-                if (!trigger.checkUserNameExists(e.player.name)) {
-                    Core.app.post {
-                        val data = createPlayerData(e.player)
-                        loadPlayer(data)
-                    }
-                } else {
-                    Core.app.post {
-                        e.player.con.kick(
-                            Bundle(e.player.locale)["event.player.name.duplicate"],
-                            0L
-                        )
-                    }
-                }
+            if (transaction {
+                    PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq e.player.plainName() }.empty()
+                }) {
+                val data = runBlocking { createPlayerData(e.player) }
+                loadPlayer(data)
+            } else {
+                e.player.con.kick(
+                    Bundle(e.player.locale)["event.player.name.duplicate"],
+                    0L
+                )
             }
         } else {
             trigger.loadPlayer(data)
         }
-    } else {
-        if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
-            if (data == null) {
-                scope.launch {
-                    if (trigger.checkUserNameExists(e.player.name)) {
-                        Core.app.post({
-                            e.player.con.kick(
-                                Bundle(e.player.locale)["event.player.name.duplicate"],
-                                0L
-                            )
-                        })
-                    } else {
-                        Core.app.post {
-                            val data = createPlayerData(e.player)
-                            loadPlayer(data)
-                        }
-                    }
-                }
+    } else if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
+        if (data == null) {
+            if (transaction {
+                    !PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq e.player.plainName() }
+                        .empty()
+                }) {
+                e.player.con.kick(
+                    Bundle(e.player.locale)["event.player.name.duplicate"],
+                    0L
+                )
             } else {
-                trigger.loadPlayer(data)
+                val data = runBlocking { createPlayerData(e.player) }
+                loadPlayer(data)
             }
-        } else {
-            e.player.sendMessage(Bundle(e.player.locale)["event.player.first.register"])
         }
+    } else {
+        e.player.sendMessage(Bundle(e.player.locale)["event.player.first.register"])
     }
 }
 
@@ -220,16 +211,16 @@ fun serverLoaded(e: EventType.ServerLoadEvent) {
 fun connectPacket(event: EventType.ConnectPacketEvent) {
     var kickReason = ""
     if (!conf.rules.mobile && event.connection.mobile) {
-        event.connection.kick(Bundle(event.packet.locale).get("event.player.not.allow.mobile"), 0L)
+        event.connection.kick(Bundle(event.packet.locale)["event.player.not.allow.mobile"], 0L)
         kickReason = "mobile"
-    } else if (conf.rules.minimalName.enabled && conf.rules.minimalName.length > event.packet.name.length()) {
-        event.connection.kick(Bundle(event.packet.locale).get("event.player.name.short"), 0L)
+    } else if (conf.rules.minimalName.enabled && conf.rules.minimalName.length > event.packet.name.length) {
+        event.connection.kick(Bundle(event.packet.locale)["event.player.name.short"], 0L)
         kickReason = "name.short"
     } else if (conf.rules.vpn) {
         for (ip in pluginData.vpnList) {
             val match = IpAddressMatcher(ip)
             if (match.matches(event.connection.address)) {
-                event.connection.kick(Bundle(event.packet.locale).get("anti-grief.vpn"))
+                event.connection.kick(Bundle(event.packet.locale)["anti-grief.vpn"])
                 kickReason = "vpn"
                 break
             }
@@ -238,9 +229,9 @@ fun connectPacket(event: EventType.ConnectPacketEvent) {
             *coldData
         ).contains(event.packet.uuid)
     ) {
-        event.connection.kick(Bundle(event.packet.locale).get("event.player.new.blocked"), 0L)
+        event.connection.kick(Bundle(event.packet.locale)["event.player.new.blocked"], 0L)
         kickReason = "newuser"
-    } else if (database.isBanned(Vars.netServer.admins.getInfo(event.connection.uuid))) {
+    } else if (runBlocking { checkPlayerBanned(event.packet.name, event.packet.uuid, event.connection.address) }) {
         event.connection.kick(Packets.KickReason.banned)
         kickReason = "banned"
     }
@@ -288,11 +279,13 @@ fun loadPlayer(data: PlayerData) {
 }
 
 fun enableBlockNewUser() {
-    val list = PlayerDataEntity.all()
+    transaction {
+        val list = PlayerTable.select(PlayerTable.uuid)
 
-    var size = 0
-    for (playerData in list) {
-        coldData[size++] = playerData.uuid
+        var size = 0
+        for (playerData in list) {
+            coldData[size++] = playerData[PlayerTable.uuid]
+        }
     }
 }
 
@@ -310,7 +303,7 @@ internal class IpAddressMatcher(ipAddress: String) {
             nMaskBits = -1
         }
         requiredAddress = parseAddress(address)
-        require(requiredAddress.getAddress().size * 8 >= nMaskBits) {
+        require(requiredAddress.address.size * 8 >= nMaskBits) {
             String.format(
                 "IP address %s is too short for bitmask of length %d",
                 address,
@@ -327,8 +320,8 @@ internal class IpAddressMatcher(ipAddress: String) {
         if (nMaskBits < 0) {
             return remoteAddress == requiredAddress
         }
-        val remAddr = remoteAddress.getAddress()
-        val reqAddr = requiredAddress.getAddress()
+        val remAddr = remoteAddress.address
+        val reqAddr = requiredAddress.address
         val nMaskFullBytes = nMaskBits / 8
         val finalByte = (0xFF00 shr (nMaskBits and 0x07)).toByte()
         for (i in 0..<nMaskFullBytes) {
@@ -343,11 +336,11 @@ internal class IpAddressMatcher(ipAddress: String) {
         }
     }
 
-    private fun parseAddress(address: String?): java.net.InetAddress {
+    private fun parseAddress(address: String?): InetAddress {
         try {
-            return java.net.InetAddress.getByName(address)
-        } catch (e: java.net.UnknownHostException) {
-            throw java.lang.IllegalArgumentException("Failed to parse address " + address, e)
+            return InetAddress.getByName(address)
+        } catch (e: UnknownHostException) {
+            throw java.lang.IllegalArgumentException("Failed to parse address $address", e)
         }
     }
 }

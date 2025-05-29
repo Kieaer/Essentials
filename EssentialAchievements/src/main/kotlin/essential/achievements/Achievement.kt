@@ -19,8 +19,8 @@ public enum Achievement {
 import arc.Events
 import essential.core.Main.Companion.scope
 import essential.database.data.PlayerData
-import essential.database.data.entity.hasAchievement
-import essential.database.data.entity.setAchievement
+import essential.database.data.hasAchievement
+import essential.database.data.setAchievement
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import java.io.IOException

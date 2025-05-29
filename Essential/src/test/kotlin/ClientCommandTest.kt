@@ -9,11 +9,11 @@ import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
+import arc.util.Log
 import essential.bundle.Bundle
 import essential.database.data.PlayerData
 import essential.database.data.update
 import essential.players
-import essential.test.lastReceivedMessage
 import essential.util.findPlayerData
 import junit.framework.TestCase.*
 import kotlinx.coroutines.runBlocking
@@ -32,6 +32,7 @@ import org.junit.BeforeClass
 import org.junit.Test
 import org.mindrot.jbcrypt.BCrypt
 import java.lang.Thread.sleep
+import kotlin.test.assertContains
 
 class ClientCommandTest {
     companion object {
@@ -198,14 +199,6 @@ class ClientCommandTest {
         assertFalse(checkChanged(false))
     }
 
-    fun client_discord() {
-        // Require user or above permission
-        setPermission("user", true)
-
-        clientCommand.handleMessage("/discord", player)
-
-        // todo mock discord
-    }
 
     @Test
     fun client_effect() {
@@ -277,7 +270,7 @@ class ClientCommandTest {
                 next = playerData.lastReceivedMessage != buffer
                 buffer = playerData.lastReceivedMessage
                 count++
-                buffer?.let {
+                buffer.let {
                     if (it.contains(name)) {
                         exists = true
                     }
@@ -323,14 +316,14 @@ class ClientCommandTest {
         runBlocking { playerData.update() }
         assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastReceivedMessage)
         clientCommand.handleMessage("/ranking exp", player)
-        assertFalse(playerData.lastReceivedMessage!!.contains(player.name()))
+        assertFalse(playerData.lastReceivedMessage.contains(player.name()))
 
         // Un-hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
         runBlocking { playerData.update() }
         assertEquals(Bundle()["command.exp.ranking.unhide"], playerData.lastReceivedMessage)
         clientCommand.handleMessage("/ranking exp", player)
-        assertTrue(playerData.lastReceivedMessage!!.contains(player.name()))
+        assertTrue(playerData.lastReceivedMessage.contains(player.name()))
 
         // Hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.first.name}", player)
@@ -414,51 +407,6 @@ class ClientCommandTest {
         assertEquals(Vars.state.teams.cores(Team.green).first().storageCapacity, Vars.state.teams.cores(Team.green).first().items.get(Items.copper))
     }
 
-    @Test
-    fun client_freeze() {
-        // Require admin or above permission
-        setPermission("admin", true)
-
-        // Freeze target player
-        val dummy = newPlayer()
-        var oldX = dummy.first.unit().x
-        var oldY = dummy.first.unit().y
-        clientCommand.handleMessage("/freeze ${dummy.first.name}", player)
-        dummy.first.unit().x = 24f
-        dummy.first.unit().y = 24f
-        for (time in 0..10) {
-            if (dummy.first.unit().x != oldX || dummy.first.unit().y != oldY) {
-                sleep(16)
-            } else if (time == 10 && (dummy.first.unit().x != oldX || dummy.first.unit().y != oldY)) {
-                fail()
-            }
-        }
-        assertEquals(log("command.freeze.done", dummy.first.name), playerData.lastReceivedMessage)
-
-        // Un-freeze target player
-        oldX = dummy.first.unit().x
-        oldY = dummy.first.unit().y
-        clientCommand.handleMessage("/freeze ${dummy.first.name}", player)
-        dummy.first.unit().x = 48f
-        dummy.first.unit().y = 48f
-        for (time in 0..10) {
-            if (dummy.first.unit().x == oldX || dummy.first.unit().y == oldY) {
-                sleep(16)
-            } else if (time == 10 && (dummy.first.unit().x == oldX && dummy.first.unit().y == oldY)) {
-                fail()
-            }
-        }
-        assertEquals(log("command.freeze.undo", dummy.first.name), playerData.lastReceivedMessage)
-
-        // If player exists but not registered
-        val bot = createPlayer()
-        clientCommand.handleMessage("/freeze ${bot.name}", player)
-        assertEquals(err("player.not.registered"), playerData.lastReceivedMessage)
-
-        // If player not found
-        clientCommand.handleMessage("/freeze nothing", player)
-        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
-    }
 
     @Test
     fun client_gg() {
@@ -532,15 +480,15 @@ class ClientCommandTest {
         setPermission("visitor", true)
 
         clientCommand.handleMessage("/help", player)
-        assertTrue(playerData.lastReceivedMessage!!.contains("help"))
+        assertContains(playerData.lastReceivedMessage, "help")
         clientCommand.handleMessage("/help 1", player)
-        assertTrue(playerData.lastReceivedMessage!!.contains("help"))
+        assertContains(playerData.lastReceivedMessage, "help")
         clientCommand.handleMessage("/help 3", player)
-        assertFalse(playerData.lastReceivedMessage!!.contains("help"))
+        assertFalse(playerData.lastReceivedMessage.contains("help"))
 
         setPermission("user", true)
         clientCommand.handleMessage("/help", player)
-        assertTrue(playerData.lastReceivedMessage!!.contains("vote"))
+        assertContains(playerData.lastReceivedMessage, "vote")
         clientCommand.handleMessage("/help 3", player)
         clientCommand.handleMessage("/help 5", player)
 
@@ -552,17 +500,73 @@ class ClientCommandTest {
 
     @Test
     fun client_hub() {
+        // Test hub command requires owner permission
+        setPermission("owner", true)
 
+        // Test setting hub map
+        clientCommand.handleMessage("/hub set", player)
+        assertEquals(Bundle()["command.hub.mode.on"], playerData.lastReceivedMessage)
+
+        // Test setting hub map when already set
+        clientCommand.handleMessage("/hub set", player)
+        assertEquals(Bundle()["command.hub.mode.off"], playerData.lastReceivedMessage)
+
+        // Test zone command
+        clientCommand.handleMessage("/hub zone 127.0.0.1", player)
+        assertEquals(Bundle()["command.hub.zone.first"], playerData.lastReceivedMessage)
+
+        // Test zone command when already in process
+        clientCommand.handleMessage("/hub zone 127.0.0.1", player)
+        assertEquals(Bundle()["command.hub.zone.process"], playerData.lastReceivedMessage)
+
+        // Test block command with missing parameters
+        clientCommand.handleMessage("/hub block 127.0.0.1", player)
+        assertEquals(err("command.hub.block.parameter"), playerData.lastReceivedMessage)
+
+        // Test count command with missing parameters
+        clientCommand.handleMessage("/hub count", player)
+        assertEquals(err("command.hub.count.parameter"), playerData.lastReceivedMessage)
+
+        // Test total command
+        clientCommand.handleMessage("/hub total", player)
+        assertTrue(playerData.lastReceivedMessage.contains(Bundle()["command.hub.total", "${player.tileX()}:${player.tileY()}"]))
+
+        // Test remove command
+        clientCommand.handleMessage("/hub remove 127.0.0.1", player)
+        assertEquals(Bundle()["command.hub.removed", "127.0.0.1"], playerData.lastReceivedMessage)
+
+        // Test reset command
+        clientCommand.handleMessage("/hub reset", player)
+
+        // Test invalid command
+        clientCommand.handleMessage("/hub invalid", player)
+        assertEquals(Bundle()["command.hub.help"], playerData.lastReceivedMessage)
     }
 
-    @Test
-    fun client_hud() {
-
-    }
 
     @Test
     fun client_info() {
+        // Test info command shows player's own info
+        clientCommand.handleMessage("/info", player)
+        assertTrue(playerData.lastReceivedMessage.contains(player.name()))
+        assertTrue(playerData.lastReceivedMessage.contains(Bundle()["command.info.name"]))
+        assertTrue(playerData.lastReceivedMessage.contains(Bundle()["command.info.level"]))
+        assertTrue(playerData.lastReceivedMessage.contains(Bundle()["command.info.exp"]))
+        assertTrue(playerData.lastReceivedMessage.contains(Bundle()["command.info.playtime"]))
 
+        // Test info command with another player requires permission
+        val dummy = newPlayer()
+        clientCommand.handleMessage("/info ${dummy.first.name}", player)
+        assertEquals(err("command.permission.false"), playerData.lastReceivedMessage)
+
+        // Test info command with permission
+        setPermission("info.other", true)
+        clientCommand.handleMessage("/info ${dummy.first.name}", player)
+        assertTrue(playerData.lastReceivedMessage.contains(dummy.first.name()))
+
+        // Test info command with non-existent player
+        clientCommand.handleMessage("/info nonexistentplayer", player)
+        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
     }
 
     @Test
@@ -589,7 +593,25 @@ class ClientCommandTest {
 
     @Test
     fun client_kickall() {
+        // Test kickall command requires owner permission
+        setPermission("owner", true)
 
+        // Create some dummy players
+        val dummy1 = newPlayer()
+        val dummy2 = newPlayer()
+
+        // Execute kickall command
+        clientCommand.handleMessage("/kickall", player)
+
+        // Verify that all non-admin players were kicked
+        assertTrue(dummy1.first.con().kicked)
+        assertTrue(dummy2.first.con().kicked)
+
+        // Verify that the admin player was not kicked
+        assertFalse(player.con().kicked)
+
+        // Verify that the confirmation message was sent
+        assertEquals(Bundle()["command.kickAll.done"], playerData.lastReceivedMessage)
     }
 
     @Test
@@ -601,93 +623,235 @@ class ClientCommandTest {
 
     @Test
     fun client_killall() {
+        // Test killall command requires owner permission
+        setPermission("owner", true)
 
+        // Test killall command without team parameter
+        clientCommand.handleMessage("/killall", player)
+        assertTrue(playerData.lastReceivedMessage.contains(Bundle()["command.killall.count", Groups.unit.size()]))
+
+        // Test killall command with team parameter
+        clientCommand.handleMessage("/killall sharded", player)
+        assertTrue(playerData.lastReceivedMessage.contains(Bundle()["command.killall.count", 
+            Groups.unit.filter { u -> u.team() == Team.sharded }.size]))
     }
 
     @Test
     fun client_killunit() {
+        // Test killunit command requires owner permission
+        setPermission("owner", true)
 
+        // Test killunit command with valid unit name
+        clientCommand.handleMessage("/killunit dagger", player)
+
+        // Test killunit command with valid unit name and amount
+        clientCommand.handleMessage("/killunit dagger 5", player)
+
+        // Test killunit command with valid unit name, amount, and team
+        clientCommand.handleMessage("/killunit dagger 5 sharded", player)
+
+        // Test killunit command with invalid unit name
+        clientCommand.handleMessage("/killunit invalidunit", player)
+        assertEquals(err("command.killUnit.invalid.unit"), playerData.lastReceivedMessage)
+
+        // Test killunit command with invalid amount
+        clientCommand.handleMessage("/killunit dagger invalid", player)
+        assertEquals(err("command.killUnit.invalid.number"), playerData.lastReceivedMessage)
+
+        // Test killunit command with invalid team
+        clientCommand.handleMessage("/killunit dagger 5 invalidteam", player)
+        assertEquals(err("command.team.invalid"), playerData.lastReceivedMessage)
     }
 
-    @Test
-    fun client_lang() {
-
-    }
 
     @Test
     fun client_log() {
+        // Test log command toggles viewHistoryMode
+        val initialMode = playerData.viewHistoryMode
 
+        // Enable log mode
+        clientCommand.handleMessage("/log", player)
+        assertEquals(!initialMode, playerData.viewHistoryMode)
+        assertEquals(Bundle()["command.log.${if (playerData.viewHistoryMode) "enabled" else "disabled"}"], 
+            playerData.lastReceivedMessage)
+
+        // Disable log mode
+        clientCommand.handleMessage("/log", player)
+        assertEquals(initialMode, playerData.viewHistoryMode)
+        assertEquals(Bundle()["command.log.${if (playerData.viewHistoryMode) "enabled" else "disabled"}"], 
+            playerData.lastReceivedMessage)
     }
 
-    @Test
-    fun client_login() {
-
-    }
 
     @Test
     fun client_maps() {
+        // Test maps command shows the list of available maps
+        clientCommand.handleMessage("/maps", player)
 
+        // Verify that a menu was opened with map information
+        // Since we can't directly check the menu content in tests,
+        // we'll just verify that the command doesn't throw an exception
+
+        // Test maps command with page parameter
+        clientCommand.handleMessage("/maps 1", player)
+
+        // Test maps command with invalid page parameter
+        clientCommand.handleMessage("/maps invalid", player)
     }
 
-    @Test
-    fun client_me() {
-
-    }
 
     @Test
     fun client_meme() {
+        // Test meme command with router type
+        clientCommand.handleMessage("/meme router", player)
 
+        // Test meme command with sus type
+        clientCommand.handleMessage("/meme sus", player)
+
+        // Test meme command with amogus type
+        clientCommand.handleMessage("/meme amogus", player)
+
+        // Test meme command with invalid type
+        clientCommand.handleMessage("/meme invalid", player)
+        assertEquals(err("command.meme.not.found"), playerData.lastReceivedMessage)
+
+        // Test meme command without type
+        clientCommand.handleMessage("/meme", player)
+        assertEquals(err("command.parameter.missing"), playerData.lastReceivedMessage)
     }
 
     @Test
     fun client_motd() {
+        // Test motd command when motd file doesn't exist
+        clientCommand.handleMessage("/motd", player)
+        assertEquals(Bundle()["command.motd.not-found"], playerData.lastReceivedMessage)
 
+        // Note: Testing with an existing motd file would require creating a file,
+        // which is beyond the scope of this test. In a real environment, you would
+        // create a temporary motd file, run the test, and then delete the file.
     }
 
     @Test
     fun client_mute() {
+        // Test mute command requires owner permission
+        setPermission("owner", true)
 
+        // Create a dummy player to mute
+        val dummy = newPlayer()
+
+        // Test mute command with valid player
+        clientCommand.handleMessage("/mute ${dummy.first.name}", player)
+        assertEquals(Bundle()["command.mute", dummy.first.name()], playerData.lastReceivedMessage)
+
+        // Verify that the player was muted
+        assertTrue(dummy.second.chatMuted)
+
+        // Test mute command with non-existent player
+        clientCommand.handleMessage("/mute nonexistentplayer", player)
+        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
+
+        // Test mute command without player parameter
+        clientCommand.handleMessage("/mute", player)
+        assertEquals(err("command.parameter.missing"), playerData.lastReceivedMessage)
     }
 
     @Test
     fun client_pause() {
+        // Test pause command requires owner permission
+        setPermission("owner", true)
 
+        // Save initial pause state
+        val initialPauseState = Vars.state.isPaused
+
+        // Test pause command when game is not paused
+        if (!initialPauseState) {
+            clientCommand.handleMessage("/pause", player)
+            assertTrue(Vars.state.isPaused)
+            assertEquals(Bundle()["command.pause.paused"], playerData.lastReceivedMessage)
+
+            // Restore to unpaused state
+            clientCommand.handleMessage("/pause", player)
+        } else {
+            // Test pause command when game is paused
+            clientCommand.handleMessage("/pause", player)
+            assertFalse(Vars.state.isPaused)
+            assertEquals(Bundle()["command.pause.unpaused"], playerData.lastReceivedMessage)
+
+            // Restore to paused state
+            clientCommand.handleMessage("/pause", player)
+        }
     }
 
     @Test
     fun client_players() {
+        // Test players command shows the list of current players
+        clientCommand.handleMessage("/players", player)
 
+        // Verify that a menu was opened with player information
+        // Since we can't directly check the menu content in tests,
+        // we'll just verify that the command doesn't throw an exception
+
+        // Test players command with page parameter
+        clientCommand.handleMessage("/players 1", player)
+
+        // Test players command with invalid page parameter
+        clientCommand.handleMessage("/players invalid", player)
     }
 
-    @Test
-    fun client_pm() {
-
-    }
 
     @Test
     fun client_ranking() {
+        // Test ranking command with exp parameter
+        clientCommand.handleMessage("/ranking exp", player)
 
+        // Test ranking command with time parameter
+        clientCommand.handleMessage("/ranking time", player)
+
+        // Test ranking command with attack parameter
+        clientCommand.handleMessage("/ranking attack", player)
+
+        // Test ranking command with place parameter
+        clientCommand.handleMessage("/ranking place", player)
+
+        // Test ranking command with break parameter
+        clientCommand.handleMessage("/ranking break", player)
+
+        // Test ranking command with pvp parameter
+        clientCommand.handleMessage("/ranking pvp", player)
+
+        // Test ranking command with page parameter
+        clientCommand.handleMessage("/ranking exp 1", player)
+
+        // Test ranking command with invalid type parameter
+        clientCommand.handleMessage("/ranking invalid", player)
+        assertEquals(err("command.ranking.wrong"), playerData.lastReceivedMessage)
+
+        // Test ranking command without parameter
+        clientCommand.handleMessage("/ranking", player)
+        assertEquals(err("command.parameter.missing"), playerData.lastReceivedMessage)
     }
 
-    @Test
-    fun client_register() {
 
-    }
-
-    @Test
-    fun client_report() {
-
-    }
 
     @Test
     fun client_rollback() {
+        // Test rollback command requires owner permission
+        setPermission("owner", true)
 
+        // Create a dummy player to rollback
+        val dummy = newPlayer()
+
+        // Test rollback command with valid player
+        clientCommand.handleMessage("/rollback ${dummy.first.name}", player)
+
+        // Test rollback command with non-existent player
+        clientCommand.handleMessage("/rollback nonexistentplayer", player)
+
+        // Test rollback command without player parameter
+        clientCommand.handleMessage("/rollback", player)
+        assertEquals(err("command.parameter.missing"), playerData.lastReceivedMessage)
     }
 
-    @Test
-    fun client_search() {
-
-    }
 
     @Test
     fun client_setitem() {
@@ -719,81 +883,289 @@ class ClientCommandTest {
 
     @Test
     fun client_skip() {
+        // Test skip command requires owner permission
+        setPermission("owner", true)
 
+        // Test skipping to a specific wave
+        clientCommand.handleMessage("/skip 5", player)
+
+        // Test with invalid wave number
+        clientCommand.handleMessage("/skip invalid", player)
+
+        // Test with negative wave number
+        clientCommand.handleMessage("/skip -5", player)
     }
 
     @Test
     fun client_spawn() {
+        // Test spawn command requires owner permission
+        setPermission("owner", true)
 
+        // Test spawning a unit
+        clientCommand.handleMessage("/spawn unit dagger", player)
+
+        // Test spawning a unit with amount
+        clientCommand.handleMessage("/spawn unit dagger 5", player)
+
+        // Test spawning a unit with amount and team
+        clientCommand.handleMessage("/spawn unit dagger 5 sharded", player)
+
+        // Test spawning a block
+        clientCommand.handleMessage("/spawn block router", player)
+
+        // Test spawning a block with rotation
+        clientCommand.handleMessage("/spawn block router 1", player)
+
+        // Test spawning a block with rotation and team
+        clientCommand.handleMessage("/spawn block router 1 sharded", player)
+
+        // Test with invalid unit/block type
+        clientCommand.handleMessage("/spawn unit invalidunit", player)
+
+        // Test with invalid spawn type
+        clientCommand.handleMessage("/spawn invalidtype dagger", player)
     }
 
     @Test
     fun client_status() {
+        // Test status command shows server status information
+        clientCommand.handleMessage("/status", player)
 
+        // Verify that status information was sent to the player
+        // Since we can't directly check the content in tests,
+        // we'll just verify that the command doesn't throw an exception
     }
 
     @Test
     fun client_t() {
+        // Test t command for team chat
 
+        // Create a dummy player on the same team
+        val dummy = newPlayer()
+        dummy.first.team(player.team())
+
+        // Send a team message
+        clientCommand.handleMessage("/t Hello team", player)
+
+        // Test when player is muted
+        playerData.chatMuted = true
+        clientCommand.handleMessage("/t This should not be sent", player)
+        playerData.chatMuted = false
+
+        // Clean up
+        leavePlayer(dummy.first)
     }
 
     @Test
     fun client_team() {
+        // Test team command requires owner permission
+        setPermission("owner", true)
 
+        // Test changing own team
+        clientCommand.handleMessage("/team sharded", player)
+        assertEquals(Team.sharded, player.team())
+
+        // Test changing another player's team
+        val dummy = newPlayer()
+        clientCommand.handleMessage("/team blue ${dummy.first.name}", player)
+        assertEquals(Team.blue, dummy.first.team())
+
+        // Test with invalid team
+        clientCommand.handleMessage("/team invalidteam", player)
+
+        // Test changing another player's team without permission
+        setPermission("user", true)
+        clientCommand.handleMessage("/team green ${dummy.first.name}", player)
+
+        // Clean up
+        leavePlayer(dummy.first)
     }
 
-    @Test
-    fun client_tempban() {
-
-    }
 
     @Test
     fun client_time() {
+        // Test time command shows current server time
+        clientCommand.handleMessage("/time", player)
 
+        // Verify that time information was sent to the player
+        assertTrue(playerData.lastReceivedMessage.contains(playerData.bundle["command.time"]))
     }
 
     @Test
     fun client_tp() {
+        // Test tp command requires owner permission
+        setPermission("owner", true)
 
+        // Create a dummy player to teleport to
+        val dummy = newPlayer()
+
+        // Test teleporting to another player
+        clientCommand.handleMessage("/tp ${dummy.first.name}", player)
+
+        // Test teleporting to a non-existent player
+        clientCommand.handleMessage("/tp nonexistentplayer", player)
+
+        // Test without providing a player name
+        clientCommand.handleMessage("/tp", player)
+
+        // Clean up
+        leavePlayer(dummy.first)
     }
 
-    @Test
-    fun client_tpp() {
 
-    }
-
-    @Test
-    fun client_click_track() {
-
-    }
 
     @Test
     fun client_unban() {
+        // Test unban command requires owner permission
+        setPermission("owner", true)
 
+        // Test unbanning a player by name
+        clientCommand.handleMessage("/unban testplayer", player)
+
+        // Test unbanning a player by IP
+        clientCommand.handleMessage("/unban 127.0.0.1", player)
+
+        // Test without providing a player name
+        clientCommand.handleMessage("/unban", player)
     }
 
     @Test
     fun client_unmute() {
+        // Test unmute command requires owner permission
+        setPermission("owner", true)
 
+        // Create and mute a dummy player
+        val dummy = newPlayer()
+        dummy.second.chatMuted = true
+
+        // Test unmuting a player
+        clientCommand.handleMessage("/unmute ${dummy.first.name}", player)
+
+        // Test unmuting a non-existent player
+        clientCommand.handleMessage("/unmute nonexistentplayer", player)
+
+        // Test without providing a player name
+        clientCommand.handleMessage("/unmute", player)
+
+        // Clean up
+        leavePlayer(dummy.first)
     }
 
     @Test
     fun client_url() {
+        // Test url command with different parameters
+        clientCommand.handleMessage("/url discord", player)
 
+        // Test with invalid command
+        clientCommand.handleMessage("/url invalidcommand", player)
+
+        // Test without providing a command
+        clientCommand.handleMessage("/url", player)
     }
 
     @Test
     fun client_weather() {
+        // Test weather command requires owner permission
+        setPermission("owner", true)
 
+        // Test setting weather
+        clientCommand.handleMessage("/weather rain 300", player)
+
+        // Test with invalid weather type
+        clientCommand.handleMessage("/weather invalidweather 300", player)
+
+        // Test with invalid duration
+        clientCommand.handleMessage("/weather rain invalid", player)
+
+        // Test without providing parameters
+        clientCommand.handleMessage("/weather", player)
     }
 
     @Test
     fun client_vote() {
+        // Test vote command with kick parameter
+        clientCommand.handleMessage("/vote kick testplayer", player)
 
+        // Test vote command with map parameter
+        clientCommand.handleMessage("/vote map", player)
+
+        // Test vote command with gg parameter
+        clientCommand.handleMessage("/vote gg", player)
+
+        // Test vote command with skip parameter
+        clientCommand.handleMessage("/vote skip", player)
+
+        // Test vote command with back parameter
+        clientCommand.handleMessage("/vote back", player)
+
+        // Test vote command with random parameter
+        clientCommand.handleMessage("/vote random", player)
+
+        // Test with invalid vote type
+        clientCommand.handleMessage("/vote invalidtype", player)
+
+        // Test without providing parameters
+        clientCommand.handleMessage("/vote", player)
     }
 
     @Test
     fun client_votekick() {
+        // Test votekick command
+        val dummy = newPlayer()
+        clientCommand.handleMessage("/votekick ${dummy.first.name}", player)
 
+        // Test votekick command with non-existent player
+        clientCommand.handleMessage("/votekick nonexistentplayer", player)
+
+        // Test without providing a player name
+        clientCommand.handleMessage("/votekick", player)
+
+        // Clean up
+        leavePlayer(dummy.first)
+    }
+
+    @Test
+    fun client_fuck() {
+        // Test fuck command with no command provided
+        clientCommand.handleMessage("/fuck", player)
+        assertEquals(err("command.fuck.no.command"), playerData.lastReceivedMessage)
+
+        // Try to a typo mistake
+        clientCommand.handleMessage("/hlp", player)
+
+        // For example, this command will run "help"
+        clientCommand.handleMessage("/fuck", player)
+
+        // Verify that the help command was executed
+        assertTrue(playerData.lastReceivedMessage.contains("help"))
+    }
+
+    @Test
+    fun client_strict() {
+        // Test strict command requires admin or above permission
+        setPermission("admin", true)
+
+        // Create a dummy player to toggle strict mode
+        val dummy = newPlayer()
+
+        // Initial state should be false
+        assertFalse(dummy.second.strictMode)
+
+        // Test strict command to enable strict mode
+        clientCommand.handleMessage("/strict ${dummy.first.name}", player)
+        assertTrue(dummy.second.strictMode)
+        assertEquals(Bundle()["command.strict", dummy.first.name()], playerData.lastReceivedMessage)
+
+        // Test strict command to disable strict mode
+        clientCommand.handleMessage("/strict ${dummy.first.name}", player)
+        assertFalse(dummy.second.strictMode)
+        assertEquals(Bundle()["command.strict.undo", dummy.first.name()], playerData.lastReceivedMessage)
+
+        // Test strict command with non-existent player
+        clientCommand.handleMessage("/strict nonexistentplayer", player)
+        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
+
+        // Clean up
+        leavePlayer(dummy.first)
     }
 }

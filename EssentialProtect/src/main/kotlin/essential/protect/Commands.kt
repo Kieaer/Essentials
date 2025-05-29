@@ -14,9 +14,8 @@ import essential.core.Main.Companion.scope
 import essential.core.Trigger
 import essential.core.log
 import essential.database.data.PlayerData
-import essential.database.data.entity.PlayerDataEntity
-import essential.database.data.entity.createPlayerData
-import essential.database.data.entity.toData
+import essential.database.data.createPlayerData
+import essential.database.data.mapToPlayerDataList
 import essential.database.table.PlayerTable
 import essential.protect.Main.Companion.conf
 import essential.util.currentTime
@@ -43,11 +42,13 @@ class Commands {
 
         scope.launch {
             val result = newSuspendedTransaction {
-                PlayerDataEntity.find { (PlayerTable.accountID eq arg[0]) and (PlayerTable.accountPW eq arg[1]) }
+                PlayerTable.select(PlayerTable.accountPW, PlayerTable.accountPW).where {
+                    (PlayerTable.accountID eq arg[0]) and (PlayerTable.accountPW eq arg[1])
+                }.mapToPlayerDataList()
             }
 
             Core.app.post {
-                if (!result.empty()) {
+                if (result.isNotEmpty()) {
                     val playerData = result.first()
 
                     if (playerData.accountID == arg[1]) {
@@ -56,7 +57,7 @@ class Commands {
                         player.sendMessage(bundle["command.login.already"])
                     } else {
                         if (findPlayerData(playerData.uuid) == null) {
-                            Trigger().loadPlayer(playerData.toData())
+                            Trigger().loadPlayer(playerData)
                         } else {
                             player.sendMessage(bundle["command.login.already"])
                         }
@@ -80,14 +81,16 @@ class Commands {
                 player.sendMessage(bundle["command.reg.incorrect"])
             } else {
                 val exists = runBlocking {
-                    PlayerDataEntity.find {
+                    PlayerTable.select(PlayerTable.accountID, PlayerTable.name).where {
                         (PlayerTable.accountID eq arg[0]) or (PlayerTable.name eq player.plainName())
                     }.empty()
                 }
                 if (exists) {
                     player.sendMessage(bundle["command.reg.exists"])
                 } else {
-                    createPlayerData(player.name(), player.uuid(), arg[0], arg[1])
+                    scope.launch {
+                        createPlayerData(player.name(), player.uuid(), arg[0], arg[1])
+                    }
                     Log.info(bundle["log.data_created", player.plainName()])
                 }
             }

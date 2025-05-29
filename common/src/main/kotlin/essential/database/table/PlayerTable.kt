@@ -5,12 +5,14 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.dao.id.UIntIdTable
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDate
 import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
 import org.jetbrains.exposed.sql.kotlin.datetime.date
 import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 
-object PlayerTable : UIntIdTable("players") {
+object PlayerTable : Table("players") {
+    val id = uinteger("id").autoIncrement().uniqueIndex()
     val name = varchar("name", 50).index()
     val uuid = varchar("uuid", 25)
     val blockPlaceCount = integer("block_place_count").default(0)
@@ -44,4 +46,6 @@ object PlayerTable : UIntIdTable("players") {
     val isBanned = bool("is_banned").default(false)
     val banExpireDate = datetime("ban_expire_date").nullable().default(null)
     val attendanceDays = integer("attendance_days").default(0)
+
+    override val primaryKey = PrimaryKey(id)
 }

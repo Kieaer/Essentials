@@ -14,8 +14,8 @@ import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.core.service.effect.EffectSystem
 import essential.database.data.PlayerData
-import essential.database.data.entity.PluginDataEntity
-import essential.database.data.entity.getPluginData
+import essential.database.data.PluginData
+import essential.database.data.getPluginData
 import essential.database.data.plugin.WarpCount
 import essential.event.CustomEvents
 import essential.permission.Permission
@@ -476,7 +476,7 @@ class Trigger {
             }
         }
 
-        private fun getServerInfo(pluginData: PluginDataEntity): MutableSet<Host> {
+        private fun getServerInfo(pluginData: PluginData): MutableSet<Host> {
             val total = mutableSetOf<Host>()
             var buf = arrayOf<Pair<String, Int>>()
 

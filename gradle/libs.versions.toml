@@ -78,7 +78,7 @@ kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlin
 
 [bundles]
 kotlinxEcosystem = ["kotlinxDatetime", "kotlinxCoroutines", "kotlinxSerializer"]
-exposed = ["exposed-core", "exposed-jdbc", "exposed-kotlin-time", "exposed-dao", "exposed-json"]
+exposed = ["exposed-core", "exposed-jdbc", "exposed-kotlin-time", "exposed-json"]
 game = ["arc", "core", "server"]
 game-test = ["arc", "core", "server", "headless", "datafaker", "mockito", "jts", "h2"]
 jackson = ["jackson-dataformat", "jackson-module"]

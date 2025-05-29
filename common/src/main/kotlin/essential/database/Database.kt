@@ -5,7 +5,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import essential.DATABASE_VERSION
 import essential.bundle
-import essential.database.data.entity.getPluginData
+import essential.database.data.getPluginData
 import essential.database.table.PlayerBannedTable
 import essential.database.table.PlayerTable
 import essential.database.table.PluginTable

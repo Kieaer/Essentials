@@ -15,13 +15,12 @@ import org.junit.Test
 
 
 class FeatureTest {
-    lateinit var playerdata: PlayerData
-
     companion object {
         private var done = false
 
         @BeforeClass
-        @JvmStatic fun setup() {
+        @JvmStatic
+        fun setup() {
             if (!done) {
                 loadGame()
                 loadPlugin()

@@ -1,17 +1,55 @@
 package essential.database.data
 
+import arc.util.Log
 import essential.bundle.Bundle
-import essential.database.data.entity.IPlayerData
-import essential.database.data.entity.PlayerDataAdapter
-import essential.database.data.entity.PlayerDataEntity
-import essential.database.data.entity.update
+import essential.database.table.PlayerTable
 import essential.playerNumber
+import kotlinx.datetime.LocalDateTime
+import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.insertReturning
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.mindrot.jbcrypt.BCrypt
 
-class PlayerData(
-    val entity: PlayerDataEntity
-) : IPlayerData by PlayerDataAdapter(entity) {
+@GenerateCode
+data class PlayerData(
+    val id: UInt,
+    var name: String,
+    var uuid: String,
+    var blockPlaceCount: Int = 0,
+    var blockBreakCount: Int = 0,
+    var level: Int = 0,
+    var exp: Int = 0,
+    var firstPlayed: LocalDateTime,
+    var lastPlayed: LocalDateTime,
+    var totalPlayed: Int = 0,
+    var attackClear: Int = 0,
+    var waveClear: Int = 0,
+    var pvpWinCount: Short = 0,
+    var pvpLoseCount: Short = 0,
+    var pvpEliminatedCount: Short = 0,
+    var pvpMvpCount: Short = 0,
+    var permission: String = "default",
+    var accountID: String? = null,
+    var accountPW: String? = null,
+    var discordID: String? = null,
+    var chatMuted: Boolean = false,
+    var effectVisibility: Boolean = false,
+    var effectLevel: Short? = null,
+    var effectColor: String? = null,
+    var hideRanking: Boolean = false,
+    var strictMode: Boolean = false,
+    var lastLoginDate: LocalDateTime,
+    var lastLogoutDate: LocalDateTime? = null,
+    var lastPlayedWorldName: String? = null,
+    var lastPlayedWorldMode: String? = null,
+    var isConnected: Boolean = false,
+    var isBanned: Boolean = false,
+    var banExpireDate: LocalDateTime? = null,
+    var attendanceDays: Int = 0
+) {
     // Exp
     var expMultiplier: Double = 1.0
     var currentExp: Int = 0
@@ -49,14 +87,88 @@ class PlayerData(
     )
 
     fun send(key: String, vararg args: Any) {
-        player.sendMessage(bundle.get(key, *args))
+        val message = bundle.get(key, *args)
+        player.sendMessage(message)
+        lastReceivedMessage = message
     }
 
     fun err(key: String, vararg args: Any) {
-        player.sendMessage("[scarlet]" + bundle.get(key, *args))
+        val message = "[scarlet]" + bundle.get(key, *args)
+        player.sendMessage(message)
+        lastReceivedMessage = message
+    }
+
+    var lastReceivedMessage: String = ""
+        set(value) {
+            Log.info("${player.name()}: $value")
+            field = value
+        }
+
+    /**
+     * Send a direct message to the player without looking up a bundle resource.
+     * This is useful for sending messages that are not localized.
+     * @param message The message to send
+     */
+    fun sendDirect(message: String) {
+        player.sendMessage(message)
+        lastReceivedMessage = message
     }
 }
 
-suspend fun PlayerData.update() {
-    entity.update()
+/** 플레이어 데이터 생성 */
+suspend fun createPlayerData(player: Playerc): PlayerData {
+    return createPlayerData(player.name(), player.uuid())
+}
+
+suspend fun createPlayerData(name: String, uuid: String): PlayerData {
+    val id = newSuspendedTransaction {
+        PlayerTable.insertReturning {
+            it[PlayerTable.name] = name
+            it[PlayerTable.uuid] = uuid
+        }.single()[PlayerTable.id]
+    }
+
+    val entity = newSuspendedTransaction {
+        val query = PlayerTable.select(PlayerTable.columns)
+            .where { PlayerTable.id eq id }
+
+        query.map { row ->
+            row.toPlayerData()
+        }.first()
+    }
+
+    return entity
+}
+
+suspend fun createPlayerData(name: String, uuid: String, accountID: String, accountPW: String): PlayerData {
+    val id = newSuspendedTransaction {
+        PlayerTable.insertReturning {
+            it[PlayerTable.name] = name
+            it[PlayerTable.uuid] = uuid
+            it[PlayerTable.accountID] = accountID
+            it[PlayerTable.accountPW] = BCrypt.hashpw(accountPW, BCrypt.gensalt())
+        }.single()[PlayerTable.id]
+    }
+
+    val data = newSuspendedTransaction {
+        val query = PlayerTable.select(PlayerTable.columns)
+            .where { PlayerTable.id eq id }
+
+        query.mapToPlayerDataList().first()
+    }
+
+    return data
+}
+
+/** 플레이어 데이터 읽기 */
+suspend fun getPlayerData(player: Playerc): PlayerData? {
+    return getPlayerData(player.uuid())
+}
+
+suspend fun getPlayerData(uuid: String): PlayerData? {
+    return newSuspendedTransaction {
+        PlayerTable.select(PlayerTable.columns)
+            .where { PlayerTable.uuid eq uuid }
+            .mapToPlayerDataList()
+    }.firstOrNull()
 }

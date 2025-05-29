@@ -6,7 +6,7 @@ import essential.bundle.Bundle
 import essential.core.Main.Companion.scope
 import essential.core.offlinePlayers
 import essential.database.data.PlayerData
-import essential.database.data.entity.getPlayerAchievements
+import essential.database.data.getPlayerAchievements
 import essential.players
 import essential.util.startInfiniteScheduler
 import kotlinx.coroutines.launch

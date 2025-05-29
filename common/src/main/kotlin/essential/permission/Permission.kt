@@ -8,12 +8,12 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import essential.bundle.Bundle
 import essential.database.data.PlayerData
-import essential.database.data.entity.PlayerDataEntity
 import essential.database.table.PlayerTable
 import essential.players
 import essential.rootPath
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.util.*
 
 object Permission {
@@ -99,9 +99,9 @@ object Permission {
                 val player = players.find { e -> e.uuid == uuid }
                 if (player == null) {
                     transaction {
-                        PlayerDataEntity.findSingleByAndUpdate(PlayerTable.uuid eq uuid) {
-                            it.permission = permissionData.group
-                            it.name = permissionData.name
+                        PlayerTable.update( { PlayerTable.uuid eq uuid } ) {
+                            it[PlayerTable.name] = permissionData.name
+                            it[PlayerTable.permission] = permissionData.group
                         }
                     }
                 } else {

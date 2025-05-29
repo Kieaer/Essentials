@@ -15,12 +15,6 @@ import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.database.data.*
-import essential.database.data.entity.createBanInfo
-import essential.database.data.entity.createPlayerData
-import essential.database.data.entity.getPlayerData
-import essential.database.data.entity.removeBanInfoByIP
-import essential.database.data.entity.removeBanInfoByUUID
-import essential.database.data.entity.update
 import essential.database.data.plugin.WarpZone
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
@@ -28,6 +22,7 @@ import essential.permission.Permission
 import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toLocalDateTime
 import ksp.event.Event
@@ -45,7 +40,7 @@ import mindustry.net.Administration
 import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -394,23 +389,21 @@ internal fun serverLoad(event: ServerLoadEvent) {
 
     if (!Vars.mods.list().contains { mod -> mod.name == "essential-protect" }) {
         Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
-            scope.launch {
-                it.player.admin(false)
-                val data = getPlayerData(it.player.uuid())
+            it.player.admin(false)
+            val data = runBlocking { getPlayerData(it.player.uuid()) }
 
-                val trigger = Trigger()
-                if (data == null) {
-                    newSuspendedTransaction {
-                        if (PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()) {
-                            val data = createPlayerData(it.player)
-                            trigger.loadPlayer(data)
-                        } else {
-                            Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
-                        }
-                    }
-                } else {
+            val trigger = Trigger()
+            if (data == null) {
+                if (transaction {
+                    PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()
+                    }) {
+                    val data = runBlocking { createPlayerData(it.player) }
                     trigger.loadPlayer(data)
+                } else {
+                    Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
                 }
+            } else {
+                trigger.loadPlayer(data)
             }
         }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
     }
@@ -610,9 +603,7 @@ internal fun playerLeave(event: PlayerLeave) {
         data.lastPlayedWorldMode = Vars.state.rules.modeName
         data.lastLogoutDate = Clock.System.now().toLocalDateTime(systemTimezone)
         data.isConnected = false
-        scope.launch {
-            data.update()
-        }
+
         offlinePlayers.add(data)
 
         if (Vars.state.rules.pvp) {

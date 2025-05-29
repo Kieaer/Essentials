@@ -6,7 +6,7 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import essential.bundle.Bundle
 import essential.database.data.PlayerData
-import essential.database.data.entity.PluginDataEntity
+import essential.database.data.PluginData
 import essential.util.toHString
 import kotlinx.datetime.TimeZone
 import java.util.concurrent.CopyOnWriteArrayList
@@ -18,7 +18,7 @@ const val DATABASE_VERSION: UByte = 4u
 
 /** 플러그인 버전 */
 val PLUGIN_VERSION: String get() {
-    val file = PluginDataEntity::class.java.getResourceAsStream("/plugin.json")
+    val file = PluginData::class.java.getResourceAsStream("/plugin.json")
     file.use {
         return ObjectMapper()
             .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)

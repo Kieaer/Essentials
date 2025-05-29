@@ -19,8 +19,7 @@ import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
 import essential.database.data.PlayerData
-import essential.database.data.entity.PlayerDataEntity
-import essential.database.data.entity.getPlayerData
+import essential.database.data.getPlayerData
 import essential.database.data.plugin.WarpBlock
 import essential.database.data.plugin.WarpCount
 import essential.database.data.plugin.WarpTotal
@@ -149,7 +148,7 @@ internal class Commands {
     fun changeName(playerData: PlayerData, arg: Array<out String>) {
         suspend fun change(data: PlayerData) {
             newSuspendedTransaction {
-                val exists = PlayerDataEntity.find { PlayerTable.name eq arg[1] }.firstOrNull()
+                val exists = PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq arg[1] }.firstOrNull()
                 if (exists != null) {
                     data.err("command.changeName.exists", arg[1])
                 } else {
@@ -454,7 +453,7 @@ internal class Commands {
 
     @ClientCommand("god", "[player]", "Set max player health")
     fun god(playerData: PlayerData) {
-        playerData.player.unit().health(1.0E8f)
+        playerData.player.unit()?.health(1.0E8f)
         playerData.send("command.god")
     }
 
@@ -498,7 +497,7 @@ internal class Commands {
         }
 
         val msg = result.toString().substring(0, result.length - 1)
-        playerData.player.sendMessage(msg)
+        playerData.sendDirect(msg)
     }
 
     @ClientCommand("info", "[player...]", "Show player info")
@@ -810,9 +809,9 @@ internal class Commands {
                 try {
                     val errorName: String = result.substring(0, result.indexOf(' ') - 1)
                     Class.forName("org.mozilla.javascript.$errorName")
-                    playerData.player.sendMessage("[scarlet]> $result")
+                    playerData.sendDirect("[scarlet]> $result")
                 } catch (_: Throwable) {
-                    playerData.player.sendMessage("> $result")
+                    playerData.sendDirect("> $result")
                 }
             }
         }
@@ -839,7 +838,7 @@ internal class Commands {
     @ClientCommand("kill", "[player]", "Kill player's unit.")
     fun kill(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isEmpty()) {
-            playerData.player.unit().kill()
+            playerData.player.unit()?.kill()
             playerData.send("command.kill.self")
         } else {
             if (Permission.check(playerData, "kill.other")) {
@@ -1884,9 +1883,9 @@ internal class Commands {
                 message.appendLine("${it.key.coloredName()} : ${round(it.value * 100).toInt()}%")
             }
 
-            playerData.player.sendMessage(message.toString().dropLast(1))
+            playerData.sendDirect(message.toString().dropLast(1))
         } else {
-            playerData.player.sendMessage(message.toString())
+            playerData.sendDirect(message.toString())
         }
     }
 
@@ -2001,7 +2000,8 @@ internal class Commands {
         if (other == null) {
             playerData.err(PLAYER_NOT_FOUND)
         } else {
-            playerData.player.unit()[other.x] = other.y
+            playerData.player.unit()?.x(other.x)
+            playerData.player.unit()?.y(other.y)
             Call.setPosition(playerData.player.con(), other.x, other.y)
             Call.setCameraPosition(playerData.player.con(), other.x, other.y)
         }

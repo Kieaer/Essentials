@@ -3,11 +3,7 @@ package ksp.table
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
-import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ksp.toClassName
-import com.squareup.kotlinpoet.ksp.toTypeName
-import com.squareup.kotlinpoet.ksp.writeTo
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import java.io.OutputStream
 
 class TableProcessor(
     private val codeGenerator: CodeGenerator,
@@ -15,7 +11,7 @@ class TableProcessor(
 ) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        val symbols = resolver.getSymbolsWithAnnotation(GenerateTable::class.qualifiedName!!)
+        val symbols = resolver.getSymbolsWithAnnotation(GenerateCode::class.qualifiedName!!)
         val unprocessed = symbols.filter { !it.validate() }.toList()
 
         symbols
@@ -26,276 +22,161 @@ class TableProcessor(
                     it.shortName.asString() == "GenerateTable"
                 }
 
-                if (annotation != null) {
-                    it.accept(DataClassVisitor(), Unit)
-                    it.accept(InterfaceVisitor(), Unit)
-                    it.accept(UpdateFunctionVisitor(), Unit)
-                    it.accept(AdapterVisitor(), Unit)
-                }
+                // Process data classes annotated with @GenerateCode
+                processDataClass(classDeclaration)
             }
 
         return unprocessed
     }
 
-    inner class DataClassVisitor : KSVisitorVoid() {
-        override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
-            val properties = classDeclaration.getAllProperties()
-                .filter { it.isDelegated() }
-                .toList()
-
-            if (properties.isEmpty()) {
-                logger.warn("No delegated properties found in ${classDeclaration.simpleName.asString()}")
-                return
-            }
-
-            val className = classDeclaration.toClassName()
-            val packageName = className.packageName
-            val dataClassName = className.simpleName.replace("Entity", "")
-
-            val fileSpec = FileSpec.builder(packageName, dataClassName)
-                .addImport(className.packageName.replace("entity", ""), dataClassName)
-                .addFunction(generateToDataFunction(className, dataClassName))
-                .addFunction(generateFromDataFunction(className, dataClassName, properties))
-                .build()
-
-            fileSpec.writeTo(codeGenerator, Dependencies(true, classDeclaration.containingFile!!))
+    private fun processDataClass(classDeclaration: KSClassDeclaration) {
+        // Check if it's a data class
+        if (!classDeclaration.modifiers.contains(Modifier.DATA)) {
+            logger.warn("@GenerateCode can only be applied to data classes: ${classDeclaration.simpleName.asString()}")
+            return
         }
 
-        private fun generateToDataFunction(className: ClassName, dataClassName: String): FunSpec {
-            return FunSpec.builder("toData")
-                .receiver(className)
-                .returns(ClassName(className.packageName, dataClassName))
-                .addCode(
-                    """
-                    return $dataClassName(
-                        entity = this
-                    )
-                    """.trimIndent()
-                )
-                .build()
+        val className = classDeclaration.simpleName.asString()
+        val packageName = classDeclaration.packageName.asString()
+
+        // Generate extension function for converting ResultRow to data class
+        val tableClassName = className.replace("Data", "Table")
+
+        // Get only the primary constructor parameters of the data class
+        val primaryConstructor = classDeclaration.primaryConstructor
+        if (primaryConstructor == null) {
+            logger.error("Data class ${classDeclaration.simpleName.asString()} does not have a primary constructor")
+            return
         }
 
-        private fun generateFromDataFunction(className: ClassName, dataClassName: String, properties: List<KSPropertyDeclaration>): FunSpec {
-            return FunSpec.builder("toEntity")
-                .receiver(ClassName(className.packageName, dataClassName))
-                .returns(className)
-                .addParameter("entity", className)
-                .addCode(
-                    """
-                    ${properties.joinToString("\n        ") { 
-                        "entity.${it.simpleName.asString()} = ${it.simpleName.asString()}" 
-                    }}
-                    return entity
-                    """.trimIndent()
-                )
-                .build()
+        val constructorParams = primaryConstructor.parameters
+        val constructorParamNames = constructorParams.map { it.name?.asString() ?: "" }.toSet()
+
+        // Filter properties to only include those that are in the primary constructor
+        val properties = classDeclaration.getAllProperties()
+            .filter { property -> constructorParamNames.contains(property.simpleName.asString()) }
+            .toList()
+
+        // Generate the code
+        val fileSpec = createFileSpec(packageName, className, tableClassName, properties)
+
+        // Write the generated code to a file
+        val fileName = "${className}Extensions"
+        val dependencies = Dependencies(false, classDeclaration.containingFile!!)
+
+        codeGenerator.createNewFile(
+            dependencies,
+            packageName,
+            fileName
+        ).use { outputStream ->
+            outputStream.write(fileSpec.toByteArray())
         }
     }
 
-    inner class InterfaceVisitor : KSVisitorVoid() {
-        override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
-            val properties = classDeclaration.getAllProperties()
-                .filter { it.isDelegated() }
-                .toList()
+    private fun createFileSpec(
+        packageName: String,
+        className: String,
+        tableClassName: String,
+        properties: List<KSPropertyDeclaration>
+    ): String {
+        val sb = StringBuilder()
 
-            if (properties.isEmpty()) {
-                logger.warn("No delegated properties found in ${classDeclaration.simpleName.asString()}")
-                return
-            }
+        // Package declaration
+        sb.append("package $packageName\n\n")
 
-            val className = classDeclaration.toClassName()
-            val packageName = className.packageName
-            val interfaceName = "I" + className.simpleName.replace("Entity", "")
+        // Imports
+        sb.append("import org.jetbrains.exposed.sql.*\n")
+        sb.append("import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq\n")
+        sb.append("import org.jetbrains.exposed.sql.transactions.transaction\n")
+        sb.append("import essential.database.table.$tableClassName\n")
+        sb.append("import $packageName.$className\n\n")
 
-            val fileSpec = FileSpec.builder(packageName, interfaceName)
-                .addImport("org.jetbrains.exposed.dao.id", "EntityID")
-                .addType(generateInterface(interfaceName, properties))
-                .build()
+        // Extension function for Table
+        sb.append("/**\n")
+        sb.append(" * Converts a ResultRow to a $className instance.\n")
+        sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
+        sb.append(" */\n")
+        sb.append("fun $tableClassName.toData(row: ResultRow): $className {\n")
 
-            fileSpec.writeTo(codeGenerator, Dependencies(true, classDeclaration.containingFile!!))
+        // Create variables for each property
+        properties.forEach { property ->
+            val propertyName = property.simpleName.asString()
+            sb.append("    val $propertyName = row[$tableClassName.$propertyName]\n")
         }
 
-        private fun generateInterface(interfaceName: String, properties: List<KSPropertyDeclaration>): TypeSpec {
-            val builder = TypeSpec.interfaceBuilder(interfaceName)
+        sb.append("\n    return $className(\n")
 
-            // Add id property to the interface
-            builder.addProperty(
-                PropertySpec.builder("id", 
-                    ClassName("org.jetbrains.exposed.dao.id", "EntityID").parameterizedBy(
-                        ClassName("kotlin", "UInt")
-                    )
-                )
-                    .mutable(true)
-                    .addModifiers(KModifier.ABSTRACT)
-                    .build()
-            )
-
-            properties.forEach { property ->
-                val propertyName = property.simpleName.asString()
-                val propertyType = property.type.resolve()
-                val typeName = propertyType.toTypeName()
-
-                builder.addProperty(
-                    PropertySpec.builder(propertyName, typeName)
-                        .mutable(true) // Make all properties mutable (var)
-                        .addModifiers(KModifier.ABSTRACT)
-                        .build()
-                )
+        // Add properties
+        properties.forEachIndexed { index, property ->
+            val propertyName = property.simpleName.asString()
+            sb.append("        $propertyName = $propertyName")
+            if (index < properties.size - 1) {
+                sb.append(",")
             }
-
-            return builder.build()
-        }
-    }
-
-    inner class UpdateFunctionVisitor : KSVisitorVoid() {
-        override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
-            val properties = classDeclaration.getAllProperties()
-                .filter { it.isDelegated() }
-                .toList()
-
-            if (properties.isEmpty()) {
-                logger.warn("No delegated properties found in ${classDeclaration.simpleName.asString()}")
-                return
-            }
-
-            val className = classDeclaration.toClassName()
-            val packageName = className.packageName
-
-            val fileSpec = FileSpec.builder(packageName, "${className.simpleName}UpdateExt")
-                .addImport("essential.database.table", "PlayerTable")
-                .addImport("org.jetbrains.exposed.sql.transactions.experimental", "newSuspendedTransaction")
-                .addImport("org.jetbrains.exposed.sql", "SqlExpressionBuilder.eq")
-                .addFunction(generateUpdateFunction(className, properties))
-                .build()
-
-            fileSpec.writeTo(codeGenerator, Dependencies(true, classDeclaration.containingFile!!))
+            sb.append("\n")
         }
 
-        private fun generateUpdateFunction(className: ClassName, properties: List<KSPropertyDeclaration>): FunSpec {
-            val tableName = "PlayerTable"
+        sb.append("    )\n")
+        sb.append("}\n\n")
 
-            val primaryKeyProperty = properties.find { it.simpleName.asString() == "uuid" }
-                ?: properties.firstOrNull()
+        // Extension function for ResultRow
+        sb.append("/**\n")
+        sb.append(" * Converts a ResultRow to a $className instance.\n")
+        sb.append(" * This is a convenience method that uses the table's toData method.\n")
+        sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
+        sb.append(" */\n")
+        sb.append("fun ResultRow.to$className(): $className {\n")
+        sb.append("    return $tableClassName.toData(this)\n")
+        sb.append("}\n\n")
 
-            if (primaryKeyProperty == null) {
-                logger.error("No primary key property found")
-                throw IllegalStateException("No primary key property found")
-            }
+        // Extension function for mapping query results
+        sb.append("/**\n")
+        sb.append(" * Maps query results to a list of $className instances.\n")
+        sb.append(" * This is a convenience method for the table class.\n")
+        sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
+        sb.append(" */\n")
+        sb.append("fun Query.mapTo${className}List(): List<$className> {\n")
+        sb.append("    return this.map { $tableClassName.toData(it) }\n")
+        sb.append("}\n\n")
 
-            val primaryKeyName = primaryKeyProperty.simpleName.asString()
+        // Function for mapping insertReturning result
+        sb.append("/**\n")
+        sb.append(" * Creates a $className instance from the ID returned by insertReturning.\n")
+        sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
+        sb.append(" */\n")
+        sb.append("fun <T> $tableClassName.fromInsertReturning(id: T): $className {\n")
+        sb.append("    return transaction {\n")
+        sb.append("        val query = $tableClassName.selectAll()\n")
+        sb.append("        when (id) {\n")
+        sb.append("            is Int -> query.where { $tableClassName.id eq id.toUInt() }\n")
+        sb.append("            is UInt -> query.where { $tableClassName.id eq id }\n")
+        sb.append("            else -> throw IllegalArgumentException(\"Unsupported ID type: \${id!!::class.java}\")\n")
+        sb.append("        }\n")
+        sb.append("        query.map { row -> row.to$className() }.first()\n")
+        sb.append("    }\n")
+        sb.append("}\n\n")
 
-            return FunSpec.builder("update")
-                .receiver(className)
-                .addModifiers(KModifier.SUSPEND)
-                .addCode(
-                    """
-                    newSuspendedTransaction {
-                        PlayerDataEntity.findSingleByAndUpdate($tableName.$primaryKeyName eq this@update.$primaryKeyName) {
-                            ${properties.joinToString("\n                            ") { 
-                                "it.${it.simpleName.asString()} = ${it.simpleName.asString()}" 
-                            }}
-                        }
-                    }
-                    """.trimIndent()
-                )
-                .build()
+        // Function for updating a record using a data class instance
+        sb.append("/**\n")
+        sb.append(" * Updates a database record using a $className instance.\n")
+        sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
+        sb.append(" */\n")
+        sb.append("fun $className.update(): Boolean {\n")
+        sb.append("    val id = this.id\n")
+        sb.append("    return transaction {\n")
+        sb.append("        $tableClassName.update({ $tableClassName.id eq id }) {\n")
+
+        // Skip the id field as it's the primary key and shouldn't be updated
+        properties.filter { it.simpleName.asString() != "id" }.forEach { property ->
+            val propertyName = property.simpleName.asString()
+            sb.append("            it[$tableClassName.$propertyName] = this.$propertyName\n")
         }
-    }
 
-    inner class AdapterVisitor : KSVisitorVoid() {
-        override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
-            val properties = classDeclaration.getAllProperties()
-                .filter { it.isDelegated() }
-                .toList()
+        sb.append("        } > 0\n")
+        sb.append("    }\n")
+        sb.append("}\n")
 
-            if (properties.isEmpty()) {
-                logger.warn("No delegated properties found in ${classDeclaration.simpleName.asString()}")
-                return
-            }
-
-            val className = classDeclaration.toClassName()
-            val packageName = className.packageName
-            val dataClassName = className.simpleName.replace("Entity", "")
-            val interfaceName = "I$dataClassName"
-            val adapterClassName = "${dataClassName}Adapter"
-
-            // Generate the adapter in the same file as the data class
-            val fileSpec = FileSpec.builder(packageName, "${dataClassName}Adapter")
-                .addType(generateAdapterClass(adapterClassName, interfaceName, className, properties))
-                .build()
-
-            fileSpec.writeTo(codeGenerator, Dependencies(true, classDeclaration.containingFile!!))
-        }
-
-        private fun generateAdapterClass(adapterClassName: String, interfaceName: String, entityClassName: ClassName, properties: List<KSPropertyDeclaration>): TypeSpec {
-            val builder = TypeSpec.classBuilder(adapterClassName)
-                .addModifiers(KModifier.INTERNAL) // Change from PRIVATE to INTERNAL for visibility across files
-                .primaryConstructor(
-                    FunSpec.constructorBuilder()
-                        .addParameter("entity", entityClassName)
-                        .build()
-                )
-                .addProperty(
-                    PropertySpec.builder("entity", entityClassName)
-                        .addModifiers(KModifier.PRIVATE)
-                        .initializer("entity")
-                        .build()
-                )
-                .addSuperinterface(ClassName(entityClassName.packageName, interfaceName))
-
-            // Add id property to the adapter
-            builder.addProperty(
-                PropertySpec.builder("id", 
-                    ClassName("org.jetbrains.exposed.dao.id", "EntityID").parameterizedBy(
-                        ClassName("kotlin", "UInt")
-                    )
-                )
-                    .mutable(true) // Make property mutable to allow setter
-                    .addModifiers(KModifier.OVERRIDE)
-                    .getter(
-                        FunSpec.getterBuilder()
-                            .addCode("return entity.id")
-                            .build()
-                    )
-                    .setter(
-                        FunSpec.setterBuilder()
-                            .addParameter("value", 
-                                ClassName("org.jetbrains.exposed.dao.id", "EntityID").parameterizedBy(
-                                    ClassName("kotlin", "UInt")
-                                )
-                            )
-                            .addCode("// Note: id is typically immutable, this setter is provided for interface compatibility")
-                            .build()
-                    )
-                    .build()
-            )
-
-            properties.forEach { property ->
-                val propertyName = property.simpleName.asString()
-                val propertyType = property.type.resolve()
-                val typeName = propertyType.toTypeName()
-
-                builder.addProperty(
-                    PropertySpec.builder(propertyName, typeName)
-                        .mutable(true) // Make property mutable to allow setter
-                        .addModifiers(KModifier.OVERRIDE)
-                        .getter(
-                            FunSpec.getterBuilder()
-                                .addCode("return entity.$propertyName")
-                                .build()
-                        )
-                        .setter(
-                            FunSpec.setterBuilder()
-                                .addParameter("value", typeName)
-                                .addCode("entity.$propertyName = value")
-                                .build()
-                        )
-                        .build()
-                )
-            }
-
-            return builder.build()
-        }
+        return sb.toString()
     }
 }
 

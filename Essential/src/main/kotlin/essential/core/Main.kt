@@ -15,10 +15,12 @@ import essential.config.Config
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
-import essential.database.data.entity.DisplayData
-import essential.database.data.entity.PluginDataEntity
-import essential.database.data.entity.getPluginData
+import essential.database.data.DisplayData
+import essential.database.data.PluginData
+import essential.database.data.getPluginData
+import essential.database.data.toPluginData
 import essential.database.databaseInit
+import essential.database.table.PluginTable
 import essential.permission.Permission
 import essential.players
 import essential.rootPath
@@ -31,6 +33,8 @@ import mindustry.game.Team
 import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertReturning
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
@@ -38,13 +42,10 @@ class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
         internal lateinit var conf: CoreConfig
-        lateinit var pluginData: PluginDataEntity
+        lateinit var pluginData: PluginData
 
         val scope = CoroutineScope(Dispatchers.IO)
     }
-
-    private val clientCommandCache = CommandHandler("/")
-    private val serverCommandCache = CommandHandler("")
 
     override fun init() {
         // 플러그인 언어 설정 및 태그 추가
@@ -83,11 +84,11 @@ class Main : Plugin() {
             var data = getPluginData()
             if (data == null) {
                 data = transaction {
-                    PluginDataEntity.new {
-                        pluginVersion = PLUGIN_VERSION
-                        databaseVersion = DATABASE_VERSION
-                        this.data = DisplayData()
-                    }
+                    PluginTable.insertReturning {
+                        it[pluginVersion] = PLUGIN_VERSION
+                        it[databaseVersion] = DATABASE_VERSION
+                        it[PluginTable.data] = DisplayData()
+                    }.single().toPluginData()
                 }
             }
 
@@ -166,13 +167,13 @@ class Main : Plugin() {
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
-        registerGeneratedServerCommands(serverCommandCache)
+        registerGeneratedServerCommands(handler)
         // todo 명령어 제외 기능 추가
     }
 
 
     override fun registerClientCommands(handler: CommandHandler) {
-        registerGeneratedClientCommands(clientCommandCache)
+        registerGeneratedClientCommands(handler)
         // todo 명령어 제외 기능 추가
     }
 
