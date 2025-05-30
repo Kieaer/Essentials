@@ -1,21 +1,5 @@
 package essential.achievements
 
-/*
-public enum Achievement {
-   Builder, Deconstructor,
-   // Specific
-   Creator, Eliminator, Defender, Aggressor, Serpulo, Erekir,
-   // Time
-   TurbidWater, BlackWater, Oil,
-   // PvP
-   Lord,
-   */
-/*Iron, Bronze, Silver, Gold, Platinum, Master, GrandMaster*/ /*
-
-    // Wave
-    // Attack
-}*/
-
 import arc.Events
 import essential.core.Main.Companion.scope
 import essential.database.data.PlayerData

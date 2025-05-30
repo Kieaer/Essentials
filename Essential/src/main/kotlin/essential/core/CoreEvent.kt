@@ -36,6 +36,7 @@ import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Playerc
+import mindustry.maps.Map
 import mindustry.net.Administration
 import mindustry.ui.Menus
 import mindustry.world.Tile
@@ -62,9 +63,13 @@ import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 import kotlin.time.Duration.Companion.minutes
 
+/** 월드 기록 */
 internal var worldHistory = ArrayList<TileLog>()
 private var dateformat = SimpleDateFormat("HH:mm:ss")
 private var blockExp = mutableMapOf<String, Int>()
+
+/** 맵 투표 목록 (UUID, 맵) */
+val mapVotes = HashMap<String, Map>()
 
 /** PvP 관전 플레이어 목록 */
 internal var pvpSpecters = mutableListOf<String>()
@@ -411,6 +416,27 @@ internal fun serverLoad(event: ServerLoadEvent) {
 
 @Event
 internal fun gameOver(event: GameOverEvent) {
+    if (mapVotes.isNotEmpty()) {
+        // Count votes for each map
+        val voteCount = HashMap<Map, Int>()
+        mapVotes.values.forEach { map ->
+            voteCount[map] = voteCount.getOrDefault(map, 0) + 1
+        }
+
+        // Find the map with the most votes
+        val mostVotedMap = voteCount.maxByOrNull { it.value }?.key
+
+        // Set the next map to the most voted map
+        if (mostVotedMap != null) {
+            Vars.maps.setNextMapOverride(mostVotedMap)
+            // Broadcast the result to all players
+            Call.sendMessage(Bundle()["command.nextmap.vote.result", mostVotedMap.plainName()])
+        }
+
+        // Clear votes after game over
+        mapVotes.clear()
+    }
+
     if (!Vars.state.rules.infiniteResources) {
         if (Vars.state.rules.pvp) {
             for (data in players) {

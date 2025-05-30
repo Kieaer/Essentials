@@ -78,6 +78,7 @@ internal class Commands {
         // 다중 사용 함수
         const val PLAYER_NOT_FOUND = "player.not.found"
         const val PLAYER_NOT_REGISTERED = "player.not.registered"
+        const val DATABASE_ERROR = "database.io.error"
 
         /**
          * Calculate the Levenshtein distance between two strings
@@ -146,26 +147,30 @@ internal class Commands {
 
     @ClientCommand("changename", "<target> <new_name>", "Change player name")
     fun changeName(playerData: PlayerData, arg: Array<out String>) {
-        suspend fun change(data: PlayerData) {
-            newSuspendedTransaction {
-                val exists = PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq arg[1] }.firstOrNull()
-                if (exists != null) {
-                    data.err("command.changeName.exists", arg[1])
-                } else {
-                    Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
-                    if (data.uuid == playerData.uuid) {
-                        playerData.send("command.changeName.apply")
+        scope.launch {
+            suspend fun change(data: PlayerData) {
+                newSuspendedTransaction {
+                    val exists = PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq arg[1] }.firstOrNull()
+                    if (exists != null) {
+                        data.err("command.changeName.exists", arg[1])
                     } else {
-                        data.send("command.changeName.apply.other", data.name, arg[1])
+                        Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
+                        if (data.uuid == playerData.uuid) {
+                            playerData.send("command.changeName.apply")
+                        } else {
+                            data.send("command.changeName.apply.other", data.name, arg[1])
+                        }
+                        data.name = arg[1]
+                        data.player.name(arg[1])
+                        if (data.update()) {
+                            data.send("command.changeName.success", data.name)
+                        } else {
+                            data.send(DATABASE_ERROR)
+                        }
                     }
-                    data.name = arg[1]
-                    data.player.name(arg[1])
-                    data.update()
                 }
             }
-        }
 
-        scope.launch {
             val target = findPlayers(arg[0])
             if (target != null) {
                 val data = findPlayerData(target.uuid())
@@ -187,15 +192,20 @@ internal class Commands {
 
     @ClientCommand("changepw", "<new_password> <password_repeat>", "Change account password.")
     fun changePassword(playerData: PlayerData, arg: Array<out String>) {
-        if (arg[0] != arg[1]) {
-            playerData.err("command.changePw.same")
-            return
-        }
+        scope.launch {
+            if (arg[0] != arg[1]) {
+                playerData.err("command.changePw.same")
+                return@launch
+            }
 
-        val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
-        playerData.accountPW = password
-        scope.launch { playerData.update() }
-        Core.app.post { playerData.send("command.changePw.apply") }
+            val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
+            playerData.accountPW = password
+            if (playerData.update()) {
+                playerData.send("command.changePw.apply")
+            } else {
+                playerData.send("")
+            }
+        }
     }
 
     @ClientCommand("chat", "<on/off>", "Mute all players without admins")
@@ -2345,6 +2355,95 @@ internal class Commands {
                     vote(playerData, array)
                 }
             }
+        }
+    }
+
+    @ClientCommand("nextmap", "[map]", "Set the next map to move to after game over")
+    fun nextMap(playerData: PlayerData, arg: Array<out String>) {
+        if (!Permission.check(playerData, "nextmap")) return
+
+        if (arg.isEmpty()) {
+            // If no map is specified, show the current votes
+            if (mapVotes.isEmpty()) {
+                playerData.send("command.nextmap.vote.none")
+            } else {
+                // Count votes for each map
+                val voteCount = HashMap<Map, Int>()
+                mapVotes.values.forEach { map ->
+                    voteCount[map] = voteCount.getOrDefault(map, 0) + 1
+                }
+
+                // Sort maps by vote count (descending)
+                val sortedVotes = voteCount.entries.sortedByDescending { it.value }
+
+                // Build the message
+                val message = StringBuilder(playerData.bundle["command.nextmap.vote.current"] + "\n")
+                sortedVotes.forEach { (map, count) ->
+                    message.append(playerData.bundle["command.nextmap.vote.count", map.plainName(), count] + "\n")
+                }
+
+                // Show the player's current vote
+                val playerVote = mapVotes[playerData.uuid]
+                if (playerVote != null) {
+                    message.append("\n" + playerData.bundle["command.nextmap.vote.your", playerVote.plainName()])
+                } else {
+                    message.append("\n" + playerData.bundle["command.nextmap.vote.none.yours"])
+                }
+
+                playerData.player.sendMessage(message.toString())
+            }
+            return
+        }
+
+        try {
+            var target: Map? = null
+            if (arg[0].toIntOrNull() != null) {
+                val list = Vars.maps.all().sortedBy { a -> a.name() }
+                val arr = HashMap<Map, Int>()
+                list.forEachIndexed { index, map ->
+                    arr[map] = index
+                }
+                arr.forEach {
+                    if (it.value == arg[0].toInt()) {
+                        target = it.key
+                        return@forEach
+                    }
+                }
+            }
+
+            if (target == null) {
+                target = Vars.maps.all().find { e -> e.plainName().contains(arg[0]) }
+            }
+
+            if (target != null) {
+                val playerUuid = playerData.uuid
+
+                // Check if player already voted for this map
+                if (mapVotes[playerUuid] == target) {
+                    // Cancel the vote
+                    mapVotes.remove(playerUuid)
+                    playerData.send("command.nextmap.vote.canceled", target.plainName())
+                } else {
+                    // Record the vote
+                    val previousVote = mapVotes.put(playerUuid, target)
+
+                    if (previousVote != null) {
+                        playerData.send("command.nextmap.vote.changed", previousVote.plainName(), target.plainName())
+                    } else {
+                        playerData.send("command.nextmap.vote.cast", target.plainName())
+                    }
+
+                    // If admin, they can still override the next map
+                    if (Permission.check(playerData, "nextmap.admin")) {
+                        Vars.maps.setNextMapOverride(target)
+                        playerData.send("command.nextmap.set", target.plainName())
+                    }
+                }
+            } else {
+                playerData.err("command.nextmap.not.found")
+            }
+        } catch (_: IndexOutOfBoundsException) {
+            playerData.err("command.nextmap.not.found")
         }
     }
 
