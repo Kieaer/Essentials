@@ -71,6 +71,9 @@ private var blockExp = mutableMapOf<String, Int>()
 /** 맵 투표 목록 (UUID, 맵) */
 val mapVotes = HashMap<String, Map>()
 
+/** 맵 평가 목록 (UUID, Boolean) - true for upvote, false for downvote */
+val mapRatings = HashMap<String, Boolean>()
+
 /** PvP 관전 플레이어 목록 */
 internal var pvpSpecters = mutableListOf<String>()
 
@@ -240,7 +243,7 @@ internal fun tap(event: TapEvent) {
             val bundle = data.bundle
             // todo 이거 파일 없음
             val coreBundle =
-                Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale.of(data.player.locale())))
+                Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.player.locale())))
 
             buf.forEach { two ->
                 val action = when (two.action) {
@@ -417,24 +420,67 @@ internal fun serverLoad(event: ServerLoadEvent) {
 @Event
 internal fun gameOver(event: GameOverEvent) {
     if (mapVotes.isNotEmpty()) {
-        // Count votes for each map
         val voteCount = HashMap<Map, Int>()
         mapVotes.values.forEach { map ->
             voteCount[map] = voteCount.getOrDefault(map, 0) + 1
         }
 
-        // Find the map with the most votes
         val mostVotedMap = voteCount.maxByOrNull { it.value }?.key
 
-        // Set the next map to the most voted map
         if (mostVotedMap != null) {
-            Vars.maps.setNextMapOverride(mostVotedMap)
-            // Broadcast the result to all players
             Call.sendMessage(Bundle()["command.nextmap.vote.result", mostVotedMap.plainName()])
         }
 
-        // Clear votes after game over
         mapVotes.clear()
+    }
+
+    // Show map rating menu to players if 5 minutes have passed since game start
+    val fiveMinutesPassed = (timeSource.markNow() - mapStartTime).inWholeMinutes >= 5
+    if (fiveMinutesPassed) {
+        val currentMap = Vars.state.map
+        val mapName = currentMap.plainName()
+
+        for (data in players) {
+            // Only show the menu if the player hasn't already voted
+            if (!mapRatings.containsKey(data.uuid)) {
+                val rateMapMenu = Menus.registerMenu { player, select ->
+                    if (select == 0) {
+                        // Upvote
+                        mapRatings[data.uuid] = true
+
+                        // Save to persistent storage
+                        val mapRatingsForCurrentMap = pluginData.data.mapRatings.getOrPut(mapName) { HashMap() }
+                        mapRatingsForCurrentMap[data.uuid] = true
+
+                        data.send("command.map.rate.upvote", mapName)
+                    } else if (select == 1) {
+                        // Downvote
+                        mapRatings[data.uuid] = false
+
+                        // Save to persistent storage
+                        val mapRatingsForCurrentMap = pluginData.data.mapRatings.getOrPut(mapName) { HashMap() }
+                        mapRatingsForCurrentMap[data.uuid] = false
+
+                        data.send("command.map.rate.downvote", mapName)
+                    }
+                    // If select == 2, it's "Cancel" so do nothing
+                }
+
+                Call.menu(
+                    data.player.con(),
+                    rateMapMenu,
+                    Bundle(data.player.locale())["command.map.rate.title"],
+                    Bundle(data.player.locale())["command.map.rate.text", mapName],
+                    arrayOf(
+                        arrayOf(
+                            Bundle(data.player.locale())["command.map.rate.upvote.button"],
+                            Bundle(data.player.locale())["command.map.rate.downvote.button"],
+                            Bundle(data.player.locale())["command.map.rate.cancel"]
+                        )
+                    )
+                )
+            }
+        }
     }
 
     if (!Vars.state.rules.infiniteResources) {
@@ -685,6 +731,16 @@ internal fun worldLoad(event: WorldLoadEvent) {
     mapStartTime = timeSource.markNow()
     isSurrender = false
     isCheated = false
+    mapRatings.clear()
+
+    // Load map ratings for the current map from persistent storage
+    val currentMapName = Vars.state.map.plainName()
+    val savedRatings = pluginData.data.mapRatings[currentMapName]
+    if (savedRatings != null) {
+        // Copy the saved ratings to the in-memory map
+        mapRatings.putAll(savedRatings)
+    }
+
     if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
 
     if (Vars.state.rules.pvp) {

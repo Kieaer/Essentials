@@ -162,11 +162,8 @@ internal class Commands {
                         }
                         data.name = arg[1]
                         data.player.name(arg[1])
-                        if (data.update()) {
-                            data.send("command.changeName.success", data.name)
-                        } else {
-                            data.send(DATABASE_ERROR)
-                        }
+                        data.update()
+                        data.send("command.changeName.success", data.name)
                     }
                 }
             }
@@ -200,11 +197,8 @@ internal class Commands {
 
             val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
             playerData.accountPW = password
-            if (playerData.update()) {
-                playerData.send("command.changePw.apply")
-            } else {
-                playerData.send("")
-            }
+            playerData.update()
+            playerData.send("command.changePw.apply")
         }
     }
 
@@ -2437,6 +2431,18 @@ internal class Commands {
                     if (Permission.check(playerData, "nextmap.admin")) {
                         Vars.maps.setNextMapOverride(target)
                         playerData.send("command.nextmap.set", target.plainName())
+                    }
+                }
+
+                if (mapVotes.isNotEmpty()) {
+                    val voteCount = HashMap<Map, Int>()
+                    mapVotes.values.forEach { map ->
+                        voteCount[map] = voteCount.getOrDefault(map, 0) + 1
+                    }
+
+                    val mostVotedMap = voteCount.maxByOrNull { it.value }?.key
+                    if (mostVotedMap != null) {
+                        Vars.maps.setNextMapOverride(mostVotedMap)
                     }
                 }
             } else {

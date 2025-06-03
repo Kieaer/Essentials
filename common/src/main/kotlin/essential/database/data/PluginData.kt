@@ -12,7 +12,6 @@ import mindustry.Vars
 import org.jetbrains.exposed.sql.insertReturning
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.update
 
 @GenerateCode
 data class PluginData(
@@ -29,7 +28,8 @@ data class DisplayData(
     val warpCount: ArrayList<WarpCount> = arrayListOf(),
     val warpTotal: ArrayList<WarpTotal> = arrayListOf(),
     val warpBlock: ArrayList<WarpBlock> = arrayListOf(),
-    val blacklistedNames: ArrayList<String> = arrayListOf()
+    val blacklistedNames: ArrayList<String> = arrayListOf(),
+    val mapRatings: HashMap<String, HashMap<String, Boolean>> = hashMapOf()
 )
 
 /** 플러그인 데이터 읽기 */
