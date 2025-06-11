@@ -28,7 +28,7 @@ hikaricp = "6.3.0"
 
 [libraries]
 kotlinxSerializer = { module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxCoroutines"}
-kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", version.ref = "kotlinxDatetime" }
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 
 arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "game" }
