@@ -5,10 +5,22 @@ import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.writeTo
+import mindustry.game.EventType
 
 class EventProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger) : SymbolProcessor {
+
+    /**
+     * Checks if a KSType represents an enum class.
+     * @param type The KSType to check
+     * @return true if the type represents an enum class, false otherwise
+     */
+    private fun isEnum(type: KSType?): Boolean {
+        if (type == null) return false
+        val declaration = type.declaration
+        return declaration is KSClassDeclaration && declaration.classKind == ClassKind.ENUM_CLASS
+    }
 
     /**
      * Determines the package name for generated code based on the package of the annotated functions.
@@ -68,6 +80,7 @@ class EventProcessor(
             .addImport("arc.Events", "")
             .addImport("arc.func", "Cons")
             .addImport("essential.core", "eventListeners")
+            .addImport("mindustry.game.EventType", "Trigger")
             .addFunction(generateRegisterEventHandlersFunction(functions))
             .build()
 
@@ -81,21 +94,39 @@ class EventProcessor(
             val parameter = function.parameters.firstOrNull()
             val parameterType = parameter?.type?.resolve()
             val eventTypeName = parameterType?.declaration?.qualifiedName?.asString() ?: "Unknown"
+            val isEnumType = isEnum(parameterType)
 
             // Get the simple name of the function
             val functionName = function.simpleName.asString()
 
-            Triple(eventTypeName, function.packageName.asString(), functionName)
+            Pair(Triple(eventTypeName, function.packageName.asString(), functionName), isEnumType)
         }
 
         return FunSpec.builder("registerGeneratedEventHandlers")
             .addModifiers(KModifier.INTERNAL)
             .addCode(
                 """
-                ${eventTypes.joinToString("\n\n") { (eventType, packageName, functionName) ->
+                ${eventTypes.joinToString("\n\n") { (typeInfo, isEnum) ->
+                    val (eventType, packageName, functionName) = typeInfo
                     if (eventType == "Unknown" || eventType == "null") {
+                        // If function doesn't have parameters, use the function name to determine which Trigger enum to use
+                        try {
+                            EventType.Trigger.valueOf(functionName)
+                            """
+                            Events.on(Trigger.$functionName::class.java) {
+                                $packageName.$functionName()
+                            }
+                            """.trimIndent()
+                        } catch (e: IllegalArgumentException) {
+                            """
+                            $packageName.$functionName()
+                            """.trimIndent()
+                        }
+                    } else if (isEnum) {
                         """
-                        $packageName.$functionName()
+                        Events.on($eventType::class.java) {
+                            $packageName.$functionName(it)
+                        }.also { listener -> eventListeners[$eventType::class.java] = listener }
                         """.trimIndent()
                     } else {
                         """

@@ -11,6 +11,7 @@ class CommandProcessor(
     private val logger: KSPLogger
 ) : SymbolProcessor {
 
+
     /**
      * Determines the package name for generated code based on the package of the annotated functions.
      * Extracts the base package from the function's package and appends ".generated" to it.
@@ -38,6 +39,42 @@ class CommandProcessor(
         } else {
             "essential.core.generated" // Default fallback
         }
+    }
+
+    /**
+     * Finds the package of the Commands class by looking at the parent class of the annotated functions.
+     * If no function is in a class named Commands, falls back to the base package.
+     */
+    private fun findCommandsPackage(functions: List<KSFunctionDeclaration>): String {
+        if (functions.isEmpty()) {
+            return "essential.core" // Default package if no functions
+        }
+
+        // Check if any function is in a class named Commands
+        for (function in functions) {
+            val parentDeclaration = function.parentDeclaration
+            if (parentDeclaration != null && parentDeclaration.simpleName.asString() == "Commands") {
+                // Get the package of the parent class
+                val packageName = function.containingFile?.packageName?.asString() ?: ""
+                return packageName
+            }
+        }
+
+        // If no function is in a Commands class, check if any file contains a Commands class
+        for (function in functions) {
+            val file = function.containingFile ?: continue
+            val filePackage = file.packageName.asString()
+            val fileDeclarations = file.declarations
+            for (declaration in fileDeclarations) {
+                if (declaration.simpleName.asString() == "Commands") {
+                    return filePackage
+                }
+            }
+        }
+
+        // If no Commands class found, fall back to the base package
+        val packageName = determinePackageName(functions)
+        return packageName.substringBeforeLast(".generated")
     }
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -78,11 +115,11 @@ class CommandProcessor(
         // Determine package name based on the package of the first function
         val packageName = determinePackageName(functions)
 
-        // Extract the base package (e.g., essential.core, essential.achievements)
-        val basePackage = packageName.substringBeforeLast(".generated")
+        // Find the package of the Commands class by looking at the parent class or file declarations
+        val commandsPackage = findCommandsPackage(functions)
 
         val fileSpec = FileSpec.builder(packageName, "ServerCommandsGenerated")
-            .addImport(basePackage, "Commands")
+            .addImport(commandsPackage, "Commands")
             .addImport("ksp.command", "ServerCommand")
             .addImport("arc.util", "CommandHandler")
             .addFunction(generateRegisterServerCommandsFunction(functions))
@@ -95,11 +132,11 @@ class CommandProcessor(
         // Determine package name based on the package of the first function
         val packageName = determinePackageName(functions)
 
-        // Extract the base package (e.g., essential.core, essential.achievements)
-        val basePackage = packageName.substringBeforeLast(".generated")
+        // Find the package of the Commands class by looking at the parent class or file declarations
+        val commandsPackage = findCommandsPackage(functions)
 
         val fileSpec = FileSpec.builder(packageName, "ClientCommandsGenerated")
-            .addImport(basePackage, "Commands")
+            .addImport(commandsPackage, "Commands")
             .addImport("ksp.command", "ClientCommand")
             .addImport("arc.util", "CommandHandler")
             .addImport("mindustry.gen", "Playerc")
