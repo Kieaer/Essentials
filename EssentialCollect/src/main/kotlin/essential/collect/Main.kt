@@ -3,9 +3,15 @@ package essential.collect
 import arc.Events
 import arc.files.Fi
 import arc.util.Log
+import arc.util.Time
+import arc.util.Timer
 import arc.util.serialization.Json
 import essential.bundle.Bundle
+import essential.config.Config
 import essential.rootPath
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import mindustry.Vars.state
 import mindustry.content.Planets
 import mindustry.game.EventType.*
@@ -15,8 +21,39 @@ import mindustry.mod.Plugin
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.databind.node.ArrayNode
+import kotlinx.serialization.Serializable
 import java.io.BufferedWriter
 import java.io.FileWriter
+import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
+
+@Serializable
+data class CollectConfig(
+    val batchSize: Int = 100,
+    val flushIntervalSeconds: Float = 5f,
+    val samplingRate: Float = 1.0f,
+    val unitStatusInterval: Int = 60,
+    val enabledEvents: Map<String, Boolean> = mapOf(
+        "playerJoin" to true,
+        "playerLeave" to true,
+        "withdraw" to true,
+        "deposit" to true,
+        "unitDestroy" to true,
+        "config" to true,
+        "tap" to true,
+        "pickup" to true,
+        "unitCreate" to true,
+        "unitControl" to true,
+        "blockBuildBegin" to true,
+        "blockBuildEnd" to true,
+        "buildRotate" to true,
+        "buildSelect" to true,
+        "bulletDestroy" to true,
+        "unitDamage" to true,
+        "unitDrown" to true,
+        "unitStatus" to true
+    )
+)
 
 class Main : Plugin() {
     private var recordFile: Fi? = null
@@ -24,6 +61,10 @@ class Main : Plugin() {
     private var currentStatus = CurrentStatus("sandbox", "andromeda")
     private var isFirstWrite = true
     private val mapper = ObjectMapper()
+    private val eventBuffer = ConcurrentLinkedQueue<ObjectNode>()
+    private val eventCounter = AtomicInteger(0)
+    private val ioScope = CoroutineScope(Dispatchers.IO)
+    private lateinit var conf: CollectConfig
 
     private data class CurrentStatus(
         val mode: String,
@@ -34,40 +75,85 @@ class Main : Plugin() {
         bundle.prefix = "[EssentialCollect]"
         Log.debug(bundle["event.plugin.starting"])
         rootPath.child("collect").mkdirs()
+
+        // Load configuration
+        conf = Config.load("config_collect.yaml", CollectConfig.serializer(), true, CollectConfig()) ?: CollectConfig()
+        Log.debug("Loaded configuration: batchSize=${conf.batchSize}, flushInterval=${conf.flushIntervalSeconds}s, samplingRate=${conf.samplingRate}")
+
+        // Set up periodic flush timer
+        Timer.schedule(object : Timer.Task() {
+            override fun run() {
+                flushEventBuffer()
+            }
+        }, conf.flushIntervalSeconds, conf.flushIntervalSeconds)
+
         setEvents()
         Log.debug(bundle["event.plugin.loaded"])
     }
 
     /**
-     * Writes an ObjectNode directly to the record file using a BufferedWriter.
-     * Creates the file if it doesn't exist, and appends to it if it does.
-     * This approach is more memory-efficient for large datasets.
+     * Adds an event to the buffer. If the buffer reaches the configured batch size,
+     * it will be flushed to disk asynchronously.
      */
     private fun writeToFile(jsonObject: ObjectNode) {
-        try {
-            if (recordFile == null) {
-                return
-            }
+        // Apply sampling rate - randomly skip events based on configuration
+        if (conf.samplingRate < 1.0f && Math.random() > conf.samplingRate) {
+            return
+        }
 
-            // Ensure the writer is initialized
-            if (jsonWriter == null) {
-                jsonWriter = BufferedWriter(FileWriter(recordFile!!.file(), true))
-            }
+        // Add the event to the buffer
+        eventBuffer.add(jsonObject)
 
-            // For the first write, write the opening bracket of the JSON array
-            if (isFirstWrite) {
-                jsonWriter?.write("[")
-                isFirstWrite = false
-            } else {
-                // For subsequent writes, add a comma before the new object
-                jsonWriter?.write(",")
-            }
+        // If we've reached the batch size, flush the buffer
+        if (eventCounter.incrementAndGet() >= conf.batchSize) {
+            flushEventBuffer()
+            eventCounter.set(0)
+        }
+    }
 
-            // Write the JSON object and flush immediately to ensure data is written to disk
-            jsonWriter?.write(jsonObject.toString())
-            jsonWriter?.flush()
-        } catch (ex: Exception) {
-            Log.err("Failed to write to record file", ex)
+    /**
+     * Flushes the event buffer to disk asynchronously.
+     * This method is called periodically by the timer and when the buffer reaches the batch size.
+     */
+    private fun flushEventBuffer() {
+        if (eventBuffer.isEmpty() || recordFile == null) {
+            return
+        }
+
+        // Create a copy of the current buffer and clear it
+        val eventsToWrite = ArrayList<ObjectNode>(eventBuffer)
+        eventBuffer.clear()
+        eventCounter.set(0)
+
+        // Write the events to disk asynchronously
+        ioScope.launch {
+            try {
+                // Ensure the writer is initialized
+                if (jsonWriter == null) {
+                    jsonWriter = BufferedWriter(FileWriter(recordFile!!.file(), true))
+                }
+
+                // For the first write, write the opening bracket of the JSON array
+                if (isFirstWrite) {
+                    jsonWriter?.write("[")
+                    isFirstWrite = false
+                }
+
+                // Write each event to the file
+                for (event in eventsToWrite) {
+                    if (!isFirstWrite) {
+                        jsonWriter?.write(",")
+                    }
+                    jsonWriter?.write(event.toString())
+                }
+
+                // Flush to ensure data is written to disk, but only after writing all events
+                jsonWriter?.flush()
+
+                Log.debug("Flushed ${eventsToWrite.size} events to disk")
+            } catch (ex: Exception) {
+                Log.err("Failed to write to record file", ex)
+            }
         }
     }
 
@@ -145,6 +231,8 @@ class Main : Plugin() {
         }
 
         Events.on(PlayerJoin::class.java) { e ->
+            if (!conf.enabledEvents["playerJoin"]!!) return@on
+
             val playerJoin = mapper.createObjectNode()
             playerJoin.put("type", "player_join")
             playerJoin.set<ObjectNode>("player", getPlayerStatus(e.player))
@@ -153,6 +241,8 @@ class Main : Plugin() {
         }
 
         Events.on(PlayerLeave::class.java) { e ->
+            if (!conf.enabledEvents["playerLeave"]!!) return@on
+
             val playerLeave = mapper.createObjectNode()
             playerLeave.put("type", "player_leave")
             playerLeave.set<ObjectNode>("player", getPlayerStatus(e.player))
@@ -161,6 +251,8 @@ class Main : Plugin() {
         }
 
         Events.on(WithdrawEvent::class.java) { e ->
+            if (!conf.enabledEvents["withdraw"]!!) return@on
+
             val withdraw = mapper.createObjectNode()
             withdraw.put("type", "withdraw")
             withdraw.set<ObjectNode>("player", getPlayerStatus(e.player))
@@ -172,6 +264,8 @@ class Main : Plugin() {
         }
 
         Events.on(DepositEvent::class.java) { e ->
+            if (!conf.enabledEvents["deposit"]!!) return@on
+
             val deposit = mapper.createObjectNode()
             deposit.put("type", "deposit")
             deposit.set<ObjectNode>("player", getPlayerStatus(e.player))
@@ -183,6 +277,8 @@ class Main : Plugin() {
         }
 
         Events.on(UnitDestroyEvent::class.java) { e ->
+            if (!conf.enabledEvents["unitDestroy"]!!) return@on
+
             val unitDestroy = mapper.createObjectNode()
             unitDestroy.put("type", "unit_destroy")
             unitDestroy.put("unit", e.unit.type.name)
@@ -192,6 +288,8 @@ class Main : Plugin() {
         }
 
         Events.on(ConfigEvent::class.java) { e ->
+            if (!conf.enabledEvents["config"]!!) return@on
+
             val config = mapper.createObjectNode()
             config.put("type", "config")
             if (e.player != null) {
@@ -205,21 +303,36 @@ class Main : Plugin() {
 
         Events.on(GameOverEvent::class.java) { e ->
             try {
+                // Flush any remaining events
+                flushEventBuffer()
+
                 // Write the closing bracket of the JSON array
                 if (jsonWriter != null && !isFirstWrite) {
-                    jsonWriter?.write("]")
-                    jsonWriter?.flush()
-                    jsonWriter?.close()
-                    jsonWriter = null
+                    ioScope.launch {
+                        try {
+                            jsonWriter?.write("]")
+                            jsonWriter?.flush()
+                            jsonWriter?.close()
+                            jsonWriter = null
+                            Log.debug("Closed record file")
+                        } catch (ex: Exception) {
+                            Log.err("Failed to close record file", ex)
+                        }
+                    }
                 }
                 // Reset for next game
                 recordFile = null
+                isFirstWrite = true
+                eventBuffer.clear()
+                eventCounter.set(0)
             } catch (ex: Exception) {
                 Log.err("Failed to close record file", ex)
             }
         }
 
         Events.on(TapEvent::class.java) { e ->
+            if (!conf.enabledEvents["tap"]!!) return@on
+
             val tap = mapper.createObjectNode()
             tap.set<ObjectNode>("player", getPlayerStatus(e.player))
             tap.put("type", "tap")
@@ -230,6 +343,8 @@ class Main : Plugin() {
         }
 
         Events.on(PickupEvent::class.java) { e ->
+            if (!conf.enabledEvents["pickup"]!!) return@on
+
             if (e.carrier != null && e.carrier.isPlayer) {
                 val pickup = mapper.createObjectNode()
                 val p = e.carrier.player
@@ -248,6 +363,8 @@ class Main : Plugin() {
         }
 
         Events.on(UnitCreateEvent::class.java) { e ->
+            if (!conf.enabledEvents["unitCreate"]!!) return@on
+
             val unitCreate = mapper.createObjectNode()
             unitCreate.put("type", "unit_create")
             unitCreate.put("unit", e.unit.type.name)
@@ -257,6 +374,8 @@ class Main : Plugin() {
         }
 
         Events.on(UnitControlEvent::class.java) { e ->
+            if (!conf.enabledEvents["unitControl"]!!) return@on
+
             val unitControl = mapper.createObjectNode()
             unitControl.put("type", "unit_control")
             unitControl.set<ObjectNode>("player", getPlayerStatus(e.player))
@@ -270,6 +389,8 @@ class Main : Plugin() {
         }
 
         Events.on(BlockBuildBeginEvent::class.java) { e ->
+            if (!conf.enabledEvents["blockBuildBegin"]!!) return@on
+
             val blockBuildBegin = mapper.createObjectNode()
             blockBuildBegin.put("type", "block_build_begin")
 
@@ -286,6 +407,8 @@ class Main : Plugin() {
         }
 
         Events.on(BlockBuildEndEvent::class.java) { e: BlockBuildEndEvent? ->
+            if (!conf.enabledEvents["blockBuildEnd"]!!) return@on
+
             val blockBuildEnd = mapper.createObjectNode()
             blockBuildEnd.put("type", "block_build_end")
 
@@ -303,6 +426,8 @@ class Main : Plugin() {
 
         // if player or unit rotated the target block
         Events.on(BuildRotateEvent::class.java) { e ->
+            if (!conf.enabledEvents["buildRotate"]!!) return@on
+
             val buildRotate = mapper.createObjectNode()
             buildRotate.put("type", "build_rotate")
             if (e.unit != null && e.unit.isPlayer) {
@@ -326,6 +451,8 @@ class Main : Plugin() {
 
         // if player or unit is block remove or selected
         Events.on(BuildSelectEvent::class.java) { e ->
+            if (!conf.enabledEvents["buildSelect"]!!) return@on
+
             val buildSelect = mapper.createObjectNode()
             buildSelect.put("type", "build_select")
             buildSelect.put("name", e.tile.block().name)
@@ -352,6 +479,8 @@ class Main : Plugin() {
 
         // if building destroyed by bullet
         Events.on(BuildingBulletDestroyEvent::class.java) { e ->
+            if (!conf.enabledEvents["bulletDestroy"]!!) return@on
+
             val buildingDestroy = mapper.createObjectNode()
             buildingDestroy.put("type", "bullet_destroy")
             buildingDestroy.put("build_name", e.build.block.name)
@@ -367,6 +496,8 @@ class Main : Plugin() {
 
         // if unit destroyed by bullet
         Events.on(UnitBulletDestroyEvent::class.java) { e ->
+            if (!conf.enabledEvents["bulletDestroy"]!!) return@on
+
             val bulletDestroy = mapper.createObjectNode()
             bulletDestroy.put("type", "bullet_destroy")
             bulletDestroy.put("unit_name", e.unit.type.name)
@@ -382,6 +513,8 @@ class Main : Plugin() {
 
         // if unit taken damage
         Events.on(UnitDamageEvent::class.java) { e ->
+            if (!conf.enabledEvents["unitDamage"]!!) return@on
+
             val damaged = mapper.createObjectNode()
             damaged.put("type", "bullet_destroy")
             damaged.put("unit_name", e.unit.type.name)
@@ -397,6 +530,8 @@ class Main : Plugin() {
 
         // if unit is drowned
         Events.on(UnitDrownEvent::class.java) { e: UnitDrownEvent? ->
+            if (!conf.enabledEvents["unitDrown"]!!) return@on
+
             val drown = mapper.createObjectNode()
             drown.put("type", "unit_drown")
             drown.put("unit_name", e!!.unit.type.name)
@@ -409,27 +544,53 @@ class Main : Plugin() {
 
         var tick = 0
         Events.on(Trigger.update::class.java) {
-            if (tick == 60) {
+            // Skip if unitStatus event is disabled
+            if (!conf.enabledEvents["unitStatus"]!!) {
+                return@on
+            }
+
+            if (tick >= conf.unitStatusInterval) {
+                // Create a status update with a sample of units instead of all units
                 val current = mapper.createObjectNode()
                 current.put("type", "current_status")
                 current.put("time", System.currentTimeMillis())
 
                 val list = mapper.createArrayNode()
 
-                Groups.unit.forEach {
+                // Calculate how many units to sample based on sampling rate
+                val unitCount = Groups.unit.size()
+                val sampleSize = (unitCount * conf.samplingRate).toInt().coerceAtLeast(1)
+
+                // Apply sampling if needed
+                var processedCount = 0
+                Groups.unit.forEach { unit ->
+                    // Skip some units based on sampling rate
+                    if (conf.samplingRate < 1.0f && Math.random() > conf.samplingRate) {
+                        return@forEach
+                    }
+
+                    // Limit the number of units processed to the sample size
+                    if (processedCount >= sampleSize) {
+                        return@forEach
+                    }
+
                     val currentStatus = mapper.createObjectNode()
-                    currentStatus.put("unit_name", it.type.name)
-                    currentStatus.put("team", it.team.name)
-                    currentStatus.put("unit_x", it.x)
-                    currentStatus.put("unit_y", it.y)
-                    currentStatus.put("aim_x", it.aimX)
-                    currentStatus.put("aim_y", it.aimY)
-                    currentStatus.put("health", it.health())
-                    currentStatus.put("shield", it.shield())
+                    currentStatus.put("unit_name", unit.type().name)
+                    currentStatus.put("team", unit.team().name)
+                    currentStatus.put("unit_x", unit.x)
+                    currentStatus.put("unit_y", unit.y)
+                    currentStatus.put("aim_x", unit.aimX())
+                    currentStatus.put("aim_y", unit.aimY())
+                    currentStatus.put("health", unit.health())
+                    currentStatus.put("shield", unit.shield())
                     list.add(currentStatus)
+
+                    processedCount++
                 }
 
                 current.set<ArrayNode>("units", list)
+                current.put("total_units", unitCount)
+                current.put("sampled_units", processedCount)
 
                 writeToFile(current)
                 tick = 0
