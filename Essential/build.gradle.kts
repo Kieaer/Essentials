@@ -5,19 +5,20 @@ plugins {
 }
 
 dependencies {
-    ksp(project(":ksp-processor"))
-    implementation(project(":ksp-processor"))
-
-    implementation(project(":common"))
-    implementation(libs.jfiglet)
-    implementation(libs.maven.check)
-
     compileOnly(libs.bundles.game)
     compileOnly(libs.bundles.kotlinxEcosystem)
     compileOnly(libs.bundles.jackson)
     compileOnly(libs.bundles.exposed)
     compileOnly(libs.kaml)
     compileOnly(libs.jbcrypt)
+
+    ksp(project(":ksp-processor"))
+    implementation(project(":ksp-processor"))
+
+    implementation(project(":common"))
+    implementation(libs.jfiglet)
+    implementation(libs.maven.check)
+    implementation(libs.sqlite)
 
     testImplementation(project(":common"))
     testImplementation(kotlin("test"))

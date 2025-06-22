@@ -8,8 +8,8 @@ import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.insertReturning
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.mindrot.jbcrypt.BCrypt
 
@@ -161,14 +161,26 @@ suspend fun createPlayerData(name: String, uuid: String, accountID: String, acco
 }
 
 /** 플레이어 데이터 읽기 */
-suspend fun getPlayerData(player: Playerc): PlayerData? {
-    return getPlayerData(player.uuid())
-}
-
 suspend fun getPlayerData(uuid: String): PlayerData? {
     return newSuspendedTransaction {
         PlayerTable.select(PlayerTable.columns)
             .where { PlayerTable.uuid eq uuid }
+            .mapToPlayerDataList()
+    }.firstOrNull()
+}
+
+// 외부 플러그인에서 사용
+suspend fun getAllPlayerData(): List<PlayerData> {
+    return newSuspendedTransaction {
+        PlayerTable.selectAll().map { row -> row.toPlayerData() }
+    }
+}
+
+// 외부 플러그인에서 사용
+suspend fun getPlayerDataByDiscord(discordID: String): PlayerData? {
+    return newSuspendedTransaction {
+        PlayerTable.select(PlayerTable.columns)
+            .where { PlayerTable.discordID eq discordID }
             .mapToPlayerDataList()
     }.firstOrNull()
 }
