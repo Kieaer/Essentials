@@ -7,6 +7,7 @@ import arc.util.Log
 import essential.bundle.Bundle
 import essential.config.Config
 import essential.core.LogType
+import essential.core.Main.Companion.scope
 import essential.core.Trigger
 import essential.core.log
 import essential.database.data.PlayerData
@@ -18,6 +19,7 @@ import essential.players
 import essential.protect.Main.Companion.conf
 import essential.protect.Main.Companion.pluginData
 import essential.util.findPlayerData
+import essential.util.startInfiniteScheduler
 import kotlinx.coroutines.runBlocking
 import ksp.event.Event
 import mindustry.Vars
@@ -84,10 +86,10 @@ fun worldLoadEnd(event: EventType.WorldLoadEndEvent) {
 }
 
 @Event
-fun update() {
-    Events.run(EventType.Trigger.update) {
-        if (conf.pvp.peace.enabled) {
-            if (pvpCount != 0) {
+fun runEverySecond() {
+    scope.startInfiniteScheduler {
+        if (conf.pvp.peace.enabled && Vars.state.rules.pvp && Vars.state.isPlaying) {
+            if (pvpCount > 0) {
                 pvpCount--
             } else {
                 Vars.state.rules.blockDamageMultiplier = originalBlockMultiplier
@@ -97,16 +99,20 @@ fun update() {
                 }
             }
         }
-        if (conf.pvp.border.enabled) {
-            Groups.unit.forEach { unit ->
-                if (unit.x < 0 || unit.y < 0 || unit.x > (Vars.world.width() * 8) || unit.y > (Vars.world.height() * 8)) {
-                    unit.kill()
-                }
+    }
+}
+
+@Event
+fun update() {
+    if (conf.pvp.border.enabled) {
+        Groups.unit.forEach { unit ->
+            if (unit.x < 0 || unit.y < 0 || unit.x > (Vars.world.width() * 8) || unit.y > (Vars.world.height() * 8)) {
+                unit.kill()
             }
         }
-        if (conf.protect.unbreakableCore) {
-            Vars.state.teams.active.forEach { t -> t.cores.forEach { c -> c.health(1.0E8f) } }
-        }
+    }
+    if (conf.protect.unbreakableCore) {
+        Vars.state.teams.active.forEach { t -> t.cores.forEach { c -> c.health(1.0E8f) } }
     }
 }
 
