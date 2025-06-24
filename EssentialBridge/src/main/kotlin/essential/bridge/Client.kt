@@ -4,6 +4,7 @@ import arc.util.Log
 import arc.util.Timer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mindustry.gen.Call
@@ -58,12 +59,12 @@ class Client : Runnable {
                 channel = AsynchronousSocketChannel.open()
 
                 // Connect to the server
-                val port = Main.conf.port ?: return@launch
+                val port = Main.conf.port
                 val address = java.net.InetSocketAddress(Main.conf.address, port)
 
-                withContext(Dispatchers.IO) {
+                scope.async {
                     channel?.connect(address)?.get()
-                }
+                }.await()
 
                 isConnected.set(true)
                 reconnectAttempts = 0
@@ -107,9 +108,9 @@ class Client : Runnable {
                     readBuffer.clear()
 
                     // Read data asynchronously
-                    val bytesRead = withContext(Dispatchers.IO) {
+                    val bytesRead = scope.async {
                         channel?.read(readBuffer)?.get() ?: -1
-                    }
+                    }.await()
 
                     if (bytesRead <= 0) {
                         // Connection closed
@@ -161,7 +162,7 @@ class Client : Runnable {
                 val flushInterval = 100L // Flush every 100ms instead of every message
 
                 while (isConnected.get()) {
-                    if (!messageQueue.isEmpty()) {
+                    if (messageQueue.isNotEmpty()) {
                         val currentTime = System.currentTimeMillis()
                         val message = messageQueue.poll()
 
@@ -171,11 +172,11 @@ class Client : Runnable {
                             writeBuffer.flip()
 
                             // Write data asynchronously
-                            withContext(Dispatchers.IO) {
+                            scope.async {
                                 while (writeBuffer.hasRemaining()) {
                                     channel?.write(writeBuffer)?.get()
                                 }
-                            }
+                            }.await()
 
                             // Only flush if it's been long enough since the last flush
                             if (currentTime - lastFlushTime > flushInterval) {

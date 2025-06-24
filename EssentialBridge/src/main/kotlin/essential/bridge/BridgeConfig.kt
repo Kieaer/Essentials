@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class BridgeConfig(
     var address: String = "127.0.0.1",
-    var port: Int = 42184,
+    var port: Int = (10000..65535).random(),
     var sharing: SharingConfig = SharingConfig()
 )
 
