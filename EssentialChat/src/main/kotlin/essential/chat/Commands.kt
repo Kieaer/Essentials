@@ -17,7 +17,7 @@ class Commands {
         if (playerData.chatMuted) return
 
         val conf = Main.Companion.conf
-        if (conf.blacklist?.enabled == true) {
+        if (conf.blacklist.enabled) {
             val file: Array<String> = Core.settings.dataDirectory.child("chat_blacklist.txt").readString("UTF-8").split("\r\n").toTypedArray()
             for (s in file) {
                 val message = arg[0]

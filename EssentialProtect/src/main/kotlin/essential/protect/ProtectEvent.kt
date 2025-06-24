@@ -7,6 +7,7 @@ import arc.util.Log
 import essential.bundle.Bundle
 import essential.config.Config
 import essential.core.LogType
+import essential.core.Main.Companion.scope
 import essential.core.Trigger
 import essential.core.log
 import essential.database.data.PlayerData
@@ -18,6 +19,8 @@ import essential.players
 import essential.protect.Main.Companion.conf
 import essential.protect.Main.Companion.pluginData
 import essential.util.findPlayerData
+import essential.util.startInfiniteScheduler
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.runBlocking
 import ksp.event.Event
 import mindustry.Vars
@@ -50,18 +53,18 @@ fun worldLoadEnd(event: EventType.WorldLoadEndEvent) {
         val field = inner.getDeclaredField("server")
         field.setAccessible(true)
 
-        val serverInstance = field.get(Vars.platform.net)
+        val serverInstance = field[Vars.platform.net]
 
-        val innerClass: Class<*> = field.get(Vars.platform.net).javaClass
+        val innerClass: Class<*> = field[Vars.platform.net].javaClass
         val method = innerClass.getMethod("setDiscoveryHandler", ServerDiscoveryHandler::class.java)
 
-        val handler = ServerDiscoveryHandler { inetAddress, reponseHandler ->
+        val handler = ServerDiscoveryHandler { inetAddress, responseHandler ->
             if (!Vars.netServer.admins.isIPBanned(inetAddress.hostAddress)) {
                 val buffer: java.nio.ByteBuffer = NetworkIO.writeServerData()
                 buffer.position(0)
-                reponseHandler.respond(buffer)
+                responseHandler.respond(buffer)
             } else {
-                reponseHandler.respond(java.nio.ByteBuffer.allocate(0))
+                responseHandler.respond(java.nio.ByteBuffer.allocate(0))
             }
         }
 
@@ -72,7 +75,7 @@ fun worldLoadEnd(event: EventType.WorldLoadEndEvent) {
 
     val filter: Server.ServerConnectFilter =
         Server.ServerConnectFilter { s -> !Vars.netServer.admins.bannedIPs.contains(s) }
-    Vars.platform.net.setConnectFilter(filter)
+    Vars.platform.net.connectFilter = filter
 
     if (conf.pvp.peace.enabled) {
         originalBlockMultiplier = Vars.state.rules.blockDamageMultiplier
@@ -84,12 +87,12 @@ fun worldLoadEnd(event: EventType.WorldLoadEndEvent) {
 }
 
 @Event
-fun update() {
-    Events.run(EventType.Trigger.update) {
-        if (conf.pvp.peace.enabled) {
-            if (pvpCount != 0) {
+fun runEverySecond() {
+    scope.startInfiniteScheduler {
+        if (conf.pvp.peace.enabled && Vars.state.rules.pvp && Vars.state.isPlaying) {
+            if (pvpCount > 0) {
                 pvpCount--
-            } else {
+            } else if (pvpCount == 0) {
                 Vars.state.rules.blockDamageMultiplier = originalBlockMultiplier
                 Vars.state.rules.unitDamageMultiplier = originalUnitMultiplier
                 players.forEach {
@@ -97,16 +100,20 @@ fun update() {
                 }
             }
         }
-        if (conf.pvp.border.enabled) {
-            Groups.unit.forEach { unit ->
-                if (unit.x < 0 || unit.y < 0 || unit.x > (Vars.world.width() * 8) || unit.y > (Vars.world.height() * 8)) {
-                    unit.kill()
-                }
+    }
+}
+
+@Event
+fun update() {
+    if (conf.pvp.border.enabled) {
+        Groups.unit.forEach { unit ->
+            if (unit.x < 0 || unit.y < 0 || unit.x > (Vars.world.width() * 8) || unit.y > (Vars.world.height() * 8)) {
+                unit.kill()
             }
         }
-        if (conf.protect.unbreakableCore) {
-            Vars.state.teams.active.forEach { t -> t.cores.forEach { c -> c.health(1.0E8f) } }
-        }
+    }
+    if (conf.protect.unbreakableCore) {
+        Vars.state.teams.active.forEach { t -> t.cores.forEach { c -> c.health(1.0E8f) } }
     }
 }
 
