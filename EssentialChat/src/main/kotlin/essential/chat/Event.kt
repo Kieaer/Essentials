@@ -117,7 +117,7 @@ fun serverLoaded(event: EventType.ServerLoadEvent) {
 fun configFileModified(it: CustomEvents.ConfigFileModified) {
     if (it.kind == java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY) {
         if (it.paths == "config_chat.yaml") {
-            val config = Config.load("config_discord.yaml", ChatConfig.serializer(), true, ChatConfig())
+            val config = Config.load("config_discord.yaml", ChatConfig.serializer(), ChatConfig())
             require(config != null) {
                 Log.err(Bundle()["event.plugin.load.failed"])
                 return

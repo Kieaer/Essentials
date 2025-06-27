@@ -18,7 +18,7 @@ class Main : Plugin() {
         Log.debug(bundle["event.plugin.starting"])
 
         // 플러그인 설정
-        val config = Config.load("config_bridge.yaml", BridgeConfig.serializer(), true, BridgeConfig())
+        val config = Config.load("config_bridge.yaml", BridgeConfig.serializer(), BridgeConfig())
         require(config != null) {
             Log.err(bundle["event.plugin.load.failed"])
             return

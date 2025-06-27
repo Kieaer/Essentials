@@ -12,7 +12,7 @@ class Main : Plugin() {
 
         Log.debug(bundle["event.plugin.starting"])
 
-        val config = essential.config.Config.load("config_web.yaml", WebConfig.serializer(), true, WebConfig())
+        val config = essential.config.Config.load("config_web.yaml", WebConfig.serializer(), WebConfig())
         require(config != null) {
             Log.err(bundle["event.plugin.load.failed"])
             return

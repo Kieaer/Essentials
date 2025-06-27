@@ -4,6 +4,6 @@
   "author": "Gureumi",
   "main": "essential.achievements.Main",
   "description": "Add achievements feature.",
-  "version": "v20",
+  "version": "v21",
   "dependencies": [ "essential" ]
 }

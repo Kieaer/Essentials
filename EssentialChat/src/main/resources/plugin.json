@@ -4,6 +4,6 @@
   "author": "Gureumi",
   "main": "essential.chat.Main",
   "description": "Add chat feature in Essential plugin.",
-  "version": "v20",
+  "version": "v21",
   "dependencies": [ "essential" ]
 }
