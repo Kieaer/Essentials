@@ -15,6 +15,11 @@ dependencyResolutionManagement {
 
     repositories {
         mavenCentral()
+        maven {
+            url = uri("http://192.168.0.15:8081/repository/maven-snapshots/")
+            isAllowInsecureProtocol = true
+        }
+
         maven { url = uri("https://jitpack.io") }
     }
 }

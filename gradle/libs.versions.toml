@@ -5,7 +5,7 @@ kotlinxCoroutines = "1.8.1"
 ksp = "2.1.21-2.0.1"
 kotlinpoet = "2.2.0"
 
-game = "v149"
+game = "SNAPSHOT"
 kaml = "0.78.0"
 exposed = "0.61.0"
 hjson = "3.0.0-C11"
@@ -32,8 +32,8 @@ kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", versi
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 
 arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "game" }
-core = { module = "com.github.Anuken.mindustryjitpack:core", version.ref = "game" }
-server = { module = "com.github.Anuken.mindustryjitpack:server", version.ref = "game" }
+core = { module = "com.github.Anuken.Mindustry:core", version.ref = "game" }
+server = { module = "com.github.Anuken.Mindustry:server", version.ref = "game" }
 headless = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "game" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
