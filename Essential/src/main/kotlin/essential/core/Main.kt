@@ -33,7 +33,6 @@ import mindustry.game.Team
 import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
-import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertReturning
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
@@ -54,7 +53,7 @@ class Main : Plugin() {
         Log.debug(bundle["event.plugin.starting"])
 
         // 플러그인 설정 불러오기
-        val config = Config.load("config.yaml", CoreConfig.serializer(), true, CoreConfig())
+        val config = Config.load("config.yaml", CoreConfig.serializer(), CoreConfig())
         require(config != null) {
             Log.err(bundle["event.plugin.load.failed"])
             return

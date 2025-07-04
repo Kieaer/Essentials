@@ -20,7 +20,6 @@ import essential.protect.Main.Companion.conf
 import essential.protect.Main.Companion.pluginData
 import essential.util.findPlayerData
 import essential.util.startInfiniteScheduler
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.runBlocking
 import ksp.event.Event
 import mindustry.Vars
@@ -261,7 +260,7 @@ fun connectPacket(event: EventType.ConnectPacketEvent) {
 fun configFileModified(e: CustomEvents.ConfigFileModified) {
     if (e.kind === java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY) {
         if (e.paths == "config_protect.yaml") {
-            val config = Config.load("config_protect.yaml", ProtectConfig.serializer(), true, ProtectConfig())
+            val config = Config.load("config_protect.yaml", ProtectConfig.serializer(), ProtectConfig())
             require(config != null) {
                 Log.err(Bundle()["config.invalid.path"])
                 return

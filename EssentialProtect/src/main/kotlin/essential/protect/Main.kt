@@ -1,21 +1,17 @@
 package essential.protect
 
 import arc.util.CommandHandler
-import arc.util.Http
 import arc.util.Log
 import essential.bundle.Bundle
 import essential.config.Config
-import essential.core.Main
 import essential.database.data.PlayerData
 import essential.permission.Permission
 import essential.protect.generated.registerGeneratedClientCommands
 import essential.protect.generated.registerGeneratedEventHandlers
-import essential.rootPath
 import essential.util.findPlayerData
 import mindustry.Vars.netServer
 import mindustry.mod.Plugin
 import java.net.URI
-import java.net.URL
 import java.util.Objects.requireNonNull
 
 class Main : Plugin() {
@@ -24,7 +20,7 @@ class Main : Plugin() {
 
         Log.debug(bundle["event.plugin.starting"])
 
-        val config = Config.load("config_protect.yaml", ProtectConfig.serializer(), true, ProtectConfig())
+        val config = Config.load("config_protect.yaml", ProtectConfig.serializer(), ProtectConfig())
         require(config != null) {
             Log.err(bundle["event.plugin.load.failed"])
             return

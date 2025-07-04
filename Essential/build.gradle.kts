@@ -2,25 +2,24 @@ plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.kotlinPluginSerialization)
     alias(libs.plugins.ksp)
+    `java-library`
 }
 
 dependencies {
-    compileOnly(libs.bundles.game)
-    compileOnly(libs.bundles.kotlinxEcosystem)
-    compileOnly(libs.bundles.jackson)
-    compileOnly(libs.bundles.exposed)
-    compileOnly(libs.kaml)
-    compileOnly(libs.jbcrypt)
+    compileOnlyApi(libs.bundles.game)
 
     ksp(project(":ksp-processor"))
-    implementation(project(":ksp-processor"))
+    api(project(":ksp-processor"))
+    api(libs.bundles.kotlinxEcosystem)
+    api(libs.bundles.jackson)
+    api(libs.bundles.exposed)
+    api(libs.jfiglet)
+    api(libs.maven.check)
+    api(libs.sqlite)
+    api(libs.hikariCP)
+    api(libs.kaml)
+    api(libs.jbcrypt)
 
-    implementation(project(":common"))
-    implementation(libs.jfiglet)
-    implementation(libs.maven.check)
-    implementation(libs.sqlite)
-
-    testImplementation(project(":common"))
     testImplementation(kotlin("test"))
     testImplementation(libs.bundles.game.test)
     testImplementation(libs.bundles.kotlinxEcosystem)

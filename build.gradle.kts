@@ -12,9 +12,9 @@ subprojects {
     apply(plugin = "com.gradleup.shadow")
 
     tasks.shadowJar {
-        from(sourceSets.main.get().output) {
-            exclude("**/mindustry/**")
-        }
+        exclude("arc/**")
+        exclude("mindustry/**")
+        exclude("server/**")
 
         from(project.configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
             exclude("META-INF/*.SF")
@@ -25,10 +25,6 @@ subprojects {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from(rootDir) {
             include("plugin.json")
-        }
-
-        minimize {
-            exclude(dependency("org.jetbrains.exposed:.*:.*"))
         }
     }
 }

@@ -19,20 +19,18 @@ object Config {
      *
      * @param name config 폴더에서의 yaml 파일 이름
      * @param serializer 직렬화가 가능한 설정 class
-     * @param createIfNotExists 파일이 없을 경우 생성 유무
      * @param defaultConfig 파일이 없을 경우 기본 설정
      * @return 설정 파일이 불러왔을 경우 해당 설정을 반환하고, 그렇지 않을 경우 null 을 반환
      */
     inline fun <reified T> load(
         name: String,
         serializer: KSerializer<T>,
-        createIfNotExists: Boolean = false,
         defaultConfig: T? = null
     ): T? {
         val file = rootPath.child("/config/$name.yaml").file()
 
         if (!file.exists()) {
-            if (createIfNotExists && defaultConfig != null) {
+            if (defaultConfig != null) {
                 try {
                     rootPath.child("config").mkdirs()
 

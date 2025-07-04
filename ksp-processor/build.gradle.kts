@@ -4,10 +4,10 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.ksp.api)
-    implementation(libs.kotlinpoet)
-    implementation(libs.kotlinpoet.ksp)
     implementation(libs.bundles.game)
+    compileOnly(libs.ksp.api)
+    compileOnly(libs.kotlinpoet)
+    implementation(libs.kotlinpoet.ksp)
 }
 
 // This is needed to make the annotation available to other modules

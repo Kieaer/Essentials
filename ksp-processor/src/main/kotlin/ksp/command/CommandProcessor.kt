@@ -1,10 +1,12 @@
 package ksp.command
 
+import arc.util.CommandHandler
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ksp.writeTo
+import mindustry.gen.Playerc
 
 class CommandProcessor(
     private val codeGenerator: CodeGenerator,
@@ -227,7 +229,7 @@ class CommandProcessor(
 
         return FunSpec.builder("registerGeneratedClientCommands")
             .addModifiers(KModifier.INTERNAL)
-            .addParameter("handler", ClassName("arc.util", "CommandHandler"))
+            .addParameter("handler", CommandHandler::class)
             .addCode(
                 """
                 val commands = Commands()

@@ -19,7 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-include("common")
 include("Essential")
 include("EssentialChat")
 include("EssentialProtect")
