@@ -2,21 +2,19 @@ package essential.achievements
 
 import arc.util.Strings
 import essential.database.data.PlayerData
-import ksp.command.ClientCommand
-import ksp.command.ServerCommand
 import essential.permission.Permission
 import essential.players
-import java.util.Locale
-import java.util.MissingResourceException
-import java.util.ResourceBundle
+import ksp.command.ClientCommand
+import ksp.command.ServerCommand
+import java.util.*
 import kotlin.math.abs
 
 class Commands {
     @ClientCommand(name = "achievements", parameter = "[page]", description = "Show your achievements")
     fun achievements(playerData: PlayerData, args: Array<String>) {
-        val temp: MutableList<String?> = ArrayList<String?>()
+        val temp: MutableList<String?> = arrayListOf()
         val bundle = try {
-            ResourceBundle.getBundle("bundle", Locale.of(playerData.player.locale().split("_")[0]))
+            ResourceBundle.getBundle("bundle", Locale(playerData.player.locale().split("_")[0]))
         } catch (e: MissingResourceException) {
             ResourceBundle.getBundle("bundle", Locale.ENGLISH)
         }

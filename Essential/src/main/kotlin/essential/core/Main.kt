@@ -8,9 +8,7 @@ import arc.util.Http
 import arc.util.Log
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
-import essential.DATABASE_VERSION
-import essential.PLUGIN_VERSION
-import essential.bundle
+import essential.*
 import essential.config.Config
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedEventHandlers
@@ -22,8 +20,6 @@ import essential.database.data.toPluginData
 import essential.database.databaseInit
 import essential.database.table.PluginTable
 import essential.permission.Permission
-import essential.players
-import essential.rootPath
 import essential.service.fileWatchService
 import kotlinx.coroutines.*
 import mindustry.Vars
@@ -61,7 +57,7 @@ class Main : Plugin() {
 
         conf = config
 
-        bundle.locale = Locale.of(conf.plugin.lang)
+        bundle.locale = Locale(conf.plugin.lang)
 
         // 업데이트 확인
         checkUpdate()
