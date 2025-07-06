@@ -22,6 +22,8 @@ class Bundle {
     }
 
     operator fun get(key: String): String {
+        if (!resource.containsKey(key)) return key
+
         return if (prefix.isEmpty()) {
             MessageFormat.format(resource.getString(key))
         } else {
@@ -30,6 +32,8 @@ class Bundle {
     }
 
     operator fun get(key: String, vararg parameter: Any): String {
+        if (!resource.containsKey(key)) return key
+
         return if (prefix.isEmpty()) {
             MessageFormat.format(resource.getString(key), *parameter)
         } else {

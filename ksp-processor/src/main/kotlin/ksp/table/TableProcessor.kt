@@ -1,9 +1,11 @@
 package ksp.table
 
 import com.google.devtools.ksp.processing.*
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.Modifier
 import com.google.devtools.ksp.validate
-import java.io.OutputStream
 
 class TableProcessor(
     private val codeGenerator: CodeGenerator,
@@ -88,6 +90,7 @@ class TableProcessor(
         sb.append("import org.jetbrains.exposed.sql.*\n")
         sb.append("import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq\n")
         sb.append("import org.jetbrains.exposed.sql.transactions.transaction\n")
+        sb.append("import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction\n")
         sb.append("import essential.database.table.$tableClassName\n")
         sb.append("import $packageName.$className\n\n")
 
@@ -161,9 +164,9 @@ class TableProcessor(
         sb.append(" * Updates a database record using a $className instance.\n")
         sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
         sb.append(" */\n")
-        sb.append("fun $className.update(): Boolean {\n")
+        sb.append("suspend fun $className.update(): Boolean {\n")
         sb.append("    val id = this.id\n")
-        sb.append("    return transaction {\n")
+        sb.append("    return newSuspendedTransaction {\n")
         sb.append("        $tableClassName.update({ $tableClassName.id eq id }) {\n")
 
         // Skip the id field as it's the primary key and shouldn't be updated

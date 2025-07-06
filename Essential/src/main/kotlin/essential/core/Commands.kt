@@ -35,6 +35,7 @@ import essential.util.findPlayersByName
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format
@@ -59,7 +60,6 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
 import java.util.MissingResourceException
@@ -149,22 +149,22 @@ internal class Commands {
     fun changeName(playerData: PlayerData, arg: Array<out String>) {
         scope.launch {
             suspend fun change(data: PlayerData) {
-                newSuspendedTransaction {
-                    val exists = PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq arg[1] }.firstOrNull()
-                    if (exists != null) {
-                        data.err("command.changeName.exists", arg[1])
+                val exists = runBlocking {
+                    PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq arg[1] }.firstOrNull()
+                }
+                if (exists != null) {
+                    data.err("command.changeName.exists", arg[1])
+                } else {
+                    Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
+                    if (data.uuid == playerData.uuid) {
+                        playerData.send("command.changeName.apply")
                     } else {
-                        Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
-                        if (data.uuid == playerData.uuid) {
-                            playerData.send("command.changeName.apply")
-                        } else {
-                            data.send("command.changeName.apply.other", data.name, arg[1])
-                        }
-                        data.name = arg[1]
-                        data.player.name(arg[1])
-                        data.update()
-                        data.send("command.changeName.success", data.name)
+                        data.send("command.changeName.apply.other", data.name, arg[1])
                     }
+                    data.name = arg[1]
+                    data.player.name(arg[1])
+                    data.update()
+                    data.send("command.changeName.success", data.name)
                 }
             }
 

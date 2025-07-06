@@ -100,7 +100,7 @@ data class PlayerData(
 
     var lastReceivedMessage: String = ""
         set(value) {
-            Log.info("${player.name()}: $value")
+            Log.debug("Plugin send message to ${player.name()}: $value")
             field = value
         }
 

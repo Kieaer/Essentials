@@ -23,7 +23,6 @@ import essential.permission.Permission
 import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.toLocalDateTime
 import ksp.event.Event
@@ -376,26 +375,29 @@ internal fun serverLoad(event: ServerLoadEvent) {
         }
     })
 
-    if (!Vars.mods.list().contains { mod -> mod.name == "essential-protect" }) {
-        Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
-            it.player.admin(false)
-            val data = runBlocking { getPlayerData(it.player.uuid()) }
+    Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
+        it.player.admin(false)
+
+        scope.launch {
+            val data = getPlayerData(it.player.uuid())
 
             val trigger = Trigger()
             if (data == null) {
                 if (transaction {
-                    PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()
+                        PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()
                     }) {
-                    val data = runBlocking { createPlayerData(it.player) }
+                    val data = createPlayerData(it.player)
+                    data.player = it.player
                     trigger.loadPlayer(data)
                 } else {
                     Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
                 }
             } else {
+                data.player = it.player
                 trigger.loadPlayer(data)
             }
-        }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
-    }
+        }
+    }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
 }
 
 @Event
@@ -422,6 +424,7 @@ internal fun gameOver(event: GameOverEvent) {
         val mapName = currentMap.plainName()
 
         for (data in players) {
+
             // Only show the menu if the player hasn't already voted
             if (!mapRatings.containsKey(data.uuid)) {
                 val rateMapMenu = Menus.registerMenu { player, select ->
@@ -656,6 +659,7 @@ internal fun playerLeave(event: PlayerLeave) {
         data.lastPlayedWorldMode = Vars.state.rules.modeName
         data.lastLogoutDate = Clock.System.now().toLocalDateTime(systemTimezone)
         data.isConnected = false
+        scope.launch { data.update() }
 
         offlinePlayers.add(data)
 

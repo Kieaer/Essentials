@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.kotlinPluginSerialization)
     alias(libs.plugins.ksp)
+    java
 }
 
 dependencies {

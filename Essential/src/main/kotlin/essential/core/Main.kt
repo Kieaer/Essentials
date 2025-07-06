@@ -10,8 +10,8 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import essential.*
 import essential.config.Config
+import essential.core.generated.EventHandlersGenerated
 import essential.core.generated.registerGeneratedClientCommands
-import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
 import essential.database.data.DisplayData
 import essential.database.data.PluginData
@@ -98,7 +98,7 @@ class Main : Plugin() {
         }
 
         // 이벤트 등록
-        registerGeneratedEventHandlers()
+        EventHandlersGenerated.registerGeneratedEventHandlers()
 
         // 스레드 등록
         val trigger = Trigger()

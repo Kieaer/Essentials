@@ -464,7 +464,7 @@ class WebServer {
     }
 
     private fun hex(key: String): ByteArray {
-        val result = ByteArray(32) // Use 32 bytes (256 bits) for AES-256
+        val result = ByteArray(16) // Use 16 bytes (256 bits) for AES-256
         val keyBytes = key.toByteArray()
 
         // Copy key bytes or pad with zeros

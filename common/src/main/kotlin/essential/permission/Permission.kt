@@ -1,6 +1,7 @@
 package essential.permission
 
 import arc.files.Fi
+import arc.util.Log
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
@@ -11,7 +12,6 @@ import essential.database.data.PlayerData
 import essential.database.table.PlayerTable
 import essential.players
 import essential.rootPath
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.util.*
@@ -140,8 +140,11 @@ object Permission {
     fun check(data: PlayerData, command: String): Boolean {
         val group = main[this[data].group]
         return if (group != null) {
-            group.permission.contains(command) || group.permission.contains("all")
+            val passed = group.permission.contains(command) || group.permission.contains("all")
+            Log.debug("[Permission] ${data.name} > group: ${this[data].group} -> command: $command -> $passed")
+            passed
         } else {
+            Log.debug("[Permission] ${data.name} > group: ${this[data].group} -> command: $command -> false")
             false
         }
     }
