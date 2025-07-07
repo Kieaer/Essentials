@@ -11,6 +11,7 @@ import mindustry.gen.Playerc
 import org.jetbrains.exposed.sql.insertReturning
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.mindrot.jbcrypt.BCrypt
 
 @GenerateCode
@@ -163,8 +164,16 @@ suspend fun createPlayerData(name: String, uuid: String, accountID: String, acco
 /** 플레이어 데이터 읽기 */
 suspend fun getPlayerData(uuid: String): PlayerData? {
     return newSuspendedTransaction {
-        PlayerTable.select(PlayerTable.columns)
+        PlayerTable.selectAll()
             .where { PlayerTable.uuid eq uuid }
+            .mapToPlayerDataList()
+    }.firstOrNull()
+}
+
+fun getPlayerDataByName(name: String): PlayerData? {
+    return transaction {
+        PlayerTable.selectAll()
+            .where { PlayerTable.name eq name }
             .mapToPlayerDataList()
     }.firstOrNull()
 }
@@ -179,7 +188,7 @@ suspend fun getAllPlayerData(): List<PlayerData> {
 // 외부 플러그인에서 사용
 suspend fun getPlayerDataByDiscord(discordID: String): PlayerData? {
     return newSuspendedTransaction {
-        PlayerTable.select(PlayerTable.columns)
+        PlayerTable.selectAll()
             .where { PlayerTable.discordID eq discordID }
             .mapToPlayerDataList()
     }.firstOrNull()

@@ -3,9 +3,10 @@ package essential.database.data
 import essential.database.table.AchievementTable
 import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
-import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
 
 /**
  * Data class for player achievements
@@ -21,8 +22,8 @@ data class AchievementData(
 /**
  * Check if a player has completed an achievement
  */
-suspend fun hasAchievement(playerData: PlayerData, achievementName: String): Boolean {
-    return newSuspendedTransaction {
+fun hasAchievement(playerData: PlayerData, achievementName: String): Boolean {
+    return transaction {
         val query = AchievementTable.select(AchievementTable.id)
             .where { 
                 (AchievementTable.playerId eq playerData.id) and
@@ -36,8 +37,8 @@ suspend fun hasAchievement(playerData: PlayerData, achievementName: String): Boo
 /**
  * Set an achievement as completed for a player
  */
-suspend fun setAchievement(playerData: PlayerData, achievementName: String) {
-    newSuspendedTransaction {
+fun setAchievement(playerData: PlayerData, achievementName: String) {
+    transaction {
         // Check if the achievement is already completed
         val query = AchievementTable.select(AchievementTable.id)
             .where { 

@@ -13,6 +13,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
+import static essential.database.data.AchievementDataKt.hasAchievement;
+import static essential.database.data.AchievementDataKt.setAchievement;
+
 public enum Achievement {
     // int array values are current value and target value
     CrawlerBlockDestroyer {
@@ -780,29 +783,13 @@ public enum Achievement {
             return false;
         }
 
-        // First check if the achievement is already completed in status
         String achievementName = this.toString().toLowerCase(Locale.getDefault());
-        boolean isCompletedInStatus = data.getStatus().containsKey("achievement." + achievementName);
 
-        // If it's already marked as completed in status, return true
-        if (isCompletedInStatus) {
-            return true;
+        if (hasAchievement(data, achievementName)) {
+            return false;
+        } else {
+            return current(data) >= value();
         }
-
-        // Otherwise, check if the current value meets the target
-        return current(data) >= value();
-    }
-
-    /**
-     * Check if the achievement is completed in the database
-     * This method is a Java equivalent of the Kotlin suspending function
-     * It returns false immediately and the actual check is done asynchronously
-     */
-    public boolean isCompletedInDatabase(PlayerData data) {
-        // In Java, we can't directly use Kotlin's suspend functions
-        // This is a simplified version that always returns false
-        // The actual implementation would need to use a callback or CompletableFuture
-        return false;
     }
 
     public void set(PlayerData data) {
@@ -815,10 +802,7 @@ public enum Achievement {
                 LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             );
 
-            // Also store in database for permanent storage
-            // In Java, we can't directly use Kotlin's coroutines
-            // We would need to use a different approach to store in the database
-            // For now, we'll just fire the event
+            setAchievement(data, achievementName);
 
             Events.fire(new CustomEvents.AchievementClear(this, data));
         }

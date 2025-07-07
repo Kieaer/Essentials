@@ -165,14 +165,14 @@ class TableProcessor(
         sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
         sb.append(" */\n")
         sb.append("suspend fun $className.update(): Boolean {\n")
-        sb.append("    val id = this.id\n")
+        sb.append("    val data = this\n")
         sb.append("    return newSuspendedTransaction {\n")
-        sb.append("        $tableClassName.update({ $tableClassName.id eq id }) {\n")
+        sb.append("        $tableClassName.update({ $tableClassName.id eq data.id }) {\n")
 
         // Skip the id field as it's the primary key and shouldn't be updated
         properties.filter { it.simpleName.asString() != "id" }.forEach { property ->
             val propertyName = property.simpleName.asString()
-            sb.append("            it[$tableClassName.$propertyName] = this.$propertyName\n")
+            sb.append("            it[$tableClassName.$propertyName] = data.$propertyName\n")
         }
 
         sb.append("        } > 0\n")

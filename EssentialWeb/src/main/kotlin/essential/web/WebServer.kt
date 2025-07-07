@@ -4,7 +4,7 @@ import arc.Core
 import arc.Events
 import arc.files.Fi
 import arc.util.Log
-import essential.database.data.getPlayerData
+import essential.database.data.getPlayerDataByName
 import essential.web.Main.Companion.bundle
 import essential.web.Main.Companion.conf
 import io.ktor.http.*
@@ -34,6 +34,7 @@ import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.io.SaveIO
+import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.io.File
@@ -83,6 +84,13 @@ class WebServer {
         if (!uploadDir.exists()) {
             uploadDir.mkdirs()
         }
+
+        Database.connect(HikariDataSource(HikariConfig().apply {
+            this.jdbcUrl = jdbcUrl
+            username = user
+            password = pass
+            maximumPoolSize = 2
+        }))
 
         server = embeddedServer(Netty, conf.port) {
             // Install necessary plugins
@@ -283,7 +291,7 @@ class WebServer {
 
     private suspend fun handleLogin(call: ApplicationCall, request: LoginRequest) {
         try {
-            val playerData = getPlayerData(request.username)
+            val playerData = getPlayerDataByName(request.username)
 
             if (playerData == null) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid username or password")

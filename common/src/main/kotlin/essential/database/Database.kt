@@ -6,6 +6,7 @@ import com.zaxxer.hikari.HikariDataSource
 import essential.DATABASE_VERSION
 import essential.bundle
 import essential.database.data.getPluginData
+import essential.database.table.AchievementTable
 import essential.database.table.PlayerBannedTable
 import essential.database.table.PlayerTable
 import essential.database.table.PluginTable
@@ -39,7 +40,7 @@ fun databaseInit(jdbcUrl: String, user: String, pass: String) {
     Database.connect(datasource)
 
     transaction {
-        SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable)
+        SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable, AchievementTable)
     }
 
     upgradeDatabaseBlocking()
