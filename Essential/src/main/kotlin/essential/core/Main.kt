@@ -37,7 +37,6 @@ class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
         internal lateinit var conf: CoreConfig
-        lateinit var pluginData: PluginData
 
         val scope = CoroutineScope(Dispatchers.IO)
     }

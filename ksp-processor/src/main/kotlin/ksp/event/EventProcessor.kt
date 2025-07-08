@@ -79,7 +79,7 @@ class EventProcessor(
         val fileSpec = FileSpec.builder(packageName, "EventHandlersGenerated")
             .addImport("arc.Events", "")
             .addImport("arc.func", "Cons")
-            .addImport("essential.core", "eventListeners")
+            .addImport("essential", "eventListeners")
             .addImport("mindustry.game.EventType", "Trigger")
             .addFunction(generateRegisterEventHandlersFunction(functions))
             .build()

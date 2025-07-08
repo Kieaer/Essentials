@@ -14,6 +14,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 @GenerateCode
+@Serializable
 data class PluginData(
     val id: UInt,
     var pluginVersion: String,

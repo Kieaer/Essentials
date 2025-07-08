@@ -2,8 +2,9 @@ package essential.bridge
 
 import arc.util.Log
 import arc.util.serialization.Json
-import essential.core.Main.Companion.scope
 import essential.rootPath
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -13,12 +14,14 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.time.LocalDateTime
+import java.util.concurrent.Executors
 import kotlin.coroutines.coroutineContext
 
 class Server : Runnable {
     private var server: ServerSocket? = null
     var lastSentMessage: String = ""
     var clients = ArrayList<Socket>()
+    val executor = Executors.newCachedThreadPool()
 
     override fun run() {
         try {
@@ -29,7 +32,8 @@ class Server : Runnable {
                     Main.Companion.bundle["network.server.connected", socket.getInetAddress().hostAddress]
                 )
                 clients.add(socket)
-                scope.launch {
+
+                executor.execute {
                     start(socket)
                 }
             }
@@ -72,12 +76,12 @@ class Server : Runnable {
         }
     }
 
-    suspend fun start(socket: Socket) {
+    fun start(socket: Socket) {
         try {
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
             var isAlive = true
 
-            while (isAlive && coroutineContext.isActive) {
+            while (isAlive) {
                 val d = reader.readLine()
                 if (d == null) {
                     println("reader data received null")

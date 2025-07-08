@@ -8,5 +8,5 @@ dependencies {
     ksp(project(":ksp-processor"))
     implementation(libs.lingua)
 
-    compileOnly(project(":Essential"))
+    implementation(project(":common"))
 }

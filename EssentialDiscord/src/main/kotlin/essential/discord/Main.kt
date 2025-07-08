@@ -7,6 +7,11 @@ import essential.config.Config
 import essential.discord.generated.registerGeneratedClientCommands
 
 class Main : mindustry.mod.Plugin() {
+    companion object {
+        internal var bundle: Bundle = Bundle()
+        internal lateinit var conf: DiscordConfig
+    }
+
     override fun init() {
         bundle.prefix = "[EssentialDiscord]"
 
@@ -30,10 +35,5 @@ class Main : mindustry.mod.Plugin() {
 
     override fun registerClientCommands(handler: CommandHandler) {
         registerGeneratedClientCommands(handler)
-    }
-
-    companion object {
-        var bundle: Bundle = Bundle()
-        lateinit var conf: DiscordConfig
     }
 }

@@ -1,6 +1,6 @@
 package essential.achievements
 
-import essential.core.Main.Companion.scope
+import essential.achievements.Main.Companion.scope
 import essential.database.data.PlayerData
 import ksp.event.Event
 import essential.players

@@ -11,6 +11,13 @@ import essential.config.Config
 import mindustry.mod.Plugin
 
 class Main : Plugin() {
+    companion object {
+        internal var bundle: Bundle = Bundle()
+        internal var isServerMode: Boolean = false
+        internal lateinit var conf: BridgeConfig
+        internal lateinit var network: Runnable
+    }
+
     var daemon: java.util.concurrent.ExecutorService = java.util.concurrent.Executors.newSingleThreadExecutor()
     override fun init() {
         bundle.prefix = "[EssentialBridge]"
@@ -63,12 +70,5 @@ class Main : Plugin() {
 
     override fun registerClientCommands(handler: CommandHandler) {
         registerGeneratedClientCommands(handler)
-    }
-
-    companion object {
-        var bundle: Bundle = Bundle()
-        var isServerMode: kotlin.Boolean = false
-        lateinit var conf: BridgeConfig
-        lateinit var network: Runnable
     }
 }

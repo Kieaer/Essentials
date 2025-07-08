@@ -10,7 +10,6 @@ import arc.util.Timer
 import essential.*
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
-import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.core.service.effect.EffectSystem
 import essential.database.data.PlayerData

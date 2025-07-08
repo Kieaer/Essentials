@@ -13,7 +13,6 @@ import com.github.lalyos.jfiglet.FigletFont
 import essential.*
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
-import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
@@ -27,6 +26,7 @@ import essential.database.data.update
 import essential.database.databaseClose
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
+import essential.log.LogType
 import essential.permission.Permission
 import essential.util.currentTime
 import essential.util.findPlayerData
@@ -566,7 +566,7 @@ internal class Commands {
                     val ip = Vars.netServer.admins.getInfo(data.uuid).lastIP
                     Vars.netServer.admins.banPlayer(data.uuid)
 
-                    log(LogType.Player, Bundle()["log.player.banned", data.name, ip])
+                    essential.log.writeLog(LogType.Player, Bundle()["log.player.banned", data.name, ip])
                     players.forEach {
                         it.send("info.banned.message", data.player.plainName(), data.name)
                     }
@@ -588,7 +588,7 @@ internal class Commands {
                         playerData.send("command.unban.id", data.uuid)
                     }
 
-                    log(LogType.Player, Bundle()["log.player.unbanned", name, ip])
+                    essential.log.writeLog(LogType.Player, Bundle()["log.player.unbanned", name, ip])
                 }
             }
 

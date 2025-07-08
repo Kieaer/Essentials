@@ -2,6 +2,7 @@ package essential
 
 import arc.Core
 import arc.files.Fi
+import arc.func.Cons
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import essential.bundle.Bundle
@@ -9,6 +10,7 @@ import essential.database.data.PlayerData
 import essential.database.data.PluginData
 import essential.util.toHString
 import kotlinx.datetime.TimeZone
+import java.util.HashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
@@ -73,6 +75,15 @@ val systemTimezone = TimeZone.currentSystemDefault()
 /** 플레이어 번호 */
 var playerNumber = 0
 
+/** 플레이 도중 나간 플레이어 목록 */
+var offlinePlayers = mutableListOf<PlayerData>()
+
+/** 플러그인 데이터 */
+lateinit var pluginData: PluginData
+
+/** 플러그인이 등록한 Event listeners 목록 */
+val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
+
 /** 플러그인 데이터 출력 */
 fun getPluginDataInfo(): String {
     return """
@@ -85,5 +96,7 @@ fun getPluginDataInfo(): String {
         |isVoting: $isVoting
         |isCheated: $isCheated
         |isSurrender: $isSurrender
+        |offlinePlayers: ${offlinePlayers.size}
+        |pluginData: $pluginData
     """.trimMargin()
 }

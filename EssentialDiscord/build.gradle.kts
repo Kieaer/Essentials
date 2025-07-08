@@ -10,5 +10,5 @@ dependencies {
         exclude(module = "opus-java")
     }
 
-    compileOnly(project(":Essential"))
+    implementation(project(":common"))
 }

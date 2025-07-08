@@ -9,12 +9,22 @@ import essential.permission.Permission
 import essential.protect.generated.registerGeneratedClientCommands
 import essential.protect.generated.registerGeneratedEventHandlers
 import essential.util.findPlayerData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import mindustry.Vars.netServer
 import mindustry.mod.Plugin
 import java.net.URI
 import java.util.Objects.requireNonNull
 
 class Main : Plugin() {
+    companion object {
+        internal var bundle: Bundle = Bundle()
+        internal lateinit var conf: ProtectConfig
+        internal var pluginData: PluginData = PluginData()
+
+        internal val scope = CoroutineScope(Dispatchers.IO)
+    }
+
     override fun init() {
         bundle.prefix = "[EssentialProtect]"
 
@@ -75,11 +85,5 @@ class Main : Plugin() {
 
     override fun registerClientCommands(handler: CommandHandler) {
         registerGeneratedClientCommands(handler)
-    }
-
-    companion object {
-        var bundle: Bundle = Bundle()
-        lateinit var conf: ProtectConfig
-        var pluginData: PluginData = PluginData()
     }
 }

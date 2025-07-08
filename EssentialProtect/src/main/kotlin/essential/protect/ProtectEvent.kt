@@ -4,22 +4,20 @@ import arc.Events
 import arc.net.Server
 import arc.net.ServerDiscoveryHandler
 import arc.util.Log
+import arc.util.Timer
 import essential.bundle.Bundle
 import essential.config.Config
-import essential.core.LogType
-import essential.core.Main.Companion.scope
-import essential.core.Trigger
-import essential.core.log
 import essential.database.data.PlayerData
 import essential.database.data.checkPlayerBanned
 import essential.database.data.createPlayerData
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
+import essential.log.LogType
+import essential.log.writeLog
 import essential.players
 import essential.protect.Main.Companion.conf
 import essential.protect.Main.Companion.pluginData
 import essential.util.findPlayerData
-import essential.util.startInfiniteScheduler
 import kotlinx.coroutines.runBlocking
 import ksp.event.Event
 import mindustry.Vars
@@ -87,7 +85,7 @@ fun worldLoadEnd(event: EventType.WorldLoadEndEvent) {
 
 @Event
 fun runEverySecond() {
-    scope.startInfiniteScheduler {
+    Timer.schedule({
         if (conf.pvp.peace.enabled && Vars.state.rules.pvp && Vars.state.isPlaying) {
             if (pvpCount > 0) {
                 pvpCount--
@@ -99,7 +97,7 @@ fun runEverySecond() {
                 }
             }
         }
-    }
+    }, 0f, 1f)
 }
 
 @Event
@@ -242,8 +240,8 @@ fun connectPacket(event: EventType.ConnectPacketEvent) {
         kickReason = "banned"
     }
     if (!kickReason.isEmpty()) {
-        val bundle: Bundle = Bundle()
-        log(
+        val bundle = Bundle()
+        writeLog(
             LogType.Player,
             bundle["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, bundle["event.player.kick.reason.$kickReason"]]
         )

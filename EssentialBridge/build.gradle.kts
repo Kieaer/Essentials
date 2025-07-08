@@ -6,5 +6,5 @@ plugins {
 
 dependencies {
     ksp(project(":ksp-processor"))
-    compileOnly(project(":Essential"))
+    implementation(project(":common"))
 }

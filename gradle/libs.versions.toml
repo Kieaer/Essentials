@@ -5,7 +5,7 @@ kotlinxCoroutines = "1.8.1"
 ksp = "2.1.21-2.0.1"
 kotlinpoet = "2.2.0"
 
-game = "SNAPSHOT"
+game = "local-SNAPSHOT"
 kaml = "0.78.0"
 exposed = "0.61.0"
 hjson = "3.0.0-C11"

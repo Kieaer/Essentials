@@ -9,11 +9,13 @@ dependencies {
     compileOnlyApi(libs.bundles.game)
 
     ksp(project(":ksp-processor"))
-
-    implementation(project(":common"))
-    implementation(libs.jfiglet)
-    implementation(libs.maven.check)
-    implementation(libs.sqlite)
+    api(project(":ksp-processor"))
+    api(libs.bundles.kotlinxEcosystem)
+    api(libs.bundles.jackson)
+    api(libs.bundles.exposed)
+    api(libs.kaml)
+    api(libs.hikariCP)
+    api(libs.jbcrypt)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.bundles.game.test)

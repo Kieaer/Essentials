@@ -12,12 +12,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import essential.*
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
-import essential.core.Main.Companion.pluginData
 import essential.core.Main.Companion.scope
 import essential.database.data.*
 import essential.database.data.plugin.WarpZone
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
+import essential.log.LogType
+import essential.log.writeLog
 import essential.permission.Permission
 import essential.util.currentTime
 import essential.util.findPlayerData
@@ -42,25 +43,12 @@ import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.RandomAccessFile
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardCopyOption
 import java.nio.file.StandardWatchEventKinds
 import java.text.NumberFormat
 import java.text.ParseException
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 import java.util.regex.Pattern
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
-import kotlin.io.path.Path
 import kotlin.time.Duration.Companion.minutes
 
 /** 월드 기록 */
@@ -83,25 +71,17 @@ internal var pvpPlayer = mutableMapOf<String, Team>()
 /** 전체 채팅 차단 유무 */
 internal var isGlobalMute = false
 private var unitLimitMessageCooldown = 0
-var offlinePlayers = mutableListOf<PlayerData>()
 
 val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
 val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
 lateinit var actionFilter: Administration.ActionFilter
 
 private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}$")
-private val logFiles = HashMap<LogType, FileAppender>()
-
-fun init() {
-    for (type in LogType.entries) {
-        logFiles[type] = FileAppender(rootPath.child("log/$type.log").file())
-    }
-}
 
 @Event
 internal fun withdraw(event: WithdrawEvent) {
     if (event.tile != null && event.player.unit().item() != null && event.player.name != null) {
-        log(
+        writeLog(
             LogType.WithDraw,
             Bundle()["log.withdraw", event.player.plainName(), event.player.unit()
                 .item().name, event.amount, event.tile.block.name, event.tile.tileX(), event.tile.tileY()]
@@ -125,7 +105,7 @@ internal fun withdraw(event: WithdrawEvent) {
 @Event
 internal fun deposit(event: DepositEvent) {
     if (event.tile != null && event.player.unit().item() != null && event.player.name != null) {
-        log(
+        writeLog(
             LogType.Deposit,
             Bundle()["log.deposit", event.player.plainName(), event.player.unit()
                 .item().name, event.amount, checkValidBlock(event.tile.tile), event.tile.tileX(), event.tile.tileY()]
@@ -182,7 +162,7 @@ internal fun config(event: ConfigEvent) {
 
 @Event
 internal fun tap(event: TapEvent) {
-    log(LogType.Tap, Bundle()["log.tap", event.player.plainName(), checkValidBlock(event.tile)])
+    writeLog(LogType.Tap, Bundle()["log.tap", event.player.plainName(), checkValidBlock(event.tile)])
     addLog(
         TileLog(
             System.currentTimeMillis(),
@@ -371,7 +351,7 @@ internal fun serverLoad(event: ServerLoadEvent) {
     }
 
     Vars.netServer.admins.addChatFilter(Administration.ChatFilter { player, message ->
-        log(LogType.Chat, "${player.plainName()}: $message")
+        writeLog(LogType.Chat, "${player.plainName()}: $message")
         return@ChatFilter if (!message.startsWith("/")) {
             val data = findPlayerData(player.uuid())
             if (data != null) {
@@ -531,7 +511,7 @@ internal fun blockBuildEnd(event: BlockBuildEndEvent) {
         ) {
             val block = event.tile.block()
             if (!event.breaking) {
-                log(
+                writeLog(
                     LogType.Block,
                     Bundle()["log.block.place", target.name, checkValidBlock(event.tile), event.tile.x, event.tile.y]
                 )
@@ -567,7 +547,7 @@ internal fun blockBuildEnd(event: BlockBuildEndEvent) {
                     Log.info("${player.name} placed ${event.tile.block().name} to ${event.tile.x},${event.tile.y}")
                 }
             } else {
-                log(
+                writeLog(
                     LogType.Block,
                     Bundle()["log.block.break", target.name, checkValidBlock(event.tile), event.tile.x, event.tile.y]
                 )
@@ -598,7 +578,7 @@ internal fun blockBuildEnd(event: BlockBuildEndEvent) {
 @Event
 internal fun buildSelect(event: BuildSelectEvent) {
     if (event.builder is Playerc && event.builder.buildPlan() != null && event.tile.block() !== Blocks.air && event.breaking) {
-        log(
+        writeLog(
             LogType.Block,
             Bundle()["log.block.remove", (event.builder as Playerc).plainName(), checkValidBlock(event.tile), event.tile.x, event.tile.y]
         )
@@ -661,12 +641,12 @@ internal fun unitCreate(event: UnitCreateEvent) {
 
 @Event
 internal fun playerJoin(event: PlayerJoin) {
-    log(LogType.Player, Bundle()["log.joined", event.player.plainName(), event.player.uuid(), event.player.con.address])
+    writeLog(LogType.Player, Bundle()["log.joined", event.player.plainName(), event.player.uuid(), event.player.con.address])
 }
 
 @Event
 internal fun playerLeave(event: PlayerLeave) {
-    log(
+    writeLog(
         LogType.Player,
         Bundle()["log.player.disconnect", event.player.plainName(), event.player.uuid(), event.player.con.address]
     )
@@ -700,7 +680,7 @@ internal fun playerLeave(event: PlayerLeave) {
 
 @Event
 internal fun playerBan(event: PlayerBanEvent) {
-    log(
+    writeLog(
         LogType.Player,
         Bundle()["log.player.banned", Vars.netServer.admins.getInfo(event.uuid).ips.first(), Vars.netServer.admins.getInfo(
             event.uuid
@@ -769,7 +749,7 @@ internal fun connectPacket(event: ConnectPacketEvent) {
                 !conf.feature.blacklist.regex && event.packet.name.contains(text)
             ) {
                 event.connection.kick(Bundle(event.packet.locale)["event.player.name.blacklisted"], 0L)
-                log(
+                writeLog(
                     LogType.Player,
                     Bundle()["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, Bundle()["event.player.kick.reason.blacklisted"]]
                 )
@@ -787,7 +767,7 @@ internal fun connectPacket(event: ConnectPacketEvent) {
 
 @Event
 internal fun playerConnect(event: PlayerConnect) {
-    log(
+    writeLog(
         LogType.Player,
         Bundle()["event.player.connected", event.player.plainName(), event.player.uuid(), event.player.con.address]
     )
@@ -844,87 +824,6 @@ internal fun configFileModified(event: CustomEvents.ConfigFileModified) {
             }
         }
     }
-}
-
-fun log(type: LogType, text: String, vararg name: String) {
-    val maxLogFile = 20
-    val time = DateTimeFormatter.ofPattern("YYYY-MM-dd HH_mm_ss").format(LocalDateTime.now())
-
-    if (!rootPath.child("log/old/$type").exists()) {
-        rootPath.child("log/old/$type").mkdirs()
-    }
-    if (!rootPath.child("log/$type.log").exists()) {
-        rootPath.child("log/$type.log").writeString("")
-    }
-
-    if (type != LogType.Report) {
-        val new = Paths.get(rootPath.child("log/$type.log").path())
-        val old = Paths.get(rootPath.child("log/old/$type/$time.log").path())
-        var main = logFiles[type]
-        val folder = rootPath.child("log")
-
-        if (main != null && main.length() > 2048 * 1024) {
-            main.write("end of file. $time")
-            main.close()
-            try {
-                if (!rootPath.child("log/old/$type").exists()) {
-                    rootPath.child("log/old/$type").mkdirs()
-                }
-                Files.move(new, old, StandardCopyOption.REPLACE_EXISTING)
-                val logFiles =
-                    rootPath.child("log/old/$type").file().listFiles { file -> file.name.endsWith(".log") }
-
-                if (logFiles != null && logFiles.size >= maxLogFile) {
-                    val zipFileName = "$time.zip"
-                    val zipOutputStream = ZipOutputStream(FileOutputStream(zipFileName))
-
-                    scope.launch {
-                        for (logFile in logFiles) {
-                            val entryName = logFile.name
-                            val zipEntry = ZipEntry(entryName)
-                            zipOutputStream.putNextEntry(zipEntry)
-
-                            val fileInputStream = FileInputStream(logFile)
-                            val buffer = ByteArray(1024)
-                            var length: Int
-                            while (fileInputStream.read(buffer).also { length = it } > 0) {
-                                zipOutputStream.write(buffer, 0, length)
-                            }
-
-                            fileInputStream.close()
-                            zipOutputStream.closeEntry()
-                        }
-
-                        zipOutputStream.close()
-
-                        logFiles.forEach {
-                            it.delete()
-                        }
-
-                        Files.move(
-                            Path(Core.files.external(zipFileName).absolutePath()),
-                            Path(rootPath.child("log/old/$type/$zipFileName").absolutePath())
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            main = null
-        }
-        if (main == null) {
-            logFiles[type] = FileAppender(folder.child("$type.log").file())
-        } else {
-            main.write("[$time] $text")
-        }
-    } else {
-        val main = rootPath.child("log/report/$time-${name[0]}.txt")
-        main.writeString(text)
-    }
-}
-
-enum class LogType {
-    Player, Tap, WithDraw, Block, Deposit, Chat, Report
 }
 
 fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) {
@@ -992,29 +891,6 @@ fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) 
         target.level,
         target.level - oldLevel
     )
-}
-
-class FileAppender(private val file: File) {
-    private val raf: RandomAccessFile
-
-    init {
-        if (!file.exists()) {
-            file.writeText("")
-        }
-        raf = RandomAccessFile(file, "rw")
-    }
-
-    fun write(text: String) {
-        raf.write(("\n$text").toByteArray(StandardCharsets.UTF_8))
-    }
-
-    fun length(): Long {
-        return file.length()
-    }
-
-    fun close() {
-        raf.close()
-    }
 }
 
 private fun addLog(log: TileLog) {

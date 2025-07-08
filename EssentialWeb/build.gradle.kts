@@ -8,5 +8,5 @@ dependencies {
     ksp(project(":ksp-processor"))
     implementation(libs.bundles.ktor)
 
-    compileOnly(project(":Essential"))
+    implementation(project(":common"))
 }

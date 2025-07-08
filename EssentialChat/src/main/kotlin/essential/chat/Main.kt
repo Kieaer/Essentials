@@ -10,6 +10,11 @@ import essential.rootPath
 import mindustry.mod.Plugin
 
 class Main : Plugin() {
+    companion object {
+        internal var bundle: Bundle = Bundle()
+        internal lateinit var conf: ChatConfig
+    }
+
     override fun init() {
         bundle.prefix = "[EssentialChat]"
 
@@ -36,10 +41,5 @@ class Main : Plugin() {
 
     override fun registerClientCommands(handler: CommandHandler) {
         registerGeneratedClientCommands(handler)
-    }
-
-    companion object {
-        var bundle: Bundle = Bundle()
-        lateinit var conf: ChatConfig
     }
 }

@@ -9,15 +9,14 @@ import essential.event.CustomEvents.PlayerDiscordRequested
 import essential.event.CustomEvents.PlayerReported
 import mindustry.Vars
 import arc.struct.ObjectSet
-import essential.core.LogType
-import essential.core.Main.Companion.scope
-import essential.core.Trigger
-import essential.core.log
 import essential.database.data.PlayerData
 import essential.database.data.createPlayerData
 import essential.database.data.mapToPlayerDataList
 import essential.database.table.PlayerTable
+import essential.log.LogType
+import essential.log.writeLog
 import essential.protect.Main.Companion.conf
+import essential.protect.Main.Companion.scope
 import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch
@@ -114,7 +113,7 @@ class Commands {
             val infos: PlayerInfo = Vars.netServer.admins.findByName(it.plainLastName()).first()
             val date = currentTime()
             val text: String? = Bundle()["command.report.texts", it.plainLastName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
-            log(LogType.Report, date + text, it.plainLastName())
+            writeLog(LogType.Report, date + text, it.plainLastName())
             Log.info(Bundle()["command.report.received", player.plainName(), it.plainLastName(), reason])
             playerData.send("command.report.done", it.plainLastName())
             Events.fire(PlayerReported(player.plainName(), it.plainLastName(), reason))

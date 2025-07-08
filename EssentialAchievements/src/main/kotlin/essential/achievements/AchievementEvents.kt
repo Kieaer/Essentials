@@ -2,12 +2,13 @@ package essential.achievements
 
 import arc.Events
 import essential.achievements.APMTracker.Companion.findPlayerByUuid
+import essential.achievements.Main.Companion.scope
 import essential.bundle.Bundle
-import essential.core.Main.Companion.scope
-import essential.core.offlinePlayers
 import essential.database.data.PlayerData
 import essential.database.data.getPlayerAchievements
+import essential.offlinePlayers
 import essential.players
+import essential.pluginData
 import essential.util.startInfiniteScheduler
 import kotlinx.coroutines.launch
 import ksp.event.Event
@@ -634,7 +635,7 @@ fun playerJoin(event: PlayerJoin) {
         data.status.put("record.time.noafk", "0")
 
         // Check for WarpServerDisconnect achievement
-        if (essential.core.Main.Companion.pluginData.data.warpBlock.isEmpty()) {
+        if (pluginData.data.warpBlock.isEmpty()) {
             data.status.put("record.warp.disconnect", "1")
             if (Achievement.WarpServerDisconnect.success(data)) {
                 Achievement.WarpServerDisconnect.set(data)
