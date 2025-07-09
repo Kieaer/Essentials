@@ -5,10 +5,21 @@ import arc.Core
 import arc.util.Log
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.zaxxer.hikari.HikariDataSource
 import essential.bundle.Bundle
+import essential.rootPath
 import mindustry.mod.Plugin
+import org.jetbrains.exposed.sql.Database
 
 class Main : Plugin() {
+    companion object {
+        var bundle: Bundle = Bundle()
+        lateinit var conf: WebConfig
+    }
+    private lateinit var datasource: HikariDataSource
+
     override fun init() {
         bundle.prefix = "[EssentialWeb]"
 
@@ -46,8 +57,20 @@ class Main : Plugin() {
 
         conf = config
 
+        datasource = HikariDataSource().apply {
+            val root = ObjectMapper(YAMLFactory()).readTree(rootPath.child("config/config.yaml").file())
+            val db = root.path("plugin").path("database")
+
+            jdbcUrl = db.path("url").asText()
+            username = db.path("username").asText()
+            password = db.path("password").asText()
+            maximumPoolSize = 2
+        }
+
+        Database.connect(datasource)
+
         val webServer = WebServer()
-        webServer.start(conf.jdbcUrl, conf.username, conf.password)
+        webServer.start()
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
@@ -56,10 +79,5 @@ class Main : Plugin() {
         })
 
         Log.debug(bundle["event.plugin.loaded"])
-    }
-
-    companion object {
-        var bundle: Bundle = Bundle()
-        lateinit var conf: WebConfig
     }
 }

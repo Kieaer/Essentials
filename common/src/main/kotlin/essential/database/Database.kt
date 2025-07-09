@@ -1,5 +1,6 @@
 package essential.database
 
+import arc.Events
 import arc.util.Log
 import com.zaxxer.hikari.HikariDataSource
 import essential.DATABASE_VERSION
@@ -9,6 +10,7 @@ import essential.database.table.AchievementTable
 import essential.database.table.PlayerBannedTable
 import essential.database.table.PlayerTable
 import essential.database.table.PluginTable
+import essential.event.CustomEvents
 import essential.rootPath
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.Database
@@ -22,86 +24,27 @@ import java.net.URL
 import java.nio.channels.Channels
 import java.nio.charset.StandardCharsets
 
-val datasource = HikariDataSource()
-private var isConnected = false
-private var jdbcUrlConfig: String? = null
-private var usernameConfig: String? = null
-private var passwordConfig: String? = null
-
-/**
- * Sets the database configuration for later use.
- * This can be called from any module to ensure the database configuration is available.
- */
-fun setDatabaseConfig(jdbcUrl: String, user: String, pass: String) {
-    jdbcUrlConfig = jdbcUrl
-    usernameConfig = user
-    passwordConfig = pass
-
-    // Configure the datasource directly
-    datasource.apply {
-        this.jdbcUrl = jdbcUrl
-        this.username = user
-        this.password = pass
-        this.maximumPoolSize = 2
-    }
-}
+var datasource = HikariDataSource()
 
 /** DB 초기 설정 */
 fun databaseInit(jdbcUrl: String, user: String, pass: String) {
     val dbType = extractDatabaseType(jdbcUrl)
     loadJdbcDriver(dbType)
 
-    // Use the common function to set database configuration
-    setDatabaseConfig(jdbcUrl, user, pass)
+    datasource = HikariDataSource().apply {
+        this.jdbcUrl = jdbcUrl
+        this.username = user
+        this.password = pass
+        this.maximumPoolSize = 2
+    }
 
-    connectToDatabase()
+    Database.connect(datasource)
 
     transaction {
         SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable, AchievementTable)
     }
 
     upgradeDatabaseBlocking()
-}
-
-/**
- * Ensures database connection is established.
- * This can be called from any module to ensure the database connection is available.
- * If a connection is already established, it will use the existing connection.
- */
-fun connectToDatabase() {
-    try {
-        // Ensure datasource is properly configured
-        if (datasource.jdbcUrl == null && jdbcUrlConfig != null) {
-            Log.info("Reconfiguring datasource with stored configuration")
-            datasource.apply {
-                this.jdbcUrl = jdbcUrlConfig
-                this.username = usernameConfig
-                this.password = passwordConfig
-                this.maximumPoolSize = 2
-            }
-        }
-
-        // Validate datasource configuration
-        if (datasource.jdbcUrl == null) {
-            Log.err("Database connection failed: jdbcUrl is null")
-            return
-        }
-
-        // Always create a new connection in the current classloader context
-        // This ensures that each module has its own connection that works in its classloader
-        Database.connect(datasource)
-
-        // Verify the connection works by checking if a transaction manager is available
-        val currentManager = org.jetbrains.exposed.sql.transactions.TransactionManager.currentOrNull()
-        if (currentManager != null) {
-            isConnected = true
-            Log.info(bundle["database.connection.established"])
-        } else {
-            Log.err("Failed to establish database connection: Transaction manager is null after connect")
-        }
-    } catch (e: Exception) {
-        Log.err("Failed to establish database connection", e)
-    }
 }
 
 /** DB 연결 종료 */

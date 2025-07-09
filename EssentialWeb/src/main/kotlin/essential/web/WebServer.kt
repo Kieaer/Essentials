@@ -77,18 +77,12 @@ class WebServer {
         val time: Long = System.currentTimeMillis()
     )
 
-    fun start(jdbcUrl: String, user: String, pass: String) = synchronized(this@WebServer) {
+    fun start() = synchronized(this@WebServer) {
         // Create upload directory if it doesn't exist
         val uploadDir = File(conf.uploadPath)
         if (!uploadDir.exists()) {
             uploadDir.mkdirs()
         }
-
-        // Use the common database configuration function
-        essential.database.setDatabaseConfig(jdbcUrl, user, pass)
-
-        // Ensure database connection is established in this module's classloader
-        essential.database.connectToDatabase()
 
         server = embeddedServer(Netty, conf.port) {
             // Install necessary plugins

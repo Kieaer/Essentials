@@ -4,13 +4,14 @@ import essential.database.table.PlayerBannedTable
 import ksp.table.GenerateCode
 import mindustry.gen.Playerc
 import mindustry.net.Administration
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.like
 import org.jetbrains.exposed.sql.json.contains
-import org.jetbrains.exposed.sql.or
+import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.vendors.SQLiteDialect
 
 @GenerateCode
 data class PlayerBannedData(
@@ -57,21 +58,25 @@ fun checkPlayerBanned(player: Playerc): Boolean {
 /** 해당 플레이어가 차단 되어 있는지 확인 합니다. */
 fun checkPlayerBanned(uuid: String, ip: String, name: String): Boolean {
     try {
-        // Ensure database connection is established before querying
-        essential.database.connectToDatabase()
-
         return transaction {
-            PlayerBannedTable.select(PlayerBannedTable.id)
-                .where { 
-                    (PlayerBannedTable.uuid eq uuid) or
-                    (PlayerBannedTable.names.contains(name)) or
-                    (PlayerBannedTable.ips.contains(ip))
-                }
-                .firstOrNull() != null
+            val nameCond =
+                PlayerBannedTable.names
+                    .castTo<String>(TextColumnType())
+                    .like("%\"$name\"%")
+
+            val ipCond =
+                PlayerBannedTable.ips
+                    .castTo<String>(TextColumnType())
+                    .like("%\"$ip\"%")
+
+            PlayerBannedTable
+                .selectAll()
+                .where { (PlayerBannedTable.uuid eq uuid) or nameCond or ipCond }
+                .limit(1)
+                .count() > 0
         }
     } catch (e: Exception) {
         arc.util.Log.err("Failed to check if player is banned", e)
-        // Default to not banned if there's an error
         return false
     }
 }

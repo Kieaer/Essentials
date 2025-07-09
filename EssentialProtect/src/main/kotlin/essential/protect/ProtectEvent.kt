@@ -5,6 +5,7 @@ import arc.net.Server
 import arc.net.ServerDiscoveryHandler
 import arc.util.Log
 import arc.util.Timer
+import com.zaxxer.hikari.HikariDataSource
 import essential.bundle.Bundle
 import essential.config.Config
 import essential.database.data.PlayerData
@@ -32,6 +33,7 @@ import mindustry.net.NetworkIO
 import mindustry.net.Packets
 import mindustry.world.Tile
 import mindustry.world.blocks.power.PowerGraph
+import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.net.InetAddress
 import java.net.UnknownHostException
@@ -233,16 +235,12 @@ fun connectPacket(event: EventType.ConnectPacketEvent) {
         kickReason = "newuser"
     } else {
         try {
-            // Ensure database connection is established before checking if player is banned
-            essential.database.connectToDatabase()
-
             if (checkPlayerBanned(event.packet.name, event.packet.uuid, event.connection.address)) {
                 event.connection.kick(Packets.KickReason.banned)
                 kickReason = "banned"
             }
         } catch (e: Exception) {
             Log.err("Failed to check if player is banned", e)
-            // Don't kick the player if there's an error checking if they're banned
         }
     }
 
@@ -291,9 +289,6 @@ fun loadPlayer(data: PlayerData) {
 
 fun enableBlockNewUser() {
     try {
-        // Ensure database connection is established before querying
-        essential.database.connectToDatabase()
-
         transaction {
             val list = PlayerTable.select(PlayerTable.uuid)
 
@@ -304,7 +299,6 @@ fun enableBlockNewUser() {
         }
     } catch (e: Exception) {
         Log.err("Failed to load player UUIDs for new user blocking", e)
-        // Initialize with empty array if there's an error
         coldData = arrayOf()
     }
 }

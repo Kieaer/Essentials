@@ -1,21 +1,28 @@
 package essential.protect
 
+import arc.Core
 import arc.util.CommandHandler
 import arc.util.Log
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.zaxxer.hikari.HikariDataSource
 import essential.bundle.Bundle
 import essential.config.Config
-import essential.database.connectToDatabase
 import essential.database.data.PlayerData
 import essential.permission.Permission
 import essential.protect.generated.registerGeneratedClientCommands
 import essential.protect.generated.registerGeneratedEventHandlers
+import essential.rootPath
 import essential.util.findPlayerData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import mindustry.Vars.netServer
 import mindustry.mod.Plugin
+import org.jetbrains.exposed.sql.Database
+import java.io.File
 import java.net.URI
 import java.util.Objects.requireNonNull
+
 
 class Main : Plugin() {
     companion object {
@@ -26,12 +33,12 @@ class Main : Plugin() {
         internal val scope = CoroutineScope(Dispatchers.IO)
     }
 
+    private lateinit var datasource: HikariDataSource
+
     override fun init() {
         bundle.prefix = "[EssentialProtect]"
 
         Log.debug(bundle["event.plugin.starting"])
-
-        connectToDatabase()
 
         val config = Config.load("config_protect.yaml", ProtectConfig.serializer(), ProtectConfig())
         require(config != null) {
@@ -40,6 +47,18 @@ class Main : Plugin() {
         }
 
         conf = config
+
+        datasource = HikariDataSource().apply {
+            val root = ObjectMapper(YAMLFactory()).readTree(rootPath.child("config/config.yaml").file())
+            val db = root.path("plugin").path("database")
+
+            jdbcUrl = db.path("url").asText()
+            username = db.path("username").asText()
+            password = db.path("password").asText()
+            maximumPoolSize = 2
+        }
+
+        Database.connect(datasource)
 
         netServer.admins.addActionFilter({ action ->
             if (action.player == null) return@addActionFilter true
@@ -79,8 +98,11 @@ class Main : Plugin() {
             pluginData.vpnList = list.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         }
 
-        // 데이터베이스 연결 확인
-        connectToDatabase()
+        Core.app.addListener(object : arc.ApplicationListener {
+            override fun dispose() {
+                datasource.close()
+            }
+        })
 
         // 이벤트 설정
         registerGeneratedEventHandlers()
