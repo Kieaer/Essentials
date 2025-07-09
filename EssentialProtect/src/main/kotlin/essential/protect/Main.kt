@@ -4,6 +4,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import essential.bundle.Bundle
 import essential.config.Config
+import essential.database.connectToDatabase
 import essential.database.data.PlayerData
 import essential.permission.Permission
 import essential.protect.generated.registerGeneratedClientCommands
@@ -29,6 +30,8 @@ class Main : Plugin() {
         bundle.prefix = "[EssentialProtect]"
 
         Log.debug(bundle["event.plugin.starting"])
+
+        connectToDatabase()
 
         val config = Config.load("config_protect.yaml", ProtectConfig.serializer(), ProtectConfig())
         require(config != null) {
@@ -75,6 +78,9 @@ class Main : Plugin() {
             val list = URI("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt").toURL().readText()
             pluginData.vpnList = list.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         }
+
+        // 데이터베이스 연결 확인
+        connectToDatabase()
 
         // 이벤트 설정
         registerGeneratedEventHandlers()

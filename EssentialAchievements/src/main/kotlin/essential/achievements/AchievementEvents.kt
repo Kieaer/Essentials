@@ -1,6 +1,7 @@
 package essential.achievements
 
 import arc.Events
+import arc.util.Timer
 import essential.achievements.APMTracker.Companion.findPlayerByUuid
 import essential.achievements.Main.Companion.scope
 import essential.bundle.Bundle
@@ -9,7 +10,6 @@ import essential.database.data.getPlayerAchievements
 import essential.offlinePlayers
 import essential.players
 import essential.pluginData
-import essential.util.startInfiniteScheduler
 import kotlinx.coroutines.launch
 import ksp.event.Event
 import mindustry.Vars.state
@@ -472,7 +472,7 @@ fun unitDestroy(event: UnitDestroyEvent) {
 
 @Event
 fun updateSecond() {
-    scope.startInfiniteScheduler {
+    Timer.schedule({
         for (data in players) {
             // Track time played on different planets
             if (state.rules.planet === Planets.serpulo) {
@@ -567,7 +567,7 @@ fun updateSecond() {
                 }
             }
         }
-    }
+    }, 0f, 1f)
 }
 
 @Event

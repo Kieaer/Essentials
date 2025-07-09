@@ -1,10 +1,9 @@
 package essential.achievements
 
-import essential.achievements.Main.Companion.scope
+import arc.util.Timer
 import essential.database.data.PlayerData
-import ksp.event.Event
 import essential.players
-import essential.util.startInfiniteScheduler
+import ksp.event.Event
 import mindustry.game.EventType
 
 /**
@@ -23,11 +22,11 @@ class APMTracker {
         private const val MAX_ACTION_TIMESTAMPS = 1000
 
         init {
-            scope.startInfiniteScheduler(APM_UPDATE_INTERVAL.toLong()) {
+            Timer.schedule({APM_UPDATE_INTERVAL.toLong()
                 for (data in players) {
                     updatePlayerAPM(data)
                 }
-            }
+            }, 0f, 1f)
         }
 
         // Track player actions

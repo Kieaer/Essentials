@@ -142,7 +142,6 @@ fun config(e: EventType.ConfigEvent) {
 
 @Event
 fun playerJoin(e: EventType.PlayerJoin) {
-    val trigger = Trigger()
     e.player.admin(false)
 
     val data: PlayerData? = findPlayerData(e.player.uuid())
@@ -160,7 +159,7 @@ fun playerJoin(e: EventType.PlayerJoin) {
                 )
             }
         } else {
-            trigger.loadPlayer(data)
+            Events.fire(CustomEvents.PlayerDataLoad(data))
         }
     } else if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
         if (data == null) {
@@ -198,7 +197,7 @@ fun blockDestroy(e: EventType.BlockDestroyEvent) {
 }
 
 @Event
-fun playerDataLoaded(e: CustomEvents.PlayerDataLoaded) {
+fun playerDataLoaded(e: CustomEvents.PlayerDataLoadEnd) {
     if (conf.rules.strict) {
         Groups.player.find { p -> p.uuid() == e.playerData.uuid }.name(e.playerData.name)
     }
@@ -229,16 +228,24 @@ fun connectPacket(event: EventType.ConnectPacketEvent) {
                 break
             }
         }
-    } else if (conf.rules.blockNewUser && !listOf<String?>(
-            *coldData
-        ).contains(event.packet.uuid)
-    ) {
+    } else if (conf.rules.blockNewUser && !listOf<String?>(*coldData).contains(event.packet.uuid)) {
         event.connection.kick(Bundle(event.packet.locale)["event.player.new.blocked"], 0L)
         kickReason = "newuser"
-    } else if (runBlocking { checkPlayerBanned(event.packet.name, event.packet.uuid, event.connection.address) }) {
-        event.connection.kick(Packets.KickReason.banned)
-        kickReason = "banned"
+    } else {
+        try {
+            // Ensure database connection is established before checking if player is banned
+            essential.database.connectToDatabase()
+
+            if (checkPlayerBanned(event.packet.name, event.packet.uuid, event.connection.address)) {
+                event.connection.kick(Packets.KickReason.banned)
+                kickReason = "banned"
+            }
+        } catch (e: Exception) {
+            Log.err("Failed to check if player is banned", e)
+            // Don't kick the player if there's an error checking if they're banned
+        }
     }
+
     if (!kickReason.isEmpty()) {
         val bundle = Bundle()
         writeLog(
@@ -283,13 +290,22 @@ fun loadPlayer(data: PlayerData) {
 }
 
 fun enableBlockNewUser() {
-    transaction {
-        val list = PlayerTable.select(PlayerTable.uuid)
+    try {
+        // Ensure database connection is established before querying
+        essential.database.connectToDatabase()
 
-        var size = 0
-        for (playerData in list) {
-            coldData[size++] = playerData[PlayerTable.uuid]
+        transaction {
+            val list = PlayerTable.select(PlayerTable.uuid)
+
+            var size = 0
+            for (playerData in list) {
+                coldData[size++] = playerData[PlayerTable.uuid]
+            }
         }
+    } catch (e: Exception) {
+        Log.err("Failed to load player UUIDs for new user blocking", e)
+        // Initialize with empty array if there's an error
+        coldData = arrayOf()
     }
 }
 

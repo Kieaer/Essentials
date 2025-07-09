@@ -9,7 +9,7 @@ class Bundle {
     var locale: Locale = Locale.getDefault()
 
     constructor() {
-        resource = ResourceBundle.getBundle("bundle", locale)
+        resource = ResourceBundle.getBundle("essential.bundle.files.bundle", locale)
     }
 
     constructor(source: ResourceBundle) {
@@ -18,7 +18,7 @@ class Bundle {
 
     constructor(languageTag: String) {
         locale = Locale(languageTag)
-        resource = ResourceBundle.getBundle("bundle", locale)
+        resource = ResourceBundle.getBundle("essential.bundle.files.bundle", locale)
     }
 
     operator fun get(key: String): String {

@@ -34,7 +34,6 @@ import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.io.SaveIO
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.io.File
@@ -78,19 +77,18 @@ class WebServer {
         val time: Long = System.currentTimeMillis()
     )
 
-    fun start() {
+    fun start(jdbcUrl: String, user: String, pass: String) = synchronized(this@WebServer) {
         // Create upload directory if it doesn't exist
         val uploadDir = File(conf.uploadPath)
         if (!uploadDir.exists()) {
             uploadDir.mkdirs()
         }
 
-        Database.connect(HikariDataSource(HikariConfig().apply {
-            this.jdbcUrl = jdbcUrl
-            username = user
-            password = pass
-            maximumPoolSize = 2
-        }))
+        // Use the common database configuration function
+        essential.database.setDatabaseConfig(jdbcUrl, user, pass)
+
+        // Ensure database connection is established in this module's classloader
+        essential.database.connectToDatabase()
 
         server = embeddedServer(Netty, conf.port) {
             // Install necessary plugins

@@ -2,17 +2,16 @@ package essential.protect
 
 import arc.Core
 import arc.Events
+import arc.struct.ObjectSet
 import arc.util.Log
 import essential.bundle.Bundle
-import ksp.command.ClientCommand
-import essential.event.CustomEvents.PlayerDiscordRequested
-import essential.event.CustomEvents.PlayerReported
-import mindustry.Vars
-import arc.struct.ObjectSet
 import essential.database.data.PlayerData
 import essential.database.data.createPlayerData
 import essential.database.data.mapToPlayerDataList
 import essential.database.table.PlayerTable
+import essential.event.CustomEvents
+import essential.event.CustomEvents.PlayerDiscordRequested
+import essential.event.CustomEvents.PlayerReported
 import essential.log.LogType
 import essential.log.writeLog
 import essential.protect.Main.Companion.conf
@@ -21,6 +20,8 @@ import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import ksp.command.ClientCommand
+import mindustry.Vars
 import mindustry.net.Administration.PlayerInfo
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.or
@@ -56,7 +57,7 @@ class Commands {
                         player.sendMessage(bundle["command.login.already"])
                     } else {
                         if (findPlayerData(playerData.uuid) == null) {
-                            Trigger().loadPlayer(playerData)
+                            Events.fire(CustomEvents.PlayerDataLoad(playerData))
                         } else {
                             player.sendMessage(bundle["command.login.already"])
                         }

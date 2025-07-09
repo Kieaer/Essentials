@@ -7,24 +7,20 @@ import arc.util.Align
 import arc.util.Log
 import arc.util.Time
 import arc.util.Timer
-import essential.*
+import essential.bundle
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
-import essential.core.Main.Companion.scope
 import essential.core.service.effect.EffectSystem
-import essential.database.data.PlayerData
 import essential.database.data.PluginData
 import essential.database.data.getPluginData
 import essential.database.data.plugin.WarpCount
-import essential.event.CustomEvents
 import essential.permission.Permission
+import essential.players
+import essential.pluginData
+import essential.rootPath
 import essential.util.findPlayerData
-import essential.util.startInfiniteScheduler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.datetime.Clock
-import kotlinx.datetime.daysUntil
-import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.EventType
@@ -47,109 +43,6 @@ import kotlin.random.Random
 
 
 class Trigger {
-    fun loadPlayer(playerData: PlayerData) {
-        val player = playerData.player
-        val message = StringBuilder()
-
-        // 로그인 날짜 기록
-        val currentTime = Clock.System.now().toLocalDateTime(systemTimezone)
-        val isDayPassed = playerData.lastLoginDate.date.daysUntil(currentTime.date)
-        if (isDayPassed >= 1) playerData.attendanceDays += 1
-        playerData.lastLoginDate = currentTime
-
-        // 권한 설정에 의한 닉네임 및 admin 권한 설정
-        val permission = Permission[playerData]
-        if (permission.name.isNotEmpty()) {
-            playerData.player.name(Permission[playerData].name)
-        }
-        playerData.player.admin(Permission[playerData].admin)
-
-        // 언어에 따라 각 언어별 motd 불러오기
-        val motd = if (rootPath.child("motd/${player.locale()}.txt").exists()) {
-            rootPath.child("motd/${player.locale()}.txt").readString()
-        } else if (rootPath.child("motd").list().isNotEmpty()) {
-            val file = rootPath.child("motd/en.txt")
-            if (file.exists()) file.readString() else null
-        } else {
-            null
-        }
-
-        // 오늘의 메세지가 10줄 이상 넘어갈 경우 전체 화면으로 출력
-        if (motd != null) {
-            val count = motd.split("\r\n|\r|\n").toTypedArray().size
-            if (count > 10) Call.infoMessage(player.con(), motd) else message.appendLine(motd)
-        }
-
-        // 입장 할 때 특정 메세지가 출력 되도록 설정 되어 있는 경우
-        if (permission.isAlert) {
-            if (permission.alertMessage.isEmpty()) {
-                players.forEach { data ->
-                    data.send("event.player.joined", player.con())
-                }
-            } else {
-                Call.sendMessage(permission.alertMessage)
-            }
-        }
-
-        // 현재 PvP 모드일 경우
-        if (Vars.state.rules.pvp) {
-            when {
-                // 이 플레이어가 이전에 참여한 팀이 있을 경우, 해당 팀에 다시 투입
-                pvpPlayer.containsKey(playerData.uuid) -> {
-                    player.team(pvpPlayer[playerData.uuid])
-                }
-
-                // PvP 관전 기능이 켜져 있고, 관전 플레이어 이거나, 해당 플레이어의 권한 목록에 관전 권한이 있는 경우 관전 팀으로 설정
-                conf.feature.pvp.spector && pvpSpecters.contains(playerData.uuid) || Permission.check(
-                    playerData,
-                    "pvp.spector"
-                ) -> {
-                    player.team(Team.derelict)
-                }
-
-
-                conf.feature.pvp.autoTeam -> {
-                    val teamRate = mutableMapOf<Team, Double>()
-                    var teams = arrayOf<Pair<Team, Int>>()
-                    for (team in Vars.state.teams.active) {
-                        var list = arrayOf<Pair<Team, Double>>()
-
-                        players.forEach {
-                            val rate =
-                                it.pvpWinCount.toDouble() / (it.pvpWinCount + it.pvpLoseCount).toDouble()
-                            list += Pair(it.player.team(), if (rate.isNaN()) 0.0 else rate)
-                        }
-
-                        teamRate[team.team] = list.filter { it.first == team }.map { it.second }.average()
-                        teams += Pair(team.team, team.players.size)
-                    }
-
-                    val teamSorted = teams.toList().sortedByDescending { it.second }
-                    val rate = teamRate.toList().sortedWith(compareBy { it.second })
-                    if ((teamSorted.first().second - teamSorted.last().second) >= 2) {
-                        player.team(teamSorted.last().first)
-                    } else {
-                        player.team(rate.last().first)
-                    }
-                }
-            }
-        }
-
-
-
-        if (playerData.expMultiplier != 1.0) {
-            message.appendLine(playerData.bundle["event.player.expboost", playerData.attendanceDays, playerData.expMultiplier])
-        }
-
-        playerData.isConnected = true
-        players.add(playerData)
-        playerNumber++
-        player.sendMessage(message.toString())
-
-        playerData.send("event.player.loaded")
-        Events.fire(CustomEvents.PlayerDataLoaded(playerData))
-    }
-
     class Thread {
         private var ping = 0.000
 
@@ -533,7 +426,69 @@ class Trigger {
             return stringBuilder.toString()
         }
 
-        scope.startInfiniteScheduler {
+        // 맵 백업 시간
+        var rollbackCount = conf.command.rollback.time
+        var messageCount = conf.feature.motd.time
+        var messageOrder = 0
+
+        Events.run(EventType.Trigger.update) {
+            for (data in players) {
+                if (Vars.state.rules.pvp && data.player.unit() != null && data.player.team()
+                        .cores().isEmpty && data.player.team() != Team.derelict && pvpPlayer.containsKey(data.uuid)
+                ) {
+                    data.pvpLoseCount++
+                    if (conf.feature.pvp.spector) {
+                        data.player.team(Team.derelict)
+                        pvpSpecters.add(data.uuid)
+                    }
+                    pvpPlayer.remove(data.uuid)
+
+                    val time = data.currentPlayTime
+                    val score = time + 5000
+
+                    data.exp += ((score * data.expMultiplier).toInt())
+                    data.send("event.exp.earn.defeat", data.currentExp + score)
+                }
+
+                if (data.status.containsKey("freeze")) {
+                    val d = findPlayerData(data.uuid)
+                    if (d != null) {
+                        val player = d.player
+                        val split = data.status["freeze"].toString().split("/")
+                        player[split[0].toFloat()] = split[1].toFloat()
+                        Call.setPosition(player.con(), split[0].toFloat(), split[1].toFloat())
+                        Call.setCameraPosition(player.con(), split[0].toFloat(), split[1].toFloat())
+                    }
+                }
+
+                if (data.mouseTracking) {
+                    Groups.player.forEach { player ->
+                        Call.label(
+                            data.player.con(),
+                            player.name,
+                            Time.delta / 2,
+                            player.mouseX,
+                            player.mouseY
+                        )
+                    }
+                }
+
+                for (two in pluginData.data.warpZone) {
+                    if (two.mapName == Vars.state.map.name() && !two.click && isUnitInside(
+                            data.player.unit().tileOn(),
+                            two.startTile,
+                            two.finishTile
+                        )
+                    ) {
+                        Log.info(Bundle()["log.warp.move", data.player.plainName(), two.ip, two.port.toString()])
+                        Call.connect(data.player.con(), two.ip, two.port)
+                        break
+                    }
+                }
+            }
+        }
+
+        Timer.schedule({
             players.forEach {
                 it.totalPlayed++
                 it.currentPlayTime++
@@ -590,114 +545,48 @@ class Trigger {
                     Call.infoPopup(it.player.con(), message, Time.delta, Align.left, 0, 0, 300, 0)
                 }
             }
-        }
+        }, 0f, 1f)
 
-        // 맵 백업 시간
-        var rollbackCount = conf.command.rollback.time
-        var messageCount = conf.feature.motd.time
-        var messageOrder = 0
-
-        Events.run(EventType.Trigger.update) {
-            for (data in players) {
-
-
-                if (Vars.state.rules.pvp && data.player.unit() != null && data.player.team()
-                        .cores().isEmpty && data.player.team() != Team.derelict && pvpPlayer.containsKey(data.uuid)
-                ) {
-                    data.pvpLoseCount++
-                    if (conf.feature.pvp.spector) {
-                        data.player.team(Team.derelict)
-                        pvpSpecters.add(data.uuid)
-                    }
-                    pvpPlayer.remove(data.uuid)
-
-                    val time = data.currentPlayTime
-                    val score = time + 5000
-
-                    data.exp += ((score * data.expMultiplier).toInt())
-                    data.send("event.exp.earn.defeat", data.currentExp + score)
-                }
-
-                if (data.status.containsKey("freeze")) {
-                    val d = findPlayerData(data.uuid)
-                    if (d != null) {
-                        val player = d.player
-                        val split = data.status["freeze"].toString().split("/")
-                        player[split[0].toFloat()] = split[1].toFloat()
-                        Call.setPosition(player.con(), split[0].toFloat(), split[1].toFloat())
-                        Call.setCameraPosition(player.con(), split[0].toFloat(), split[1].toFloat())
-                    }
-                }
-
-                if (data.mouseTracking) {
-                    Groups.player.forEach { player ->
-                        Call.label(
-                            data.player.con(),
-                            player.name,
-                            Time.delta / 2,
-                            player.mouseX,
-                            player.mouseY
-                        )
-                    }
-                }
-
-                for (two in pluginData.data.warpZone) {
-                    if (two.mapName == Vars.state.map.name() && !two.click && isUnitInside(
-                            data.player.unit().tileOn(),
-                            two.startTile,
-                            two.finishTile
-                        )
-                    ) {
-                        Log.info(Bundle()["log.warp.move", data.player.plainName(), two.ip, two.port.toString()])
-                        Call.connect(data.player.con(), two.ip, two.port)
-                        break
+        Timer.schedule({
+            if (Vars.state.rules.pvp) {
+                players.forEach {
+                    if (!pvpPlayer.containsKey(it.uuid) && it.player.team() != Team.derelict && it.player.unit() != null) {
+                        pvpPlayer[it.uuid] = it.player.team()
                     }
                 }
             }
-        }
 
-        Timer.schedule(object : Timer.Task() {
-            override fun run() {
-                if (Vars.state.rules.pvp) {
+            if (rollbackCount == 0) {
+                SaveIO.save(Vars.saveDirectory.child("rollback.msav"))
+                rollbackCount = conf.command.rollback.time
+            } else {
+                rollbackCount--
+            }
+
+            if (conf.feature.motd.enabled) {
+                if (messageCount == conf.feature.motd.time) {
                     players.forEach {
-                        if (!pvpPlayer.containsKey(it.uuid) && it.player.team() != Team.derelict && it.player.unit() != null) {
-                            pvpPlayer[it.uuid] = it.player.team()
+                        val message = if (rootPath.child("messages/${it.player.locale()}.txt").exists()) {
+                            rootPath.child("messages/${it.player.locale()}.txt").readString()
+                        } else if (rootPath.child("messages").list().isNotEmpty()) {
+                            val file = rootPath.child("messages/en.txt")
+                            if (file.exists()) file.readString() else null
+                        } else {
+                            null
+                        }
+                        if (message != null) {
+                            val c = message.split(Regex("\r\n"))
+
+                            if (c.size <= messageOrder) {
+                                messageOrder = 0
+                            }
+                            it.player.sendMessage(c[messageOrder])
                         }
                     }
-                }
-
-                if (rollbackCount == 0) {
-                    SaveIO.save(Vars.saveDirectory.child("rollback.msav"))
-                    rollbackCount = conf.command.rollback.time
+                    messageOrder++
+                    messageCount = 0
                 } else {
-                    rollbackCount--
-                }
-
-                if (conf.feature.motd.enabled) {
-                    if (messageCount == conf.feature.motd.time) {
-                        players.forEach {
-                            val message = if (rootPath.child("messages/${it.player.locale()}.txt").exists()) {
-                                rootPath.child("messages/${it.player.locale()}.txt").readString()
-                            } else if (rootPath.child("messages").list().isNotEmpty()) {
-                                val file = rootPath.child("messages/en.txt")
-                                if (file.exists()) file.readString() else null
-                            } else {
-                                null
-                            }
-                            if (message != null) {
-                                val c = message.split(Regex("\r\n"))
-
-                                if (c.size <= messageOrder) {
-                                    messageOrder = 0
-                                }
-                                it.player.sendMessage(c[messageOrder])
-                            }
-                        }
-                        messageOrder++
-                        messageCount = 0
-                    } else {
-                        messageCount++
-                    }
+                    messageCount++
                 }
             }
         }, 0f, 60f)

@@ -14,8 +14,8 @@ object CustomEvents {
     class DiscordURLOpen(val playerData: PlayerData)
     class PlayerConnectKicked(val name: String, val reason: String)
     class PlayerReported(val reporter: String, val name: String, val reason: String)
-    class PlayerDataLoadStart(val playerData: PlayerData)
-    class PlayerDataLoaded(val playerData: PlayerData)
+    class PlayerDataLoad(val playerData: PlayerData)
+    class PlayerDataLoadEnd(val playerData: PlayerData)
     class ConfigFileModified(val kind: WatchEvent.Kind<out Any>, val paths: String)
     class PlayerDiscordRequested(val uuid: String)
 }

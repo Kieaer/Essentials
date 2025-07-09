@@ -47,7 +47,7 @@ class Main : Plugin() {
         conf = config
 
         val webServer = WebServer()
-        webServer.start()
+        webServer.start(conf.jdbcUrl, conf.username, conf.password)
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {

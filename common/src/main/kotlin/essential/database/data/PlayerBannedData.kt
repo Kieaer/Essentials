@@ -4,10 +4,13 @@ import essential.database.table.PlayerBannedTable
 import ksp.table.GenerateCode
 import mindustry.gen.Playerc
 import mindustry.net.Administration
-import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.json.contains
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
 
 @GenerateCode
 data class PlayerBannedData(
@@ -47,19 +50,28 @@ suspend fun removeBanInfoByIP(ip: String) {
 }
 
 /** 해당 플레이어가 차단 되어 있는지 확인 합니다. */
-suspend fun checkPlayerBanned(player: Playerc): Boolean {
+fun checkPlayerBanned(player: Playerc): Boolean {
     return checkPlayerBanned(player.uuid(), player.ip(), player.name())
 }
 
 /** 해당 플레이어가 차단 되어 있는지 확인 합니다. */
-suspend fun checkPlayerBanned(uuid: String, ip: String, name: String): Boolean {
-    return newSuspendedTransaction {
-        PlayerBannedTable.select(PlayerBannedTable.id)
-            .where { 
-                (PlayerBannedTable.uuid eq uuid) or
-                (PlayerBannedTable.names.contains(name)) or
-                (PlayerBannedTable.ips.contains(ip))
-            }
-            .firstOrNull() != null
+fun checkPlayerBanned(uuid: String, ip: String, name: String): Boolean {
+    try {
+        // Ensure database connection is established before querying
+        essential.database.connectToDatabase()
+
+        return transaction {
+            PlayerBannedTable.select(PlayerBannedTable.id)
+                .where { 
+                    (PlayerBannedTable.uuid eq uuid) or
+                    (PlayerBannedTable.names.contains(name)) or
+                    (PlayerBannedTable.ips.contains(ip))
+                }
+                .firstOrNull() != null
+        }
+    } catch (e: Exception) {
+        arc.util.Log.err("Failed to check if player is banned", e)
+        // Default to not banned if there's an error
+        return false
     }
 }

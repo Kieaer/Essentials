@@ -24,6 +24,7 @@ import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import ksp.event.Event
 import mindustry.Vars
@@ -388,13 +389,13 @@ internal fun serverLoad(event: ServerLoadEvent) {
                     }) {
                     val data = createPlayerData(it.player)
                     data.player = it.player
-                    trigger.loadPlayer(data)
+                    Events.fire(CustomEvents.PlayerDataLoad(data))
                 } else {
                     Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
                 }
             } else {
                 data.player = it.player
-                trigger.loadPlayer(data)
+                Events.fire(CustomEvents.PlayerDataLoad(data))
             }
         }
     }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
@@ -828,6 +829,111 @@ internal fun configFileModified(event: CustomEvents.ConfigFileModified) {
             }
         }
     }
+}
+
+@Event
+internal fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
+    val playerData = event.playerData
+    val player = playerData.player
+    val message = StringBuilder()
+
+    // 로그인 날짜 기록
+    val currentTime = Clock.System.now().toLocalDateTime(systemTimezone)
+    val isDayPassed = playerData.lastLoginDate.date.daysUntil(currentTime.date)
+    if (isDayPassed >= 1) playerData.attendanceDays += 1
+    playerData.lastLoginDate = currentTime
+
+    // 권한 설정에 의한 닉네임 및 admin 권한 설정
+    val permission = Permission[playerData]
+    if (permission.name.isNotEmpty()) {
+        playerData.player.name(Permission[playerData].name)
+    }
+    playerData.player.admin(Permission[playerData].admin)
+
+    // 언어에 따라 각 언어별 motd 불러오기
+    val motd = if (rootPath.child("motd/${player.locale()}.txt").exists()) {
+        rootPath.child("motd/${player.locale()}.txt").readString()
+    } else if (rootPath.child("motd").list().isNotEmpty()) {
+        val file = rootPath.child("motd/en.txt")
+        if (file.exists()) file.readString() else null
+    } else {
+        null
+    }
+
+    // 오늘의 메세지가 10줄 이상 넘어갈 경우 전체 화면으로 출력
+    if (motd != null) {
+        val count = motd.split("\r\n|\r|\n").toTypedArray().size
+        if (count > 10) Call.infoMessage(player.con(), motd) else message.appendLine(motd)
+    }
+
+    // 입장 할 때 특정 메세지가 출력 되도록 설정 되어 있는 경우
+    if (permission.isAlert) {
+        if (permission.alertMessage.isEmpty()) {
+            players.forEach { data ->
+                data.send("event.player.joined", player.con())
+            }
+        } else {
+            Call.sendMessage(permission.alertMessage)
+        }
+    }
+
+    // 현재 PvP 모드일 경우
+    if (Vars.state.rules.pvp) {
+        when {
+            // 이 플레이어가 이전에 참여한 팀이 있을 경우, 해당 팀에 다시 투입
+            pvpPlayer.containsKey(playerData.uuid) -> {
+                player.team(pvpPlayer[playerData.uuid])
+            }
+
+            // PvP 관전 기능이 켜져 있고, 관전 플레이어 이거나, 해당 플레이어의 권한 목록에 관전 권한이 있는 경우 관전 팀으로 설정
+            conf.feature.pvp.spector && pvpSpecters.contains(playerData.uuid) || Permission.check(
+                playerData,
+                "pvp.spector"
+            ) -> {
+                player.team(Team.derelict)
+            }
+
+
+            conf.feature.pvp.autoTeam -> {
+                val teamRate = mutableMapOf<Team, Double>()
+                var teams = arrayOf<Pair<Team, Int>>()
+                for (team in Vars.state.teams.active) {
+                    var list = arrayOf<Pair<Team, Double>>()
+
+                    players.forEach {
+                        val rate =
+                            it.pvpWinCount.toDouble() / (it.pvpWinCount + it.pvpLoseCount).toDouble()
+                        list += Pair(it.player.team(), if (rate.isNaN()) 0.0 else rate)
+                    }
+
+                    teamRate[team.team] = list.filter { it.first == team }.map { it.second }.average()
+                    teams += Pair(team.team, team.players.size)
+                }
+
+                val teamSorted = teams.toList().sortedByDescending { it.second }
+                val rate = teamRate.toList().sortedWith(compareBy { it.second })
+                if ((teamSorted.first().second - teamSorted.last().second) >= 2) {
+                    player.team(teamSorted.last().first)
+                } else {
+                    player.team(rate.last().first)
+                }
+            }
+        }
+    }
+
+
+
+    if (playerData.expMultiplier != 1.0) {
+        message.appendLine(playerData.bundle["event.player.expboost", playerData.attendanceDays, playerData.expMultiplier])
+    }
+
+    playerData.isConnected = true
+    players.add(playerData)
+    playerNumber++
+    player.sendMessage(message.toString())
+
+    playerData.send("event.player.loaded")
+    Events.fire(CustomEvents.PlayerDataLoadEnd(playerData))
 }
 
 fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) {

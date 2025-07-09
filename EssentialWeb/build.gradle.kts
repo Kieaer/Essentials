@@ -9,4 +9,6 @@ dependencies {
     implementation(libs.bundles.ktor)
 
     implementation(project(":common"))
+    implementation(libs.jbcrypt)
+    implementation(libs.hikariCP)
 }
