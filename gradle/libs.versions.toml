@@ -5,7 +5,8 @@ kotlinxCoroutines = "1.8.1"
 ksp = "2.1.21-2.0.1"
 kotlinpoet = "2.2.0"
 
-game = "local-SNAPSHOT"
+game = "-SNAPSHOT"
+local = "local-SNAPSHOT"
 kaml = "0.78.0"
 exposed = "0.61.0"
 hjson = "3.0.0-C11"
@@ -35,6 +36,11 @@ arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "game" }
 core = { module = "com.github.Anuken.Mindustry:core", version.ref = "game" }
 server = { module = "com.github.Anuken.Mindustry:server", version.ref = "game" }
 headless = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "game" }
+
+arc-local = { module = "com.github.Anuken.Arc:arc-core", version.ref = "local" }
+core-local = { module = "com.github.Anuken.Mindustry:core", version.ref = "local" }
+server-local = { module = "com.github.Anuken.Mindustry:server", version.ref = "local" }
+headless-local = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "local" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
@@ -79,7 +85,9 @@ kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlin
 kotlinxEcosystem = ["kotlinxDatetime", "kotlinxCoroutines", "kotlinxSerializer"]
 exposed = ["exposed-core", "exposed-jdbc", "exposed-kotlin-time", "exposed-json"]
 game = ["arc", "core", "server"]
+local-game = ["arc-local", "core-local", "server-local"]
 game-test = ["arc", "core", "server", "headless", "datafaker", "mockito", "jts", "h2"]
+local-game-test = ["arc-local", "core-local", "server-local", "headless-local", "datafaker", "mockito", "jts", "h2"]
 jackson = ["jackson-dataformat", "jackson-module"]
 ktor = ["ktor", "ktor-netty", "ktor-content", "ktor-serialize-json", "ktor-auth", "ktor-auth-jwt", "ktor-sessions", "ktor-html", "ktor-websockets"]
 

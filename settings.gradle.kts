@@ -11,16 +11,19 @@ pluginManagement {
 
 @Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
+    val snapshotIp = System.getenv("LOCAL_REPO_IP")
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 
     repositories {
         mavenCentral()
-        maven {
-            url = uri("http://127.0.0.1:8081/repository/maven-snapshots/")
-            isAllowInsecureProtocol = true
+        if (snapshotIp != null && snapshotIp.isNotEmpty()) {
+            maven {
+                url = uri("http://$snapshotIp/repository/maven-snapshots/")
+                isAllowInsecureProtocol = true
+            }
+        } else {
+            maven { url = uri("https://jitpack.io") }
         }
-
-        maven { url = uri("https://jitpack.io") }
     }
 }
 

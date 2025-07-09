@@ -6,8 +6,6 @@ plugins {
 }
 
 dependencies {
-    compileOnlyApi(libs.bundles.game)
-
     ksp(project(":ksp-processor"))
     api(project(":ksp-processor"))
     api(libs.bundles.kotlinxEcosystem)
@@ -18,7 +16,11 @@ dependencies {
     api(libs.jbcrypt)
 
     testImplementation(kotlin("test"))
-    testImplementation(libs.bundles.game.test)
+    if (System.getenv("LOCAL_REPO_IP") != null) {
+        testImplementation(libs.bundles.local.game.test)
+    } else {
+        testImplementation(libs.bundles.game.test)
+    }
     testImplementation(libs.bundles.kotlinxEcosystem)
     testImplementation(libs.bundles.exposed)
     testImplementation(libs.sqlite)

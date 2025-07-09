@@ -11,6 +11,16 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "com.gradleup.shadow")
 
+    if (project.name != "ksp-processor") {
+        dependencies {
+            if (System.getenv("LOCAL_REPO_IP") != null) {
+                compileOnly(rootProject.libs.bundles.local.game)
+            } else {
+                compileOnly(rootProject.libs.bundles.game)
+            }
+        }
+    }
+
     tasks.shadowJar {
         exclude("arc/**")
         exclude("mindustry/**")

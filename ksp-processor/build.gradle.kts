@@ -4,7 +4,11 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.bundles.game)
+    if (System.getenv("LOCAL_REPO_IP") != null) {
+        implementation(libs.bundles.local.game)
+    } else {
+        implementation(libs.bundles.game)
+    }
     compileOnly(libs.ksp.api)
     compileOnly(libs.kotlinpoet)
     implementation(libs.kotlinpoet.ksp)
