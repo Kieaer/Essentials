@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,31 +9,32 @@
     <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
     <link rel="stylesheet" href="css/styles.css">
     <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+    <script defer src="js/translations.js"></script>
     <script defer src="js/app.js"></script>
 </head>
 <body>
     <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
         <header class="mdl-layout__header">
             <div class="mdl-layout__header-row">
-                <span class="mdl-layout-title">Mindustry Server</span>
+                <span class="mdl-layout-title" data-i18n="nav.title">Mindustry Server</span>
                 <div class="mdl-layout-spacer"></div>
                 <nav class="mdl-navigation mdl-layout--large-screen-only">
-                    <a class="mdl-navigation__link" href="#" id="nav-home">Home</a>
-                    <a class="mdl-navigation__link" href="#" id="nav-maps">Maps</a>
-                    <a class="mdl-navigation__link" href="#" id="nav-server">Server Status</a>
-                    <a class="mdl-navigation__link" href="#" id="nav-login">Login</a>
-                    <a class="mdl-navigation__link" href="#" id="nav-logout" style="display: none;">Logout</a>
+                    <a class="mdl-navigation__link" href="#" id="nav-home" data-i18n="nav.home">Home</a>
+                    <a class="mdl-navigation__link" href="#" id="nav-maps" data-i18n="nav.maps">Maps</a>
+                    <a class="mdl-navigation__link" href="#" id="nav-server" data-i18n="nav.server">Server Status</a>
+                    <a class="mdl-navigation__link" href="#" id="nav-login" data-i18n="nav.login">Login</a>
+                    <a class="mdl-navigation__link" href="#" id="nav-logout" style="display: none;" data-i18n="nav.logout">Logout</a>
                 </nav>
             </div>
         </header>
         <div class="mdl-layout__drawer">
-            <span class="mdl-layout-title">Mindustry Server</span>
+            <span class="mdl-layout-title" data-i18n="nav.title">Mindustry Server</span>
             <nav class="mdl-navigation">
-                <a class="mdl-navigation__link" href="#" id="drawer-home">Home</a>
-                <a class="mdl-navigation__link" href="#" id="drawer-maps">Maps</a>
-                <a class="mdl-navigation__link" href="#" id="drawer-server">Server Status</a>
-                <a class="mdl-navigation__link" href="#" id="drawer-login">Login</a>
-                <a class="mdl-navigation__link" href="#" id="drawer-logout" style="display: none;">Logout</a>
+                <a class="mdl-navigation__link" href="#" id="drawer-home" data-i18n="nav.home">Home</a>
+                <a class="mdl-navigation__link" href="#" id="drawer-maps" data-i18n="nav.maps">Maps</a>
+                <a class="mdl-navigation__link" href="#" id="drawer-server" data-i18n="nav.server">Server Status</a>
+                <a class="mdl-navigation__link" href="#" id="drawer-login" data-i18n="nav.login">Login</a>
+                <a class="mdl-navigation__link" href="#" id="drawer-logout" style="display: none;" data-i18n="nav.logout">Logout</a>
             </nav>
         </div>
         <main class="mdl-layout__content">
@@ -42,11 +43,11 @@
                 <section id="home-page" class="page">
                     <div class="mdl-grid">
                         <div class="mdl-cell mdl-cell--12-col">
-                            <h2>Welcome to Mindustry Server Web Interface</h2>
-                            <p>This web interface allows you to manage maps and monitor server status.</p>
+                            <h2 data-i18n="home.title">Welcome to Mindustry Server Web Interface</h2>
+                            <p data-i18n="home.description">This web interface allows you to manage maps and monitor server status.</p>
                         </div>
                         <div class="mdl-cell mdl-cell--12-col">
-                            <h3>Featured Maps</h3>
+                            <h3 data-i18n="home.featured">Featured Maps</h3>
                             <div id="featured-maps" class="map-grid">
                                 <!-- Maps will be loaded here -->
                                 <div class="mdl-spinner mdl-js-spinner is-active"></div>
@@ -59,12 +60,12 @@
                 <section id="maps-page" class="page" style="display: none;">
                     <div class="mdl-grid">
                         <div class="mdl-cell mdl-cell--12-col">
-                            <h2>Map Management</h2>
-                            <p>Upload, download, and manage maps for your server.</p>
+                            <h2 data-i18n="maps.title">Map Management</h2>
+                            <p data-i18n="maps.description">Upload, download, and manage maps for your server.</p>
                         </div>
                         <div class="mdl-cell mdl-cell--12-col">
                             <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="upload-map-btn">
-                                <i class="material-icons">file_upload</i> Upload Map
+                                <i class="material-icons">file_upload</i> <span data-i18n="maps.upload">Upload Map</span>
                             </button>
                         </div>
                         <div class="mdl-cell mdl-cell--12-col">
@@ -80,32 +81,32 @@
                 <section id="server-page" class="page" style="display: none;">
                     <div class="mdl-grid">
                         <div class="mdl-cell mdl-cell--12-col">
-                            <h2>Server Status</h2>
-                            <p>Monitor server status, players, and chat.</p>
+                            <h2 data-i18n="server.title">Server Status</h2>
+                            <p data-i18n="server.description">Monitor server status, players, and chat.</p>
                         </div>
                         <div class="mdl-cell mdl-cell--6-col">
                             <div class="mdl-card mdl-shadow--2dp server-info-card">
                                 <div class="mdl-card__title">
-                                    <h2 class="mdl-card__title-text">Server Information</h2>
+                                    <h2 class="mdl-card__title-text" data-i18n="server.info">Server Information</h2>
                                 </div>
                                 <div class="mdl-card__supporting-text">
-                                    <p><strong>Current Map:</strong> <span id="current-map">Loading...</span></p>
-                                    <p><strong>TPS:</strong> <span id="server-tps">Loading...</span></p>
-                                    <p><strong>Wave:</strong> <span id="server-wave">Loading...</span></p>
-                                    <p><strong>Game Time:</strong> <span id="server-time">Loading...</span></p>
+                                    <p><strong data-i18n="server.map">Current Map</strong>: <span id="current-map" data-i18n="server.loading">Loading...</span></p>
+                                    <p><strong>TPS:</strong> <span id="server-tps" data-i18n="server.loading">Loading...</span></p>
+                                    <p><strong data-i18n="server.wave">Wave</strong>: <span id="server-wave" data-i18n="server.loading">Loading...</span></p>
+                                    <p><strong data-i18n="server.time">Game Time</strong>: <span id="server-time" data-i18n="server.loading">Loading...</span></p>
                                 </div>
                             </div>
                         </div>
                         <div class="mdl-cell mdl-cell--6-col">
                             <div class="mdl-card mdl-shadow--2dp player-list-card">
                                 <div class="mdl-card__title">
-                                    <h2 class="mdl-card__title-text">Players</h2>
+                                    <h2 class="mdl-card__title-text" data-i18n="server.players">Players</h2>
                                 </div>
                                 <div class="mdl-card__supporting-text">
                                     <ul id="player-list" class="mdl-list">
                                         <!-- Players will be loaded here -->
                                         <li class="mdl-list__item">
-                                            <span class="mdl-list__item-primary-content">Loading players...</span>
+                                            <span class="mdl-list__item-primary-content" data-i18n="server.loading">Loading...</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -114,21 +115,21 @@
                         <div class="mdl-cell mdl-cell--12-col">
                             <div class="mdl-card mdl-shadow--2dp chat-card">
                                 <div class="mdl-card__title">
-                                    <h2 class="mdl-card__title-text">Chat</h2>
+                                    <h2 class="mdl-card__title-text" data-i18n="server.chat">Chat</h2>
                                 </div>
                                 <div class="mdl-card__supporting-text">
                                     <div id="chat-messages" class="chat-messages">
                                         <!-- Chat messages will be loaded here -->
-                                        <p class="chat-message">Loading chat history...</p>
+                                        <p class="chat-message" data-i18n="server.chat.loading">Loading chat history...</p>
                                     </div>
                                 </div>
                                 <div class="mdl-card__actions mdl-card--border">
                                     <form id="chat-form">
                                         <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 80%;">
                                             <input class="mdl-textfield__input" type="text" id="chat-input">
-                                            <label class="mdl-textfield__label" for="chat-input">Type a message...</label>
+                                            <label class="mdl-textfield__label" for="chat-input" data-i18n="server.chat.input">Type a message...</label>
                                         </div>
-                                        <button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored">
+                                        <button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" data-i18n="server.chat.send">
                                             Send
                                         </button>
                                     </form>
@@ -144,23 +145,23 @@
                         <div class="mdl-cell mdl-cell--4-col mdl-cell--4-offset">
                             <div class="mdl-card mdl-shadow--2dp login-card">
                                 <div class="mdl-card__title">
-                                    <h2 class="mdl-card__title-text">Login</h2>
+                                    <h2 class="mdl-card__title-text" data-i18n="login.title">Login</h2>
                                 </div>
                                 <div class="mdl-card__supporting-text">
                                     <form id="login-form">
                                         <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
                                             <input class="mdl-textfield__input" type="text" id="username">
-                                            <label class="mdl-textfield__label" for="username">Username</label>
+                                            <label class="mdl-textfield__label" for="username" data-i18n="login.username">Username</label>
                                         </div>
                                         <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
                                             <input class="mdl-textfield__input" type="password" id="password">
-                                            <label class="mdl-textfield__label" for="password">Password</label>
+                                            <label class="mdl-textfield__label" for="password" data-i18n="login.password">Password</label>
                                         </div>
                                         <div id="login-error" class="error-message" style="display: none;"></div>
                                     </form>
                                 </div>
                                 <div class="mdl-card__actions mdl-card--border">
-                                    <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="login-btn">
+                                    <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="login-btn" data-i18n="login.button">
                                         Login
                                     </button>
                                 </div>
@@ -171,7 +172,7 @@
 
                 <!-- Upload Map Dialog -->
                 <dialog class="mdl-dialog" id="upload-dialog">
-                    <h4 class="mdl-dialog__title">Upload Map</h4>
+                    <h4 class="mdl-dialog__title" data-i18n="upload.title">Upload Map</h4>
                     <div class="mdl-dialog__content">
                         <form id="upload-form">
                             <div class="mdl-textfield mdl-js-textfield mdl-textfield--file">
@@ -185,8 +186,8 @@
                         </form>
                     </div>
                     <div class="mdl-dialog__actions">
-                        <button type="button" class="mdl-button" id="upload-cancel">Cancel</button>
-                        <button type="button" class="mdl-button mdl-button--colored" id="upload-confirm">Upload</button>
+                        <button type="button" class="mdl-button" id="upload-cancel" data-i18n="upload.cancel">Cancel</button>
+                        <button type="button" class="mdl-button mdl-button--colored" id="upload-confirm" data-i18n="upload.button">Upload</button>
                     </div>
                 </dialog>
             </div>
