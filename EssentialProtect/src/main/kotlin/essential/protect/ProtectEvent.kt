@@ -5,12 +5,9 @@ import arc.net.Server
 import arc.net.ServerDiscoveryHandler
 import arc.util.Log
 import arc.util.Timer
-import com.zaxxer.hikari.HikariDataSource
 import essential.bundle.Bundle
 import essential.config.Config
-import essential.database.data.PlayerData
-import essential.database.data.checkPlayerBanned
-import essential.database.data.createPlayerData
+import essential.database.data.*
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.log.LogType
@@ -18,7 +15,6 @@ import essential.log.writeLog
 import essential.players
 import essential.protect.Main.Companion.conf
 import essential.protect.Main.Companion.pluginData
-import essential.util.findPlayerData
 import kotlinx.coroutines.runBlocking
 import ksp.event.Event
 import mindustry.Vars
@@ -33,7 +29,6 @@ import mindustry.net.NetworkIO
 import mindustry.net.Packets
 import mindustry.world.Tile
 import mindustry.world.blocks.power.PowerGraph
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.net.InetAddress
 import java.net.UnknownHostException
@@ -145,15 +140,23 @@ fun config(e: EventType.ConfigEvent) {
 @Event
 fun playerJoin(e: EventType.PlayerJoin) {
     e.player.admin(false)
-
-    val data: PlayerData? = findPlayerData(e.player.uuid())
+    val data: PlayerData? = runBlocking { getPlayerData(e.player.uuid()) }
     if (conf.account.getAuthType() == ProtectConfig.AuthType.None || !conf.account.enabled) {
         if (data == null) {
             if (transaction {
-                    PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq e.player.plainName() }.empty()
+                    PlayerTable
+                        .select(PlayerTable.name)
+                        .where { PlayerTable.name eq e.player.plainName() }
+                        .empty()
                 }) {
-                val data = runBlocking { createPlayerData(e.player) }
-                loadPlayer(data)
+
+                val playerData = runBlocking {
+                    val data = createPlayerData(e.player)
+                    data.permission = "user"
+                    data.update()
+                    data
+                }
+                Events.fire(CustomEvents.PlayerDataLoad(playerData))
             } else {
                 e.player.con.kick(
                     Bundle(e.player.locale)["event.player.name.duplicate"],
@@ -166,21 +169,26 @@ fun playerJoin(e: EventType.PlayerJoin) {
     } else if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
         if (data == null) {
             if (transaction {
-                    !PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq e.player.plainName() }
+                    PlayerTable
+                        .select(PlayerTable.name)
+                        .where { PlayerTable.name eq e.player.plainName() }
                         .empty()
                 }) {
+                //data.send("event.discord.not.registered")
+                // TODO discord 로그인 추가
+            } else {
                 e.player.con.kick(
                     Bundle(e.player.locale)["event.player.name.duplicate"],
                     0L
                 )
-            } else {
-                val data = runBlocking { createPlayerData(e.player) }
-                loadPlayer(data)
             }
+        } else {
+            Events.fire(CustomEvents.PlayerDataLoad(data))
         }
     } else {
         e.player.sendMessage(Bundle(e.player.locale)["event.player.first.register"])
     }
+
 }
 
 @Event
@@ -278,12 +286,6 @@ fun configFileModified(e: CustomEvents.ConfigFileModified) {
 fun start() {
     if (conf.rules.blockNewUser) {
         enableBlockNewUser()
-    }
-}
-
-fun loadPlayer(data: PlayerData) {
-    if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord && data.discordID == null) {
-        data.send("event.discord.not.registered")
     }
 }
 

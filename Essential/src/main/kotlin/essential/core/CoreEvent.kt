@@ -15,7 +15,6 @@ import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
 import essential.database.data.*
 import essential.database.data.plugin.WarpZone
-import essential.database.datasource
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.log.LogType
@@ -383,12 +382,12 @@ internal fun serverLoad(event: ServerLoadEvent) {
         scope.launch {
             val data = getPlayerData(it.player.uuid())
 
-            val trigger = Trigger()
             if (data == null) {
                 if (transaction {
                         PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()
                     }) {
                     val data = createPlayerData(it.player)
+                    data.permission = "user"
                     data.player = it.player
                     Events.fire(CustomEvents.PlayerDataLoad(data))
                 } else {
@@ -933,7 +932,7 @@ internal fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     playerNumber++
     player.sendMessage(message.toString())
 
-    playerData.send("event.player.loaded")
+    Log.debug("${playerData.name} data loaded.")
     Events.fire(CustomEvents.PlayerDataLoadEnd(playerData))
 }
 

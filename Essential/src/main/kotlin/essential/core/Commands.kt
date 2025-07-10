@@ -196,6 +196,7 @@ internal class Commands {
             }
 
             val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
+            playerData.accountID = playerData.name
             playerData.accountPW = password
             playerData.update()
             playerData.send("command.changePw.apply")

@@ -8,6 +8,7 @@ import essential.bundle.Bundle
 import essential.database.data.PlayerData
 import essential.database.data.createPlayerData
 import essential.database.data.mapToPlayerDataList
+import essential.database.data.update
 import essential.database.table.PlayerTable
 import essential.event.CustomEvents
 import essential.event.CustomEvents.PlayerDiscordRequested
@@ -89,7 +90,9 @@ class Commands {
                     player.sendMessage(bundle["command.reg.exists"])
                 } else {
                     scope.launch {
-                        createPlayerData(player.name(), player.uuid(), arg[0], arg[1])
+                        val playerData = createPlayerData(player.name(), player.uuid(), arg[0], arg[1])
+                        playerData.permission = "user"
+                        playerData.update()
                     }
                     Log.info(bundle["log.data_created", player.plainName()])
                 }
