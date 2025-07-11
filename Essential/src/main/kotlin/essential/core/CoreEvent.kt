@@ -23,6 +23,7 @@ import essential.permission.Permission
 import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
@@ -43,7 +44,12 @@ import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.IOException
+import java.math.BigInteger
+import java.nio.file.Files
 import java.nio.file.StandardWatchEventKinds
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 import java.text.NumberFormat
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -60,6 +66,7 @@ private var blockExp = mutableMapOf<String, Int>()
 val mapVotes = HashMap<String, Map>()
 
 /** 맵 평가 목록 (UUID, Boolean) - true for upvote, false for downvote */
+// This is now stored in the database using MapRating class
 val mapRatings = HashMap<String, Boolean>()
 
 /** PvP 관전 플레이어 목록 */
@@ -427,24 +434,35 @@ internal fun gameOver(event: GameOverEvent) {
         for (data in players) {
 
             // Only show the menu if the player hasn't already voted
-            if (!mapRatings.containsKey(data.uuid)) {
+            val hasVoted = runBlocking { getMapRating(data.uuid, mapName) != null }
+            if (!hasVoted) {
                 val rateMapMenu = Menus.registerMenu { player, select ->
                     if (select == 0) {
                         // Upvote
-                        mapRatings[data.uuid] = true
+                        runBlocking {
+                            // Get the map hash (MD5 hash of the map file)
+                            val mapHash = calculateMapMD5Hash(currentMap)
 
-                        // Save to persistent storage
-                        val mapRatingsForCurrentMap = pluginData.data.mapRatings.getOrPut(mapName) { HashMap() }
-                        mapRatingsForCurrentMap[data.uuid] = true
+                            // Save to database
+                            updateOrCreateMapRating(mapName, mapHash, data.uuid, true)
+
+                            // Keep in-memory cache for current session
+                            mapRatings[data.uuid] = true
+                        }
 
                         data.send("command.map.rate.upvote", mapName)
                     } else if (select == 1) {
                         // Downvote
-                        mapRatings[data.uuid] = false
+                        runBlocking {
+                            // Get the map hash (MD5 hash of the map file)
+                            val mapHash = calculateMapMD5Hash(currentMap)
 
-                        // Save to persistent storage
-                        val mapRatingsForCurrentMap = pluginData.data.mapRatings.getOrPut(mapName) { HashMap() }
-                        mapRatingsForCurrentMap[data.uuid] = false
+                            // Save to database
+                            updateOrCreateMapRating(mapName, mapHash, data.uuid, false)
+
+                            // Keep in-memory cache for current session
+                            mapRatings[data.uuid] = false
+                        }
 
                         data.send("command.map.rate.downvote", mapName)
                     }
@@ -719,12 +737,29 @@ internal fun worldLoad(event: WorldLoadEvent) {
     isCheated = false
     mapRatings.clear()
 
-    // Load map ratings for the current map from persistent storage
+    // Load map ratings for the current map from the database
     val currentMapName = Vars.state.map.plainName()
+
+    // Load ratings into in-memory cache for quick access during the current session
+    runBlocking {
+        val ratings = getMapRatings(currentMapName)
+        for (rating in ratings) {
+            mapRatings[rating.playerUuid] = rating.isUpvote
+        }
+    }
+
+    // Migrate ratings from the old storage system if needed
     val savedRatings = pluginData.data.mapRatings[currentMapName]
-    if (savedRatings != null) {
-        // Copy the saved ratings to the in-memory map
-        mapRatings.putAll(savedRatings)
+    if (savedRatings != null && savedRatings.isNotEmpty()) {
+        runBlocking {
+            for ((uuid, isUpvote) in savedRatings) {
+                // Only migrate if not already in the database
+                if (getMapRating(uuid, currentMapName) == null) {
+                    val mapHash = calculateMapMD5Hash(Vars.state.map)
+                    updateOrCreateMapRating(currentMapName, mapHash, uuid, isUpvote)
+                }
+            }
+        }
     }
 
     if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
@@ -1026,6 +1061,25 @@ fun isUnitInside(target: Tile, first: Tile, second: Tile): Boolean {
     val maxY = maxOf(first.getY(), second.getY())
 
     return target.getX() in minX..maxX && target.getY() in minY..maxY
+}
+
+/**
+ * Calculate the MD5 hash of a map file
+ * @param map The map to calculate the hash for
+ * @return The MD5 hash of the map file as a hexadecimal string
+ */
+private fun calculateMapMD5Hash(map: mindustry.maps.Map): String {
+    try {
+        val data = Files.readAllBytes(map.file.file().toPath())
+        val hash = MessageDigest.getInstance("MD5").digest(data)
+        return BigInteger(1, hash).toString(16)
+    } catch (e: NoSuchAlgorithmException) {
+        Log.err("Failed to calculate MD5 hash: ${e.message}")
+        return ""
+    } catch (e: IOException) {
+        Log.err("Failed to read map file: ${e.message}")
+        return ""
+    }
 }
 
 private fun checkValidBlock(tile: Tile): String {

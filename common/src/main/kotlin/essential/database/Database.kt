@@ -1,16 +1,11 @@
 package essential.database
 
-import arc.Events
 import arc.util.Log
 import com.zaxxer.hikari.HikariDataSource
 import essential.DATABASE_VERSION
 import essential.bundle
 import essential.database.data.getPluginData
-import essential.database.table.AchievementTable
-import essential.database.table.PlayerBannedTable
-import essential.database.table.PlayerTable
-import essential.database.table.PluginTable
-import essential.event.CustomEvents
+import essential.database.table.*
 import essential.rootPath
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.Database
@@ -41,7 +36,7 @@ fun databaseInit(jdbcUrl: String, user: String, pass: String) {
     Database.connect(datasource)
 
     transaction {
-        SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable, AchievementTable)
+        SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable, AchievementTable, MapRatingTable)
     }
 
     upgradeDatabaseBlocking()

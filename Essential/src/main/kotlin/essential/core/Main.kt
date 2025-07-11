@@ -15,6 +15,7 @@ import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
 import essential.database.data.DisplayData
 import essential.database.data.getPluginData
+import essential.database.data.migrateMapRatingsFromPluginData
 import essential.database.data.toPluginData
 import essential.database.databaseInit
 import essential.database.table.PluginTable
@@ -86,6 +87,16 @@ class Main : Plugin() {
             }
 
             pluginData = data
+
+            // Migrate map ratings from PluginData to the new MapRating table
+            try {
+                Log.info("Migrating map ratings to the new database table...")
+                migrateMapRatingsFromPluginData(data)
+                Log.info("Map ratings migration completed successfully.")
+            } catch (e: Exception) {
+                Log.err("Error migrating map ratings: ${e.message}")
+                e.printStackTrace()
+            }
         }
 
         // 권한 기능 설정
