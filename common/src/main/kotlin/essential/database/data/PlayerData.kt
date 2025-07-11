@@ -77,6 +77,9 @@ data class PlayerData(
     var apm = 0
     var apmTimestamps = mutableListOf<Long>()
 
+    // achievements status
+    var achievementStatus = mutableListOf<String>()
+
     var animatedName = false
 
     var player: Playerc = Player.create()

@@ -54,6 +54,8 @@ class Main : Plugin() {
             return
         }
 
+
+
         conf = config
 
         bundle.locale = Locale(conf.plugin.lang)

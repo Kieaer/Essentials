@@ -3,14 +3,11 @@ package essential.achievements
 import arc.Events
 import arc.util.Timer
 import essential.achievements.APMTracker.Companion.findPlayerByUuid
-import essential.achievements.Main.Companion.scope
 import essential.bundle.Bundle
 import essential.database.data.PlayerData
-import essential.database.data.getPlayerAchievements
 import essential.offlinePlayers
 import essential.players
 import essential.pluginData
-import kotlinx.coroutines.launch
 import ksp.event.Event
 import mindustry.Vars.state
 import mindustry.content.Planets
@@ -574,28 +571,6 @@ fun updateSecond() {
 fun playerJoin(event: PlayerJoin) {
     val data: PlayerData? = findPlayerByUuid(event.player.uuid())
     if (data != null) {
-        // Load achievements from database
-        scope.launch {
-            try {
-                // Get all completed achievements from the database
-                val achievements = getPlayerAchievements(data)
-
-                // Store them in data.status for use during this session
-                achievements.forEach { achievement ->
-                    data.status.put(
-                        "achievement.${achievement.achievementName}",
-                        achievement.completedAt.toString()
-                    )
-                }
-
-                // Log the number of loaded achievements
-                data.send("Loaded ${achievements.size} achievements from database")
-            } catch (ex: Exception) {
-                // Log any errors
-                data.err("Error loading achievements from database: ${ex.message}")
-            }
-        }
-
         // Check for attendance achievement
         if (Achievement.Attendance.success(data)) {
             Achievement.Attendance.set(data)

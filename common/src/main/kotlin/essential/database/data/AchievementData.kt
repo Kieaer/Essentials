@@ -55,6 +55,11 @@ fun setAchievement(playerData: PlayerData, achievementName: String) {
                 it[AchievementTable.achievementName] = achievementName
                 // completedAt will be set automatically by the default value
             }
+
+            // Add to player's achievement status list
+            if (!playerData.achievementStatus.contains(achievementName)) {
+                playerData.achievementStatus.add(achievementName)
+            }
         }
     }
 }

@@ -967,6 +967,13 @@ internal fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     playerNumber++
     player.sendMessage(message.toString())
 
+    runBlocking {
+        val data = getPlayerAchievements(playerData)
+        data.forEach {
+            playerData.achievementStatus.add(it.achievementName)
+        }
+    }
+
     Log.debug("${playerData.name} data loaded.")
     Events.fire(CustomEvents.PlayerDataLoadEnd(playerData))
 }
@@ -1068,7 +1075,7 @@ fun isUnitInside(target: Tile, first: Tile, second: Tile): Boolean {
  * @param map The map to calculate the hash for
  * @return The MD5 hash of the map file as a hexadecimal string
  */
-private fun calculateMapMD5Hash(map: mindustry.maps.Map): String {
+private fun calculateMapMD5Hash(map: Map): String {
     try {
         val data = Files.readAllBytes(map.file.file().toPath())
         val hash = MessageDigest.getInstance("MD5").digest(data)

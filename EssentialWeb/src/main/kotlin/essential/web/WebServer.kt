@@ -271,7 +271,7 @@ class WebServer {
         }
 
         server.start(false)
-        Log.info(bundle["web.server.started", conf.port])
+        Log.info(bundle["web.server.started", conf.port.toString()])
     }
 
     fun stop() {

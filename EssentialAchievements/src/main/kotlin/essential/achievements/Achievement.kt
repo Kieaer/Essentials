@@ -3,7 +3,6 @@ package essential.achievements
 import arc.Events
 import essential.achievements.Main.Companion.scope
 import essential.database.data.PlayerData
-import essential.database.data.hasAchievement
 import essential.database.data.setAchievement
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -12,8 +11,6 @@ import java.math.BigInteger
 import java.nio.file.Files
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 enum class Achievement {
@@ -204,6 +201,8 @@ enum class Achievement {
             return 1
         }
 
+        override val isHidden = true
+
         override fun current(data: PlayerData): Int{
             return data.status.getOrDefault("record.warp.disconnect", "0").toInt()
         }
@@ -283,6 +282,8 @@ enum class Achievement {
         override fun value(): Int{
             return 1
         }
+
+        override val isHidden = true
 
         override fun current(data: PlayerData): Int{
             return data.status.getOrDefault("record.voting.ban", "0").toInt()
@@ -492,7 +493,7 @@ enum class Achievement {
         }
     },
 
-    // ??
+    // See 'owner' permission user to get this
     MeetOwner {
         override fun value(): Int{
             return 1
@@ -554,6 +555,8 @@ enum class Achievement {
         override fun value(): Int{
             return 1
         }
+
+        override val isHidden = true
 
         override fun current(data: PlayerData): Int{
             return data.status.getOrDefault("record.chat.newyear", "0").toInt()
@@ -636,16 +639,15 @@ enum class Achievement {
     abstract fun current(data: PlayerData): Int
     open fun success(data: PlayerData): Boolean {
         // Prevent achievements from being cleared in sandbox mode
-        if (mindustry.Vars.state.rules.infiniteResources) {
+        if (Vars.state.rules.infiniteResources) {
             return false
         }
 
-        // First check if the achievement is already completed in status
+        // First check if the achievement is already completed in database
         val achievementName = this.toString().lowercase(Locale.getDefault())
-        val isCompletedInStatus = data.status.containsKey("achievement.$achievementName")
 
-        // If it's already marked as completed in status, return true
-        if (isCompletedInStatus) {
+        // If it's already marked as completed in database, return true
+        if (data.achievementStatus.contains(achievementName)) {
             return true
         }
 
@@ -653,26 +655,12 @@ enum class Achievement {
         return current(data) >= value()
     }
 
-    /**
-     * Check if the achievement is completed in the database
-     * This is a suspending function and should be called from a coroutine
-     */
-    suspend fun isCompletedInDatabase(data: PlayerData): Boolean {
-        val achievementName = this.toString().lowercase(Locale.getDefault())
-        return hasAchievement(data, achievementName)
-    }
-
     fun set(data: PlayerData) {
         val achievementName = this.toString().lowercase(Locale.getDefault())
 
-        // Store in status for temporary use during this session
-        if (!data.status.containsKey("achievement.$achievementName")) {
-            data.status.put(
-                "achievement.$achievementName",
-                LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
-            )
-
-            // Also store in database for permanent storage
+        // Only store in database for permanent storage
+        // We no longer store in playerData.status
+        if (!data.achievementStatus.contains(achievementName)) {
             scope.launch {
                 setAchievement(data, achievementName)
             }
