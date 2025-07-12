@@ -682,20 +682,22 @@ internal fun playerLeave(event: PlayerLeave) {
 
         offlinePlayers.add(data)
 
-        if (Vars.state.rules.pvp) {
-            val b = Groups.player.copy()
-            b.remove(event.player)
-            val s: HashMap<Team, Playerc> = hashMapOf()
-            b.forEach { p ->
-                if (p.team() != Team.derelict) {
-                    s[p.team()] = p
+        if (Administration.Config.autoPause.bool()) {
+            if (Vars.state.rules.pvp) {
+                val b = Groups.player.copy()
+                b.remove(event.player)
+                val s: HashMap<Team, Playerc> = hashMapOf()
+                b.forEach { p ->
+                    if (p.team() != Team.derelict) {
+                        s[p.team()] = p
+                    }
                 }
+                if (s.keys.size == 1) {
+                    Events.fire(GameOverEvent(b.first().team()))
+                }
+            } else if (players.isEmpty() && pvpSpecters.isNotEmpty()) {
+                Events.fire(GameOverEvent(data.player.team()))
             }
-            if (s.keys.size == 1) {
-                Events.fire(GameOverEvent(b.first().team()))
-            }
-        } else if (players.isEmpty() && pvpSpecters.isNotEmpty()) {
-            Events.fire(GameOverEvent(data.player.team()))
         }
         players.removeAll { e -> e.uuid == data.uuid }
     }
