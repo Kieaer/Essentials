@@ -271,7 +271,7 @@ fun connectPacket(event: EventType.ConnectPacketEvent) {
 fun configFileModified(e: CustomEvents.ConfigFileModified) {
     if (e.kind === java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY) {
         if (e.paths == "config_protect.yaml") {
-            val config = Config.load("config_protect.yaml", ProtectConfig.serializer(), ProtectConfig())
+            val config = Config.load("config_protect", ProtectConfig.serializer(), ProtectConfig())
             require(config != null) {
                 Log.err(Bundle()["config.invalid.path"])
                 return

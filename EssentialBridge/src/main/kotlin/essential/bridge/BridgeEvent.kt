@@ -11,7 +11,7 @@ import ksp.event.Event
 internal fun configFileModified(event: CustomEvents.ConfigFileModified) {
     if (event.kind === java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY) {
         if (event.paths == "config_bridge.yaml") {
-            val config = Config.load("config_bridge.yaml", BridgeConfig.serializer(), BridgeConfig())
+            val config = Config.load("config_bridge", BridgeConfig.serializer(), BridgeConfig())
             require(config != null) {
                 Log.err(Bundle()["event.plugin.load.failed"])
                 return

@@ -12,7 +12,7 @@ import ksp.event.Event
 fun configFileModified(event: CustomEvents.ConfigFileModified) {
     if (event.kind === java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY) {
         if (event.paths == "config_discord.yaml") {
-            val config = Config.load("config_discord.yaml", DiscordConfig.serializer(), DiscordConfig())
+            val config = Config.load("config_discord", DiscordConfig.serializer(), DiscordConfig())
             require(config != null) {
                 Log.err(bundle["event.plugin.load.failed"])
                 return

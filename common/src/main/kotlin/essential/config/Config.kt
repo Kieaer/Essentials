@@ -27,7 +27,8 @@ object Config {
         serializer: KSerializer<T>,
         defaultConfig: T? = null
     ): T? {
-        val file = rootPath.child("/config/$name.yaml").file()
+        val name = "$name.yaml"
+        val file = rootPath.child("config/$name").file()
 
         if (!file.exists()) {
             if (defaultConfig != null) {
@@ -48,7 +49,7 @@ object Config {
         }
 
         return try {
-            val content = Files.readString(Paths.get(name))
+            val content = Files.readString(Paths.get(rootPath.child("config/$name").absolutePath()))
             val config = yaml.decodeFromString(serializer, content)
             Log.info(bundle["config.loaded", name])
             config

@@ -20,7 +20,7 @@ class Main : Plugin() {
 
         Log.debug(bundle["event.plugin.starting"])
 
-        val config = Config.load("config_discord.yaml", ChatConfig.serializer(), ChatConfig())
+        val config = Config.load("config_chat", ChatConfig.serializer(), ChatConfig())
         require(config != null) {
             Log.err(bundle["event.plugin.load.failed"])
             return

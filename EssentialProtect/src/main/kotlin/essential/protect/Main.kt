@@ -19,7 +19,6 @@ import kotlinx.coroutines.Dispatchers
 import mindustry.Vars.netServer
 import mindustry.mod.Plugin
 import org.jetbrains.exposed.sql.Database
-import java.io.File
 import java.net.URI
 import java.util.Objects.requireNonNull
 
@@ -40,7 +39,7 @@ class Main : Plugin() {
 
         Log.debug(bundle["event.plugin.starting"])
 
-        val config = Config.load("config_protect.yaml", ProtectConfig.serializer(), ProtectConfig())
+        val config = Config.load("config_protect", ProtectConfig.serializer(), ProtectConfig())
         require(config != null) {
             Log.err(bundle["event.plugin.load.failed"])
             return

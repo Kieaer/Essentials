@@ -35,7 +35,7 @@ import java.util.*
 
 class Main : Plugin() {
     companion object {
-        const val CONFIG_PATH = "config/config.yaml"
+        const val CONFIG_PATH = "config/config"
         internal lateinit var conf: CoreConfig
 
         val scope = CoroutineScope(Dispatchers.IO)
@@ -48,7 +48,7 @@ class Main : Plugin() {
         Log.debug(bundle["event.plugin.starting"])
 
         // 플러그인 설정 불러오기
-        val config = Config.load("config.yaml", CoreConfig.serializer(), CoreConfig())
+        val config = Config.load("config", CoreConfig.serializer(), CoreConfig())
         require(config != null) {
             Log.err(bundle["event.plugin.load.failed"])
             return
