@@ -179,8 +179,30 @@ class Main : Plugin() {
 
 
     override fun registerClientCommands(handler: CommandHandler) {
+        val commandClass = Class.forName("arc.util.CommandHandler\$Command")
+        val runnerField = commandClass.getDeclaredField("runner")
+        runnerField.isAccessible = true
+
+        val vote = Vars.netServer.clientCommands.commandList.find { command -> command.text.equals("vote", true) }
+        val votekick = Vars.netServer.clientCommands.commandList.find { command -> command.text.equals("votekick", true) }
+
         registerGeneratedClientCommands(handler)
-        // todo 명령어 제외 기능 추가
+
+        if (!conf.feature.vote.enabled && vote != null) {
+            val voteRunner = runnerField.get(vote)
+            handler.register(vote.text, vote.paramText, vote.description, voteRunner as CommandHandler.CommandRunner<*>)
+
+            if (conf.feature.vote.enableVotekick && votekick != null) {
+                val votekickRunner = runnerField.get(votekick)
+                handler.register(votekick.text, votekick.paramText, votekick.description, votekickRunner as CommandHandler.CommandRunner<*>)
+            } else {
+                handler.removeCommand("votekick")
+            }
+        } else {
+            if (!conf.feature.vote.enableVotekick) {
+                handler.removeCommand("votekick")
+            }
+        }
     }
 
     private fun checkUpdate() {
