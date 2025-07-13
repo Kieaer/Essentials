@@ -4,12 +4,14 @@ plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.kotlinPluginSerialization) apply false
     alias(libs.plugins.shadowJar) apply false
+    `maven-publish`
 }
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jetbrains.kotlin.plugin.serialization")
     apply(plugin = "com.gradleup.shadow")
+    apply(plugin = "maven-publish")
 
     if (project.name != "ksp-processor") {
         dependencies {
@@ -35,6 +37,18 @@ subprojects {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         from(rootDir) {
             include("plugin.json")
+        }
+    }
+
+    publishing {
+        publications {
+            create<MavenPublication>("maven") {
+                groupId = "essential"
+                artifactId = project.name.lowercase()
+                version = "1.0.0"
+
+                from(components["java"])
+            }
         }
     }
 }
