@@ -5,6 +5,7 @@ import arc.Events
 import arc.struct.ObjectSet
 import arc.util.Log
 import essential.bundle.Bundle
+import essential.core.Main.Companion.scope
 import essential.database.data.PlayerData
 import essential.database.data.createPlayerData
 import essential.database.data.mapToPlayerDataList
@@ -16,7 +17,6 @@ import essential.event.CustomEvents.PlayerReported
 import essential.log.LogType
 import essential.log.writeLog
 import essential.protect.Main.Companion.conf
-import essential.protect.Main.Companion.scope
 import essential.util.currentTime
 import essential.util.findPlayerData
 import kotlinx.coroutines.launch

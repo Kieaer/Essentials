@@ -57,7 +57,8 @@ import java.util.*
 import java.util.regex.Pattern
 import kotlin.time.Duration.Companion.minutes
 
-/** 월드 기록 */
+/** 월드 기록 - Now stored in the database */
+@Deprecated("Use database functions instead", ReplaceWith("getAllWorldHistory()"))
 internal var worldHistory = ArrayList<TileLog>()
 private var dateformat = SimpleDateFormat("HH:mm:ss")
 private var blockExp = mutableMapOf<String, Int>()
@@ -220,54 +221,137 @@ internal fun tap(event: TapEvent) {
         }
 
         if (data.viewHistoryMode) {
+            // Use both the ArrayList (for backward compatibility) and the database
             val buf = ArrayList<TileLog>()
+
+            // Add entries from the ArrayList
             worldHistory.forEach { two ->
                 if (two.x == event.tile.x && two.y == event.tile.y) {
                     buf.add(two)
                 }
             }
-            val str = StringBuilder()
-            val bundle = data.bundle
-            // todo 이거 파일 없음
 
-            val coreBundle =
-                Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.player.locale())))
+            // Launch a coroutine to get entries from the database
+            scope.launch {
+                try {
+                    // Get entries from the database
+                    val dbEntries = getWorldHistoryByCoordinates(event.tile.x.toShort(), event.tile.y.toShort())
 
-            buf.forEach { two ->
-                val action = when (two.action) {
-                    "tap" -> "[royal]${bundle["event.log.tap"]}[]"
-                    "break" -> "[scarlet]${bundle["event.log.break"]}[]"
-                    "place" -> "[sky]${bundle["event.log.place"]}[]"
-                    "config" -> "[cyan]${bundle["event.log.config"]}[]"
-                    "withdraw" -> "[green]${bundle["event.log.withdraw"]}[]"
-                    "deposit" -> "[brown]${bundle["event.log.deposit"]}[]"
-                    "message" -> "[orange]${bundle["event.log.message"]}"
-                    else -> ""
+                    // Convert database entries to TileLog objects
+                    val dbTileLogs = dbEntries.map { entry ->
+                        TileLog(
+                            time = entry.time,
+                            player = entry.player,
+                            action = entry.action,
+                            x = entry.x,
+                            y = entry.y,
+                            tile = entry.tile,
+                            rotate = entry.rotate,
+                            team = Team.all.find { it.name == entry.team } ?: Team.derelict,
+                            value = entry.value
+                        )
+                    }
+
+                    // Add database entries to the buffer if they're not already in the ArrayList
+                    dbTileLogs.forEach { dbLog ->
+                        if (!buf.any { it.time == dbLog.time && it.player == dbLog.player && it.action == dbLog.action }) {
+                            buf.add(dbLog)
+                        }
+                    }
+
+                    // Sort the buffer by time
+                    buf.sortBy { it.time }
+
+                    // Process the combined results
+                    val str = StringBuilder()
+                    val bundle = data.bundle
+                    // todo 이거 파일 없음
+
+                    val coreBundle =
+                        Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.player.locale())))
+
+                    buf.forEach { two ->
+                        val action = when (two.action) {
+                            "tap" -> "[royal]${bundle["event.log.tap"]}[]"
+                            "break" -> "[scarlet]${bundle["event.log.break"]}[]"
+                            "place" -> "[sky]${bundle["event.log.place"]}[]"
+                            "config" -> "[cyan]${bundle["event.log.config"]}[]"
+                            "withdraw" -> "[green]${bundle["event.log.withdraw"]}[]"
+                            "deposit" -> "[brown]${bundle["event.log.deposit"]}[]"
+                            "message" -> "[orange]${bundle["event.log.message"]}"
+                            else -> ""
+                        }
+
+                        if (two.action == "message") {
+                            str.append(
+                                bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], two.value as String]
+                            ).append("\n")
+                        } else {
+                            str.append(
+                                bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], action]
+                            ).append("\n")
+                        }
+                    }
+
+                    Call.effect(event.player.con(), Fx.shockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
+                    if (str.toString().lines().size > 10) {
+                        str.append(bundle["event.log.position", event.tile.x, event.tile.y] + "\n")
+                        val lines: List<String> = str.toString().split("\n").reversed()
+                        for (i in 0 until 10) {
+                            str.append(lines[i]).append("\n")
+                        }
+                        event.player.sendMessage(str.toString().trim())
+                    } else {
+                        event.player.sendMessage(
+                            bundle["event.log.position", event.tile.x, event.tile.y] + "\n" + str.toString().trim()
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.err("Error retrieving world history from database", e)
+
+                    // Fallback to using only the ArrayList if there's an error
+                    val str = StringBuilder()
+                    val bundle = data.bundle
+                    val coreBundle =
+                        Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.player.locale())))
+
+                    buf.forEach { two ->
+                        val action = when (two.action) {
+                            "tap" -> "[royal]${bundle["event.log.tap"]}[]"
+                            "break" -> "[scarlet]${bundle["event.log.break"]}[]"
+                            "place" -> "[sky]${bundle["event.log.place"]}[]"
+                            "config" -> "[cyan]${bundle["event.log.config"]}[]"
+                            "withdraw" -> "[green]${bundle["event.log.withdraw"]}[]"
+                            "deposit" -> "[brown]${bundle["event.log.deposit"]}[]"
+                            "message" -> "[orange]${bundle["event.log.message"]}"
+                            else -> ""
+                        }
+
+                        if (two.action == "message") {
+                            str.append(
+                                bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], two.value as String]
+                            ).append("\n")
+                        } else {
+                            str.append(
+                                bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], action]
+                            ).append("\n")
+                        }
+                    }
+
+                    Call.effect(event.player.con(), Fx.shockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
+                    if (str.toString().lines().size > 10) {
+                        str.append(bundle["event.log.position", event.tile.x, event.tile.y] + "\n")
+                        val lines: List<String> = str.toString().split("\n").reversed()
+                        for (i in 0 until 10) {
+                            str.append(lines[i]).append("\n")
+                        }
+                        event.player.sendMessage(str.toString().trim())
+                    } else {
+                        event.player.sendMessage(
+                            bundle["event.log.position", event.tile.x, event.tile.y] + "\n" + str.toString().trim()
+                        )
+                    }
                 }
-
-                if (two.action == "message") {
-                    str.append(
-                        bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], two.value as String]
-                    ).append("\n")
-                } else {
-                    str.append(
-                        bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], action]
-                    ).append("\n")
-                }
-            }
-
-            Call.effect(event.player.con(), Fx.shockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
-            if (str.toString().lines().size > 10) {
-                str.append(bundle["event.log.position", event.tile.x, event.tile.y] + "\n")
-                val lines: List<String> = str.toString().split("\n").reversed()
-                for (i in 0 until 10) {
-                    str.append(lines[i]).append("\n")
-                }
-                event.player.sendMessage(str.toString().trim())
-            } else {
-                event.player.sendMessage(
-                    bundle["event.log.position", event.tile.x, event.tile.y] + "\n" + str.toString().trim()
-                )
             }
         }
 
@@ -509,6 +593,12 @@ internal fun gameOver(event: GameOverEvent) {
     }
     offlinePlayers.clear()
     worldHistory.clear()
+
+    // Clear the world history database
+    scope.launch {
+        clearWorldHistory()
+    }
+
     pvpSpecters.clear()
     pvpPlayer.clear()
 }
@@ -538,10 +628,48 @@ internal fun blockBuildEnd(event: BlockBuildEndEvent) {
                     Bundle()["log.block.place", target.name, checkValidBlock(event.tile), event.tile.x, event.tile.y]
                 )
 
+                // Use both the ArrayList (for backward compatibility) and the database
                 val buf = ArrayList<TileLog>()
+
+                // Add entries from the ArrayList
                 worldHistory.forEach { two ->
                     if (two.x == event.tile.x && two.y == event.tile.y) {
                         buf.add(two)
+                    }
+                }
+
+                // Launch a coroutine to get entries from the database
+                runBlocking {
+                    try {
+                        // Get entries from the database
+                        val dbEntries = getWorldHistoryByCoordinates(event.tile.x.toShort(), event.tile.y.toShort())
+
+                        // Convert database entries to TileLog objects
+                        val dbTileLogs = dbEntries.map { entry ->
+                            TileLog(
+                                time = entry.time,
+                                player = entry.player,
+                                action = entry.action,
+                                x = entry.x,
+                                y = entry.y,
+                                tile = entry.tile,
+                                rotate = entry.rotate,
+                                team = Team.all.find { it.name == entry.team } ?: Team.derelict,
+                                value = entry.value
+                            )
+                        }
+
+                        // Add database entries to the buffer if they're not already in the ArrayList
+                        dbTileLogs.forEach { dbLog ->
+                            if (!buf.any { it.time == dbLog.time && it.player == dbLog.player && it.action == dbLog.action }) {
+                                buf.add(dbLog)
+                            }
+                        }
+
+                        // Sort the buffer by time
+                        buf.sortBy { it.time }
+                    } catch (e: Exception) {
+                        Log.err("Error retrieving world history from database", e)
                     }
                 }
 
@@ -1048,7 +1176,23 @@ fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) 
 }
 
 private fun addLog(log: TileLog) {
+    // Add to the ArrayList for backward compatibility
     worldHistory.add(log)
+
+    // Add to the database in a coroutine I/O scope
+    scope.launch {
+        createWorldHistory(
+            time = log.time,
+            player = log.player,
+            action = log.action,
+            x = log.x,
+            y = log.y,
+            tile = log.tile,
+            rotate = log.rotate,
+            team = log.team.name,
+            value = log.value?.toString()
+        )
+    }
 }
 
 class TileLog(

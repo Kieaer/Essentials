@@ -6,6 +6,15 @@ plugins {
 
 dependencies {
     ksp(project(":ksp-processor"))
+    compileOnly(project(":Essential"))
 
-    implementation(project(":common"))
+    runtimeOnly(project(":ksp-processor"))
+    runtimeOnly(libs.bundles.kotlinxEcosystem)
+    runtimeOnly(libs.bundles.jackson)
+    runtimeOnly(libs.bundles.exposed)
+    runtimeOnly(libs.kaml)
+    runtimeOnly(libs.hikariCP)
+    runtimeOnly(libs.jbcrypt)
+    runtimeOnly(libs.jfiglet)
+    runtimeOnly(libs.sqlite)
 }

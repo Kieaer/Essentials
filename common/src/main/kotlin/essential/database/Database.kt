@@ -36,7 +36,7 @@ fun databaseInit(jdbcUrl: String, user: String, pass: String) {
     Database.connect(datasource)
 
     transaction {
-        SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable, AchievementTable, MapRatingTable)
+        SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable, AchievementTable, MapRatingTable, WorldHistoryTable)
     }
 
     upgradeDatabaseBlocking()

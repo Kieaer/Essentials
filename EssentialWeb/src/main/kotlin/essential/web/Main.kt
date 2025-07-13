@@ -1,5 +1,4 @@
 package essential.web
-
 import arc.ApplicationListener
 import arc.Core
 import arc.util.Log
@@ -32,6 +31,7 @@ class Main : Plugin() {
         val localYaml = Yaml(configuration = YamlConfiguration(strictMode = false))
 
         // Load the config manually without using the Essential module's Yaml instance
+        // Load the config manually without using the Essential module's Yaml instance
         val configFile = essential.rootPath.child("config/config_web.yaml")
         val config = if (configFile.exists()) {
             try {
@@ -54,30 +54,25 @@ class Main : Plugin() {
                 defaultConfig
             }
         }
-
         conf = config
-
         datasource = HikariDataSource().apply {
             val root = ObjectMapper(YAMLFactory()).readTree(rootPath.child("config/config.yaml").file())
             val db = root.path("plugin").path("database")
-
             jdbcUrl = db.path("url").asText()
             username = db.path("username").asText()
             password = db.path("password").asText()
             maximumPoolSize = 2
         }
-
         Database.connect(datasource)
-
         val webServer = WebServer()
         webServer.start()
-
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
                 webServer.stop()
             }
         })
-
         Log.debug(bundle["event.plugin.loaded"])
     }
 }
+import com.charleskorn.kaml.Yaml
+import com.charleskorn.kaml.YamlConfiguration

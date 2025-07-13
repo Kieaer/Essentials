@@ -2,15 +2,17 @@ package essential.util
 
 import essential.database.data.PlayerData
 import essential.players
-import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
 import mindustry.net.Administration
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /** Get current time. The Format is "yyyy-MM-dd HH:mm:ss.SSS" */
+@OptIn(ExperimentalTime::class)
 fun currentTime(): String {
     return Clock.System.now()
         .toLocalDateTime(TimeZone.currentSystemDefault()).toHString()

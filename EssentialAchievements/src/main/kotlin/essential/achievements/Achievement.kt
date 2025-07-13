@@ -1,7 +1,7 @@
 package essential.achievements
 
 import arc.Events
-import essential.achievements.Main.Companion.scope
+import essential.core.Main.Companion.scope
 import essential.database.data.PlayerData
 import essential.database.data.setAchievement
 import kotlinx.coroutines.launch

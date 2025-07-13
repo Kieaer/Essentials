@@ -14,8 +14,6 @@ import essential.protect.generated.registerGeneratedClientCommands
 import essential.protect.generated.registerGeneratedEventHandlers
 import essential.rootPath
 import essential.util.findPlayerData
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import mindustry.Vars.netServer
 import mindustry.mod.Plugin
 import org.jetbrains.exposed.sql.Database
@@ -28,8 +26,6 @@ class Main : Plugin() {
         internal var bundle: Bundle = Bundle()
         internal lateinit var conf: ProtectConfig
         internal var pluginData: PluginData = PluginData()
-
-        internal val scope = CoroutineScope(Dispatchers.IO)
     }
 
     private lateinit var datasource: HikariDataSource
