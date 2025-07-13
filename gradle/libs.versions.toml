@@ -1,8 +1,9 @@
 [versions]
-kotlin = "2.1.21"
-kotlinxDatetime = "0.6.2"
-kotlinxCoroutines = "1.8.1"
-ksp = "2.1.21-2.0.1"
+kotlin = "2.2.0"
+kotlinxDatetime = "0.7.1-0.6.x-compat"
+kotlinxCoroutines = "1.10.2"
+kotlinxSerialization = "1.9.0"
+ksp = "2.2.0-2.0.2"
 kotlinpoet = "2.2.0"
 
 game = "-SNAPSHOT"
@@ -15,11 +16,11 @@ mavenArtifact = "4.0.0-alpha-3"
 jackson = "2.19.0"
 jfiglet = "0.0.9"
 logback = "1.5.16"
-dataFaker = "2.4.2"
-mockito = "5.15.2"
+dataFaker = "2.4.3"
+mockito = "5.18.0"
 jts = "1.20.0"
 h2 = "2.3.232"
-sqlite = "3.49.1.0"
+sqlite = "3.50.2.0"
 lingua = "1.2.2"
 discord = "5.5.1"
 ktor = "3.2.0"
@@ -28,7 +29,7 @@ shadowJar = "9.0.0-beta12"
 hikaricp = "6.3.0"
 
 [libraries]
-kotlinxSerializer = { module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxCoroutines"}
+kotlinxSerializer = { module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization"}
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", version.ref = "kotlinxDatetime" }
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 

@@ -8,6 +8,7 @@ dependencies {
     ksp(project(":ksp-processor"))
     implementation(libs.discord) {
         exclude(module = "opus-java")
+        exclude(module="tink")
     }
 
     implementation(project(":common"))
