@@ -31,8 +31,7 @@ class Main : Plugin() {
         val localYaml = Yaml(configuration = YamlConfiguration(strictMode = false))
 
         // Load the config manually without using the Essential module's Yaml instance
-        // Load the config manually without using the Essential module's Yaml instance
-        val configFile = essential.rootPath.child("config/config_web.yaml")
+        val configFile = rootPath.child("config/config_web.yaml")
         val config = if (configFile.exists()) {
             try {
                 val content = configFile.readString()
@@ -44,7 +43,7 @@ class Main : Plugin() {
         } else {
             // Save the default config
             try {
-                essential.rootPath.child("config").mkdirs()
+                rootPath.child("config").mkdirs()
                 val content = localYaml.encodeToString(WebConfig.serializer(), defaultConfig)
                 configFile.writeString(content)
                 Log.info(bundle["config.created", "config_web.yaml"])
@@ -74,5 +73,3 @@ class Main : Plugin() {
         Log.debug(bundle["event.plugin.loaded"])
     }
 }
-import com.charleskorn.kaml.Yaml
-import com.charleskorn.kaml.YamlConfiguration

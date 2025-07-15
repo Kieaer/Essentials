@@ -7,10 +7,17 @@ plugins {
 
 dependencies {
     ksp(project(":ksp-processor"))
-    api(project(":common"))
-    api(libs.jfiglet)
-    api(libs.maven.check)
-    api(libs.sqlite)
+    implementation(project(":ksp-processor"))
+    implementation(project(":common"))
+    implementation(libs.bundles.kotlinxEcosystem)
+    implementation(libs.bundles.jackson)
+    implementation(libs.bundles.exposed)
+    implementation(libs.jfiglet)
+    implementation(libs.maven.check)
+    implementation(libs.sqlite)
+    implementation(libs.kaml)
+    implementation(libs.hikariCP)
+    implementation(libs.jbcrypt)
 
     testImplementation(kotlin("test"))
     if (System.getenv("LOCAL_REPO_IP") != null) {

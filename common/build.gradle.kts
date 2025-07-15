@@ -7,13 +7,13 @@ plugins {
 
 dependencies {
     ksp(project(":ksp-processor"))
-    api(project(":ksp-processor"))
-    api(libs.bundles.kotlinxEcosystem)
-    api(libs.bundles.jackson)
-    api(libs.bundles.exposed)
-    api(libs.kaml)
-    api(libs.hikariCP)
-    api(libs.jbcrypt)
+    compileOnly(project(":ksp-processor"))
+    compileOnly(libs.bundles.kotlinxEcosystem)
+    compileOnly(libs.bundles.jackson)
+    compileOnly(libs.bundles.exposed)
+    compileOnly(libs.kaml)
+    compileOnly(libs.hikariCP)
+    compileOnly(libs.jbcrypt)
 
     testImplementation(kotlin("test"))
     if (System.getenv("LOCAL_REPO_IP") != null) {

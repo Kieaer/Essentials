@@ -273,7 +273,7 @@ fun achievementClear(event: CustomEvents.AchievementClear) {
     event.playerData.send(bundle, "event.achievement.success", event.achievement.toString().lowercase())
     players.forEach { data ->
         val b = Bundle(
-            java.util.ResourceBundle.getBundle(
+            ResourceBundle.getBundle(
                 "bundle",
                 Locale(data.player.locale()),
                 Main::class.java.getClassLoader()
