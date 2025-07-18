@@ -5,7 +5,6 @@ import PluginTest.Companion.loadPlugin
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
-import essential.database.data.PlayerData
 import essential.players
 import mindustry.Vars
 import mindustry.game.Team

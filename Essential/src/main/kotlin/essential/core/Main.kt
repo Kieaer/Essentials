@@ -6,8 +6,6 @@ import arc.Events
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.ObjectMapper
 import essential.*
 import essential.config.Config
 import essential.core.generated.registerGeneratedClientCommands
@@ -22,6 +20,10 @@ import essential.database.table.PluginTable
 import essential.permission.Permission
 import essential.service.fileWatchService
 import kotlinx.coroutines.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import mindustry.Vars
 import mindustry.Vars.state
 import mindustry.game.EventType.WorldLoadEvent
@@ -211,14 +213,20 @@ class Main : Plugin() {
                 .error { _ -> Log.warn(bundle["event.plugin.update.check.failed"]) }
                 .block {
                     if (it.status == Http.HttpStatus.OK) {
-                        val jsonParser = ObjectMapper().configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
-                        val json = jsonParser.readTree(it.resultAsString)
+                        val json = Json { ignoreUnknownKeys = true; isLenient = true }
+                        val jsonObject = json.parseToJsonElement(it.resultAsString).jsonObject
                         pluginData.pluginVersion = PLUGIN_VERSION
-                        val latest = DefaultArtifactVersion(json.get("tag_name").asText(pluginData.pluginVersion))
+                        
+                        val tagName = jsonObject["tag_name"]?.jsonPrimitive?.content ?: pluginData.pluginVersion
+                        val latest = DefaultArtifactVersion(tagName)
                         val current = DefaultArtifactVersion(pluginData.pluginVersion)
+                        
+                        // Parse assets array and get download URL from first asset
+                        val browserDownloadUrl = jsonObject["assets"]?.jsonArray?.getOrNull(0)?.jsonObject?.get("browser_download_url")?.jsonPrimitive?.content ?: ""
+                        val body = jsonObject["body"]?.jsonPrimitive?.content ?: ""
 
                         when {
-                            latest > current -> Log.info(bundle["config.update.new", json.get("assets").get(0).get("browser_download_url").asText(), json.get("body").asText()])
+                            latest > current -> Log.info(bundle["config.update.new", browserDownloadUrl, body])
                             latest.compareTo(current) == 0 -> Log.info(bundle["config.update.current"])
                             latest < current -> Log.info(bundle["config.update.devel"])
                         }

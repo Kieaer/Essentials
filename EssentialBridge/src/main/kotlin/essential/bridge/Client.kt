@@ -5,8 +5,6 @@ import arc.util.Timer
 import kotlinx.coroutines.*
 import mindustry.gen.Call
 import java.lang.Runnable
-import java.lang.System
-import java.lang.Thread
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.charset.StandardCharsets

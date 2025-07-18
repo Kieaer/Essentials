@@ -12,7 +12,6 @@ dependencies {
     implementation(project(":common"))
     implementation(project(":ksp-processor"))
     implementation(libs.bundles.kotlinxEcosystem)
-    implementation(libs.bundles.jackson)
     implementation(libs.bundles.exposed)
     implementation(libs.bundles.ktor)
     implementation(libs.kaml)

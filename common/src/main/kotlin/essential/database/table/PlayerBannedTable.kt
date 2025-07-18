@@ -1,9 +1,8 @@
 package essential.database.table
 
-import org.jetbrains.exposed.dao.id.UIntIdTable
-import org.jetbrains.exposed.sql.json.json
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.json.json
 
 object PlayerBannedTable : Table("player_banned") {
     val id = uinteger("id").autoIncrement().uniqueIndex()

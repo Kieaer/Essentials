@@ -4,7 +4,6 @@ import arc.Events
 import essential.event.CustomEvents
 import essential.rootPath
 import kotlinx.coroutines.isActive
-import java.io.IOException
 import java.nio.file.*
 import kotlin.coroutines.coroutineContext
 

@@ -13,7 +13,6 @@ dependencies {
     implementation(project(":ksp-processor"))
     implementation(libs.bundles.kotlinxEcosystem)
     implementation(libs.bundles.exposed)
-    implementation(libs.bundles.jackson)
     implementation(libs.hikariCP)
     implementation(libs.kaml)
 }

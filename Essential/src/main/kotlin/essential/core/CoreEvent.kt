@@ -8,7 +8,6 @@ import arc.graphics.Color
 import arc.util.Log
 import arc.util.Strings
 import com.charleskorn.kaml.Yaml
-import com.fasterxml.jackson.databind.ObjectMapper
 import essential.*
 import essential.bundle.Bundle
 import essential.core.Main.Companion.conf
@@ -27,6 +26,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import ksp.event.Event
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -1146,24 +1147,62 @@ fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) 
         if (!rootPath.child("data/exp.json").exists()) {
             rootPath.child("data/exp.json").writeString("[]")
         }
-        val objectMapper = ObjectMapper()
-        val resultArray = objectMapper.readTree(rootPath.child("data/exp.json").readString("UTF-8"))
-        val resultJson = mutableMapOf<String, Any>()
-        resultJson["name"] = target.name
-        resultJson["uuid"] = target.uuid
-        resultJson["date"] = currentTime()
-        resultJson["erekirAttack"] = erekirAttack
-        resultJson["erekirPvP"] = erekirPvP
-        resultJson["time"] = time
-        resultJson["enemyBuildingDestroyed"] = target.currentUnitDestroyedCount
-        resultJson["buildingsDestroyed"] = target.currentBuildDestroyedCount
-        resultJson["wave"] = Vars.state.wave
-        resultJson["multiplier"] = target.expMultiplier
-        resultJson["score"] = score
-        resultJson["totalScore"] = score * target.expMultiplier
-
-        objectMapper.writeValue(rootPath.child("data/exp.json").file(), resultArray.plus(resultJson))
-        rootPath.child("data/exp.json").writeString(resultArray.toString())
+        
+        // Define a data class for the exp record
+        @Serializable
+        data class ExpRecord(
+            val name: String,
+            val uuid: String,
+            val date: String,
+            val erekirAttack: Int,
+            val erekirPvP: Int,
+            val time: Int,
+            val enemyBuildingDestroyed: Int,
+            val buildingsDestroyed: Int,
+            val wave: Int,
+            val multiplier: Double,
+            val score: Int,
+            val totalScore: Double
+        )
+        
+        // Read existing JSON array
+        val json = Json { 
+            prettyPrint = true
+            ignoreUnknownKeys = true
+            isLenient = true
+        }
+        
+        val jsonString = rootPath.child("data/exp.json").readString("UTF-8")
+        val existingRecords = if (jsonString.isBlank() || jsonString == "[]") {
+            listOf()
+        } else {
+            try {
+                json.decodeFromString<List<ExpRecord>>(jsonString)
+            } catch (e: Exception) {
+                Log.err("Error parsing exp.json, creating new file", e)
+                listOf()
+            }
+        }
+        
+        // Create new record
+        val newRecord = ExpRecord(
+            name = target.name,
+            uuid = target.uuid,
+            date = currentTime(),
+            erekirAttack = erekirAttack,
+            erekirPvP = erekirPvP,
+            time = time,
+            enemyBuildingDestroyed = target.currentUnitDestroyedCount,
+            buildingsDestroyed = target.currentBuildDestroyedCount,
+            wave = Vars.state.wave,
+            multiplier = target.expMultiplier,
+            score = score,
+            totalScore = score * target.expMultiplier
+        )
+        
+        // Add new record to list and write back to file
+        val updatedRecords = existingRecords + newRecord
+        rootPath.child("data/exp.json").writeString(json.encodeToString(updatedRecords))
     }
 
     if (isConnected && conf.feature.level.levelNotify) target.send(

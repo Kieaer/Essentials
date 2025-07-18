@@ -12,11 +12,8 @@ import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.HashMap
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlin.collections.forEach
-import kotlin.collections.set
 import kotlin.io.path.Path
 
 private val logFiles = HashMap<LogType, FileAppender>()

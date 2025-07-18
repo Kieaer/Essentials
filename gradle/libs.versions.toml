@@ -49,8 +49,6 @@ exposed-kotlin-time = { module = "org.jetbrains.exposed:exposed-kotlin-datetime"
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 
 kaml = { module = "com.charleskorn.kaml:kaml-jvm", version.ref = "kaml" }
-jackson-dataformat = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
-jackson-module = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 
 ktor = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
@@ -89,7 +87,7 @@ game = ["arc", "core", "server"]
 local-game = ["arc-local", "core-local", "server-local"]
 game-test = ["arc", "core", "server", "headless", "datafaker", "mockito", "jts", "h2"]
 local-game-test = ["arc-local", "core-local", "server-local", "headless-local", "datafaker", "mockito", "jts", "h2"]
-jackson = ["jackson-dataformat", "jackson-module"]
+# Jackson bundle removed and replaced with Kotlin Serialization and KAML
 ktor = ["ktor", "ktor-netty", "ktor-content", "ktor-serialize-json", "ktor-auth", "ktor-auth-jwt", "ktor-sessions", "ktor-html", "ktor-websockets"]
 
 [plugins]

@@ -9,7 +9,6 @@ import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
-import arc.util.Log
 import essential.bundle.Bundle
 import essential.database.data.PlayerData
 import essential.database.data.update

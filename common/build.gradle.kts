@@ -9,7 +9,6 @@ dependencies {
     ksp(project(":ksp-processor"))
     compileOnly(project(":ksp-processor"))
     compileOnly(libs.bundles.kotlinxEcosystem)
-    compileOnly(libs.bundles.jackson)
     compileOnly(libs.bundles.exposed)
     compileOnly(libs.kaml)
     compileOnly(libs.hikariCP)

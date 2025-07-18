@@ -3,14 +3,14 @@ package essential
 import arc.Core
 import arc.files.Fi
 import arc.func.Cons
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.databind.ObjectMapper
 import essential.bundle.Bundle
 import essential.database.data.PlayerData
 import essential.database.data.PluginData
 import essential.util.toHString
 import kotlinx.datetime.TimeZone
-import java.util.HashMap
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
@@ -22,11 +22,10 @@ const val DATABASE_VERSION: UByte = 4u
 val PLUGIN_VERSION: String get() {
     val file = PluginData::class.java.getResourceAsStream("/plugin.json")
     file.use {
-        return ObjectMapper()
-            .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
-            .readTree(it)
-            .get("version")
-            .asText()
+        val jsonString = it.bufferedReader().readText()
+        val json = Json { ignoreUnknownKeys = true; isLenient = true }
+        val jsonObject = json.parseToJsonElement(jsonString).jsonObject
+        return jsonObject["version"]?.jsonPrimitive?.content ?: "unknown"
     }
 }
 

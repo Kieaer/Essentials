@@ -1,8 +1,6 @@
 package essential.event
 
-import com.zaxxer.hikari.HikariDataSource
 import essential.database.data.PlayerData
-import org.jetbrains.exposed.sql.Database
 import java.nio.file.WatchEvent
 
 object CustomEvents {

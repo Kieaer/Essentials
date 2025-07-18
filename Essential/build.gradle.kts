@@ -10,7 +10,6 @@ dependencies {
     implementation(project(":ksp-processor"))
     implementation(project(":common"))
     implementation(libs.bundles.kotlinxEcosystem)
-    implementation(libs.bundles.jackson)
     implementation(libs.bundles.exposed)
     implementation(libs.jfiglet)
     implementation(libs.maven.check)

@@ -2,16 +2,16 @@ package essential.permission
 
 import arc.files.Fi
 import arc.util.Log
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.module.kotlin.readValue
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.charleskorn.kaml.Yaml
+import com.charleskorn.kaml.YamlConfiguration
 import essential.bundle.Bundle
 import essential.database.data.PlayerData
 import essential.database.table.PlayerTable
 import essential.players
 import essential.rootPath
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 import java.util.*
@@ -61,13 +61,45 @@ object Permission {
     }
 
     fun load() {
-        val mapper = ObjectMapper(YAMLFactory()).apply {
-            registerKotlinModule()
-            configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+        val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
+        
+        user = try {
+            if (userFile.exists() && userFile.readString().isNotBlank()) {
+                val content = userFile.readString()
+                if (content.trim() == "---" || content.trim().isEmpty()) {
+                    // Handle case where file only contains document separator or is effectively empty
+                    mapOf()
+                } else {
+                    yaml.decodeFromString(MapSerializer(String.serializer(), PermissionData.serializer()), content)
+                }
+            } else {
+                mapOf()
+            }
+        } catch (e: Exception) {
+            Log.warn("Failed to parse permission_user.yaml: ${e.message}")
+            // Create a new empty file with the comment template
+            userFile.writeString(comment)
+            mapOf()
         }
-
-        user = mapper.readValue(userFile.reader())
-        main = mapper.readValue(mainFile.reader())
+        
+        main = try {
+            if (mainFile.exists()) {
+                yaml.decodeFromString(MapSerializer(String.serializer(), RoleConfig.serializer()), mainFile.readString())
+            } else {
+                mapOf()
+            }
+        } catch (e: Exception) {
+            Log.warn("Failed to parse permission.yaml: ${e.message}")
+            // Reset to default permissions file
+            if (mainFile.exists()) mainFile.delete()
+            mainFile.write(this::class.java.getResourceAsStream("/permission_default.yaml")!!, false)
+            try {
+                yaml.decodeFromString(MapSerializer(String.serializer(), RoleConfig.serializer()), mainFile.readString())
+            } catch (e2: Exception) {
+                Log.err("Failed to parse default permission.yaml: ${e2.message}")
+                mapOf()
+            }
+        }
 
         for ((name, roleConfig) in main) {
             if (default == "user" && roleConfig.default == true) {
@@ -149,6 +181,7 @@ object Permission {
         }
     }
 
+    @Serializable
     data class PermissionData(
         var name: String = "",
         var group: String = default,
@@ -158,6 +191,7 @@ object Permission {
         var chatFormat: String = "",
     )
 
+    @Serializable
     data class RoleConfig(
         val admin: Boolean? = null,
         val inheritance: String? = null,

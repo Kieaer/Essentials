@@ -77,14 +77,9 @@ class WebServer {
         val time: Long = System.currentTimeMillis()
     )
 
-    fun start() = synchronized(this@WebServer) {
-        // Create upload directory if it doesn't exist
-        val uploadDir = File(conf.uploadPath)
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs()
-        }
-
-        server = embeddedServer(Netty, conf.port) {
+    // Configure the application module
+    private fun configureModule(application: Application) {
+        with(application) {
             // Install necessary plugins
             install(ContentNegotiation) {
                 json(Json {
@@ -254,6 +249,22 @@ class WebServer {
                     }
                 }
             }
+        }
+    }
+
+    fun start() = synchronized(this@WebServer) {
+        // Create upload directory if it doesn't exist
+        val uploadDir = File(conf.uploadPath)
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs()
+        }
+
+        // Create the server with a regular function
+        server = embeddedServer(
+            factory = Netty, 
+            port = conf.port
+        ) { 
+            configureModule(this)
         }
 
         Events.on(EventType.PlayerChatEvent::class.java) { event ->

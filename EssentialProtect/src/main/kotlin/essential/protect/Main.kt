@@ -3,8 +3,8 @@ package essential.protect
 import arc.Core
 import arc.util.CommandHandler
 import arc.util.Log
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.charleskorn.kaml.Yaml
+import com.charleskorn.kaml.YamlConfiguration
 import com.zaxxer.hikari.HikariDataSource
 import essential.bundle.Bundle
 import essential.config.Config
@@ -44,12 +44,23 @@ class Main : Plugin() {
         conf = config
 
         datasource = HikariDataSource().apply {
-            val root = ObjectMapper(YAMLFactory()).readTree(rootPath.child("config/config.yaml").file())
-            val db = root.path("plugin").path("database")
-
-            jdbcUrl = db.path("url").asText()
-            username = db.path("username").asText()
-            password = db.path("password").asText()
+            // Create a simple data class to represent the config structure
+            @kotlinx.serialization.Serializable
+            data class DatabaseConfig(val url: String = "", val username: String = "", val password: String = "")
+            
+            @kotlinx.serialization.Serializable
+            data class PluginConfig(val database: DatabaseConfig = DatabaseConfig())
+            
+            @kotlinx.serialization.Serializable
+            data class RootConfig(val plugin: PluginConfig = PluginConfig())
+            
+            val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
+            val configContent = rootPath.child("config/config.yaml").readString()
+            val config = yaml.decodeFromString(RootConfig.serializer(), configContent)
+            
+            jdbcUrl = config.plugin.database.url
+            username = config.plugin.database.username
+            password = config.plugin.database.password
             maximumPoolSize = 2
         }
 

@@ -3,10 +3,6 @@ package essential.bridge
 import arc.util.Log
 import arc.util.serialization.Json
 import essential.rootPath
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.net.Administration
 import java.io.*
@@ -15,7 +11,6 @@ import java.net.Socket
 import java.net.SocketException
 import java.time.LocalDateTime
 import java.util.concurrent.Executors
-import kotlin.coroutines.coroutineContext
 
 class Server : Runnable {
     private var server: ServerSocket? = null
