@@ -12,8 +12,7 @@ import essential.database.data.PlayerData
 import essential.permission.Permission
 import essential.protect.generated.registerGeneratedClientCommands
 import essential.protect.generated.registerGeneratedEventHandlers
-import essential.rootPath
-import essential.util.findPlayerData
+import essential.reflection.EssentialLookup
 import mindustry.Vars.netServer
 import mindustry.mod.Plugin
 import org.jetbrains.exposed.sql.Database
@@ -55,7 +54,8 @@ class Main : Plugin() {
             data class RootConfig(val plugin: PluginConfig = PluginConfig())
             
             val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
-            val configContent = rootPath.child("config/config.yaml").readString()
+            val rp = EssentialLookup.getRootPath() ?: arc.Core.settings.dataDirectory.child("mods/Essentials/")
+            val configContent = rp.child("config/config.yaml").readString()
             val config = yaml.decodeFromString(RootConfig.serializer(), configContent)
             
             jdbcUrl = config.plugin.database.url
@@ -68,14 +68,15 @@ class Main : Plugin() {
 
         netServer.admins.addActionFilter({ action ->
             if (action.player == null) return@addActionFilter true
-            val data: PlayerData? = findPlayerData(action.player.uuid())
-            if (data != null) {
+            val hasData: Boolean = EssentialLookup.hasPlayerData(action.player.uuid())
+            if (hasData) {
                 // 계정 기능이 켜져있는 경우
                 if (conf.account.enabled) {
                     // Discord 인증을 사용할 경우
                     if (requireNonNull<ProtectConfig.AuthType>(conf.account.getAuthType()) == ProtectConfig.AuthType.Discord) {
                         // 계정에 Discord 인증이 안되어 있는 경우
-                        if (data.discordID == null) {
+                        val discordId = EssentialLookup.getPlayerDiscordId(action.player.uuid())
+                        if (discordId == null) {
                             action.player.sendMessage(Bundle(action.player.locale).get("event.discord.not.registered"))
                             return@addActionFilter false
                         } else {

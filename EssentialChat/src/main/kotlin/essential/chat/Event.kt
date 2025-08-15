@@ -11,9 +11,8 @@ import essential.chat.Main.Companion.conf
 import essential.config.Config
 import essential.database.data.PlayerData
 import essential.event.CustomEvents
-import essential.isVoting
 import essential.permission.Permission
-import essential.rootPath
+import essential.reflection.EssentialLookup
 import essential.util.findPlayerData
 import ksp.event.Event
 import mindustry.Vars
@@ -56,7 +55,7 @@ fun load() {
                             0,
                             1
                         )
-                    ).matches() && !(isVoting && message.equals("y", ignoreCase = true))
+                    ).matches() && !(essential.reflection.EssentialLookup.getIsVoting() && message.equals("y", ignoreCase = true))
                 ) {
                     player.sendMessage(bundle["event.chat.language.not.allow"])
                     return null
@@ -64,8 +63,9 @@ fun load() {
             }
 
             if (conf.blacklist.enabled) {
+                val rp = EssentialLookup.getRootPath() ?: arc.Core.settings.dataDirectory.child("mods/Essentials/")
                 val file: Array<String> =
-                    rootPath.child("chat_blacklist.txt").readString("UTF-8").split("\r\n").toTypedArray()
+                    rp.child("chat_blacklist.txt").readString("UTF-8").split("\r\n").toTypedArray()
                 for (text in file) {
                     if (conf.blacklist.regex) {
                         if (Pattern.compile(text).matcher(message).find()) {

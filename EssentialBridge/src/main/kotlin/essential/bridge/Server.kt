@@ -2,7 +2,7 @@ package essential.bridge
 
 import arc.util.Log
 import arc.util.serialization.Json
-import essential.rootPath
+import essential.reflection.EssentialLookup
 import mindustry.Vars
 import mindustry.net.Administration
 import java.io.*
@@ -106,7 +106,7 @@ class Server : Runnable {
                             while ((reader.readLine().also { line = it }) != null && line != "null") {
                                 stacktrace.append(line).append("\n")
                             }
-                            rootPath.child("report/" + LocalDateTime.now().withNano(0) + ".txt")
+                            (EssentialLookup.getRootPath() ?: arc.Core.settings.dataDirectory.child("mods/Essentials/")).child("report/" + LocalDateTime.now().withNano(0) + ".txt")
                                 .writeString(stacktrace.toString())
                             Log.info("Crash log received from " + socket.getInetAddress().hostAddress)
                         }

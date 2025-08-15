@@ -18,7 +18,6 @@ import essential.log.LogType
 import essential.log.writeLog
 import essential.protect.Main.Companion.conf
 import essential.util.currentTime
-import essential.util.findPlayerData
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import ksp.command.ClientCommand
@@ -57,7 +56,7 @@ class Commands {
                     } else if (playerData.isConnected) {
                         player.sendMessage(bundle["command.login.already"])
                     } else {
-                        if (findPlayerData(playerData.uuid) == null) {
+                        if (!essential.reflection.EssentialLookup.hasPlayerData(playerData.uuid)) {
                             Events.fire(CustomEvents.PlayerDataLoad(playerData))
                         } else {
                             player.sendMessage(bundle["command.login.already"])

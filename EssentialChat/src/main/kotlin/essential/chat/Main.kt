@@ -6,7 +6,7 @@ import essential.bundle.Bundle
 import essential.chat.generated.registerGeneratedClientCommands
 import essential.chat.generated.registerGeneratedEventHandlers
 import essential.config.Config
-import essential.rootPath
+import essential.reflection.EssentialLookup
 import mindustry.mod.Plugin
 
 class Main : Plugin() {
@@ -32,8 +32,9 @@ class Main : Plugin() {
         registerGeneratedEventHandlers()
 
         // 채팅 금지어 파일 추가
-        if (!rootPath.child("chat_blacklist.txt").exists()) {
-            rootPath.child("chat_blacklist.txt").writeString("않")
+        val rp = EssentialLookup.getRootPath() ?: arc.Core.settings.dataDirectory.child("mods/Essentials/")
+        if (!rp.child("chat_blacklist.txt").exists()) {
+            rp.child("chat_blacklist.txt").writeString("않")
         }
 
         Log.debug(bundle["event.plugin.loaded"])

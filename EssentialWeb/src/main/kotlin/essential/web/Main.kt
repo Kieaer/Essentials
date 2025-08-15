@@ -6,7 +6,7 @@ import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
 import com.zaxxer.hikari.HikariDataSource
 import essential.bundle.Bundle
-import essential.rootPath
+import essential.reflection.EssentialLookup
 import kotlinx.serialization.Serializable
 import mindustry.mod.Plugin
 import org.jetbrains.exposed.sql.Database
@@ -30,7 +30,8 @@ class Main : Plugin() {
         val localYaml = Yaml(configuration = YamlConfiguration(strictMode = false))
 
         // Load the config manually without using the Essential module's Yaml instance
-        val configFile = rootPath.child("config/config_web.yaml")
+        val rp = EssentialLookup.getRootPath() ?: arc.Core.settings.dataDirectory.child("mods/Essentials/")
+        val configFile = rp.child("config/config_web.yaml")
         val config = if (configFile.exists()) {
             try {
                 val content = configFile.readString()
@@ -42,7 +43,7 @@ class Main : Plugin() {
         } else {
             // Save the default config
             try {
-                rootPath.child("config").mkdirs()
+                rp.child("config").mkdirs()
                 val content = localYaml.encodeToString(WebConfig.serializer(), defaultConfig)
                 configFile.writeString(content)
                 Log.info(bundle["config.created", "config_web.yaml"])
@@ -65,7 +66,7 @@ class Main : Plugin() {
             data class RootConfig(val plugin: PluginConfig = PluginConfig())
             
             val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
-            val configContent = rootPath.child("config/config.yaml").readString()
+            val configContent = rp.child("config/config.yaml").readString()
             val config = yaml.decodeFromString(RootConfig.serializer(), configContent)
             
             jdbcUrl = config.plugin.database.url
