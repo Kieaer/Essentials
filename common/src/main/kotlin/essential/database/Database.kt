@@ -21,11 +21,37 @@ import java.nio.charset.StandardCharsets
 
 var datasource = HikariDataSource()
 
+// Dedicated datasource/database for local-only world_history storage
+var worldHistoryDatasource: HikariDataSource? = null
+var worldHistoryDatabase: Database? = null
+
 /** DB 초기 설정 */
 fun databaseInit(jdbcUrl: String, user: String, pass: String) {
     val dbType = extractDatabaseType(jdbcUrl)
     loadJdbcDriver(dbType)
 
+    // Always prepare a local SQLite database for world_history
+    try {
+        loadJdbcDriver("sqlite")
+        // Ensure the directory exists before opening SQLite file
+        rootPath.mkdirs()
+        val sqlitePath = rootPath.child("world_history.db").file().absolutePath
+        worldHistoryDatasource = HikariDataSource().apply {
+            this.jdbcUrl = "jdbc:sqlite:$sqlitePath"
+            this.maximumPoolSize = 1
+        }
+        worldHistoryDatabase = worldHistoryDatasource?.let { Database.connect(it) }
+        // Ensure world_history table exists on the local SQLite database only
+        worldHistoryDatabase?.let { db ->
+            transaction(db) {
+                SchemaUtils.create(WorldHistoryTable)
+            }
+        }
+    } catch (e: Throwable) {
+        Log.err("[database] Failed to initialize local SQLite for world_history: @", e)
+    }
+
+    // Shared datasource for all other tables
     datasource = HikariDataSource().apply {
         this.jdbcUrl = jdbcUrl
         this.username = user
@@ -36,7 +62,7 @@ fun databaseInit(jdbcUrl: String, user: String, pass: String) {
     Database.connect(datasource)
 
     transaction {
-        SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable, AchievementTable, MapRatingTable, WorldHistoryTable)
+        SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable, AchievementTable, MapRatingTable)
     }
 
     upgradeDatabaseBlocking()
@@ -45,6 +71,7 @@ fun databaseInit(jdbcUrl: String, user: String, pass: String) {
 /** DB 연결 종료 */
 fun databaseClose() {
     datasource.close()
+    worldHistoryDatasource?.close()
 }
 
 private fun extractDatabaseType(jdbcUrl: String): String {
