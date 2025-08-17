@@ -5,6 +5,7 @@ import arc.Events
 import arc.files.Fi
 import arc.util.Log
 import essential.database.data.getPlayerDataByName
+import essential.playTime
 import essential.web.Main.Companion.bundle
 import essential.web.Main.Companion.conf
 import io.ktor.http.*
@@ -67,7 +68,7 @@ class WebServer {
         val players: List<String>,
         val tps: Float,
         val wave: Int,
-        val gameTime: Float
+        val gameTime: String
     )
 
     @Serializable
@@ -177,7 +178,8 @@ class WebServer {
                         }
 
                         get("/chat") {
-                            call.respond(chatHistory)
+                            val messages = chatHistory.filter { !it.message.startsWith("/") }.sortedByDescending { it.time }
+                            call.respond(messages)
                         }
 
                         post("/chat") {
@@ -436,7 +438,7 @@ class WebServer {
 
     private fun getMaps(): List<MapInfo> {
         val mapsList = mutableListOf<MapInfo>()
-        Vars.maps.all().forEach { map ->
+        Vars.maps.all().filter { it.custom }.forEach { map ->
             mapsList.add(
                 MapInfo(
                     name = map.name(),
@@ -459,7 +461,7 @@ class WebServer {
             players = playerNames,
             tps = Core.graphics.framesPerSecond.toFloat(), // Use FPS as TPS
             wave = Vars.state.wave,
-            gameTime = Vars.state.wavetime / 60f // Use wave time as game time (in minutes)
+            gameTime = playTime
         )
     }
 

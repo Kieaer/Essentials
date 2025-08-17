@@ -408,7 +408,7 @@ function loadServerStatus() {
             document.getElementById('current-map').textContent = status.map;
             document.getElementById('server-tps').textContent = status.tps.toFixed(1);
             document.getElementById('server-wave').textContent = status.wave;
-            document.getElementById('server-time').textContent = formatTime(status.gameTime);
+            document.getElementById('server-time').textContent = status.gameTime;
 
             // Update player list
             const playerList = document.getElementById('player-list');
@@ -529,7 +529,7 @@ function setupWebSocket() {
         document.getElementById('current-map').textContent = data.map;
         document.getElementById('server-tps').textContent = data.tps.toFixed(1);
         document.getElementById('server-wave').textContent = data.wave;
-        document.getElementById('server-time').textContent = formatTime(data.gameTime);
+        document.getElementById('server-time').textContent = data.gameTime;
 
         // Update player list
         const playerList = document.getElementById('player-list');
