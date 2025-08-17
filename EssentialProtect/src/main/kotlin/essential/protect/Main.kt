@@ -8,7 +8,6 @@ import com.charleskorn.kaml.YamlConfiguration
 import com.zaxxer.hikari.HikariDataSource
 import essential.bundle.Bundle
 import essential.config.Config
-import essential.database.data.PlayerData
 import essential.permission.Permission
 import essential.protect.generated.registerGeneratedClientCommands
 import essential.protect.generated.registerGeneratedEventHandlers
@@ -73,11 +72,11 @@ class Main : Plugin() {
                 // 계정 기능이 켜져있는 경우
                 if (conf.account.enabled) {
                     // Discord 인증을 사용할 경우
-                    if (requireNonNull<ProtectConfig.AuthType>(conf.account.getAuthType()) == ProtectConfig.AuthType.Discord) {
+                    if (requireNonNull(conf.account.getAuthType()) == ProtectConfig.AuthType.Discord) {
                         // 계정에 Discord 인증이 안되어 있는 경우
                         val discordId = EssentialLookup.getPlayerDiscordId(action.player.uuid())
                         if (discordId == null) {
-                            action.player.sendMessage(Bundle(action.player.locale).get("event.discord.not.registered"))
+                            action.player.sendMessage(Bundle(action.player.locale)["event.discord.not.registered"])
                             return@addActionFilter false
                         } else {
                             return@addActionFilter true

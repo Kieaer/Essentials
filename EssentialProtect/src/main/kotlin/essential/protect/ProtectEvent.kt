@@ -156,7 +156,7 @@ fun playerJoin(e: EventType.PlayerJoin) {
                     data.update()
                     data
                 }
-                Events.fire(CustomEvents.PlayerDataLoad(playerData))
+                if (!essential.reflection.EssentialLookup.firePlayerDataLoad(playerData.uuid)) Events.fire(CustomEvents.PlayerDataLoad(playerData))
             } else {
                 e.player.con.kick(
                     Bundle(e.player.locale)["event.player.name.duplicate"],
@@ -164,7 +164,7 @@ fun playerJoin(e: EventType.PlayerJoin) {
                 )
             }
         } else {
-            Events.fire(CustomEvents.PlayerDataLoad(data))
+            if (!essential.reflection.EssentialLookup.firePlayerDataLoad(data.uuid)) Events.fire(CustomEvents.PlayerDataLoad(data))
         }
     } else if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
         if (data == null) {
@@ -183,7 +183,7 @@ fun playerJoin(e: EventType.PlayerJoin) {
                 )
             }
         } else {
-            Events.fire(CustomEvents.PlayerDataLoad(data))
+            if (!essential.reflection.EssentialLookup.firePlayerDataLoad(data.uuid)) Events.fire(CustomEvents.PlayerDataLoad(data))
         }
     } else {
         e.player.sendMessage(Bundle(e.player.locale)["event.player.first.register"])

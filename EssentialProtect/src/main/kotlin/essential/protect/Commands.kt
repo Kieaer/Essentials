@@ -57,7 +57,7 @@ class Commands {
                         player.sendMessage(bundle["command.login.already"])
                     } else {
                         if (!essential.reflection.EssentialLookup.hasPlayerData(playerData.uuid)) {
-                            Events.fire(CustomEvents.PlayerDataLoad(playerData))
+                            if (!essential.reflection.EssentialLookup.firePlayerDataLoad(playerData.uuid)) Events.fire(CustomEvents.PlayerDataLoad(playerData))
                         } else {
                             player.sendMessage(bundle["command.login.already"])
                         }

@@ -181,6 +181,15 @@ fun getPlayerDataByName(name: String): PlayerData? {
     }.firstOrNull()
 }
 
+/** 동기식으로 플레이어 데이터 읽기 (클래스로더 브리지용) */
+fun getPlayerDataSync(uuid: String): PlayerData? {
+    return transaction {
+        PlayerTable.selectAll()
+            .where { PlayerTable.uuid eq uuid }
+            .mapToPlayerDataList()
+    }.firstOrNull()
+}
+
 // 외부 플러그인에서 사용
 suspend fun getAllPlayerData(): List<PlayerData> {
     return newSuspendedTransaction {

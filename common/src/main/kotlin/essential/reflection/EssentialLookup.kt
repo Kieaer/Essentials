@@ -30,6 +30,9 @@ object EssentialLookup {
     @Volatile
     private var utilsKtClass: Class<*>? = null
 
+    @Volatile
+    private var playerDataKtClass: Class<*>? = null
+
     private val methodCache: MutableMap<String, Method> = ConcurrentHashMap()
 
     /** Initialize cache using a known ClassLoader (call from Essential at startup). */
@@ -51,8 +54,10 @@ object EssentialLookup {
             if (cachedLoader === loader && pluginDataKtClass != null && utilsKtClass != null) return
             val pluginDataClazz = Class.forName("essential.PluginDataKt", true, loader)
             val utilsClazz = Class.forName("essential.util.UtilsKt", true, loader)
+            val playerDataClazz = Class.forName("essential.database.data.PlayerDataKt", true, loader)
             pluginDataKtClass = pluginDataClazz
             utilsKtClass = utilsClazz
+            playerDataKtClass = playerDataClazz
             cachedLoader = loader
             methodCache.clear()
         } catch (e: Throwable) {
@@ -178,6 +183,49 @@ object EssentialLookup {
         } catch (e: Throwable) {
             Log.err("[EssentialLookup] Failed to read PlayerData.discordID: @", e)
             null
+        }
+    }
+
+    /**
+     * Fire CustomEvents.PlayerDataLoad with a PlayerData instance created in Essential's classloader.
+     * This bypasses classloader separation issues between modules.
+     * @return true if the event was successfully fired using Essential's classloader; false otherwise.
+     */
+    @JvmStatic
+    fun firePlayerDataLoad(uuid: String): Boolean {
+        return try {
+            initCache()
+            val loader = cachedLoader ?: return false
+
+            // Resolve getPlayerDataSync in Essential's classloader and obtain PlayerData instance
+            val pdGetter = run {
+                val clazz = playerDataKtClass ?: Class.forName("essential.database.data.PlayerDataKt", true, loader)
+                playerDataKtClass = clazz
+                getMethodFrom(clazz, "getPlayerDataSync", String::class.java)
+            } ?: return false
+            val pd = pdGetter.invoke(null, uuid) ?: return false
+
+            // Try to set PlayerData.player to the live Player instance
+            try {
+                val player = mindustry.gen.Groups.player.find { it.uuid() == uuid }
+                if (player != null) {
+                    val setter = pd.javaClass.methods.firstOrNull { it.name == "setPlayer" && it.parameterCount == 1 }
+                    setter?.invoke(pd, player)
+                }
+            } catch (_: Throwable) { }
+
+            // Construct event in Essential's classloader
+            val eventClazz = Class.forName("essential.event.CustomEvents\$PlayerDataLoad", true, loader)
+            val ctor = eventClazz.constructors.firstOrNull { it.parameterCount == 1 }
+                ?: return false
+            val evt = ctor.newInstance(pd)
+
+            // Fire the event on Arc's event bus
+            Events.fire(evt)
+            true
+        } catch (e: Throwable) {
+            Log.err("[EssentialLookup] Failed to fire PlayerDataLoad via bridge: @", e)
+            false
         }
     }
 }
