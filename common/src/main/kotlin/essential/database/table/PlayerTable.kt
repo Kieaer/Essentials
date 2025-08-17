@@ -9,7 +9,7 @@ import org.jetbrains.exposed.sql.kotlin.datetime.datetime
 object PlayerTable : Table("players") {
     val id = uinteger("id").autoIncrement().uniqueIndex()
     val name = varchar("name", 50).index()
-    val uuid = varchar("uuid", 25)
+    val uuid = varchar("uuid", 25).uniqueIndex()
     val blockPlaceCount = integer("block_place_count").default(0)
     val blockBreakCount = integer("block_break_count").default(0)
     val level = integer("level").default(0)
