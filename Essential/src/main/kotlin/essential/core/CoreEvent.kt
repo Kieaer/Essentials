@@ -468,29 +468,31 @@ internal fun serverLoad(event: ServerLoadEvent) {
         }
     })
 
-    Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
-        it.player.admin(false)
+    if (Vars.mods.getMod("essential-protect") == null) {
+        Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
+            it.player.admin(false)
 
-        scope.launch {
-            val data = getPlayerData(it.player.uuid())
+            scope.launch {
+                val data = getPlayerData(it.player.uuid())
 
-            if (data == null) {
-                if (transaction {
-                        PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()
-                    }) {
-                    val data = createPlayerData(it.player)
-                    data.permission = "user"
+                if (data == null) {
+                    if (transaction {
+                            PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()
+                        }) {
+                        val data = createPlayerData(it.player)
+                        data.permission = "user"
+                        data.player = it.player
+                        Events.fire(CustomEvents.PlayerDataLoad(data))
+                    } else {
+                        Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
+                    }
+                } else {
                     data.player = it.player
                     Events.fire(CustomEvents.PlayerDataLoad(data))
-                } else {
-                    Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
                 }
-            } else {
-                data.player = it.player
-                Events.fire(CustomEvents.PlayerDataLoad(data))
             }
-        }
-    }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
+        }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })
+    }
 }
 
 @Event
@@ -1147,7 +1149,7 @@ fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) 
         if (!rootPath.child("data/exp.json").exists()) {
             rootPath.child("data/exp.json").writeString("[]")
         }
-        
+
         // Define a data class for the exp record
         @Serializable
         data class ExpRecord(
@@ -1164,14 +1166,14 @@ fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) 
             val score: Int,
             val totalScore: Double
         )
-        
+
         // Read existing JSON array
-        val json = Json { 
+        val json = Json {
             prettyPrint = true
             ignoreUnknownKeys = true
             isLenient = true
         }
-        
+
         val jsonString = rootPath.child("data/exp.json").readString("UTF-8")
         val existingRecords = if (jsonString.isBlank() || jsonString == "[]") {
             listOf()
@@ -1183,7 +1185,7 @@ fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) 
                 listOf()
             }
         }
-        
+
         // Create new record
         val newRecord = ExpRecord(
             name = target.name,
@@ -1199,7 +1201,7 @@ fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) 
             score = score,
             totalScore = score * target.expMultiplier
         )
-        
+
         // Add new record to list and write back to file
         val updatedRecords = existingRecords + newRecord
         rootPath.child("data/exp.json").writeString(json.encodeToString(updatedRecords))
