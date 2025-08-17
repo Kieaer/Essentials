@@ -19,6 +19,7 @@ import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
 import essential.database.data.PlayerData
 import essential.database.data.getPlayerData
+import essential.database.data.mergePlayerAccounts
 import essential.database.data.plugin.WarpBlock
 import essential.database.data.plugin.WarpCount
 import essential.database.data.plugin.WarpTotal
@@ -2620,6 +2621,25 @@ internal class Commands {
         println(pluginData.toString())
         for (a in players) {
             println(a.toString())
+        }
+    }
+
+    @ServerCommand("mergeplayer", "<from_uuid> <to_uuid>", "Merge two player accounts (from -> to).")
+    fun mergePlayer(arg: Array<out String>) {
+        if (arg.size < 2) {
+            Log.warn("Usage: mergeplayer <from_uuid> <to_uuid>")
+            return
+        }
+        val from = arg[0]
+        val to = arg[1]
+        runBlocking {
+            try {
+                val result = mergePlayerAccounts(from, to)
+                Log.info(result)
+            } catch (e: Exception) {
+                Log.err("Merge failed: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
 
