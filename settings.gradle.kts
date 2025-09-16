@@ -28,12 +28,7 @@ dependencyResolutionManagement {
 }
 
 include("Essential")
-include("EssentialChat")
-include("EssentialProtect")
-include("EssentialBridge")
 include("EssentialDiscord")
 include("EssentialWeb")
 include("EssentialAchievements")
 include("ksp-processor")
-
-include("common")

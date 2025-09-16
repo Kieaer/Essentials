@@ -11,8 +11,6 @@ import essential.core.Main
 import essential.database.data.PlayerData
 import essential.players
 import essential.rootPath
-import junit.framework.TestCase.assertNotNull
-import junit.framework.TestCase.fail
 import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.UnitTypes
@@ -29,9 +27,6 @@ import mindustry.net.Net
 import mindustry.net.NetConnection
 import mindustry.world.Tile
 import net.datafaker.Faker
-import org.junit.After
-import org.junit.Assert
-import org.junit.Test
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
@@ -42,6 +37,7 @@ import java.nio.file.Paths
 import java.text.MessageFormat
 import java.util.*
 import java.util.zip.ZipFile
+import kotlin.test.*
 
 class PluginTest {
     companion object {
@@ -144,7 +140,7 @@ class PluginTest {
                 HeadlessApplication(core) { throwable: Throwable? -> exceptionThrown[0] = throwable }
                 while (!begins[0]) {
                     if (exceptionThrown[0] != null) {
-                        Assert.fail(exceptionThrown[0]!!.stackTraceToString())
+                        fail(exceptionThrown[0]!!.stackTraceToString())
                     }
                     sleep(10)
                 }
@@ -168,7 +164,7 @@ class PluginTest {
                 netClient = NetClient()
                 Core.camera = Camera()
             } catch (r : Throwable) {
-                Assert.fail(r.stackTraceToString())
+                fail(r.stackTraceToString())
             }
         }
 
@@ -332,7 +328,7 @@ class PluginTest {
         stopPlugin()
     }
 
-    @After
+    @AfterTest
     fun resetEnv() {
         System.clearProperty("test")
     }

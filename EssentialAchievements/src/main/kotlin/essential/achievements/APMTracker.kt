@@ -1,8 +1,8 @@
 package essential.achievements
 
 import arc.util.Timer
-import essential.database.data.PlayerData
-import essential.players
+import essential.common.database.data.PlayerData
+import essential.common.players
 import ksp.event.Event
 import mindustry.game.EventType
 

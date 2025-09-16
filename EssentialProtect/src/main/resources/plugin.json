@@ -1,9 +1,0 @@
-{
-  "displayName": "EssentialProtect",
-  "name": "essential-protect",
-  "author": "Gureumi",
-  "main": "essential.protect.Main",
-  "description": "Add server protect feature in Essential plugin.",
-  "version": "v21",
-  "dependencies": [ "essential" ]
-}

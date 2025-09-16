@@ -8,7 +8,6 @@ plugins {
 dependencies {
     ksp(project(":ksp-processor"))
     implementation(project(":ksp-processor"))
-    implementation(project(":common"))
     implementation(libs.bundles.kotlinxEcosystem)
     implementation(libs.bundles.exposed)
     implementation(libs.jfiglet)
@@ -19,11 +18,7 @@ dependencies {
     implementation(libs.jbcrypt)
 
     testImplementation(kotlin("test"))
-    if (System.getenv("LOCAL_REPO_IP") != null) {
-        testImplementation(libs.bundles.local.game.test)
-    } else {
-        testImplementation(libs.bundles.game.test)
-    }
+    testImplementation(libs.bundles.game.test)
     testImplementation(libs.bundles.kotlinxEcosystem)
     testImplementation(libs.bundles.exposed)
     testImplementation(libs.sqlite)

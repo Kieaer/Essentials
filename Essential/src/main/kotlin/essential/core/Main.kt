@@ -6,19 +6,17 @@ import arc.Events
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
-import essential.*
-import essential.config.Config
+import essential.common.*
+import essential.common.config.Config
+import essential.common.database.data.createPluginData
+import essential.common.database.data.getPluginData
+import essential.common.database.data.migrateMapRatingsFromPluginData
+import essential.common.database.databaseInit
+import essential.common.permission.Permission
+import essential.common.service.fileWatchService
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
-import essential.database.data.DisplayData
-import essential.database.data.getPluginData
-import essential.database.data.migrateMapRatingsFromPluginData
-import essential.database.data.toPluginData
-import essential.database.databaseInit
-import essential.database.table.PluginTable
-import essential.permission.Permission
-import essential.service.fileWatchService
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -31,8 +29,6 @@ import mindustry.game.Team
 import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
-import org.jetbrains.exposed.sql.insertReturning
-import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 
 class Main : Plugin() {
@@ -55,8 +51,6 @@ class Main : Plugin() {
             Log.err(bundle["event.plugin.load.failed"])
             return
         }
-
-
 
         conf = config
 
@@ -81,13 +75,7 @@ class Main : Plugin() {
         runBlocking {
             var data = getPluginData()
             if (data == null) {
-                data = transaction {
-                    PluginTable.insertReturning {
-                        it[pluginVersion] = PLUGIN_VERSION
-                        it[databaseVersion] = DATABASE_VERSION
-                        it[PluginTable.data] = DisplayData()
-                    }.single().toPluginData()
-                }
+                data = createPluginData()
             }
 
             pluginData = data
@@ -120,8 +108,6 @@ class Main : Plugin() {
         scope.launch { Trigger.Thread().init() }
 
         Vars.netServer.admins.addActionFilter(object : Administration.ActionFilter {
-            var isNotTargetMap = false
-
             init {
                 Events.on(WorldLoadEvent::class.java) {
                     isNotTargetMap =
@@ -215,11 +201,10 @@ class Main : Plugin() {
                     if (it.status == Http.HttpStatus.OK) {
                         val json = Json { ignoreUnknownKeys = true; isLenient = true }
                         val jsonObject = json.parseToJsonElement(it.resultAsString).jsonObject
-                        pluginData.pluginVersion = PLUGIN_VERSION
                         
-                        val tagName = jsonObject["tag_name"]?.jsonPrimitive?.content ?: pluginData.pluginVersion
+                        val tagName = jsonObject["tag_name"]?.jsonPrimitive?.content ?: PLUGIN_VERSION
                         val latest = DefaultArtifactVersion(tagName)
-                        val current = DefaultArtifactVersion(pluginData.pluginVersion)
+                        val current = DefaultArtifactVersion(PLUGIN_VERSION)
                         
                         // Parse assets array and get download URL from first asset
                         val browserDownloadUrl = jsonObject["assets"]?.jsonArray?.getOrNull(0)?.jsonObject?.get("browser_download_url")?.jsonPrimitive?.content ?: ""
@@ -232,13 +217,6 @@ class Main : Plugin() {
                         }
                     }
                 }
-        } else {
-            Vars.mods.list().forEach { mod ->
-                if (mod.meta.name == "Essentials") {
-                    pluginData.pluginVersion = mod.meta.version
-                    return@forEach
-                }
-            }
         }
     }
 }

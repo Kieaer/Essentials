@@ -63,7 +63,7 @@ subprojects {
         }
     }
 
-    if (project.name != "ksp-processor" && project.name != "common") {
+    if (project.name != "ksp-processor") {
         tasks.register<JavaExec>("proguardJar") {
             dependsOn("shadowJar")
 

@@ -11,28 +11,27 @@ import arc.util.Timer
 import com.charleskorn.kaml.Yaml
 import com.github.lalyos.jfiglet.FigletFont
 import essential.*
-import essential.bundle.Bundle
+import essential.common.*
+import essential.common.bundle.Bundle
+import essential.common.database.data.*
+import essential.common.database.data.plugin.WarpBlock
+import essential.common.database.data.plugin.WarpCount
+import essential.common.database.data.plugin.WarpTotal
+import essential.common.database.databaseClose
+import essential.common.database.table.PlayerTable
+import essential.common.event.CustomEvents
+import essential.common.log.LogType
+import essential.common.log.writeLog
+import essential.common.permission.Permission
+import essential.common.util.currentTime
+import essential.common.util.findPlayerData
+import essential.common.util.findPlayers
+import essential.common.util.findPlayersByName
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
-import essential.database.data.PlayerData
-import essential.database.data.getPlayerData
-import essential.database.data.mergePlayerAccounts
-import essential.database.data.plugin.WarpBlock
-import essential.database.data.plugin.WarpCount
-import essential.database.data.plugin.WarpTotal
-import essential.database.data.update
-import essential.database.databaseClose
-import essential.database.table.PlayerTable
-import essential.event.CustomEvents
-import essential.log.LogType
-import essential.permission.Permission
-import essential.util.currentTime
-import essential.util.findPlayerData
-import essential.util.findPlayers
-import essential.util.findPlayersByName
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -76,7 +75,6 @@ import kotlin.time.Duration.Companion.minutes
 
 internal class Commands {
     companion object {
-        // 다중 사용 함수
         const val PLAYER_NOT_FOUND = "player.not.found"
         const val PLAYER_NOT_REGISTERED = "player.not.registered"
         const val DATABASE_ERROR = "database.io.error"
@@ -568,7 +566,7 @@ internal class Commands {
                     val ip = Vars.netServer.admins.getInfo(data.uuid).lastIP
                     Vars.netServer.admins.banPlayer(data.uuid)
 
-                    essential.log.writeLog(LogType.Player, Bundle()["log.player.banned", data.name, ip])
+                    writeLog(LogType.Player, Bundle()["log.player.banned", data.name, ip])
                     players.forEach {
                         it.send("info.banned.message", data.player.plainName(), data.name)
                     }
@@ -590,7 +588,7 @@ internal class Commands {
                         playerData.send("command.unban.id", data.uuid)
                     }
 
-                    essential.log.writeLog(LogType.Player, Bundle()["log.player.unbanned", name, ip])
+                    writeLog(LogType.Player, Bundle()["log.player.unbanned", name, ip])
                 }
             }
 
@@ -690,7 +688,8 @@ internal class Commands {
                                             )
                                             banPlayer(targetData)
                                         }
-                                    } // 영구 차단
+                                    }
+                                    // 영구 차단
                                     Call.menu(
                                         p.con(),
                                         banConfirmMenu,
@@ -1512,34 +1511,110 @@ internal class Commands {
 
     @ClientCommand("rollback", "<player>", "Undo all actions taken by the player.")
     fun rollback(playerData: PlayerData, arg: Array<out String>) {
-        val buffer = worldHistory.toTypedArray()
+        runBlocking {
+            val history = getAllWorldHistory()
 
-        buffer.forEach {
-            val buf = ArrayList<TileLog>()
-            if (it.player.contains(arg[0])) {
-                buffer.forEach { two ->
-                    if (two.x == it.x && two.y == it.y) {
-                        buf.add(two)
+            // Group entries by tile coordinates for efficient processing
+            val grouped = history.groupBy { Pair(it.x.toInt(), it.y.toInt()) }
+
+            grouped.forEach { (pos, entriesUnsorted) ->
+                // Consider only tiles that the target player has interacted with
+                val hasPlayerAction = entriesUnsorted.any { it.player.contains(arg[0], ignoreCase = true) }
+                if (!hasPlayerAction) return@forEach
+
+                // Sort entries chronologically for this tile
+                val entries = entriesUnsorted.sortedBy { it.time }
+
+                // Find the first action by the target player on this tile
+                val firstIdx = entries.indexOfFirst { it.player.contains(arg[0], ignoreCase = true) }
+                if (firstIdx == -1) return@forEach
+
+                val targetTile = Vars.world.tile(pos.first, pos.second)
+                if (targetTile == null) return@forEach
+
+                // Determine desired state just BEFORE the player's first action
+                // 1) Determine block occupancy (air vs a specific block)
+                var desiredBlockName: String? = null // null -> air
+                var desiredTeam: Team = Team.derelict
+                var desiredRot: Int = 0
+
+                // Helper: scan backwards to find the last occupancy-changing action before firstIdx
+                fun applyPrevOccupancyFrom(indexExclusive: Int) {
+                    for (i in indexExclusive downTo 0) {
+                        val e = entries[i]
+                        when (e.action) {
+                            "place" -> {
+                                desiredBlockName = e.tile
+                                desiredTeam = Team.all.find { t -> t.name == e.team } ?: Team.derelict
+                                desiredRot = e.rotate
+                                return
+                            }
+                            "break" -> {
+                                desiredBlockName = null // air
+                                desiredTeam = Team.derelict
+                                desiredRot = 0
+                                return
+                            }
+                        }
                     }
                 }
 
-                val last = buf.last()
-                val targetTile = Vars.world.tile(last.x.toInt(), last.y.toInt())
-                if (last.action == "place") {
-                    targetTile.remove()
-                } else if (last.action == "break") {
-                    targetTile.setBlock(Vars.content.block(last.tile), last.team, last.rotate)
-
-                    for (tile in buf.reversed()) {
-                        if (tile.value != null) {
-                            targetTile.build.configure(tile.value)
-                            break
+                if (firstIdx > 0) {
+                    // There were actions before the player's first action; infer state from them
+                    applyPrevOccupancyFrom(firstIdx - 1)
+                } else {
+                    // Player's first action is the earliest; infer from the type of the first action
+                    val first = entries[firstIdx]
+                    when (first.action) {
+                        "place" -> {
+                            // Before placing, it must have been air (or unknown -> assume air)
+                            desiredBlockName = null
                         }
+                        "break" -> {
+                            // Before breaking, the block existed and is recorded in 'tile'
+                            desiredBlockName = first.tile
+                            desiredTeam = Team.all.find { t -> t.name == first.team } ?: Team.derelict
+                            desiredRot = first.rotate
+                        }
+                        else -> {
+                            // For non-occupancy actions, assume no change (keep current)
+                            // But for safety, try to infer any previous occupancy (none exists), default to current state
+                            desiredBlockName = targetTile.block().name.takeIf { it != Blocks.air.name }
+                            desiredTeam = targetTile.team()
+                            desiredRot = targetTile.build?.rotation ?: 0
+                        }
+                    }
+                }
+
+                // 2) Find the last configuration value before the player's first action, if any
+                var desiredConfig: String? = null
+                for (i in (firstIdx - 1) downTo 0) {
+                    val e = entries[i]
+                    if (e.value != null) {
+                        desiredConfig = e.value
+                        break
+                    }
+                }
+
+                // Apply the desired state to the world
+                if (desiredBlockName == null || desiredBlockName == Blocks.air.name) {
+                    targetTile.remove()
+                } else {
+                    val block = Vars.content.block(desiredBlockName)
+                    if (block != null) {
+                        targetTile.setBlock(block, desiredTeam, desiredRot)
+                        if (desiredConfig != null && targetTile.build != null) {
+                            targetTile.build.configure(desiredConfig)
+                        }
+                    } else {
+                        // If block not found, safest is to remove
+                        targetTile.remove()
                     }
                 }
             }
         }
 
+        // Refresh world data for all players to reflect changes
         for (p in Groups.player) {
             Call.worldDataBegin(p.con)
             Vars.netServer.sendWorldData(p)
@@ -1578,7 +1653,7 @@ internal class Commands {
                     if (pluginData.hubMapName == null) {
                         pluginData.hubMapName = Vars.state.map.name()
                         playerData.send("command.hub.mode.on")
-                    } else if (pluginData.hubMapName != null && pluginData.hubMapName != Vars.state.map.name()) {
+                    } else if (pluginData.hubMapName != Vars.state.map.name()) {
                         playerData.send("command.hub.mode.exists")
                     } else {
                         pluginData.hubMapName = null
@@ -2359,26 +2434,21 @@ internal class Commands {
         if (!Permission.check(playerData, "nextmap")) return
 
         if (arg.isEmpty()) {
-            // If no map is specified, show the current votes
             if (mapVotes.isEmpty()) {
                 playerData.send("command.nextmap.vote.none")
             } else {
-                // Count votes for each map
                 val voteCount = HashMap<Map, Int>()
                 mapVotes.values.forEach { map ->
                     voteCount[map] = voteCount.getOrDefault(map, 0) + 1
                 }
 
-                // Sort maps by vote count (descending)
                 val sortedVotes = voteCount.entries.sortedByDescending { it.value }
 
-                // Build the message
                 val message = StringBuilder(playerData.bundle["command.nextmap.vote.current"] + "\n")
                 sortedVotes.forEach { (map, count) ->
                     message.append(playerData.bundle["command.nextmap.vote.count", map.plainName(), count] + "\n")
                 }
 
-                // Show the player's current vote
                 val playerVote = mapVotes[playerData.uuid]
                 if (playerVote != null) {
                     message.append("\n" + playerData.bundle["command.nextmap.vote.your", playerVote.plainName()])

@@ -9,32 +9,29 @@ import essential.players
 import mindustry.Vars
 import mindustry.game.Team
 import mindustry.gen.Groups
-import org.junit.BeforeClass
-import org.junit.Test
+import kotlin.test.*
 
 
 class FeatureTest {
     companion object {
         private var done = false
-
-        @BeforeClass
-        @JvmStatic
-        fun setup() {
-            if (!done) {
-                loadGame()
-                loadPlugin()
-
-                val p = newPlayer()
-                Vars.player = p.first.self()
-                player = p.first.self()
-                playerData = p.second
-
-                done = true
-            }
-        }
     }
 
+    @BeforeTest
+    fun setup() {
+        if (!done) {
+            System.setProperty("test", "yes")
+            loadGame()
+            loadPlugin()
 
+            val p = newPlayer()
+            Vars.player = p.first.self()
+            player = p.first.self()
+            playerData = p.second
+
+            done = true
+        }
+    }
 
     @Test
     fun pvpBalanceTest() {

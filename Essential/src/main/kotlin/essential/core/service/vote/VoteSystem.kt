@@ -7,12 +7,12 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.util.Time
 import arc.util.Timer
-import essential.*
+import essential.common.*
+import essential.common.database.data.PlayerData
+import essential.common.event.CustomEvents
+import essential.common.permission.Permission
+import essential.common.util.findPlayerData
 import essential.core.earnEXP
-import essential.database.data.PlayerData
-import essential.event.CustomEvents
-import essential.permission.Permission
-import essential.util.findPlayerData
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx

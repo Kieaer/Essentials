@@ -327,5 +327,3 @@
     <fields>;
     <methods>;
 }
-
--keep class org.sqlite.** { *; }

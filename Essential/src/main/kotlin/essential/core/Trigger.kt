@@ -7,18 +7,20 @@ import arc.util.Align
 import arc.util.Log
 import arc.util.Time
 import arc.util.Timer
-import essential.bundle
-import essential.bundle.Bundle
+import essential.common.bundle
+import essential.common.bundle.Bundle
+import essential.common.database.data.PluginData
+import essential.common.database.data.cleanupExpiredRoutingPermissions
+import essential.common.database.data.getPluginData
+import essential.common.database.data.plugin.WarpCount
+import essential.common.permission.Permission
+import essential.common.players
+import essential.common.pluginData
+import essential.common.rootPath
+import essential.common.util.findPlayerData
 import essential.core.Main.Companion.conf
 import essential.core.service.effect.EffectSystem
-import essential.database.data.PluginData
-import essential.database.data.getPluginData
-import essential.database.data.plugin.WarpCount
-import essential.permission.Permission
-import essential.players
-import essential.pluginData
-import essential.rootPath
-import essential.util.findPlayerData
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import mindustry.Vars
@@ -37,7 +39,6 @@ import java.net.DatagramSocket
 import java.net.InetAddress
 import java.nio.ByteBuffer
 import java.util.function.Consumer
-import kotlin.coroutines.coroutineContext
 import kotlin.math.floor
 import kotlin.random.Random
 
@@ -105,16 +106,17 @@ class Trigger {
 
         suspend fun init() {
             var isNotTargetMap: Boolean
-            while (coroutineContext.isActive) {
+            while (currentCoroutineContext().isActive) {
                 try {
-                    val pluginData = getPluginData()
+                    val pluginDataFromDatabase = getPluginData()
 
                     // 플러그인 데이터는 항상 존재 해야 합니다.
-                    require(pluginData != null) {
+                    require(pluginDataFromDatabase != null) {
                         bundle["plugin.data.null"]
                     }
 
-                    val data = pluginData.data
+                    pluginData = pluginDataFromDatabase
+                    val data = pluginDataFromDatabase.data
 
                     isNotTargetMap = false
                     if (data.warpCount.none { f -> f.mapName == Vars.state.map.name() } &&
@@ -345,6 +347,8 @@ class Trigger {
                     Core.app.exit()
                 }
             }
+
+            cleanupExpiredRoutingPermissions()
         }
 
         private fun pingHostImpl(address: String, port: Int, listener: Consumer<Host>) {

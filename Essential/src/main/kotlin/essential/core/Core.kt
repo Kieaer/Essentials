@@ -1,6 +1,6 @@
 package essential.core
 
-import essential.event.CustomEvents
+import essential.common.event.CustomEvents
 import mindustry.game.EventType.*
 
 /**

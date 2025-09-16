@@ -57,6 +57,7 @@ class EventProcessor(
         val eventSymbols = resolver.getSymbolsWithAnnotation(Event::class.qualifiedName!!)
         val unprocessed = eventSymbols.filter { !it.validate() }.toList()
 
+        // 이벤트 핸들러 생성 - 패키지별로 그룹화
         if (eventSymbols.any()) {
             val eventFunctions = eventSymbols
                 .filter { it is KSFunctionDeclaration && it.validate() }
@@ -64,7 +65,15 @@ class EventProcessor(
                 .toList()
 
             if (eventFunctions.isNotEmpty()) {
-                generateEventHandlersFile(eventFunctions)
+                // 패키지별로 그룹화
+                val eventFunctionsByPackage = eventFunctions.groupBy { function ->
+                    function.containingFile?.packageName?.asString() ?: "essential.core"
+                }
+
+                // 각 패키지별로 파일 생성
+                eventFunctionsByPackage.forEach { (packageName, functions) ->
+                    generateEventHandlersFile(functions)
+                }
             }
         }
 
@@ -81,7 +90,7 @@ class EventProcessor(
         val fileSpec = FileSpec.builder(packageName, "EventHandlersGenerated")
             .addImport("arc.Events", "")
             .addImport("arc.func", "Cons")
-            .addImport("essential", "eventListeners")
+            .addImport("essential.common", "eventListeners")
             .addImport("mindustry.game.EventType", "Trigger")
             .addFunction(generateRegisterEventHandlersFunction(functions))
             .build()

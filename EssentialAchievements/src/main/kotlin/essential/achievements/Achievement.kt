@@ -1,9 +1,9 @@
 package essential.achievements
 
 import arc.Events
+import essential.common.database.data.PlayerData
+import essential.common.database.data.setAchievement
 import essential.core.Main.Companion.scope
-import essential.database.data.PlayerData
-import essential.database.data.setAchievement
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import java.io.IOException
@@ -171,16 +171,15 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            var result: Int
-            try {
+            var result: Int = try {
                 val total: Int = data.pvpWinCount + data.pvpLoseCount
                 if (total < 10) { // Require at least 10 games for win rate calculation
-                    result = 0
+                    0
                 } else {
-                    result = data.pvpWinCount * 100 / total
+                    data.pvpWinCount * 100 / total
                 }
             } catch (e: ArithmeticException) {
-                result = 0
+                0
             }
             return result
         }

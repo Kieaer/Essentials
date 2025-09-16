@@ -89,7 +89,7 @@ class CommandProcessor(
         val unprocessedServer = serverSymbols.filter { !it.validate() }.toList()
         val unprocessedClient = clientSymbols.filter { !it.validate() }.toList()
 
-        // 서버 명령어 생성
+        // 서버 명령어 생성 - 패키지별로 그룹화
         if (serverSymbols.any()) {
             val serverFunctions = serverSymbols
                 .filter { it is KSFunctionDeclaration && it.validate() }
@@ -97,11 +97,19 @@ class CommandProcessor(
                 .toList()
 
             if (serverFunctions.isNotEmpty()) {
-                generateServerCommandsFile(serverFunctions)
+                // 패키지별로 그룹화
+                val serverFunctionsByPackage = serverFunctions.groupBy { function ->
+                    function.containingFile?.packageName?.asString() ?: "essential.core"
+                }
+
+                // 각 패키지별로 파일 생성
+                serverFunctionsByPackage.forEach { (packageName, functions) ->
+                    generateServerCommandsFile(functions)
+                }
             }
         }
 
-        // 클라이언트 명령어 생성
+        // 클라이언트 명령어 생성 - 패키지별로 그룹화
         if (clientSymbols.any()) {
             val clientFunctions = clientSymbols
                 .filter { it is KSFunctionDeclaration && it.validate() }
@@ -109,7 +117,15 @@ class CommandProcessor(
                 .toList()
 
             if (clientFunctions.isNotEmpty()) {
-                generateClientCommandsFile(clientFunctions)
+                // 패키지별로 그룹화
+                val clientFunctionsByPackage = clientFunctions.groupBy { function ->
+                    function.containingFile?.packageName?.asString() ?: "essential.core"
+                }
+
+                // 각 패키지별로 파일 생성
+                clientFunctionsByPackage.forEach { (packageName, functions) ->
+                    generateClientCommandsFile(functions)
+                }
             }
         }
 
@@ -145,10 +161,10 @@ class CommandProcessor(
             .addImport("ksp.command", "ClientCommand")
             .addImport("arc.util", "CommandHandler")
             .addImport("mindustry.gen", "Playerc")
-            .addImport("essential.util", "findPlayerData")
-            .addImport("essential.permission", "Permission")
-            .addImport("essential.bundle", "Bundle")
-            .addImport("essential.database.data", "PlayerData")
+            .addImport("essential.common.util", "findPlayerData")
+            .addImport("essential.common.permission", "Permission")
+            .addImport("essential.common.bundle", "Bundle")
+            .addImport("essential.common.database.data", "PlayerData")
             .addFunction(generateRegisterClientCommandsFunction(functions))
             .build()
 

@@ -1,9 +1,9 @@
 package essential.achievements
 
 import arc.util.Strings
-import essential.database.data.PlayerData
-import essential.permission.Permission
-import essential.players
+import essential.common.database.data.PlayerData
+import essential.common.permission.Permission
+import essential.common.players
 import ksp.command.ClientCommand
 import ksp.command.ServerCommand
 import java.util.*

@@ -3,11 +3,11 @@ package essential.achievements
 import arc.Events
 import arc.util.Timer
 import essential.achievements.APMTracker.Companion.findPlayerByUuid
-import essential.bundle.Bundle
-import essential.database.data.PlayerData
-import essential.offlinePlayers
-import essential.players
-import essential.pluginData
+import essential.common.bundle.Bundle
+import essential.common.database.data.PlayerData
+import essential.common.offlinePlayers
+import essential.common.players
+import essential.common.pluginData
 import ksp.event.Event
 import mindustry.Vars.state
 import mindustry.content.Planets

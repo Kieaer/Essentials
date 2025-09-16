@@ -3,9 +3,9 @@ package essential.core.service.effect
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.util.Timer
+import essential.common.database.data.PlayerData
+import essential.common.players
 import essential.core.Main.Companion.conf
-import essential.database.data.PlayerData
-import essential.players
 import mindustry.Vars
 import mindustry.content.Fx
 import mindustry.entities.Effect

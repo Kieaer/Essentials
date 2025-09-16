@@ -1,6 +1,6 @@
 package essential.core.service.vote
 
-import essential.database.data.PlayerData
+import essential.common.database.data.PlayerData
 import mindustry.Vars
 import mindustry.game.Team
 import mindustry.gen.Playerc

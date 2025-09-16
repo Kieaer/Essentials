@@ -8,19 +8,19 @@ import arc.graphics.Color
 import arc.util.Log
 import arc.util.Strings
 import com.charleskorn.kaml.Yaml
-import essential.*
-import essential.bundle.Bundle
+import essential.common.*
+import essential.common.bundle.Bundle
+import essential.common.database.data.*
+import essential.common.database.data.plugin.WarpZone
+import essential.common.database.table.PlayerTable
+import essential.common.event.CustomEvents
+import essential.common.log.LogType
+import essential.common.log.writeLog
+import essential.common.permission.Permission
+import essential.common.util.currentTime
+import essential.common.util.findPlayerData
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
-import essential.database.data.*
-import essential.database.data.plugin.WarpZone
-import essential.database.table.PlayerTable
-import essential.event.CustomEvents
-import essential.log.LogType
-import essential.log.writeLog
-import essential.permission.Permission
-import essential.util.currentTime
-import essential.util.findPlayerData
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
@@ -59,8 +59,6 @@ import java.util.regex.Pattern
 import kotlin.time.Duration.Companion.minutes
 
 /** 월드 기록 - Now stored in the database */
-@Deprecated("Use database functions instead", ReplaceWith("getAllWorldHistory()"))
-internal var worldHistory = ArrayList<TileLog>()
 private var dateformat = SimpleDateFormat("HH:mm:ss")
 private var blockExp = mutableMapOf<String, Int>()
 
@@ -68,7 +66,6 @@ private var blockExp = mutableMapOf<String, Int>()
 val mapVotes = HashMap<String, Map>()
 
 /** 맵 평가 목록 (UUID, Boolean) - true for upvote, false for downvote */
-// This is now stored in the database using MapRating class
 val mapRatings = HashMap<String, Boolean>()
 
 /** PvP 관전 플레이어 목록 */
@@ -80,6 +77,9 @@ internal var pvpPlayer = mutableMapOf<String, Team>()
 /** 전체 채팅 차단 유무 */
 internal var isGlobalMute = false
 private var unitLimitMessageCooldown = 0
+
+/** 서버 라우팅 강제 여부 - isNotTargetMap이 false일 때 true가 됨 */
+internal var isNotTargetMap = false
 
 val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
 val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
@@ -202,6 +202,17 @@ internal fun tap(event: TapEvent) {
                             two.port
                         )]
                     )
+                    
+                    // 허브 서버에서 다른 서버로 이동할 때 라우팅 권한 부여
+                    val currentMapName = Vars.state.map.name()
+                    val hubMapName = pluginData.hubMapName
+                    if (hubMapName != null && currentMapName == hubMapName) {
+                        // 대상 서버 이름을 설명에서 추출하거나 IP:PORT 조합을 사용
+                        val targetServerName = two.description.takeIf { it.isNotEmpty() } ?: "${two.ip}:${two.port}"
+                        grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
+                        Log.debug("Granted routing permission for ${event.player.plainName()} to $targetServerName")
+                    }
+                    
                     Call.connect(event.player.con(), two.ip, two.port)
                 }
                 return@forEach
@@ -216,25 +227,45 @@ internal fun tap(event: TapEvent) {
                 )
             ) {
                 Log.info(Bundle()["log.warp.move", event.player.plainName(), two.ip, two.port.toString()])
+                
+                // 허브 서버에서 다른 서버로 이동할 때 라우팅 권한 부여
+                val currentMapName = Vars.state.map.name()
+                val hubMapName = pluginData.hubMapName
+                if (hubMapName != null && currentMapName == hubMapName) {
+                    val targetServerName = "${two.ip}:${two.port}"
+                    grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
+                    Log.debug("Granted routing permission for ${event.player.plainName()} to $targetServerName via warp zone")
+                }
+                
                 Call.connect(event.player.con(), two.ip, two.port)
                 continue
             }
         }
 
         if (data.viewHistoryMode) {
-            // Use both the ArrayList (for backward compatibility) and the database
-            val buf = ArrayList<TileLog>()
-
-            // Add entries from the ArrayList
-            worldHistory.forEach { two ->
-                if (two.x == event.tile.x && two.y == event.tile.y) {
-                    buf.add(two)
-                }
-            }
-
-            // Launch a coroutine to get entries from the database
             scope.launch {
+                val buf = ArrayList<TileLog>()
+
                 try {
+                    val all = getAllWorldHistory()
+                    all.forEach { entry ->
+                        if (entry.x == event.tile.x && entry.y == event.tile.y) {
+                            buf.add(
+                                TileLog(
+                                    time = entry.time,
+                                    player = entry.player,
+                                    action = entry.action,
+                                    x = entry.x,
+                                    y = entry.y,
+                                    tile = entry.tile,
+                                    rotate = entry.rotate,
+                                    team = Team.all.find { it.name == entry.team } ?: Team.derelict,
+                                    value = entry.value
+                                )
+                            )
+                        }
+                    }
+
                     // Get entries from the database
                     val dbEntries = getWorldHistoryByCoordinates(event.tile.x.toShort(), event.tile.y.toShort())
 
@@ -439,7 +470,7 @@ internal fun serverLoad(event: ServerLoadEvent) {
         two.requirements.forEach { item ->
             buf += item.amount
         }
-        blockExp.put(two.name, buf)
+        blockExp[two.name] = buf
     }
 
     Vars.netServer.admins.addChatFilter(Administration.ChatFilter { player, message ->
@@ -595,7 +626,6 @@ internal fun gameOver(event: GameOverEvent) {
         }
     }
     offlinePlayers.clear()
-    worldHistory.clear()
 
     // Clear the world history database
     scope.launch {
@@ -631,19 +661,29 @@ internal fun blockBuildEnd(event: BlockBuildEndEvent) {
                     Bundle()["log.block.place", target.name, checkValidBlock(event.tile), event.tile.x, event.tile.y]
                 )
 
-                // Use both the ArrayList (for backward compatibility) and the database
                 val buf = ArrayList<TileLog>()
 
-                // Add entries from the ArrayList
-                worldHistory.forEach { two ->
-                    if (two.x == event.tile.x && two.y == event.tile.y) {
-                        buf.add(two)
-                    }
-                }
-
-                // Launch a coroutine to get entries from the database
-                runBlocking {
+                scope.launch {
                     try {
+                        val all = getAllWorldHistory()
+                        all.forEach { entry ->
+                            if (entry.x == event.tile.x.toShort() && entry.y == event.tile.y.toShort()) {
+                                buf.add(
+                                    TileLog(
+                                        time = entry.time,
+                                        player = entry.player,
+                                        action = entry.action,
+                                        x = entry.x,
+                                        y = entry.y,
+                                        tile = entry.tile,
+                                        rotate = entry.rotate,
+                                        team = Team.all.find { it.name == entry.team } ?: Team.derelict,
+                                        value = entry.value
+                                    )
+                                )
+                            }
+                        }
+
                         // Get entries from the database
                         val dbEntries = getWorldHistoryByCoordinates(event.tile.x.toShort(), event.tile.y.toShort())
 
@@ -674,12 +714,12 @@ internal fun blockBuildEnd(event: BlockBuildEndEvent) {
                     } catch (e: Exception) {
                         Log.err("Error retrieving world history from database", e)
                     }
-                }
 
-                if (!Vars.state.rules.infiniteResources && event.tile != null && event.tile.build != null && event.tile.build.maxHealth() == event.tile.block().health.toFloat() && (!buf.isEmpty() && buf.last().tile != event.tile.block().name)) {
-                    target.blockPlaceCount++
-                    target.exp += blockExp[block.name]!!
-                    target.currentExp += blockExp[block.name]!!
+                    if (!Vars.state.rules.infiniteResources && event.tile != null && event.tile.build != null && event.tile.build.maxHealth() == event.tile.block().health.toFloat() && (!buf.isEmpty() && buf.last().tile != event.tile.block().name)) {
+                        target.blockPlaceCount++
+                        target.exp += blockExp[block.name]!!
+                        target.currentExp += blockExp[block.name]!!
+                    }
                 }
 
                 addLog(
@@ -933,6 +973,36 @@ internal fun connectPacket(event: ConnectPacketEvent) {
                     )
                 )
                 return@forEach
+            }
+        }
+    }
+    
+    // 서버 라우팅 검증 - hub_map_name이 null이 아닐 때만 적용
+    val hubMapName = pluginData.hubMapName
+    if (hubMapName != null) {
+        val currentMapName = Vars.state.map.name()
+        
+        // 현재 서버가 허브 서버가 아닌 경우에만 라우팅 검증 적용
+        if (currentMapName != hubMapName) {
+            // 플레이어가 허브를 통한 라우팅 권한이 있는지 확인
+            val hasRoutingPermission = checkRoutingPermission(event.packet.uuid, currentMapName)
+            
+            if (!hasRoutingPermission) {
+                event.connection.kick("Direct connection denied - must route through hub server", 0L)
+                writeLog(
+                    LogType.Player,
+                    Bundle()["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, "Direct connection denied - must route through hub"]
+                )
+                Events.fire(
+                    CustomEvents.PlayerConnectKicked(
+                        event.packet.name,
+                        "Direct connection denied - must route through hub"
+                    )
+                )
+                return
+            } else {
+                // 라우팅 권한을 사용 처리
+                useRoutingPermission(event.packet.uuid, currentMapName)
             }
         }
     }
@@ -1217,10 +1287,6 @@ fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) 
 }
 
 private fun addLog(log: TileLog) {
-    // Add to the ArrayList for backward compatibility
-    worldHistory.add(log)
-
-    // Add to the database in a coroutine I/O scope
     scope.launch {
         createWorldHistory(
             time = log.time,

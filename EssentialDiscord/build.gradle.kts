@@ -9,7 +9,6 @@ dependencies {
 
     ksp(project(":ksp-processor"))
 
-    implementation(project(":common"))
     implementation(project(":ksp-processor"))
     implementation(libs.bundles.kotlinxEcosystem)
     implementation(libs.kaml)

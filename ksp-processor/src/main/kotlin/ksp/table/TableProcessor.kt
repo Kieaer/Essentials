@@ -91,8 +91,32 @@ class TableProcessor(
         sb.append("import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq\n")
         sb.append("import org.jetbrains.exposed.sql.transactions.transaction\n")
         sb.append("import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction\n")
-        sb.append("import essential.database.table.$tableClassName\n")
-        sb.append("import $packageName.$className\n\n")
+        sb.append("import essential.common.database.table.$tableClassName\n")
+        sb.append("import $packageName.$className\n")
+        sb.append("import kotlinx.serialization.json.Json\n")
+        sb.append("import kotlinx.serialization.encodeToString\n")
+        sb.append("import kotlinx.serialization.decodeFromString\n\n")
+
+        // Helper: set of primitive/simple types that don't need JSON conversion
+        fun isSimpleType(typeDecl: com.google.devtools.ksp.symbol.KSClassDeclaration?): Boolean {
+            val qn = typeDecl?.qualifiedName?.asString() ?: return true
+            return qn in setOf(
+                "kotlin.Int", "kotlin.UInt", "kotlin.Short", "kotlin.UShort",
+                "kotlin.Byte", "kotlin.UByte", "kotlin.Long", "kotlin.ULong",
+                "kotlin.Float", "kotlin.Double", "kotlin.Boolean", "kotlin.String",
+                "kotlin.Char", "kotlin.UInt?", "kotlin.UByte?",
+                "kotlin.collections.List", "kotlin.collections.Set", "kotlin.collections.Map",
+                "kotlin.Array",
+                "kotlinx.datetime.LocalDateTime"
+            )
+        }
+        fun isSerializableType(typeDecl: com.google.devtools.ksp.symbol.KSClassDeclaration?): Boolean {
+            if (typeDecl == null) return false
+            return typeDecl.annotations.any {
+                val name = it.shortName.asString()
+                name == "Serializable" || it.annotationType.resolve().declaration.qualifiedName?.asString() == "kotlinx.serialization.Serializable"
+            }
+        }
 
         // Extension function for Table
         sb.append("/**\n")
@@ -104,7 +128,14 @@ class TableProcessor(
         // Create variables for each property
         properties.forEach { property ->
             val propertyName = property.simpleName.asString()
-            sb.append("    val $propertyName = row[$tableClassName.$propertyName]\n")
+            val typeDecl = property.type.resolve().declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration
+            val needsJson = !isSimpleType(typeDecl) && isSerializableType(typeDecl)
+            if (needsJson) {
+                val typeName = typeDecl!!.simpleName.asString()
+                sb.append("    val $propertyName = Json.decodeFromString<$typeName>(row[$tableClassName.$propertyName])\n")
+            } else {
+                sb.append("    val $propertyName = row[$tableClassName.$propertyName]\n")
+            }
         }
 
         sb.append("\n    return $className(\n")
@@ -172,7 +203,13 @@ class TableProcessor(
         // Skip the id field as it's the primary key and shouldn't be updated
         properties.filter { it.simpleName.asString() != "id" }.forEach { property ->
             val propertyName = property.simpleName.asString()
-            sb.append("            it[$tableClassName.$propertyName] = data.$propertyName\n")
+            val typeDecl = property.type.resolve().declaration as? com.google.devtools.ksp.symbol.KSClassDeclaration
+            val needsJson = !isSimpleType(typeDecl) && isSerializableType(typeDecl)
+            if (needsJson) {
+                sb.append("            it[$tableClassName.$propertyName] = Json.encodeToString(data.$propertyName)\n")
+            } else {
+                sb.append("            it[$tableClassName.$propertyName] = data.$propertyName\n")
+            }
         }
 
         sb.append("        } > 0\n")
