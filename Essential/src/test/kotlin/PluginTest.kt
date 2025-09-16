@@ -6,11 +6,11 @@ import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
-import essential.bundle.Bundle
+import essential.common.bundle.Bundle
+import essential.common.database.data.PlayerData
+import essential.common.players
+import essential.common.rootPath
 import essential.core.Main
-import essential.database.data.PlayerData
-import essential.players
-import essential.rootPath
 import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.UnitTypes
@@ -37,7 +37,10 @@ import java.nio.file.Paths
 import java.text.MessageFormat
 import java.util.*
 import java.util.zip.ZipFile
-import kotlin.test.*
+import kotlin.test.AfterTest
+import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.fail
 
 class PluginTest {
     companion object {

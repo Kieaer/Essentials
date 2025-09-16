@@ -5,11 +5,12 @@ import PluginTest.Companion.loadPlugin
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
-import essential.players
+import essential.common.players
 import mindustry.Vars
 import mindustry.game.Team
 import mindustry.gen.Groups
-import kotlin.test.*
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 
 
 class FeatureTest {

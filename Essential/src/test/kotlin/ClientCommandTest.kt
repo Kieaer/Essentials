@@ -9,11 +9,11 @@ import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import arc.Events
-import essential.bundle.Bundle
-import essential.database.data.PlayerData
-import essential.database.data.update
-import essential.players
-import essential.util.findPlayerData
+import essential.common.bundle.Bundle
+import essential.common.database.data.PlayerData
+import essential.common.database.data.update
+import essential.common.players
+import essential.common.util.findPlayerData
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.content.Blocks

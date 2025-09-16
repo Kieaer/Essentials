@@ -4,8 +4,8 @@ import arc.Core
 import arc.Events
 import arc.files.Fi
 import arc.util.Log
-import essential.database.data.getPlayerDataByName
-import essential.playTime
+import essential.common.database.data.getPlayerDataByName
+import essential.common.playTime
 import essential.web.Main.Companion.bundle
 import essential.web.Main.Companion.conf
 import io.ktor.http.*
@@ -35,6 +35,7 @@ import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.io.SaveIO
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.io.File
 import java.nio.file.Files
@@ -327,7 +328,7 @@ class WebServer {
             }
 
             // Verify password using BCrypt
-            val passwordMatches = newSuspendedtransaction(db = mainDatabase) {
+            val passwordMatches = newSuspendedTransaction {
                 val storedHash = playerData.accountPW
                 if (storedHash != null) {
                     BCrypt.checkpw(request.password, storedHash)
