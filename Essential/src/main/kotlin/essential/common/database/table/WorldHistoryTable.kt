@@ -1,8 +1,8 @@
 package essential.common.database.table
 
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
-import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.datetime.CurrentDateTime
+import org.jetbrains.exposed.v1.datetime.datetime
 
 object WorldHistoryTable : Table("world_history") {
     val id = uinteger("id").autoIncrement().uniqueIndex()

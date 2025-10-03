@@ -1,8 +1,8 @@
 package essential.common.database.table
 
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.json.json
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.json.json
 
 object PlayerBannedTable : Table("player_banned") {
     val id = uinteger("id").autoIncrement().uniqueIndex()

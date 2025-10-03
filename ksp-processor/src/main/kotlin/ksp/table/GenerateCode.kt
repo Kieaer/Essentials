@@ -71,7 +71,7 @@ package ksp.table
  * For example, you can use the fromInsertReturning function to create a data class instance from the ID returned by insertReturning:
  * 
  * ```
- * val id = newSuspendedTransaction {
+ * val id = suspendTransaction {
  *     MyDataTable.insertReturning {
  *         it[MyDataTable.name] = "John"
  *         it[MyDataTable.value] = 42
@@ -84,14 +84,14 @@ package ksp.table
  * This is much more convenient than the previous approach, which required a separate query:
  * 
  * ```
- * val id = newSuspendedTransaction {
+ * val id = suspendTransaction {
  *     MyDataTable.insertReturning {
  *         it[MyDataTable.name] = "John"
  *         it[MyDataTable.value] = 42
  *     }
  * }
  * 
- * val data = newSuspendedTransaction {
+ * val data = suspendTransaction {
  *     MyDataTable.select { MyDataTable.id eq id }
  *         .map { it.toMyData() }
  *         .first()

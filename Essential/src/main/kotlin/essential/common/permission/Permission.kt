@@ -9,11 +9,14 @@ import essential.common.database.data.PlayerData
 import essential.common.database.table.PlayerTable
 import essential.common.players
 import essential.common.rootPath
+import essential.core.Main.Companion.scope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.update
 import java.util.*
 
 object Permission {
@@ -130,10 +133,12 @@ object Permission {
             for ((uuid, permissionData) in user!!) {
                 val player = players.find { e -> e.uuid == uuid }
                 if (player == null) {
-                    transaction {
-                        PlayerTable.update( { PlayerTable.uuid eq uuid } ) {
-                            it[PlayerTable.name] = permissionData.name
-                            it[PlayerTable.permission] = permissionData.group
+                    scope.launch {
+                        suspendTransaction {
+                            PlayerTable.update({ PlayerTable.uuid eq uuid }) {
+                                it[PlayerTable.name] = permissionData.name
+                                it[PlayerTable.permission] = permissionData.group
+                            }
                         }
                     }
                 } else {

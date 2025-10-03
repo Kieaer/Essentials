@@ -23,9 +23,11 @@ import kotlinx.coroutines.runBlocking
 import ksp.command.ClientCommand
 import mindustry.Vars
 import mindustry.net.Administration.PlayerInfo
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
 class Commands {
     companion object {
@@ -41,7 +43,7 @@ class Commands {
         }
 
         scope.launch {
-            val result = newSuspendedTransaction {
+            val result = suspendTransaction() {
                 PlayerTable.select(PlayerTable.accountPW, PlayerTable.accountPW).where {
                     (PlayerTable.accountID eq arg[0]) and (PlayerTable.accountPW eq arg[1])
                 }.mapToPlayerDataList()

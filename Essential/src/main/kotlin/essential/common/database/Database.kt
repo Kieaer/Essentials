@@ -1,16 +1,17 @@
 package essential.common.database
 
 import arc.util.Log
-import com.zaxxer.hikari.HikariDataSource
 import essential.common.DATABASE_VERSION
 import essential.common.bundle
 import essential.common.database.data.getPluginData
 import essential.common.database.table.*
 import essential.common.rootPath
+import io.r2dbc.spi.ConnectionFactoryOptions
+import io.r2dbc.spi.Option
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -38,11 +39,7 @@ private class DriverShim(private val driver: Driver) : Driver {
     }
 }
 
-var datasource = HikariDataSource()
-
-// Dedicated datasource/database for local-only world_history storage
-var worldHistoryDatasource: HikariDataSource? = null
-var worldHistoryDatabase: Database? = null
+var worldHistoryDatabase: R2dbcDatabase? = null
 
 // ClassLoaders for dynamically downloaded JDBC drivers
 private val driverClassLoaders = mutableMapOf<String, URLClassLoader>()
@@ -71,17 +68,20 @@ fun databaseInit(jdbcUrl: String, user: String, pass: String) {
         val dataDir = rootPath.child("data")
         if (!dataDir.exists()) dataDir.mkdirs()
         val sqlitePath = rootPath.child("data/world_history.db").file().absolutePath
-        val sqliteDriver = getDriverMap()["sqlite"]?.third ?: "org.sqlite.JDBC"
         withDriverClassLoader("sqlite") {
-            worldHistoryDatasource = HikariDataSource().apply {
-                this.jdbcUrl = "jdbc:sqlite:$sqlitePath"
-                this.driverClassName = sqliteDriver
-                this.maximumPoolSize = 1
+            worldHistoryDatabase = R2dbcDatabase.connect {
+                setUrl("r2dbc:sqlite:$sqlitePath")
+                connectionFactoryOptions {
+                    option(ConnectionFactoryOptions.USER, user)
+                    option(ConnectionFactoryOptions.PASSWORD, pass)
+                }
             }
-            worldHistoryDatabase = worldHistoryDatasource?.let { Database.connect(it) }
+
             worldHistoryDatabase?.let { db ->
-                transaction(db) {
-                    SchemaUtils.create(WorldHistoryTable)
+                runBlocking {
+                    suspendTransaction(db) {
+                        SchemaUtils.create(WorldHistoryTable)
+                    }
                 }
             }
         }
@@ -89,31 +89,31 @@ fun databaseInit(jdbcUrl: String, user: String, pass: String) {
         Log.err("[database] Failed to initialize local SQLite for world_history: @", e)
     }
 
-    val mainDriver = getDriverMap()[dbType]?.third
-    if (dbType == "sqlite") ensureSqliteFileParentExists(jdbcUrl)
     withDriverClassLoader(dbType) {
-        datasource = HikariDataSource().apply {
-            this.jdbcUrl = jdbcUrl
-            this.username = user
-            this.password = pass
-            this.maximumPoolSize = 2
-            if (mainDriver != null) this.driverClassName = mainDriver
+        R2dbcDatabase.connect {
+            setUrl(jdbcUrl)
+            connectionFactoryOptions {
+                option(ConnectionFactoryOptions.USER, user)
+                option(ConnectionFactoryOptions.PASSWORD, pass)
+                option(Option.valueOf("maxSize"), 2)
+            }
         }
 
-        Database.connect(datasource)
-
-        transaction {
-            SchemaUtils.create(PlayerTable, PluginTable, PlayerBannedTable, AchievementTable, MapRatingTable, ServerRoutingTable)
+        runBlocking {
+            suspendTransaction {
+                SchemaUtils.create(
+                    PlayerTable,
+                    PluginTable,
+                    PlayerBannedTable,
+                    AchievementTable,
+                    MapRatingTable,
+                    ServerRoutingTable
+                )
+            }
         }
     }
 
     upgradeDatabaseBlocking()
-}
-
-/** DB 연결 종료 */
-fun databaseClose() {
-    datasource.close()
-    worldHistoryDatasource?.close()
 }
 
 private fun extractDatabaseType(jdbcUrl: String): String {
@@ -167,7 +167,7 @@ private fun loadJdbcDriver(dbType: String) {
 
     if (jarFile.exists()) {
         try {
-            val cl = URLClassLoader(arrayOf(jarFile.toURI().toURL()), Database::class.java.classLoader)
+            val cl = URLClassLoader(arrayOf(jarFile.toURI().toURL()), R2dbcDatabase::class.java.classLoader)
             driverClassLoaders[dbType] = cl
             Thread.currentThread().contextClassLoader = cl
 
@@ -319,9 +319,11 @@ private fun executeSqlScript(fileName: String) {
         val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
         Log.info(bundle["database.upgrade.execute", fileName])
 
-        transaction {
-            sqlScript.split(";").filter { it.trim().isNotEmpty() }.forEach { statement ->
-                exec(statement)
+        runBlocking {
+            suspendTransaction {
+                sqlScript.split(";").filter { it.trim().isNotEmpty() }.forEach { statement ->
+                    exec(statement)
+                }
             }
         }
     } else {

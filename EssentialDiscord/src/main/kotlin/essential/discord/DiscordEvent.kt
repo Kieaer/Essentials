@@ -1,11 +1,11 @@
 package essential.discord
 
 import arc.util.Log
-import essential.bundle.Bundle
-import essential.config.Config
+import essential.common.bundle.Bundle
+import essential.common.config.Config
+import essential.common.event.CustomEvents
 import essential.discord.Main.Companion.bundle
 import essential.discord.Main.Companion.conf
-import essential.event.CustomEvents
 import ksp.event.Event
 
 @Event
@@ -14,7 +14,7 @@ fun configFileModified(event: CustomEvents.ConfigFileModified) {
         if (event.paths == "config_discord.yaml") {
             val config = Config.load("config_discord", DiscordConfig.serializer(), DiscordConfig())
             require(config != null) {
-                Log.err(bundle["event.plugin.load.failed"])
+                bundle["event.plugin.load.failed"]
                 return
             }
             conf = config

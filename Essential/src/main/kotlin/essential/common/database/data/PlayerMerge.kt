@@ -2,14 +2,16 @@ package essential.common.database.data
 
 import essential.common.database.table.PlayerTable
 import essential.common.systemTimezone
-import kotlinx.datetime.Clock
+import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.deleteWhere
+import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.update
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Merge player data from a source UUID into a target UUID according to the defined rules.
@@ -22,17 +24,18 @@ import org.jetbrains.exposed.sql.update
  * - last_played_world_name/mode: use source (new) values
  * - ban_expire_date: latest of the two; isBanned adjusted to whether ban not expired
  */
+@OptIn(ExperimentalTime::class)
 @Suppress("RedundantSuspendModifier")
-suspend fun mergePlayerAccounts(fromUuid: String, toUuid: String): String = newSuspendedTransaction {
+suspend fun mergePlayerAccounts(fromUuid: String, toUuid: String): String = suspendTransaction {
     if (fromUuid.equals(toUuid, ignoreCase = true)) {
-        return@newSuspendedTransaction "Source and target UUID must be different."
+        return@suspendTransaction "Source and target UUID must be different."
     }
 
     val fromRow = PlayerTable.selectAll().where { PlayerTable.uuid eq fromUuid }.singleOrNull()
     val toRow = PlayerTable.selectAll().where { PlayerTable.uuid eq toUuid }.singleOrNull()
 
-    if (fromRow == null) return@newSuspendedTransaction "Source player not found: $fromUuid"
-    if (toRow == null) return@newSuspendedTransaction "Target player not found: $toUuid"
+    if (fromRow == null) return@suspendTransaction "Source player not found: $fromUuid"
+    if (toRow == null) return@suspendTransaction "Target player not found: $toUuid"
 
     val from = fromRow.toPlayerData()
     val to = toRow.toPlayerData()
@@ -95,5 +98,5 @@ suspend fun mergePlayerAccounts(fromUuid: String, toUuid: String): String = newS
     // Delete source row
     PlayerTable.deleteWhere { PlayerTable.id eq from.id }
 
-    return@newSuspendedTransaction "Merged ${from.name} ($fromUuid) into ${to.name} ($toUuid)."
+    return@suspendTransaction "Merged ${from.name} ($fromUuid) into ${to.name} ($toUuid)."
 }

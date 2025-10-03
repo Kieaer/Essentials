@@ -23,7 +23,6 @@ import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
@@ -44,7 +43,9 @@ import mindustry.net.Administration
 import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import java.io.IOException
 import java.math.BigInteger
 import java.nio.file.Files
@@ -56,7 +57,9 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.ExperimentalTime
 
 /** 월드 기록 - Now stored in the database */
 private var dateformat = SimpleDateFormat("HH:mm:ss")
@@ -202,17 +205,19 @@ internal fun tap(event: TapEvent) {
                             two.port
                         )]
                     )
-                    
+
                     // 허브 서버에서 다른 서버로 이동할 때 라우팅 권한 부여
                     val currentMapName = Vars.state.map.name()
                     val hubMapName = pluginData.hubMapName
                     if (hubMapName != null && currentMapName == hubMapName) {
                         // 대상 서버 이름을 설명에서 추출하거나 IP:PORT 조합을 사용
-                        val targetServerName = two.description.takeIf { it.isNotEmpty() } ?: "${two.ip}:${two.port}"
-                        grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
-                        Log.debug("Granted routing permission for ${event.player.plainName()} to $targetServerName")
+                        scope.launch {
+                            val targetServerName = two.description.takeIf { it.isNotEmpty() } ?: "${two.ip}:${two.port}"
+                            grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
+                            Log.debug("Granted routing permission for ${event.player.plainName()} to $targetServerName")
+                        }
                     }
-                    
+
                     Call.connect(event.player.con(), two.ip, two.port)
                 }
                 return@forEach
@@ -227,16 +232,18 @@ internal fun tap(event: TapEvent) {
                 )
             ) {
                 Log.info(Bundle()["log.warp.move", event.player.plainName(), two.ip, two.port.toString()])
-                
+
                 // 허브 서버에서 다른 서버로 이동할 때 라우팅 권한 부여
                 val currentMapName = Vars.state.map.name()
                 val hubMapName = pluginData.hubMapName
                 if (hubMapName != null && currentMapName == hubMapName) {
-                    val targetServerName = "${two.ip}:${two.port}"
-                    grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
-                    Log.debug("Granted routing permission for ${event.player.plainName()} to $targetServerName via warp zone")
+                    scope.launch {
+                        val targetServerName = "${two.ip}:${two.port}"
+                        grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
+                        Log.debug("Granted routing permission for ${event.player.plainName()} to $targetServerName via warp zone")
+                    }
                 }
-                
+
                 Call.connect(event.player.con(), two.ip, two.port)
                 continue
             }
@@ -507,7 +514,7 @@ internal fun serverLoad(event: ServerLoadEvent) {
                 val data = getPlayerData(it.player.uuid())
 
                 if (data == null) {
-                    if (transaction {
+                    if (suspendTransaction {
                             PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()
                         }) {
                         val data = createPlayerData(it.player)
@@ -834,9 +841,13 @@ internal fun unitCreate(event: UnitCreateEvent) {
 
 @Event
 internal fun playerJoin(event: PlayerJoin) {
-    writeLog(LogType.Player, Bundle()["log.joined", event.player.plainName(), event.player.uuid(), event.player.con.address])
+    writeLog(
+        LogType.Player,
+        Bundle()["log.joined", event.player.plainName(), event.player.uuid(), event.player.con.address]
+    )
 }
 
+@OptIn(ExperimentalTime::class)
 @Event
 internal fun playerLeave(event: PlayerLeave) {
     writeLog(
@@ -976,33 +987,35 @@ internal fun connectPacket(event: ConnectPacketEvent) {
             }
         }
     }
-    
+
     // 서버 라우팅 검증 - hub_map_name이 null이 아닐 때만 적용
     val hubMapName = pluginData.hubMapName
     if (hubMapName != null) {
         val currentMapName = Vars.state.map.name()
-        
+
         // 현재 서버가 허브 서버가 아닌 경우에만 라우팅 검증 적용
         if (currentMapName != hubMapName) {
-            // 플레이어가 허브를 통한 라우팅 권한이 있는지 확인
-            val hasRoutingPermission = checkRoutingPermission(event.packet.uuid, currentMapName)
-            
-            if (!hasRoutingPermission) {
-                event.connection.kick("Direct connection denied - must route through hub server", 0L)
-                writeLog(
-                    LogType.Player,
-                    Bundle()["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, "Direct connection denied - must route through hub"]
-                )
-                Events.fire(
-                    CustomEvents.PlayerConnectKicked(
-                        event.packet.name,
-                        "Direct connection denied - must route through hub"
+            scope.launch {
+                // 플레이어가 허브를 통한 라우팅 권한이 있는지 확인
+                val hasRoutingPermission = checkRoutingPermission(event.packet.uuid, currentMapName)
+
+                if (!hasRoutingPermission) {
+                    event.connection.kick("Direct connection denied - must route through hub server", 0L)
+                    writeLog(
+                        LogType.Player,
+                        Bundle()["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, "Direct connection denied - must route through hub"]
                     )
-                )
-                return
-            } else {
-                // 라우팅 권한을 사용 처리
-                useRoutingPermission(event.packet.uuid, currentMapName)
+                    Events.fire(
+                        CustomEvents.PlayerConnectKicked(
+                            event.packet.name,
+                            "Direct connection denied - must route through hub"
+                        )
+                    )
+                    return@launch
+                } else {
+                    // 라우팅 권한을 사용 처리
+                    useRoutingPermission(event.packet.uuid, currentMapName)
+                }
             }
         }
     }
@@ -1069,6 +1082,7 @@ internal fun configFileModified(event: CustomEvents.ConfigFileModified) {
     }
 }
 
+@OptIn(ExperimentalTime::class)
 @Event
 internal fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     val playerData = event.playerData

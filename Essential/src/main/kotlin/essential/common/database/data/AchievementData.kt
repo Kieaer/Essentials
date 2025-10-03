@@ -1,12 +1,16 @@
 package essential.common.database.data
 
 import essential.common.database.table.AchievementTable
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
 /**
  * Data class for player achievements
@@ -22,8 +26,8 @@ data class AchievementData(
 /**
  * Check if a player has completed an achievement
  */
-fun hasAchievement(playerData: PlayerData, achievementName: String): Boolean {
-    return transaction {
+suspend fun hasAchievement(playerData: PlayerData, achievementName: String): Boolean {
+    return suspendTransaction {
         val query = AchievementTable.select(AchievementTable.id)
             .where { 
                 (AchievementTable.playerId eq playerData.id) and
@@ -37,8 +41,8 @@ fun hasAchievement(playerData: PlayerData, achievementName: String): Boolean {
 /**
  * Set an achievement as completed for a player
  */
-fun setAchievement(playerData: PlayerData, achievementName: String) {
-    transaction {
+suspend fun setAchievement(playerData: PlayerData, achievementName: String) {
+    suspendTransaction {
         // Check if the achievement is already completed
         val query = AchievementTable.select(AchievementTable.id)
             .where { 
@@ -68,7 +72,7 @@ fun setAchievement(playerData: PlayerData, achievementName: String) {
  * Get all completed achievements for a player
  */
 suspend fun getPlayerAchievements(playerData: PlayerData): List<AchievementData> {
-    return newSuspendedTransaction {
+    return suspendTransaction {
         AchievementTable.select(AchievementTable.columns)
             .where { AchievementTable.playerId eq playerData.id }
             .map { row ->
@@ -78,6 +82,6 @@ suspend fun getPlayerAchievements(playerData: PlayerData): List<AchievementData>
                     achievementName = row[AchievementTable.achievementName],
                     completedAt = row[AchievementTable.completedAt]
                 )
-            }
+            }.toList()
     }
 }

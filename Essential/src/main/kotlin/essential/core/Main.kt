@@ -89,10 +89,10 @@ class Main : Plugin() {
                 Log.err("Error migrating map ratings: ${e.message}")
                 e.printStackTrace()
             }
-        }
 
-        // 권한 기능 설정
-        Permission.load()
+            // 권한 기능 설정
+            Permission.load()
+        }
 
         // 설정 파일 감시기능
         scope.launch {

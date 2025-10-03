@@ -1,15 +1,12 @@
 package essential.protect
 
-import arc.ApplicationListener
-import arc.Core
 import arc.util.CommandHandler
 import arc.util.Log
-import com.zaxxer.hikari.HikariDataSource
 import essential.common.bundle.Bundle
 import essential.common.config.Config
 import essential.common.database.data.PlayerData
-import essential.common.database.data.getPlayerData
 import essential.common.permission.Permission
+import essential.common.util.findPlayerData
 import essential.protect.generated.registerGeneratedClientCommands
 import essential.protect.generated.registerGeneratedEventHandlers
 import mindustry.Vars.netServer
@@ -24,8 +21,6 @@ class Main : Plugin() {
         internal lateinit var conf: ProtectConfig
         internal var pluginData: PluginData = PluginData()
     }
-
-    private lateinit var datasource: HikariDataSource
 
     override fun init() {
         bundle.prefix = "[EssentialProtect]"
@@ -42,7 +37,7 @@ class Main : Plugin() {
 
         netServer.admins.addActionFilter({ action ->
             if (action.player == null) return@addActionFilter true
-            val data: PlayerData? = getPlayerData(action.player.uuid())
+            val data: PlayerData? = findPlayerData(action.player.uuid())
             if (data != null) {
                 // 계정 기능이 켜져있는 경우
                 if (conf.account.enabled) {
@@ -75,12 +70,6 @@ class Main : Plugin() {
             val list = URI("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt").toURL().readText()
             pluginData.vpnList = list.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         }
-
-        Core.app.addListener(object : ApplicationListener {
-            override fun dispose() {
-                datasource.close()
-            }
-        })
 
         // 이벤트 설정
         registerGeneratedEventHandlers()

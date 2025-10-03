@@ -4,7 +4,7 @@ import arc.util.CommandHandler
 import arc.util.Log
 import essential.achievements.generated.registerGeneratedClientCommands
 import essential.achievements.generated.registerGeneratedEventHandlers
-import essential.bundle.Bundle
+import essential.common.bundle.Bundle
 import mindustry.mod.Plugin
 
 class Main : Plugin() {

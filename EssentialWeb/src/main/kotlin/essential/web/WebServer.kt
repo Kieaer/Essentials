@@ -35,7 +35,7 @@ import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.io.SaveIO
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.io.File
 import java.nio.file.Files
@@ -328,7 +328,7 @@ class WebServer {
             }
 
             // Verify password using BCrypt
-            val passwordMatches = newSuspendedTransaction {
+            val passwordMatches = suspendTransaction {
                 val storedHash = playerData.accountPW
                 if (storedHash != null) {
                     BCrypt.checkpw(request.password, storedHash)

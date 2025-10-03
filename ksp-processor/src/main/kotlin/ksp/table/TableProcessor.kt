@@ -18,7 +18,7 @@ class TableProcessor(
 
         symbols
             .filter { it is KSClassDeclaration && it.validate() }
-            .forEach { 
+            .forEach {
                 val classDeclaration = it as KSClassDeclaration
                 val annotation = classDeclaration.annotations.find { it ->
                     it.shortName.asString() == "GenerateTable"
@@ -87,15 +87,20 @@ class TableProcessor(
         sb.append("package $packageName\n\n")
 
         // Imports
-        sb.append("import org.jetbrains.exposed.sql.*\n")
-        sb.append("import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq\n")
-        sb.append("import org.jetbrains.exposed.sql.transactions.transaction\n")
-        sb.append("import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction\n")
+        sb.append("import org.jetbrains.exposed.v1.core.ResultRow\n")
+        sb.append("import org.jetbrains.exposed.v1.core.eq\n")
+        sb.append("import org.jetbrains.exposed.v1.r2dbc.Query\n")
+        sb.append("import org.jetbrains.exposed.v1.r2dbc.selectAll\n")
+        sb.append("import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction\n")
+        sb.append("import org.jetbrains.exposed.v1.r2dbc.update\n")
         sb.append("import essential.common.database.table.$tableClassName\n")
         sb.append("import $packageName.$className\n")
         sb.append("import kotlinx.serialization.json.Json\n")
         sb.append("import kotlinx.serialization.encodeToString\n")
-        sb.append("import kotlinx.serialization.decodeFromString\n\n")
+        sb.append("import kotlinx.serialization.decodeFromString\n")
+        sb.append("import kotlinx.coroutines.flow.first\n")
+        sb.append("import kotlinx.coroutines.flow.map\n")
+        sb.append("import kotlinx.coroutines.flow.toList\n\n")
 
         // Helper: set of primitive/simple types that don't need JSON conversion
         fun isSimpleType(typeDecl: com.google.devtools.ksp.symbol.KSClassDeclaration?): Boolean {
@@ -110,6 +115,7 @@ class TableProcessor(
                 "kotlinx.datetime.LocalDateTime"
             )
         }
+
         fun isSerializableType(typeDecl: com.google.devtools.ksp.symbol.KSClassDeclaration?): Boolean {
             if (typeDecl == null) return false
             return typeDecl.annotations.any {
@@ -169,8 +175,8 @@ class TableProcessor(
         sb.append(" * This is a convenience method for the table class.\n")
         sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
         sb.append(" */\n")
-        sb.append("fun Query.mapTo${className}List(): List<$className> {\n")
-        sb.append("    return this.map { $tableClassName.toData(it) }\n")
+        sb.append("suspend fun Query.mapTo${className}List(): List<$className> {\n")
+        sb.append("    return this.map { $tableClassName.toData(it) }.toList()\n")
         sb.append("}\n\n")
 
         // Function for mapping insertReturning result
@@ -178,8 +184,8 @@ class TableProcessor(
         sb.append(" * Creates a $className instance from the ID returned by insertReturning.\n")
         sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
         sb.append(" */\n")
-        sb.append("fun <T> $tableClassName.fromInsertReturning(id: T): $className {\n")
-        sb.append("    return transaction {\n")
+        sb.append("suspend fun <T> $tableClassName.fromInsertReturning(id: T): $className {\n")
+        sb.append("    return suspendTransaction {\n")
         sb.append("        val query = $tableClassName.selectAll()\n")
         sb.append("        when (id) {\n")
         sb.append("            is Int -> query.where { $tableClassName.id eq id.toUInt() }\n")
@@ -197,7 +203,7 @@ class TableProcessor(
         sb.append(" */\n")
         sb.append("suspend fun $className.update(): Boolean {\n")
         sb.append("    val data = this\n")
-        sb.append("    return newSuspendedTransaction {\n")
+        sb.append("    return suspendTransaction {\n")
         sb.append("        $tableClassName.update({ $tableClassName.id eq data.id }) {\n")
 
         // Skip the id field as it's the primary key and shouldn't be updated

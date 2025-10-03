@@ -2,13 +2,15 @@ package essential.common.database.data
 
 import essential.common.database.table.WorldHistoryTable
 import essential.common.database.worldHistoryDatabase
+import kotlinx.coroutines.flow.single
 import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.deleteAll
-import org.jetbrains.exposed.sql.insertReturning
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.deleteAll
+import org.jetbrains.exposed.v1.r2dbc.insertReturning
+import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
 @GenerateCode
 data class WorldHistoryData(
@@ -39,7 +41,7 @@ suspend fun createWorldHistory(
     team: String,
     value: String?
 ): WorldHistoryData {
-    return newSuspendedTransaction(db = worldHistoryDatabase) {
+    return suspendTransaction(db = worldHistoryDatabase) {
         WorldHistoryTable.insertReturning {
             it[WorldHistoryTable.time] = time
             it[WorldHistoryTable.player] = player
@@ -58,7 +60,7 @@ suspend fun createWorldHistory(
  * Get all world history entries
  */
 suspend fun getAllWorldHistory(): List<WorldHistoryData> {
-    return newSuspendedTransaction(db = worldHistoryDatabase) {
+    return suspendTransaction(db = worldHistoryDatabase) {
         WorldHistoryTable.selectAll()
             .mapToWorldHistoryDataList()
     }
@@ -68,7 +70,7 @@ suspend fun getAllWorldHistory(): List<WorldHistoryData> {
  * Get world history entries by player
  */
 suspend fun getWorldHistoryByPlayer(player: String): List<WorldHistoryData> {
-    return newSuspendedTransaction(db = worldHistoryDatabase) {
+    return suspendTransaction(db = worldHistoryDatabase) {
         WorldHistoryTable.selectAll()
             .where { WorldHistoryTable.player eq player }
             .mapToWorldHistoryDataList()
@@ -79,7 +81,7 @@ suspend fun getWorldHistoryByPlayer(player: String): List<WorldHistoryData> {
  * Get world history entries by action
  */
 suspend fun getWorldHistoryByAction(action: String): List<WorldHistoryData> {
-    return newSuspendedTransaction(db = worldHistoryDatabase) {
+    return suspendTransaction(db = worldHistoryDatabase) {
         WorldHistoryTable.selectAll()
             .where { WorldHistoryTable.action eq action }
             .mapToWorldHistoryDataList()
@@ -90,7 +92,7 @@ suspend fun getWorldHistoryByAction(action: String): List<WorldHistoryData> {
  * Get world history entries by coordinates
  */
 suspend fun getWorldHistoryByCoordinates(x: Short, y: Short): List<WorldHistoryData> {
-    return newSuspendedTransaction(db = worldHistoryDatabase) {
+    return suspendTransaction(db = worldHistoryDatabase) {
         WorldHistoryTable.selectAll()
             .where { (WorldHistoryTable.x eq x) and (WorldHistoryTable.y eq y) }
             .mapToWorldHistoryDataList()
@@ -101,7 +103,7 @@ suspend fun getWorldHistoryByCoordinates(x: Short, y: Short): List<WorldHistoryD
  * Delete all world history entries
  */
 suspend fun clearWorldHistory() {
-    newSuspendedTransaction(db = worldHistoryDatabase) {
+    suspendTransaction(db = worldHistoryDatabase) {
         WorldHistoryTable.deleteAll()
     }
 }

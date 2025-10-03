@@ -1,7 +1,7 @@
 package essential.common.database.table
 
 import essential.common.DATABASE_VERSION
-import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.v1.core.Table
 
 object PluginTable : Table("plugin_data") {
     val id = uinteger("id").autoIncrement().uniqueIndex()

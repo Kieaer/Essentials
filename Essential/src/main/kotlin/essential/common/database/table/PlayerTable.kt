@@ -1,11 +1,8 @@
 package essential.common.database.table
 
-import essential.common.systemTimezone
-import kotlinx.datetime.Clock
-import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.kotlin.datetime.CurrentDateTime
-import org.jetbrains.exposed.sql.kotlin.datetime.datetime
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.datetime.CurrentDateTime
+import org.jetbrains.exposed.v1.datetime.datetime
 
 object PlayerTable : Table("players") {
     val id = uinteger("id").autoIncrement().uniqueIndex()
@@ -34,7 +31,7 @@ object PlayerTable : Table("players") {
     val effectColor = varchar("effect_color", 10).nullable().default(null)
     val hideRanking = bool("hide_ranking").default(false)
     val strictMode = bool("strict_mode").default(false)
-    val lastLoginDate = datetime("last_login_date").clientDefault { Clock.System.now().toLocalDateTime(systemTimezone) }
+    val lastLoginDate = datetime("last_login_date").defaultExpression(CurrentDateTime)
     val lastLogoutDate = datetime("last_logout_date").nullable().default(null)
     val lastPlayedWorldName = varchar("last_played_world_name", 50).nullable().default(null)
     val lastPlayedWorldMode = varchar("last_played_world_mode", 50).nullable().default(null)

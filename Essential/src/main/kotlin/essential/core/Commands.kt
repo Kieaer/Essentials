@@ -17,7 +17,6 @@ import essential.common.database.data.*
 import essential.common.database.data.plugin.WarpBlock
 import essential.common.database.data.plugin.WarpCount
 import essential.common.database.data.plugin.WarpTotal
-import essential.common.database.databaseClose
 import essential.common.database.table.PlayerTable
 import essential.common.event.CustomEvents
 import essential.common.log.LogType
@@ -34,9 +33,10 @@ import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format
 import kotlinx.datetime.toLocalDateTime
@@ -60,7 +60,9 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.util.MissingResourceException
 import kotlin.math.abs
@@ -70,7 +72,9 @@ import kotlin.math.round
 import kotlin.random.Random
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.ExperimentalTime
 
 
 internal class Commands {
@@ -148,9 +152,7 @@ internal class Commands {
     fun changeName(playerData: PlayerData, arg: Array<out String>) {
         scope.launch {
             suspend fun change(data: PlayerData) {
-                val exists = runBlocking {
-                    PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq arg[1] }.firstOrNull()
-                }
+                val exists = PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq arg[1] }.firstOrNull()
                 if (exists != null) {
                     data.err("command.changeName.exists", arg[1])
                 } else {
@@ -504,6 +506,7 @@ internal class Commands {
         playerData.sendDirect(msg)
     }
 
+    @OptIn(ExperimentalTime::class)
     @ClientCommand("info", "[player...]", "Show player info")
     fun info(playerData: PlayerData, arg: Array<out String>) {
         val bundle = playerData.bundle
@@ -1382,7 +1385,7 @@ internal class Commands {
                 val breakBlock = mutableMapOf<Pair<String, String>, Int>()
                 val pvp = mutableMapOf<Pair<String, String>, Triple<Short, Short, Short>>()
 
-                transaction {
+                suspendTransaction {
                     if (arg[0].lowercase() == "pvp") {
                         PlayerTable.select(
                             PlayerTable.name,
@@ -2040,6 +2043,7 @@ internal class Commands {
     }
 
     // todo tempban client -> server
+    @OptIn(ExperimentalTime::class)
     @ServerCommand("tempban", "<player> <time> [reason]", "Ban the player for aa certain peroid of time")
     fun tempBan(arg: Array<out String>) {
         val bundle = Bundle()
@@ -2068,6 +2072,7 @@ internal class Commands {
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     @ClientCommand("time", description = "Show current server time")
     fun time(playerData: PlayerData) {
         val now = Clock.System.now().toString()
@@ -2547,6 +2552,7 @@ internal class Commands {
         }
     }
 
+    @OptIn(ExperimentalTime::class)
     @ServerCommand("gen", description = "Generate wiki docs")
     fun genDocs() {
         if (System.getenv("DEBUG_KEY") != null) {
@@ -2629,7 +2635,9 @@ internal class Commands {
     @ServerCommand("reload", description = "Reload essential plugin configs.")
     fun reload() {
         try {
-            Permission.load()
+            runBlocking {
+                Permission.load()
+            }
             Log.info(Bundle()["config.permission.updated"])
             conf = Yaml.default.decodeFromString(CoreConfig.serializer(), rootPath.child(Main.CONFIG_PATH).readString())
             Log.info(Bundle()["config.reloaded"])
@@ -2673,9 +2681,6 @@ internal class Commands {
             }
 
             Vars.netServer.admins.actionFilters.remove(actionFilter)
-
-            // DB 연결 해제
-            databaseClose()
 
             Vars.mods.getMod("essential").dispose()
             Vars.mods.list().remove(Vars.mods.getMod("essential"))

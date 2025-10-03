@@ -2,8 +2,8 @@ package essential.discord
 
 import arc.util.CommandHandler
 import arc.util.Log
-import essential.bundle.Bundle
-import essential.config.Config
+import essential.common.bundle.Bundle
+import essential.common.config.Config
 import essential.discord.generated.registerGeneratedClientCommands
 
 class Main : mindustry.mod.Plugin() {

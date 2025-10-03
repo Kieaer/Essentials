@@ -1,8 +1,8 @@
 package essential.discord
 
 import arc.Events
-import essential.database.data.PlayerData
-import essential.event.CustomEvents.DiscordURLOpen
+import essential.common.database.data.PlayerData
+import essential.common.event.CustomEvents.DiscordURLOpen
 import ksp.command.ClientCommand
 import mindustry.gen.Call
 

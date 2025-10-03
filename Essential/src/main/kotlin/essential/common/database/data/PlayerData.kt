@@ -4,14 +4,19 @@ import arc.util.Log
 import essential.common.bundle.Bundle
 import essential.common.database.table.PlayerTable
 import essential.common.playerNumber
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.single
+import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
-import org.jetbrains.exposed.sql.insertReturning
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.insertReturning
+import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
 
 @GenerateCode
@@ -125,14 +130,14 @@ suspend fun createPlayerData(player: Playerc): PlayerData {
 }
 
 suspend fun createPlayerData(name: String, uuid: String): PlayerData {
-    val id = newSuspendedTransaction {
+    val id = suspendTransaction {
         PlayerTable.insertReturning {
             it[PlayerTable.name] = name
             it[PlayerTable.uuid] = uuid
         }.single()[PlayerTable.id]
     }
 
-    val entity = newSuspendedTransaction {
+    val entity = suspendTransaction {
         val query = PlayerTable.select(PlayerTable.columns)
             .where { PlayerTable.id eq id }
 
@@ -145,7 +150,7 @@ suspend fun createPlayerData(name: String, uuid: String): PlayerData {
 }
 
 suspend fun createPlayerData(name: String, uuid: String, accountID: String, accountPW: String): PlayerData {
-    val id = newSuspendedTransaction {
+    val id = suspendTransaction {
         PlayerTable.insertReturning {
             it[PlayerTable.name] = name
             it[PlayerTable.uuid] = uuid
@@ -154,7 +159,7 @@ suspend fun createPlayerData(name: String, uuid: String, accountID: String, acco
         }.single()[PlayerTable.id]
     }
 
-    val data = newSuspendedTransaction {
+    val data = suspendTransaction {
         val query = PlayerTable.select(PlayerTable.columns)
             .where { PlayerTable.id eq id }
 
@@ -166,15 +171,15 @@ suspend fun createPlayerData(name: String, uuid: String, accountID: String, acco
 
 /** 플레이어 데이터 읽기 */
 suspend fun getPlayerData(uuid: String): PlayerData? {
-    return newSuspendedTransaction {
+    return suspendTransaction {
         PlayerTable.selectAll()
             .where { PlayerTable.uuid eq uuid }
             .mapToPlayerDataList()
     }.firstOrNull()
 }
 
-fun getPlayerDataByName(name: String): PlayerData? {
-    return transaction {
+suspend fun getPlayerDataByName(name: String): PlayerData? {
+    return suspendTransaction {
         PlayerTable.selectAll()
             .where { PlayerTable.name eq name }
             .mapToPlayerDataList()
@@ -182,8 +187,8 @@ fun getPlayerDataByName(name: String): PlayerData? {
 }
 
 /** 동기식으로 플레이어 데이터 읽기 (클래스로더 브리지용) */
-fun getPlayerDataSync(uuid: String): PlayerData? {
-    return transaction {
+suspend fun getPlayerDataSync(uuid: String): PlayerData? {
+    return suspendTransaction {
         PlayerTable.selectAll()
             .where { PlayerTable.uuid eq uuid }
             .mapToPlayerDataList()
@@ -192,14 +197,14 @@ fun getPlayerDataSync(uuid: String): PlayerData? {
 
 // 외부 플러그인에서 사용
 suspend fun getAllPlayerData(): List<PlayerData> {
-    return newSuspendedTransaction {
-        PlayerTable.selectAll().map { row -> row.toPlayerData() }
+    return suspendTransaction {
+        PlayerTable.selectAll().map { row -> row.toPlayerData() }.toList()
     }
 }
 
 // 외부 플러그인에서 사용
 suspend fun getPlayerDataByDiscord(discordID: String): PlayerData? {
-    return newSuspendedTransaction {
+    return suspendTransaction {
         PlayerTable.selectAll()
             .where { PlayerTable.discordID eq discordID }
             .mapToPlayerDataList()

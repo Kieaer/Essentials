@@ -6,10 +6,10 @@ kotlinxSerialization = "1.9.0"
 ksp = "2.2.10-2.0.2"
 kotlinpoet = "2.2.0"
 
-game = "v151.1"
+game = "v152"
 local = "local-SNAPSHOT"
 kaml = "0.91.0"
-exposed = "0.61.0"
+exposed = "1.0.0-rc-1"
 hjson = "3.0.0-C11"
 jbcrypt = "0.4.3"
 mavenArtifact = "4.0.0-alpha-3"
@@ -26,7 +26,6 @@ discord = "5.6.1"
 ktor = "3.2.3"
 thymeleaf = "3.1.2.RELEASE"
 shadowJar = "9.0.0-beta12"
-hikaricp = "7.0.1"
 
 [libraries]
 kotlinxSerializer = { module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization"}
@@ -34,17 +33,18 @@ kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", versi
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 
 arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "game" }
-core = { module = "com.github.Anuken.Mindustry:core", version.ref = "game" }
-server = { module = "com.github.Anuken.Mindustry:server", version.ref = "game" }
+core = { module = "com.github.Anuken.mindustryjitpack:core", version.ref = "game" }
+server = { module = "com.github.Anuken.mindustryjitpack:server", version.ref = "game" }
 headless = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "game" }
 
 arc-local = { module = "com.github.Anuken.Arc:arc-core", version.ref = "local" }
-core-local = { module = "com.github.Anuken.Mindustry:core", version.ref = "local" }
-server-local = { module = "com.github.Anuken.Mindustry:server", version.ref = "local" }
+core-local = { module = "com.github.Anuken.mindustryjitpack:core", version.ref = "local" }
+server-local = { module = "com.github.Anuken.mindustryjitpack:server", version.ref = "local" }
 headless-local = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "local" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
 exposed-kotlin-time = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 
@@ -75,14 +75,13 @@ sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
 jbcrypt = { module = "de.svenkubiak:jBCrypt", version.ref = "jbcrypt" }
 lingua = { module = "com.github.pemistahl:lingua", version.ref = "lingua" }
 discord = { module = "net.dv8tion:JDA", version.ref = "discord" }
-hikariCP = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 
 [bundles]
 kotlinxEcosystem = ["kotlinxDatetime", "kotlinxCoroutines", "kotlinxSerializer"]
-exposed = ["exposed-core", "exposed-jdbc", "exposed-kotlin-time", "exposed-json"]
+exposed = ["exposed-core", "exposed-r2dbc", "exposed-kotlin-time", "exposed-json"]
 game = ["arc", "core", "server"]
 local-game = ["arc-local", "core-local", "server-local"]
 game-test = ["arc", "core", "server", "headless", "datafaker", "mockito", "jts", "h2"]

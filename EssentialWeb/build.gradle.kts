@@ -14,6 +14,5 @@ dependencies {
     implementation(libs.bundles.exposed)
     implementation(libs.bundles.ktor)
     implementation(libs.kaml)
-    implementation(libs.hikariCP)
     implementation(libs.jbcrypt)
 }

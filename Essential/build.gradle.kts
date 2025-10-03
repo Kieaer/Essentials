@@ -14,7 +14,6 @@ dependencies {
     implementation(libs.maven.check)
     implementation(libs.sqlite)
     implementation(libs.kaml)
-    implementation(libs.hikariCP)
     implementation(libs.jbcrypt)
 
     testImplementation(kotlin("test"))

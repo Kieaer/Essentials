@@ -5,11 +5,10 @@ import arc.util.Log
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
 import com.zaxxer.hikari.HikariDataSource
-import essential.bundle.Bundle
-import essential.reflection.EssentialLookup
+import essential.common.bundle.Bundle
 import kotlinx.serialization.Serializable
 import mindustry.mod.Plugin
-import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.v1.jdbc.Database
 
 class Main : Plugin() {
     companion object {

@@ -13,9 +13,11 @@ import essential.common.event.CustomEvents
 import essential.common.log.LogType
 import essential.common.log.writeLog
 import essential.common.players
+import essential.core.Main.Companion.scope
 import essential.protect.Main.Companion.conf
 import essential.protect.Main.Companion.pluginData
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import ksp.event.Event
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -29,7 +31,9 @@ import mindustry.net.NetworkIO
 import mindustry.net.Packets
 import mindustry.world.Tile
 import mindustry.world.blocks.power.PowerGraph
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.nio.ByteBuffer
@@ -142,55 +146,53 @@ fun config(e: EventType.ConfigEvent) {
 @Event
 fun playerJoin(e: EventType.PlayerJoin) {
     e.player.admin(false)
-    val data: PlayerData? = runBlocking { getPlayerData(e.player.uuid()) }
-    if (conf.account.getAuthType() == ProtectConfig.AuthType.None || !conf.account.enabled) {
-        if (data == null) {
-            if (transaction {
-                    PlayerTable
-                        .select(PlayerTable.name)
-                        .where { PlayerTable.name eq e.player.plainName() }
-                        .empty()
-                }) {
+    scope.launch {
+        val data: PlayerData? = getPlayerData(e.player.uuid())
+        if (conf.account.getAuthType() == ProtectConfig.AuthType.None || !conf.account.enabled) {
+            if (data == null) {
+                if (suspendTransaction {
+                        PlayerTable
+                            .select(PlayerTable.name)
+                            .where { PlayerTable.name eq e.player.plainName() }
+                            .empty()
+                    }) {
 
-                val playerData = runBlocking {
                     val data = createPlayerData(e.player)
                     data.permission = "user"
                     data.update()
-                    data
+                    Events.fire(CustomEvents.PlayerDataLoad(data))
+                } else {
+                    e.player.con.kick(
+                        Bundle(e.player.locale)["event.player.name.duplicate"],
+                        0L
+                    )
                 }
-                Events.fire(CustomEvents.PlayerDataLoad(playerData))
             } else {
-                e.player.con.kick(
-                    Bundle(e.player.locale)["event.player.name.duplicate"],
-                    0L
-                )
+                Events.fire(CustomEvents.PlayerDataLoad(data))
+            }
+        } else if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
+            if (data == null) {
+                if (suspendTransaction() {
+                        PlayerTable
+                            .select(PlayerTable.name)
+                            .where { PlayerTable.name eq e.player.plainName() }
+                            .empty()
+                    }) {
+                    //data.send("event.discord.not.registered")
+                    // TODO discord 로그인 추가
+                } else {
+                    e.player.con.kick(
+                        Bundle(e.player.locale)["event.player.name.duplicate"],
+                        0L
+                    )
+                }
+            } else {
+                Events.fire(CustomEvents.PlayerDataLoad(data))
             }
         } else {
-            Events.fire(CustomEvents.PlayerDataLoad(data))
+            e.player.sendMessage(Bundle(e.player.locale)["event.player.first.register"])
         }
-    } else if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
-        if (data == null) {
-            if (transaction {
-                    PlayerTable
-                        .select(PlayerTable.name)
-                        .where { PlayerTable.name eq e.player.plainName() }
-                        .empty()
-                }) {
-                //data.send("event.discord.not.registered")
-                // TODO discord 로그인 추가
-            } else {
-                e.player.con.kick(
-                    Bundle(e.player.locale)["event.player.name.duplicate"],
-                    0L
-                )
-            }
-        } else {
-            Events.fire(CustomEvents.PlayerDataLoad(data))
-        }
-    } else {
-        e.player.sendMessage(Bundle(e.player.locale)["event.player.first.register"])
     }
-
 }
 
 @Event
@@ -244,13 +246,15 @@ fun connectPacket(event: EventType.ConnectPacketEvent) {
         event.connection.kick(Bundle(event.packet.locale)["event.player.new.blocked"], 0L)
         kickReason = "newuser"
     } else {
-        try {
-            if (checkPlayerBanned(event.packet.name, event.packet.uuid, event.connection.address)) {
-                event.connection.kick(Packets.KickReason.banned)
-                kickReason = "banned"
+        scope.launch {
+            try {
+                if (checkPlayerBanned(event.packet.name, event.packet.uuid, event.connection.address)) {
+                    event.connection.kick(Packets.KickReason.banned)
+                    kickReason = "banned"
+                }
+            } catch (e: Exception) {
+                Log.err("Failed to check if player is banned", e)
             }
-        } catch (e: Exception) {
-            Log.err("Failed to check if player is banned", e)
         }
     }
 
@@ -292,18 +296,20 @@ fun start() {
 }
 
 fun enableBlockNewUser() {
-    try {
-        transaction {
-            val list = PlayerTable.select(PlayerTable.uuid)
+    scope.launch {
+        try {
+            suspendTransaction {
+                val list = PlayerTable.select(PlayerTable.uuid).toList()
 
-            var size = 0
-            for (playerData in list) {
-                coldData[size++] = playerData[PlayerTable.uuid]
+                var size = 0
+                for (playerData in list) {
+                    coldData[size++] = playerData[PlayerTable.uuid]
+                }
             }
+        } catch (e: Exception) {
+            Log.err("Failed to load player UUIDs for new user blocking", e)
+            coldData = arrayOf()
         }
-    } catch (e: Exception) {
-        Log.err("Failed to load player UUIDs for new user blocking", e)
-        coldData = arrayOf()
     }
 }
 

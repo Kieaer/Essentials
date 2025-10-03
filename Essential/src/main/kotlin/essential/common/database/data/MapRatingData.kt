@@ -1,13 +1,15 @@
 package essential.common.database.data
 
 import essential.common.database.table.MapRatingTable
+import kotlinx.coroutines.flow.single
 import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.insertReturning
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.r2dbc.insertReturning
+import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.jetbrains.exposed.v1.r2dbc.update
 
 @GenerateCode
 data class MapRatingData(
@@ -28,7 +30,7 @@ suspend fun createMapRating(
     playerUuid: String,
     isUpvote: Boolean
 ): MapRatingData {
-    return newSuspendedTransaction {
+    return suspendTransaction {
         MapRatingTable.insertReturning {
             it[MapRatingTable.mapName] = mapName
             it[MapRatingTable.mapHash] = mapHash
@@ -42,7 +44,7 @@ suspend fun createMapRating(
  * Get a map rating by player UUID and map name
  */
 suspend fun getMapRating(playerUuid: String, mapName: String): MapRatingData? {
-    return newSuspendedTransaction {
+    return suspendTransaction {
         MapRatingTable.selectAll()
             .where { (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }
             .mapToMapRatingDataList()
@@ -54,7 +56,7 @@ suspend fun getMapRating(playerUuid: String, mapName: String): MapRatingData? {
  * Get all map ratings for a specific map
  */
 suspend fun getMapRatings(mapName: String): List<MapRatingData> {
-    return newSuspendedTransaction {
+    return suspendTransaction {
         MapRatingTable.selectAll()
             .where { MapRatingTable.mapName eq mapName }
             .mapToMapRatingDataList()
@@ -65,7 +67,7 @@ suspend fun getMapRatings(mapName: String): List<MapRatingData> {
  * Get all map ratings by a specific player
  */
 suspend fun getPlayerMapRatings(playerUuid: String): List<MapRatingData> {
-    return newSuspendedTransaction {
+    return suspendTransaction {
         MapRatingTable.selectAll()
             .where { MapRatingTable.playerUuid eq playerUuid }
             .mapToMapRatingDataList()
@@ -86,7 +88,7 @@ suspend fun updateOrCreateMapRating(
     return if (existing != null) {
         // If the rating exists but the vote is different, update it
         if (existing.isUpvote != isUpvote) {
-            newSuspendedTransaction {
+            suspendTransaction {
                 MapRatingTable.update({ (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }) {
                     it[MapRatingTable.isUpvote] = isUpvote
                 }
@@ -105,7 +107,7 @@ suspend fun updateOrCreateMapRating(
  * Migrate map ratings from PluginData to the new MapRating table
  */
 suspend fun migrateMapRatingsFromPluginData(pluginData: PluginData) {
-    newSuspendedTransaction {
+    suspendTransaction {
         // Iterate through all map ratings in PluginData
         for ((mapName, ratings) in pluginData.data.mapRatings) {
             // For each map, iterate through all player ratings
