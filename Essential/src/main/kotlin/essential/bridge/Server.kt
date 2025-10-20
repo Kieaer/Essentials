@@ -20,11 +20,11 @@ class Server : Runnable {
 
     override fun run() {
         try {
-            server = ServerSocket(Main.Companion.conf.port)
+            server = ServerSocket(BridgeService.Companion.conf.port)
             while (!Thread.currentThread().isInterrupted) {
                 val socket = server!!.accept()
                 Log.debug(
-                    Main.Companion.bundle["network.server.connected", socket.getInetAddress().hostAddress]
+                    BridgeService.Companion.bundle["network.server.connected", socket.getInetAddress().hostAddress]
                 )
                 clients.add(socket)
 
@@ -119,6 +119,6 @@ class Server : Runnable {
             Log.err(e)
         }
         clients.remove(socket)
-        Log.info(Main.Companion.bundle["network.server.disconnected", socket.getInetAddress().hostAddress])
+        Log.info(BridgeService.Companion.bundle["network.server.disconnected", socket.getInetAddress().hostAddress])
     }
 }

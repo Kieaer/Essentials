@@ -15,7 +15,7 @@ import java.net.URI
 import java.util.Objects.requireNonNull
 
 
-class Main : Plugin() {
+class ProtectService : Plugin() {
     companion object {
         internal var bundle: Bundle = Bundle()
         internal lateinit var conf: ProtectConfig

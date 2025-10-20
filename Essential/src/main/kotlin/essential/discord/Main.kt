@@ -5,8 +5,9 @@ import arc.util.Log
 import essential.common.bundle.Bundle
 import essential.common.config.Config
 import essential.discord.generated.registerGeneratedClientCommands
+import mindustry.mod.Plugin
 
-class Main : mindustry.mod.Plugin() {
+class Main : Plugin() {
     companion object {
         internal var bundle: Bundle = Bundle()
         internal lateinit var conf: DiscordConfig

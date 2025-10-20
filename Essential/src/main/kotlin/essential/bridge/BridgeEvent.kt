@@ -1,7 +1,7 @@
 package essential.bridge
 
 import arc.util.Log
-import essential.bridge.Main.Companion.conf
+import essential.bridge.BridgeService.Companion.conf
 import essential.common.bundle.Bundle
 import essential.common.config.Config
 import essential.common.event.CustomEvents

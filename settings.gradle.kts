@@ -28,7 +28,5 @@ dependencyResolutionManagement {
 }
 
 include("Essential")
-include("EssentialDiscord")
 include("EssentialWeb")
-include("EssentialAchievements")
 include("ksp-processor")

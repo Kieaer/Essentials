@@ -4,18 +4,17 @@ import arc.Core
 import arc.util.Log
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
-import com.zaxxer.hikari.HikariDataSource
 import essential.common.bundle.Bundle
+import io.r2dbc.spi.ConnectionFactoryOptions
 import kotlinx.serialization.Serializable
 import mindustry.mod.Plugin
-import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 
 class Main : Plugin() {
     companion object {
         var bundle: Bundle = Bundle()
         lateinit var conf: WebConfig
     }
-    private lateinit var datasource: HikariDataSource
 
     override fun init() {
         bundle.prefix = "[EssentialWeb]"
@@ -29,7 +28,7 @@ class Main : Plugin() {
         val localYaml = Yaml(configuration = YamlConfiguration(strictMode = false))
 
         // Load the config manually without using the Essential module's Yaml instance
-        val rp = EssentialLookup.getRootPath() ?: arc.Core.settings.dataDirectory.child("mods/Essentials/")
+        val rp = Core.settings.dataDirectory.child("mods/Essentials/")
         val configFile = rp.child("config/config_web.yaml")
         val config = if (configFile.exists()) {
             try {
@@ -53,8 +52,7 @@ class Main : Plugin() {
             }
         }
         conf = config
-        datasource = HikariDataSource().apply {
-            // Create a simple data class to represent the config structure
+        R2dbcDatabase.connect {
             @Serializable
             data class DatabaseConfig(val url: String = "", val username: String = "", val password: String = "")
             
@@ -67,13 +65,14 @@ class Main : Plugin() {
             val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
             val configContent = rp.child("config/config.yaml").readString()
             val config = yaml.decodeFromString(RootConfig.serializer(), configContent)
-            
-            jdbcUrl = config.plugin.database.url
-            username = config.plugin.database.username
-            password = config.plugin.database.password
-            maximumPoolSize = 2
+
+            setUrl(config.plugin.database.url)
+            connectionFactoryOptions {
+                option(ConnectionFactoryOptions.USER, config.plugin.database.username)
+                option(ConnectionFactoryOptions.PASSWORD, config.plugin.database.password)
+            }
         }
-        Database.connect(datasource)
+
         val webServer = WebServer()
         webServer.start()
         Core.app.addListener(object : ApplicationListener {

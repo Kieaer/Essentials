@@ -1,9 +1,0 @@
-{
-  "displayName": "EssentialAchievements",
-  "name": "essential-achievements",
-  "author": "Gureumi",
-  "main": "essential.achievements.Main",
-  "description": "Add achievements feature.",
-  "version": "v21",
-  "dependencies": [ "essential" ]
-}

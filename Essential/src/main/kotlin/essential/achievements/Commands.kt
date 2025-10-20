@@ -8,9 +8,11 @@ import ksp.command.ClientCommand
 import ksp.command.ServerCommand
 import java.util.*
 import kotlin.math.abs
+import kotlin.math.ceil
+import kotlin.math.min
 
 class Commands {
-    @ClientCommand(name = "achievements", parameter = "[page]", description = "Show your achievements")
+    @ClientCommand(name = "essential/achievements", parameter = "[page]", description = "Show your achievements")
     fun achievements(playerData: PlayerData, args: Array<String>) {
         val temp: MutableList<String?> = arrayListOf()
         val bundle = try {
@@ -29,10 +31,10 @@ class Commands {
             }
         }
 
-        val result = java.lang.StringBuilder()
+        val result = StringBuilder()
         val per = 9
         var page = if (args.isEmpty()) 1 else abs(Strings.parseInt(args[0]))
-        val pages = kotlin.math.ceil((temp.size.toFloat() / per).toDouble()).toInt()
+        val pages = ceil((temp.size.toFloat() / per).toDouble()).toInt()
         page--
 
         if (page >= pages || page < 0) {
@@ -45,7 +47,7 @@ class Commands {
             .append("[gray]/[lightgray]").append(pages)
             .append("[orange] --[white]\n")
 
-        for (a in per * page..<kotlin.math.min(per * (page + 1), temp.size)) {
+        for (a in per * page..<min(per * (page + 1), temp.size)) {
             result.append(temp[a])
         }
 

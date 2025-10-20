@@ -17,7 +17,7 @@ import essential.common.log.LogType
 import essential.common.log.writeLog
 import essential.common.util.currentTime
 import essential.core.Main.Companion.scope
-import essential.protect.Main.Companion.conf
+import essential.protect.ProtectService.Companion.conf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import ksp.command.ClientCommand

@@ -6,6 +6,8 @@ import arc.Events
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
+import essential.bridge.BridgeService
+import essential.chat.ChatService
 import essential.common.*
 import essential.common.config.Config
 import essential.common.database.data.createPluginData
@@ -17,6 +19,7 @@ import essential.common.service.fileWatchService
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
+import essential.protect.ProtectService
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -35,6 +38,12 @@ class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config"
         internal lateinit var conf: CoreConfig
+        
+        private var bridgeBridgeService: BridgeService? = null
+        private var chatChatService: ChatService? = null
+        private var protectProtectService: ProtectService? = null
+        private var achievementsAchievementsMain: essential.achievements.Main? = null
+        private var discordDiscordMain: essential.discord.Main? = null
 
         val scope = CoroutineScope(Dispatchers.IO)
     }
@@ -106,6 +115,27 @@ class Main : Plugin() {
         val trigger = Trigger()
         trigger.register()
         scope.launch { Trigger.Thread().init() }
+
+        // Optional module initialization based on CoreConfig
+        try {
+            if (conf.plugin.enableBridge) {
+                bridgeBridgeService = BridgeService().also { it.init() }
+            }
+            if (conf.plugin.enableChat) {
+                chatChatService = ChatService().also { it.init() }
+            }
+            if (conf.plugin.enableProtect) {
+                protectProtectService = ProtectService().also { it.init() }
+            }
+            if (conf.plugin.enableAchievements) {
+                achievementsAchievementsMain = essential.achievements.Main().also { it.init() }
+            }
+            if (conf.plugin.enableDiscord) {
+                discordDiscordMain = essential.discord.Main().also { it.init() }
+            }
+        } catch (e: Exception) {
+            Log.err(bundle["event.plugin.load.failed"], e)
+        }
 
         Vars.netServer.admins.addActionFilter(object : Administration.ActionFilter {
             init {
@@ -190,6 +220,28 @@ class Main : Plugin() {
             if (!conf.feature.vote.enableVotekick) {
                 handler.removeCommand("votekick")
             }
+        }
+
+        // Delegate command registration to optional modules
+        if (conf.plugin.enableBridge) {
+            if (bridgeBridgeService == null) bridgeBridgeService = BridgeService()
+            bridgeBridgeService?.registerClientCommands(handler)
+        }
+        if (conf.plugin.enableChat) {
+            if (chatChatService == null) chatChatService = ChatService()
+            chatChatService?.registerClientCommands(handler)
+        }
+        if (conf.plugin.enableProtect) {
+            if (protectProtectService == null) protectProtectService = ProtectService()
+            protectProtectService?.registerClientCommands(handler)
+        }
+        if (conf.plugin.enableAchievements) {
+            if (achievementsAchievementsMain == null) achievementsAchievementsMain = essential.achievements.Main()
+            achievementsAchievementsMain?.registerClientCommands(handler)
+        }
+        if (conf.plugin.enableDiscord) {
+            if (discordDiscordMain == null) discordDiscordMain = essential.discord.Main()
+            discordDiscordMain?.registerClientCommands(handler)
         }
     }
 

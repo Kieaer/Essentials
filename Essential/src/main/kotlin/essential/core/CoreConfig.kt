@@ -15,6 +15,11 @@ data class Plugin(
     val lang: String = "en",
     val autoUpdate: Boolean = true,
     val database: DatabaseConfig = DatabaseConfig(),
+    val enableBridge: Boolean = true,
+    val enableProtect: Boolean = true,
+    val enableChat: Boolean = true,
+    val enableAchievements: Boolean = true,
+    val enableDiscord: Boolean = true,
 )
 
 /** Database 설정 */

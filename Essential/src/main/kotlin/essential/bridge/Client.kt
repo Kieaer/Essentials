@@ -63,8 +63,8 @@ class Client : Runnable {
                 channel = AsynchronousSocketChannel.open()
 
                 // Connect to the server
-                val port = Main.conf.port
-                val address = InetSocketAddress(Main.conf.address, port)
+                val port = BridgeService.conf.port
+                val address = InetSocketAddress(BridgeService.conf.address, port)
 
                 scope.async {
                     channel?.connect(address)?.get()
@@ -72,7 +72,7 @@ class Client : Runnable {
 
                 isConnected.set(true)
                 reconnectAttempts = 0
-                Log.info(Main.bundle["network.client.connected", Main.conf.address])
+                Log.info(BridgeService.bundle["network.client.connected", BridgeService.conf.address])
 
                 // Start reading and writing
                 startReading()

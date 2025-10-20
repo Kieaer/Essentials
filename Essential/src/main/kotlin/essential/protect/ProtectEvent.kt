@@ -14,8 +14,8 @@ import essential.common.log.LogType
 import essential.common.log.writeLog
 import essential.common.players
 import essential.core.Main.Companion.scope
-import essential.protect.Main.Companion.conf
-import essential.protect.Main.Companion.pluginData
+import essential.protect.ProtectService.Companion.conf
+import essential.protect.ProtectService.Companion.pluginData
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import ksp.event.Event

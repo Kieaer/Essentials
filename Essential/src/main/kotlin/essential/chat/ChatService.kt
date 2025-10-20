@@ -9,7 +9,7 @@ import essential.common.config.Config
 import essential.common.rootPath
 import mindustry.mod.Plugin
 
-class Main : Plugin() {
+class ChatService : Plugin() {
     companion object {
         internal var bundle: Bundle = Bundle()
         internal lateinit var conf: ChatConfig

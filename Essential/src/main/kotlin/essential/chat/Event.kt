@@ -1,7 +1,7 @@
 package essential.chat
 
 import arc.util.Log
-import essential.chat.Main.Companion.conf
+import essential.chat.ChatService.Companion.conf
 import essential.common.bundle.Bundle
 import essential.common.config.Config
 import essential.common.database.data.PlayerData

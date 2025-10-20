@@ -103,7 +103,7 @@ class TableProcessor(
         sb.append("import kotlinx.coroutines.flow.toList\n\n")
 
         // Helper: set of primitive/simple types that don't need JSON conversion
-        fun isSimpleType(typeDecl: com.google.devtools.ksp.symbol.KSClassDeclaration?): Boolean {
+        fun isSimpleType(typeDecl: KSClassDeclaration?): Boolean {
             val qn = typeDecl?.qualifiedName?.asString() ?: return true
             return qn in setOf(
                 "kotlin.Int", "kotlin.UInt", "kotlin.Short", "kotlin.UShort",
@@ -116,7 +116,7 @@ class TableProcessor(
             )
         }
 
-        fun isSerializableType(typeDecl: com.google.devtools.ksp.symbol.KSClassDeclaration?): Boolean {
+        fun isSerializableType(typeDecl: KSClassDeclaration?): Boolean {
             if (typeDecl == null) return false
             return typeDecl.annotations.any {
                 val name = it.shortName.asString()

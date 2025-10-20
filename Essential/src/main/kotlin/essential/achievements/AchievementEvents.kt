@@ -11,8 +11,8 @@ import essential.common.pluginData
 import ksp.event.Event
 import mindustry.Vars.state
 import mindustry.content.Planets
-import mindustry.game.EventType
 import mindustry.game.EventType.*
+import mindustry.game.Team
 import mindustry.gen.Groups
 import java.util.*
 
@@ -78,7 +78,7 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
 fun gameover(event: GameOverEvent) {
     // Calculate PvP contribution points for each player
     if (state.rules.pvp) {
-        val teamContributions = mutableMapOf<mindustry.game.Team, Int>()
+        val teamContributions = mutableMapOf<Team, Int>()
         val playerContributions = mutableMapOf<String, Int>()
 
         // Calculate total contribution for each team and individual players
@@ -101,7 +101,7 @@ fun gameover(event: GameOverEvent) {
 
             // If player's team lost and player's contribution was more than double the rest of the team
             if (event.winner != data.player.team() &&
-                data.player.team() != mindustry.game.Team.derelict &&
+                data.player.team() != Team.derelict &&
                 playerContribution > otherPlayersContribution * 2 &&
                 otherPlayersContribution > 0
             ) {
@@ -144,7 +144,7 @@ fun gameover(event: GameOverEvent) {
         players.forEach { data ->
             if (event.winner === data.player.team()) {
                 // Count players on each team
-                val teamCounts = mutableMapOf<mindustry.game.Team, Int>()
+                val teamCounts = mutableMapOf<Team, Int>()
                 Groups.player.forEach { player ->
                     val team = player.team()
                     teamCounts[team] = (teamCounts[team] ?: 0) + 1
@@ -627,7 +627,7 @@ fun playerLeave(event: PlayerLeave) {
         offlinePlayers.add(data)
 
         // When game ends, check if this player's team lost
-        Events.on(EventType.GameOverEvent::class.java) { gameOver ->
+        Events.on(GameOverEvent::class.java) { gameOver ->
             if (gameOver.winner != event.player.team()) {
                 // Player left and their team lost
                 val leaveCount = data.status.getOrDefault("record.pvp.leave.lose", "0").toInt() + 1

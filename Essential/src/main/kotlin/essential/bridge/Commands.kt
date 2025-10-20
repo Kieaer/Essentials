@@ -13,12 +13,12 @@ class Commands {
     fun broadcast(playerData: PlayerData?, arg: Array<out String>) {
         val message = arg[0]
 
-        if (Main.Companion.isServerMode) {
-            (Main.Companion.network as Server).sendAll("message", message)
-            (Main.Companion.network as Server).lastSentMessage = message
+        if (BridgeService.Companion.isServerMode) {
+            (BridgeService.Companion.network as Server).sendAll("message", message)
+            (BridgeService.Companion.network as Server).lastSentMessage = message
             Call.sendMessage(message)
         } else {
-            (Main.Companion.network as Client).message(message)
+            (BridgeService.Companion.network as Client).message(message)
         }
     }
 }
