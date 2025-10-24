@@ -33,7 +33,7 @@ data class DisplayData(
     val mapRatings: HashMap<String, HashMap<String, Boolean>> = hashMapOf()
 )
 
-/** 플러그인 데이터 읽기 */
+/** Read plugin data */
 suspend fun getPluginData(): PluginData? {
     return suspendTransaction {
         PluginTable.selectAll()
@@ -42,7 +42,7 @@ suspend fun getPluginData(): PluginData? {
     }
 }
 
-/** 플러그인 데이터 생성 */
+/** Create plugin data */
 suspend fun createPluginData(): PluginData {
     val displayData = DisplayData()
     return suspendTransaction {

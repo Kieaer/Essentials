@@ -61,27 +61,27 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
-/** 월드 기록 - Now stored in the database */
+/** World history - Now stored in the database */
 private var dateformat = SimpleDateFormat("HH:mm:ss")
 private var blockExp = mutableMapOf<String, Int>()
 
-/** 맵 투표 목록 (UUID, 맵) */
+/** Map vote list (UUID -> Map) */
 val mapVotes = HashMap<String, Map>()
 
-/** 맵 평가 목록 (UUID, Boolean) - true for upvote, false for downvote */
+/** Map rating list (UUID -> Boolean) - true for upvote, false for downvote */
 val mapRatings = HashMap<String, Boolean>()
 
-/** PvP 관전 플레이어 목록 */
+/** PvP spectator player list */
 internal var pvpSpecters = mutableListOf<String>()
 
-/** PvP 플레이어 팀 데이터 목록 */
+/** PvP player team map */
 internal var pvpPlayer = mutableMapOf<String, Team>()
 
-/** 전체 채팅 차단 유무 */
+/** Whether global chat is muted */
 internal var isGlobalMute = false
 private var unitLimitMessageCooldown = 0
 
-/** 서버 라우팅 강제 여부 - isNotTargetMap이 false일 때 true가 됨 */
+/** Whether server routing is forced - becomes true when isNotTargetMap is false */
 internal var isNotTargetMap = false
 
 val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
@@ -206,11 +206,11 @@ internal fun tap(event: TapEvent) {
                         )]
                     )
 
-                    // 허브 서버에서 다른 서버로 이동할 때 라우팅 권한 부여
+                    // Grant routing permission when moving from the hub server to another server
                     val currentMapName = Vars.state.map.name()
                     val hubMapName = pluginData.hubMapName
                     if (hubMapName != null && currentMapName == hubMapName) {
-                        // 대상 서버 이름을 설명에서 추출하거나 IP:PORT 조합을 사용
+                        // Extract target server name from description, or use IP:PORT combination
                         scope.launch {
                             val targetServerName = two.description.takeIf { it.isNotEmpty() } ?: "${two.ip}:${two.port}"
                             grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
@@ -233,7 +233,7 @@ internal fun tap(event: TapEvent) {
             ) {
                 Log.info(Bundle()["log.warp.move", event.player.plainName(), two.ip, two.port.toString()])
 
-                // 허브 서버에서 다른 서버로 이동할 때 라우팅 권한 부여
+                // Grant routing permission when moving from the hub server to another server
                 val currentMapName = Vars.state.map.name()
                 val hubMapName = pluginData.hubMapName
                 if (hubMapName != null && currentMapName == hubMapName) {
@@ -304,7 +304,7 @@ internal fun tap(event: TapEvent) {
                     // Process the combined results
                     val str = StringBuilder()
                     val bundle = data.bundle
-                    // todo 이거 파일 없음
+                    // todo this file does not exist
 
                     val coreBundle =
                         Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.player.locale())))
@@ -988,15 +988,15 @@ internal fun connectPacket(event: ConnectPacketEvent) {
         }
     }
 
-    // 서버 라우팅 검증 - hub_map_name이 null이 아닐 때만 적용
+    // Server routing validation - applied only when hub_map_name is not null
     val hubMapName = pluginData.hubMapName
     if (hubMapName != null) {
         val currentMapName = Vars.state.map.name()
 
-        // 현재 서버가 허브 서버가 아닌 경우에만 라우팅 검증 적용
+        // Apply routing validation only if the current server is not the hub server
         if (currentMapName != hubMapName) {
             scope.launch {
-                // 플레이어가 허브를 통한 라우팅 권한이 있는지 확인
+                // Check whether the player has routing permission via the hub
                 val hasRoutingPermission = checkRoutingPermission(event.packet.uuid, currentMapName)
 
                 if (!hasRoutingPermission) {
@@ -1013,7 +1013,7 @@ internal fun connectPacket(event: ConnectPacketEvent) {
                     )
                     return@launch
                 } else {
-                    // 라우팅 권한을 사용 처리
+                    // Mark routing permission as used
                     useRoutingPermission(event.packet.uuid, currentMapName)
                 }
             }
@@ -1089,20 +1089,20 @@ internal fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     val player = playerData.player
     val message = StringBuilder()
 
-    // 로그인 날짜 기록
+    // Record login date
     val currentTime = Clock.System.now().toLocalDateTime(systemTimezone)
     val isDayPassed = playerData.lastLoginDate.date.daysUntil(currentTime.date)
     if (isDayPassed >= 1) playerData.attendanceDays += 1
     playerData.lastLoginDate = currentTime
 
-    // 권한 설정에 의한 닉네임 및 admin 권한 설정
+    // Set nickname and admin permissions based on configured roles
     val permission = Permission[playerData]
     if (permission.name.isNotEmpty()) {
         playerData.player.name(Permission[playerData].name)
     }
     playerData.player.admin(Permission[playerData].admin)
 
-    // 언어에 따라 각 언어별 motd 불러오기
+    // Load the Message of the Day (MOTD) based on the player's language
     val motd = if (rootPath.child("motd/${player.locale()}.txt").exists()) {
         rootPath.child("motd/${player.locale()}.txt").readString()
     } else if (rootPath.child("motd").list().isNotEmpty()) {
@@ -1112,13 +1112,13 @@ internal fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
         null
     }
 
-    // 오늘의 메세지가 10줄 이상 넘어갈 경우 전체 화면으로 출력
+    // If the MOTD exceeds 10 lines, display it as a full-screen message
     if (motd != null) {
         val count = motd.split("\r\n|\r|\n").toTypedArray().size
         if (count > 10) Call.infoMessage(player.con(), motd) else message.appendLine(motd)
     }
 
-    // 입장 할 때 특정 메세지가 출력 되도록 설정 되어 있는 경우
+    // If configured to display a specific message on player join
     if (permission.isAlert) {
         if (permission.alertMessage.isEmpty()) {
             players.forEach { data ->
@@ -1129,15 +1129,15 @@ internal fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
         }
     }
 
-    // 현재 PvP 모드일 경우
+    // If the current mode is PvP
     if (Vars.state.rules.pvp) {
         when {
-            // 이 플레이어가 이전에 참여한 팀이 있을 경우, 해당 팀에 다시 투입
+            // If this player previously joined a team, reassign them to that team
             pvpPlayer.containsKey(playerData.uuid) -> {
                 player.team(pvpPlayer[playerData.uuid])
             }
 
-            // PvP 관전 기능이 켜져 있고, 관전 플레이어 이거나, 해당 플레이어의 권한 목록에 관전 권한이 있는 경우 관전 팀으로 설정
+            // If PvP spectator is enabled and the player is a spectator or has spectator permission, set to the spectator team
             conf.feature.pvp.spector && pvpSpecters.contains(playerData.uuid) || Permission.check(
                 playerData,
                 "pvp.spector"

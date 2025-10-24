@@ -15,10 +15,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
-/** 현재 DB 버전 */
+/** Current database version */
 const val DATABASE_VERSION: UByte = 4u
 
-/** 플러그인 버전 */
+/** Plugin version */
 val PLUGIN_VERSION: String get() {
     val file = PluginData::class.java.getResourceAsStream("/plugin.json")
     file.use {
@@ -29,61 +29,61 @@ val PLUGIN_VERSION: String get() {
     }
 }
 
-/** 플러그인 메세지 데이터 */
+/** Plugin message bundle */
 val bundle = Bundle()
 
-/** 플러그인 데이터 폴더 경로 */
+/** Plugin data folder path */
 val rootPath: Fi = Core.settings.dataDirectory.child("mods/Essentials/")
 
 /** Kotlin TimeSource */
 val timeSource = TimeSource.Monotonic
 
-/** 서버 시작 시간 */
+/** Server start time */
 private val startupTime = timeSource.markNow()
 
-/** 맵이 시작된 시간 */
+/** Map start time */
 var mapStartTime = timeSource.markNow()
 
-/** 서버가 켜져있는 시간 */
+/** Server uptime */
 val uptime : String get() = (timeSource.markNow() - startupTime).toHString()
 
-/** 현재 플레이 중인 맵 시간 */
+/** Elapsed time on current map */
 val playTime : String get() = (timeSource.markNow() - mapStartTime).toHString()
 
-/** 투표 가능 유무 */
+/** Next vote availability time */
 var nextVoteAvailable : TimeMark = timeSource.markNow()
 
-/** 플레이어별 남은 투표 시간 (UUID, Time) */
+/** Remaining vote cooldown per player (UUID -> TimeMark) */
 var voterCooldown = mutableMapOf<String, TimeMark>()
 
-/** 현재 투표 진행 유무 */
+/** Whether a vote is in progress */
 var isVoting = false
 
-/** 플러그인에 의한 치트 사용 유무 (맵 이동시 초기화) */
+/** Whether plugin-induced cheats are enabled (reset on map change) */
 var isCheated = false
 
-/** 항복 유무 (맵 이동시 초기화) */
+/** Whether surrender is active (reset on map change) */
 var isSurrender = false
 
-/** 플레이어 데이터 목록 */
+/** Player data list */
 val players = CopyOnWriteArrayList<PlayerData>()
 
-/** 시스템 Time zone */
+/** System time zone */
 val systemTimezone = TimeZone.currentSystemDefault()
 
-/** 플레이어 번호 */
+/** Player number sequence */
 var playerNumber = 0
 
-/** 플레이 도중 나간 플레이어 목록 */
+/** Players who left during a match */
 var offlinePlayers = mutableListOf<PlayerData>()
 
-/** 플러그인 데이터 */
+/** Plugin data */
 lateinit var pluginData: PluginData
 
-/** 플러그인이 등록한 Event listeners 목록 */
+/** Event listeners registered by the plugin */
 val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
 
-/** 플러그인 데이터 출력 */
+/** Print plugin data summary */
 fun getPluginDataInfo(): String {
     return """
         |rootPath: ${rootPath.absolutePath()}

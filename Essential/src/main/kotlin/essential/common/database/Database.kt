@@ -57,11 +57,8 @@ private fun <T> withDriverClassLoader(dbType: String, block: () -> T): T {
     }
 }
 
-/** DB 초기 설정 */
-fun databaseInit(jdbcUrl: String, user: String, pass: String) {
-    val dbType = extractDatabaseType(jdbcUrl)
-    loadJdbcDriver(dbType)
-
+/** Initial database setup */
+fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
     try {
         loadJdbcDriver("sqlite")
         rootPath.mkdirs()
@@ -275,7 +272,7 @@ fun downloadSpecificDriver(dbType: String) {
     }
 }
 
-/** URL 으로부터 파일 다운로드 */
+/** Download file from URL */
 private fun downloadFile(url: URL, outputFile: File) {
     url.openStream().use { inputStream ->
         val readableByteChannel = Channels.newChannel(inputStream)
@@ -286,8 +283,8 @@ private fun downloadFile(url: URL, outputFile: File) {
 }
 
 /**
- * 필요한 경우 database schema 업데이트
- * 현재 database 버전과 플러그인의 database 버전을 비교하고 SQL 를 실행 합니다.
+ * Update database schema when necessary.
+ * Compares the current database version with the plugin's database version and runs SQL scripts.
  */
 suspend fun upgradeDatabase() {
     val pluginData = getPluginData()
@@ -308,8 +305,8 @@ suspend fun upgradeDatabase() {
 }
 
 /**
- * resources/sql 폴더에서 SQL 파일을 실행 합니다.
- * @param fileName 실행할 SQL 파일 이름
+ * Execute an SQL file from the resources/sql folder.
+ * @param fileName Name of the SQL file to execute
  */
 private fun executeSqlScript(fileName: String) {
     val sqlFilePath = "sql/$fileName"
@@ -331,7 +328,7 @@ private fun executeSqlScript(fileName: String) {
     }
 }
 
-/** DB 업데이트 */
+/** Database upgrade (blocking) */
 fun upgradeDatabaseBlocking() {
     runBlocking {
         upgradeDatabase()

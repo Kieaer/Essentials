@@ -9,7 +9,7 @@ data class CoreConfig(
     val command: Command = Command(),
 )
 
-/** 플러그인 설정 */
+/** Plugin configuration */
 @Serializable
 data class Plugin(
     val lang: String = "en",
@@ -22,15 +22,15 @@ data class Plugin(
     val enableDiscord: Boolean = true,
 )
 
-/** Database 설정 */
+/** Database configuration */
 @Serializable
 data class DatabaseConfig(
-    var url: String = "jdbc:sqlite:config/mods/Essentials/data/database.db",
+    var url: String = "h2:./config/mods/Essentials/data/database",
     val username: String = "sa",
     val password: String = "",
 )
 
-/** 플러그인 기능 설정 */
+/** Plugin feature configuration */
 @Serializable
 data class Feature(
     val afk: Afk = Afk(),
@@ -44,7 +44,7 @@ data class Feature(
     val count: Boolean = false,
 )
 
-/** 기능 - 잠수 설정 */
+/** Feature - AFK settings */
 @Serializable
 data class Afk(
     val enabled: Boolean = false,
@@ -52,35 +52,35 @@ data class Afk(
     val server: String? = "",
 )
 
-/** 기능 - 투표 설정 */
+/** Feature - Vote settings */
 @Serializable
 data class Vote(
     val enabled: Boolean = true,
     val enableVotekick: Boolean = false,
 )
 
-/** 기능 - 유닛 제한 설정 */
+/** Feature - Unit limit settings */
 @Serializable
 data class UnitFeature(
     val enabled: Boolean = false,
     val limit: Int = 3000,
 )
 
-/** 기능 - 오늘의 메세지 설정 */
+/** Feature - Message of the Day settings */
 @Serializable
 data class MessageOfTheDay(
     val enabled: Boolean = false,
     val time: Int = 600,
 )
 
-/** 기능 - PvP 설정 */
+/** Feature - PvP settings */
 @Serializable
 data class PvP(
     val autoTeam: Boolean = false,
     val spector: Boolean = false,
 )
 
-/** 기능 - 플레이어 레벨 기능 설정 */
+/** Feature - Player level feature settings */
 @Serializable
 data class LevelConfig(
     val effect: Effects = Effects(),
@@ -88,47 +88,47 @@ data class LevelConfig(
     val display: Boolean = false,
 )
 
-/** 기능 - 레벨별 이동 효과 설정 */
+/** Feature - Movement effects per level */
 @Serializable
 data class Effects(
     val enabled: Boolean = false,
     val moving: Boolean = false,
 )
 
-/** 기능 - 명령어 설정 */
+/** Feature - Command settings */
 @Serializable
 data class Command(
     val skip: Skip = Skip(),
     val rollback: Rollback = Rollback(),
 )
 
-/** 명령어 - wave skip 설정 */
+/** Command - Wave skip settings */
 @Serializable
 data class Skip(
     val enabled: Boolean = true,
     val limit: Int = 10,
 )
 
-/** 기능 - 게임 설정 */
+/** Feature - Game settings */
 @Serializable
 data class Game(
     val wave: Wave = Wave(),
 )
 
-/** 게임 설정 - wave 설정 */
+/** Game settings - Wave settings */
 @Serializable
 data class Wave(
     val autoSkip: Int = 1,
 )
 
-/** 기능 - 닉네임 필터링 설정 */
+/** Feature - Nickname filtering settings */
 @Serializable
 data class Blacklist(
     val enabled: Boolean = true,
     val regex: Boolean = false,
 )
 
-/** 명령어 - 롤백 설정 */
+/** Command - Rollback settings */
 @Serializable
 data class Rollback(
     val enabled: Boolean = true,

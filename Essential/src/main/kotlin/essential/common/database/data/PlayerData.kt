@@ -124,7 +124,7 @@ data class PlayerData(
     }
 }
 
-/** 플레이어 데이터 생성 */
+/** Create player data */
 suspend fun createPlayerData(player: Playerc): PlayerData {
     return createPlayerData(player.name(), player.uuid())
 }
@@ -169,7 +169,7 @@ suspend fun createPlayerData(name: String, uuid: String, accountID: String, acco
     return data
 }
 
-/** 플레이어 데이터 읽기 */
+/** Read player data */
 suspend fun getPlayerData(uuid: String): PlayerData? {
     return suspendTransaction {
         PlayerTable.selectAll()
@@ -186,7 +186,7 @@ suspend fun getPlayerDataByName(name: String): PlayerData? {
     }.firstOrNull()
 }
 
-/** 동기식으로 플레이어 데이터 읽기 (클래스로더 브리지용) */
+/** Read player data synchronously (for classloader bridge) */
 suspend fun getPlayerDataSync(uuid: String): PlayerData? {
     return suspendTransaction {
         PlayerTable.selectAll()
@@ -195,7 +195,7 @@ suspend fun getPlayerDataSync(uuid: String): PlayerData? {
     }.firstOrNull()
 }
 
-// 외부 플러그인에서 사용
+// Used by external plugins
 suspend fun getAllPlayerData(): List<PlayerData> {
     return suspendTransaction {
         PlayerTable.selectAll().map { row -> row.toPlayerData() }.toList()

@@ -15,12 +15,12 @@ object Config {
     val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
 
     /**
-     * yaml 파일으로부터 설정을 불러 옵니다.
+     * Load configuration from a YAML file.
      *
-     * @param name config 폴더에서의 yaml 파일 이름
-     * @param serializer 직렬화가 가능한 설정 class
-     * @param defaultConfig 파일이 없을 경우 기본 설정
-     * @return 설정 파일이 불러왔을 경우 해당 설정을 반환하고, 그렇지 않을 경우 null 을 반환
+     * @param name YAML file name in the config folder
+     * @param serializer Serializable configuration class
+     * @param defaultConfig Default configuration when the file does not exist
+     * @return Returns the configuration when loaded successfully, otherwise null
      */
     inline fun <reified T> load(
         name: String,
@@ -63,12 +63,12 @@ object Config {
     }
 
     /**
-     * 설정을 yaml 으로 저장합니다.
+     * Save the configuration as YAML.
      *
-     * @param name config 폴더에서의 yaml 파일 이름
-     * @param serializer 직렬화가 가능한 설정 class
-     * @param config 저장할 설정 class
-     * @return 저장에 성공 할 경우 true, 그렇지 않을 경우 false
+     * @param name YAML file name in the config folder
+     * @param serializer Serializable configuration class
+     * @param config Configuration object to save
+     * @return true if saved successfully, otherwise false
      */
     fun <T> save(name: String, serializer: KSerializer<T>, config: T): Boolean {
         val file = rootPath.child("config/${name}")
@@ -88,11 +88,11 @@ object Config {
     }
 
     /**
-     * 설정 파일이 변경 되었는지 확인
+     * Watch for changes to the configuration file.
      *
-     * @param name config 폴더에서의 설정 파일 이름
-     * @param serializer 직렬화가 가능한 설정 class
-     * @param onReload 설정 파일이 수정 되었을 경우 실행할 코드
+     * @param name Configuration file name in the config folder
+     * @param serializer Serializable configuration class
+     * @param onReload Code to run when the configuration file is modified
      */
     inline fun <reified T> watch(
         name: String,

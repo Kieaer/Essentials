@@ -22,7 +22,7 @@ data class PlayerBannedData(
     var date: Long
 )
 
-/** 차단된 플레이어의 정보를 DB 에 추가 합니다. */
+/** Add banned player information to the database. */
 suspend fun createBanInfo(data: Administration.PlayerInfo, reason: String?) {
     return suspendTransaction {
         PlayerBannedTable.insert {
@@ -35,26 +35,26 @@ suspend fun createBanInfo(data: Administration.PlayerInfo, reason: String?) {
     }
 }
 
-/** 플레이어의 UUID를 차단 해제 합니다. */
+/** Unban a player by UUID. */
 suspend fun removeBanInfoByUUID(uuid: String) {
     return suspendTransaction {
         PlayerBannedTable.deleteWhere { PlayerBannedTable.uuid eq uuid }
     }
 }
 
-/** 플레이어의 IP 차단을 해제 합니다. */
+/** Unban a player by IP. */
 suspend fun removeBanInfoByIP(ip: String) {
     return suspendTransaction {
         PlayerBannedTable.deleteWhere { PlayerBannedTable.ips.contains(ip) }
     }
 }
 
-/** 해당 플레이어가 차단 되어 있는지 확인 합니다. */
+/** Check whether the player is banned. */
 suspend fun checkPlayerBanned(player: Playerc): Boolean {
     return checkPlayerBanned(player.uuid(), player.ip(), player.name())
 }
 
-/** 해당 플레이어가 차단 되어 있는지 확인 합니다. */
+/** Check whether the player is banned. */
 suspend fun checkPlayerBanned(uuid: String, ip: String, name: String): Boolean {
     try {
         return suspendTransaction {

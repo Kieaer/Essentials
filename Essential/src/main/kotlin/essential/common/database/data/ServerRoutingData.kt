@@ -40,7 +40,7 @@ fun ResultRow.toServerRoutingData() = ServerRoutingData(
 )
 
 /**
- * 허브 서버를 통한 라우팅 권한을 부여합니다
+ * Grants routing permission via the hub server.
  */
 @OptIn(ExperimentalTime::class)
 suspend fun grantRoutingPermission(playerUuid: String, hubServerName: String, targetServerName: String, validSeconds: Int = 10): ServerRoutingData? {
@@ -62,7 +62,7 @@ suspend fun grantRoutingPermission(playerUuid: String, hubServerName: String, ta
 }
 
 /**
- * 플레이어가 특정 서버에 접속할 권한이 있는지 확인합니다
+ * Checks whether the player has permission to connect to a specific server.
  */
 @OptIn(ExperimentalTime::class)
 suspend fun checkRoutingPermission(playerUuid: String, targetServerName: String): Boolean {
@@ -79,7 +79,7 @@ suspend fun checkRoutingPermission(playerUuid: String, targetServerName: String)
 }
 
 /**
- * 라우팅 권한을 사용 처리합니다
+ * Marks routing permission as used.
  */
 @OptIn(ExperimentalTime::class)
 suspend fun useRoutingPermission(playerUuid: String, targetServerName: String): Boolean {
@@ -100,7 +100,7 @@ suspend fun useRoutingPermission(playerUuid: String, targetServerName: String): 
 }
 
 /**
- * 만료된 라우팅 권한을 정리합니다
+ * Clean up expired routing permissions.
  */
 @OptIn(ExperimentalTime::class)
 suspend fun cleanupExpiredRoutingPermissions() {
