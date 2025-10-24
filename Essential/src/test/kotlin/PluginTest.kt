@@ -50,11 +50,15 @@ class PluginTest {
         lateinit var path : Fi
         val serverCommand : CommandHandler = CommandHandler("")
         val clientCommand : CommandHandler = CommandHandler("/")
+        
+        private var gameLoaded = false
+        private var pluginLoaded = false
 
         @Mock
         lateinit var mockApplication : Application
 
         fun loadGame() {
+            if (gameLoaded) return
             /*if (System.getProperty("os.name").contains("Windows")) {
                 val pathToBeDeleted : Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
                 if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
@@ -166,12 +170,14 @@ class PluginTest {
 
                 netClient = NetClient()
                 Core.camera = Camera()
+                gameLoaded = true
             } catch (r : Throwable) {
                 fail(r.stackTraceToString())
             }
         }
 
         fun loadPlugin() {
+            if (pluginLoaded) return
             path.child("mods/Essentials").deleteDirectory()
 
             main = Main()
@@ -181,10 +187,13 @@ class PluginTest {
             main.registerServerCommands(serverCommand)
 
             Events.fire(ServerLoadEvent())
+            pluginLoaded = true
         }
 
         fun stopPlugin() {
             Core.app.exit()
+            gameLoaded = false
+            pluginLoaded = false
         }
 
         fun runPost() {
@@ -314,11 +323,11 @@ class PluginTest {
         }
 
         fun err(key : String, vararg parameters : Any) : String {
-            return "[scarlet]" + MessageFormat.format(Bundle().resource.getString(key), *parameters)
+            return "[scarlet]" + Bundle().get(key, *parameters)
         }
 
         fun log(msg : String, vararg parameters : Any) : String {
-            return MessageFormat.format(Bundle().resource.getString(msg), *parameters)
+            return Bundle().get(msg, *parameters)
         }
     }
 

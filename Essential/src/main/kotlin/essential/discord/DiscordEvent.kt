@@ -4,8 +4,8 @@ import arc.util.Log
 import essential.common.bundle.Bundle
 import essential.common.config.Config
 import essential.common.event.CustomEvents
-import essential.discord.Main.Companion.bundle
-import essential.discord.Main.Companion.conf
+import essential.discord.DiscordService.Companion.bundle
+import essential.discord.DiscordService.Companion.conf
 import ksp.event.Event
 import java.nio.file.StandardWatchEventKinds
 

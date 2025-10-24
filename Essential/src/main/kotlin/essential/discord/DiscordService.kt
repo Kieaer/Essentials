@@ -7,7 +7,7 @@ import essential.common.config.Config
 import essential.discord.generated.registerGeneratedClientCommands
 import mindustry.mod.Plugin
 
-class Main : Plugin() {
+class DiscordService : Plugin() {
     companion object {
         internal var bundle: Bundle = Bundle()
         internal lateinit var conf: DiscordConfig

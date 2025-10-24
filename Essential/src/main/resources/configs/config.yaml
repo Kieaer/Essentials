@@ -6,7 +6,7 @@ plugin:
   # Database URL
   # Example) postgresql://127.0.0.1:5432/essentials
   database:
-    url: sqlite:config/mods/Essentials/data/database.db
+    url: h2:./config/mods/Essentials/data/database.db
     username: sa
     password: 123
 

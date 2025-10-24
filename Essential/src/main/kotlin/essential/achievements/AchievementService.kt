@@ -7,7 +7,7 @@ import essential.achievements.generated.registerGeneratedEventHandlers
 import essential.common.bundle.Bundle
 import mindustry.mod.Plugin
 
-class Main : Plugin() {
+class AchievementService : Plugin() {
     companion object {
         internal var bundle: Bundle = Bundle()
         internal var conf: AchievementConfig? = null
@@ -18,12 +18,6 @@ class Main : Plugin() {
 
         Log.debug(bundle["event.plugin.starting"])
 
-        /*conf = essential.core.Main.Companion.createAndReadConfig(
-                "config_achievements.yaml",
-                Objects.requireNonNull(this.getClass().getResourceAsStream("/config_achievements.yaml")),
-                Config.class
-        );
-*/
         // 이벤트 실행
         registerGeneratedEventHandlers()
 

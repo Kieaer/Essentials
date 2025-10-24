@@ -66,7 +66,27 @@ class Main : Plugin() {
             val configContent = rp.child("config/config.yaml").readString()
             val config = yaml.decodeFromString(RootConfig.serializer(), configContent)
 
-            setUrl(config.plugin.database.url)
+            fun normalizeUrl(url: String): String {
+                if (url.startsWith("r2dbc:h2:")) return url
+                if (url.startsWith("r2dbc:sqlite:")) {
+                    val path = url.removePrefix("r2dbc:sqlite:").replace('\\','/')
+                    return "r2dbc:h2:file:///" + path
+                }
+                if (url.startsWith("jdbc:sqlite:")) {
+                    val path = url.removePrefix("jdbc:sqlite:").replace('\\','/')
+                    return "r2dbc:h2:file:///" + path
+                }
+                if (url.startsWith("sqlite:")) {
+                    val path = url.removePrefix("sqlite:").replace('\\','/')
+                    return "r2dbc:h2:file:///" + path
+                }
+                if (url.startsWith("jdbc:h2:")) return "r2dbc:h2:" + url.removePrefix("jdbc:h2:")
+                if (url.startsWith("h2:")) return "r2dbc:h2:" + url.removePrefix("h2:")
+                if (url.startsWith("r2dbc:")) return url
+                return if (url.startsWith("jdbc:")) "r2dbc:" + url.removePrefix("jdbc:") else url
+            }
+
+            setUrl(normalizeUrl(config.plugin.database.url))
             connectionFactoryOptions {
                 option(ConnectionFactoryOptions.USER, config.plugin.database.username)
                 option(ConnectionFactoryOptions.PASSWORD, config.plugin.database.password)

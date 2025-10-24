@@ -6,14 +6,13 @@ import essential.common.database.table.PlayerTable
 import essential.common.playerNumber
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.r2dbc.insertReturning
+import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
@@ -130,40 +129,47 @@ suspend fun createPlayerData(player: Playerc): PlayerData {
 }
 
 suspend fun createPlayerData(name: String, uuid: String): PlayerData {
-    val id = suspendTransaction {
-        PlayerTable.insertReturning {
-            it[PlayerTable.name] = name
-            it[PlayerTable.uuid] = uuid
-        }.single()[PlayerTable.id]
+    // Fast-path: if already exists, return it
+    suspendTransaction {
+        val exists = PlayerTable.select(PlayerTable.id)
+            .where { PlayerTable.uuid eq uuid }
+            .empty()
+        if (!exists) return@suspendTransaction
+        try {
+            PlayerTable.insert {
+                it[PlayerTable.name] = name
+                it[PlayerTable.uuid] = uuid
+            }
+        } catch (_: Throwable) {
+            // Another concurrent inserter may have created the row; ignore and proceed to fetch
+        }
     }
 
     val entity = suspendTransaction {
-        val query = PlayerTable.select(PlayerTable.columns)
-            .where { PlayerTable.id eq id }
-
-        query.map { row ->
-            row.toPlayerData()
-        }.first()
+        PlayerTable.select(PlayerTable.columns)
+            .where { PlayerTable.uuid eq uuid }
+            .map { row -> row.toPlayerData() }
+            .first()
     }
 
     return entity
 }
 
 suspend fun createPlayerData(name: String, uuid: String, accountID: String, accountPW: String): PlayerData {
-    val id = suspendTransaction {
-        PlayerTable.insertReturning {
+    suspendTransaction {
+        PlayerTable.insert {
             it[PlayerTable.name] = name
             it[PlayerTable.uuid] = uuid
             it[PlayerTable.accountID] = accountID
             it[PlayerTable.accountPW] = BCrypt.hashpw(accountPW, BCrypt.gensalt())
-        }.single()[PlayerTable.id]
+        }
     }
 
     val data = suspendTransaction {
-        val query = PlayerTable.select(PlayerTable.columns)
-            .where { PlayerTable.id eq id }
-
-        query.mapToPlayerDataList().first()
+        PlayerTable.select(PlayerTable.columns)
+            .where { PlayerTable.uuid eq uuid }
+            .mapToPlayerDataList()
+            .first()
     }
 
     return data
@@ -202,7 +208,7 @@ suspend fun getAllPlayerData(): List<PlayerData> {
     }
 }
 
-// 외부 플러그인에서 사용
+// Used by external plugins
 suspend fun getPlayerDataByDiscord(discordID: String): PlayerData? {
     return suspendTransaction {
         PlayerTable.selectAll()

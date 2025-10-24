@@ -60,53 +60,50 @@ private fun <T> withDriverClassLoader(dbType: String, block: () -> T): T {
 /** Initial database setup */
 fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
     try {
-        loadJdbcDriver("sqlite")
         rootPath.mkdirs()
         val dataDir = rootPath.child("data")
         if (!dataDir.exists()) dataDir.mkdirs()
-        val sqlitePath = rootPath.child("data/world_history.db").file().absolutePath
-        withDriverClassLoader("sqlite") {
-            worldHistoryDatabase = R2dbcDatabase.connect {
-                setUrl("r2dbc:sqlite:$sqlitePath")
-                connectionFactoryOptions {
-                    option(ConnectionFactoryOptions.USER, user)
-                    option(ConnectionFactoryOptions.PASSWORD, pass)
-                }
-            }
+        val h2FilePath = rootPath.child("data/world_history").file().absolutePath.replace('\\', '/')
 
-            worldHistoryDatabase?.let { db ->
-                runBlocking {
-                    suspendTransaction(db) {
-                        SchemaUtils.create(WorldHistoryTable)
-                    }
+        worldHistoryDatabase = R2dbcDatabase.connect {
+            setUrl("r2dbc:h2:file:///$h2FilePath")
+            connectionFactoryOptions {
+                option(ConnectionFactoryOptions.USER, user)
+                option(ConnectionFactoryOptions.PASSWORD, pass)
+            }
+        }
+
+        worldHistoryDatabase?.let { db ->
+            runBlocking {
+                suspendTransaction(db) {
+                    SchemaUtils.create(WorldHistoryTable)
                 }
             }
         }
     } catch (e: Throwable) {
-        Log.err("[database] Failed to initialize local SQLite for world_history: @", e)
+        Log.err("[database] Failed to initialize local H2 for world_history: @", e)
     }
 
-    withDriverClassLoader(dbType) {
-        R2dbcDatabase.connect {
-            setUrl(jdbcUrl)
-            connectionFactoryOptions {
-                option(ConnectionFactoryOptions.USER, user)
-                option(ConnectionFactoryOptions.PASSWORD, pass)
-                option(Option.valueOf("maxSize"), 2)
-            }
+    // Connect main database via R2DBC
+    R2dbcDatabase.connect {
+        setUrl(toR2dbcUrl(r2dbcUrl))
+        connectionFactoryOptions {
+            option(ConnectionFactoryOptions.USER, user)
+            option(ConnectionFactoryOptions.PASSWORD, pass)
+            option(Option.valueOf("maxSize"), 2)
         }
+    }
 
-        runBlocking {
-            suspendTransaction {
-                SchemaUtils.create(
-                    PlayerTable,
-                    PluginTable,
-                    PlayerBannedTable,
-                    AchievementTable,
-                    MapRatingTable,
-                    ServerRoutingTable
-                )
-            }
+    runBlocking {
+        suspendTransaction {
+            SchemaUtils.create(
+                PlayerTable,
+                PluginTable,
+                PlayerBannedTable,
+                AchievementTable,
+                MapRatingTable,
+                ServerRoutingTable
+            )
         }
     }
 
@@ -118,6 +115,72 @@ private fun extractDatabaseType(jdbcUrl: String): String {
     val matchResult = pattern.find(jdbcUrl)
 
     return matchResult?.groupValues?.get(1) ?: "sqlite"
+}
+
+/** Convert JDBC-style and shorthand H2/SQLite URLs to valid R2DBC URLs. */
+private fun toR2dbcUrl(url: String): String {
+    val u = url.trim()
+
+    // Already valid R2DBC H2 URLs we accept as-is
+    if (u.startsWith("r2dbc:h2:file:")) return u
+    if (u.startsWith("r2dbc:h2:mem:")) return u
+
+    // r2dbc:h2:... without file/mem -> assume file path
+    if (u.startsWith("r2dbc:h2:")) {
+        val rest = u.removePrefix("r2dbc:h2:")
+        if (rest.startsWith("file:") || rest.startsWith("mem:")) return u
+        val safe = rest.replace('\\', '/')
+        return "r2dbc:h2:file:///" + safe
+    }
+
+    // Map SQLite-like URLs to H2 file URLs
+    if (u.startsWith("r2dbc:sqlite:")) {
+        val path = u.removePrefix("r2dbc:sqlite:")
+        val safe = path.replace('\\', '/')
+        return "r2dbc:h2:file:///" + safe
+    }
+    if (u.startsWith("jdbc:sqlite:")) {
+        val path = u.removePrefix("jdbc:sqlite:")
+        val safe = path.replace('\\', '/')
+        return "r2dbc:h2:file:///" + safe
+    }
+    if (u.startsWith("sqlite:")) {
+        val path = u.removePrefix("sqlite:")
+        val safe = path.replace('\\', '/')
+        return "r2dbc:h2:file:///" + safe
+    }
+
+    // Handle JDBC/short H2 forms
+    if (u.startsWith("jdbc:h2:")) {
+        val rest = u.removePrefix("jdbc:h2:")
+        if (rest.startsWith("mem:")) return "r2dbc:h2:mem:" + rest.removePrefix("mem:")
+        if (rest.startsWith("file:")) {
+            var fileRest = rest.removePrefix("file:")
+            if (fileRest.startsWith("///")) fileRest = fileRest.removePrefix("///")
+            else if (fileRest.startsWith("//")) fileRest = fileRest.removePrefix("//")
+            val safe = fileRest.replace('\\', '/')
+            return "r2dbc:h2:file:///" + safe
+        }
+        val safe = rest.replace('\\', '/')
+        return "r2dbc:h2:file:///" + safe
+    }
+    if (u.startsWith("h2:")) {
+        val rest = u.removePrefix("h2:")
+        if (rest.startsWith("mem:")) return "r2dbc:h2:mem:" + rest.removePrefix("mem:")
+        if (rest.startsWith("file:")) {
+            var fileRest = rest.removePrefix("file:")
+            if (fileRest.startsWith("///")) fileRest = fileRest.removePrefix("///")
+            else if (fileRest.startsWith("//")) fileRest = fileRest.removePrefix("//")
+            val safe = fileRest.replace('\\', '/')
+            return "r2dbc:h2:file:///" + safe
+        }
+        val safe = rest.replace('\\', '/')
+        return "r2dbc:h2:file:///" + safe
+    }
+
+    if (u.startsWith("r2dbc:")) return u
+    if (u.startsWith("jdbc:")) return "r2dbc:" + u.removePrefix("jdbc:")
+    return u
 }
 
 /** Load the JDBC driver for the specified database type */
@@ -189,7 +252,7 @@ private fun loadJdbcDriver(dbType: String) {
     }
 }
 
-/** JDBC 드라이버 목록 */
+/** List of JDBC drivers */
 private fun getDriverMap(): Map<String, Triple<String, String, String>> {
     return mapOf(
         "mysql" to Triple("com.mysql", "mysql-connector-j", "com.mysql.cj.jdbc.Driver"),
@@ -202,7 +265,7 @@ private fun getDriverMap(): Map<String, Triple<String, String, String>> {
     )
 }
 
-/** JDBC 드라이버 다운로드 */
+/** Download JDBC driver */
 fun downloadSpecificDriver(dbType: String) {
     val driverMap = getDriverMap()
     val driverInfo = driverMap[dbType] ?: return

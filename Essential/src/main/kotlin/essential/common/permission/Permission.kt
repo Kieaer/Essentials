@@ -67,13 +67,18 @@ object Permission {
         val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
         
         user = try {
-            if (userFile.exists() && userFile.readString().isNotBlank()) {
-                val content = userFile.readString()
-                if (content.trim() == "---" || content.trim().isEmpty()) {
-                    // Handle case where file only contains document separator or is effectively empty
+            if (userFile.exists()) {
+                val raw = userFile.readString()
+                // Remove YAML comments and whitespace to check if there's any real content
+                val stripped = raw.lineSequence()
+                    .filter { line -> !line.trimStart().startsWith("#") }
+                    .joinToString("\n")
+                    .trim()
+                if (stripped.isEmpty() || stripped == "---") {
+                    // Treat comment-only or effectively empty files as empty map
                     mapOf()
                 } else {
-                    yaml.decodeFromString(MapSerializer(String.serializer(), PermissionData.serializer()), content)
+                    yaml.decodeFromString(MapSerializer(String.serializer(), PermissionData.serializer()), raw)
                 }
             } else {
                 mapOf()

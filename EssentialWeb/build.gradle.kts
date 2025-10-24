@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":ksp-processor"))
     implementation(libs.bundles.kotlinxEcosystem)
     implementation(libs.bundles.exposed)
+    implementation(libs.r2dbc.h2)
     implementation(libs.bundles.ktor)
     implementation(libs.kaml)
     implementation(libs.jbcrypt)

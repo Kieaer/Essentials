@@ -282,7 +282,7 @@ class CommandProcessor(
                                 if (annotation.name == "js") {
                                     player.kick(Bundle(player.locale())["command.js.no.permission"])
                                 } else {
-                                    data.send("command.permission.false")
+                                    data.err("command.permission.false")
                                 }
                             }
                         }

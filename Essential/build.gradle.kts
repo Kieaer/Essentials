@@ -12,7 +12,7 @@ dependencies {
     implementation(libs.bundles.exposed)
     implementation(libs.jfiglet)
     implementation(libs.maven.check)
-    implementation(libs.sqlite)
+    implementation(libs.r2dbc.h2)
     implementation(libs.kaml)
     implementation(libs.jbcrypt)
 
@@ -20,6 +20,6 @@ dependencies {
     testImplementation(libs.bundles.game.test)
     testImplementation(libs.bundles.kotlinxEcosystem)
     testImplementation(libs.bundles.exposed)
-    testImplementation(libs.sqlite)
+    testImplementation(libs.r2dbc.h2)
     testImplementation(libs.jbcrypt)
 }

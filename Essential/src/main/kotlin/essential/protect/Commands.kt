@@ -19,7 +19,6 @@ import essential.common.util.currentTime
 import essential.core.Main.Companion.scope
 import essential.protect.ProtectService.Companion.conf
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import ksp.command.ClientCommand
 import mindustry.Vars
 import mindustry.net.Administration.PlayerInfo
@@ -78,20 +77,20 @@ class Commands {
             } else if (arg[1] != arg[2]) {
                 player.sendMessage(bundle["command.reg.incorrect"])
             } else {
-                val exists = runBlocking {
-                    PlayerTable.select(PlayerTable.accountID, PlayerTable.name).where {
-                        (PlayerTable.accountID eq arg[0]) or (PlayerTable.name eq player.plainName())
-                    }.empty()
-                }
-                if (exists) {
-                    player.sendMessage(bundle["command.reg.exists"])
-                } else {
-                    scope.launch {
+                scope.launch {
+                    val exists = suspendTransaction {
+                        PlayerTable.select(PlayerTable.accountID, PlayerTable.name).where {
+                            (PlayerTable.accountID eq arg[0]) or (PlayerTable.name eq player.plainName())
+                        }.empty()
+                    }
+                    if (exists) {
+                        Core.app.post { player.sendMessage(bundle["command.reg.exists"]) }
+                    } else {
                         val playerData = createPlayerData(player.name(), player.uuid(), arg[0], arg[1])
                         playerData.permission = "user"
                         playerData.update()
+                        Log.info(bundle["log.data_created", player.plainName()])
                     }
-                    Log.info(bundle["log.data_created", player.plainName()])
                 }
             }
         } else if (conf.account.getAuthType() != ProtectConfig.AuthType.Discord) {

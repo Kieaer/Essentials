@@ -9,7 +9,7 @@ kotlinpoet = "2.2.0"
 game = "v152"
 local = "local-SNAPSHOT"
 kaml = "0.91.0"
-exposed = "1.0.0-rc-1"
+exposed = "1.0.0-rc-2"
 hjson = "3.0.0-C11"
 jbcrypt = "0.4.3"
 mavenArtifact = "4.0.0-alpha-3"
@@ -21,6 +21,7 @@ mockito = "5.19.0"
 jts = "1.20.0"
 h2 = "2.3.232"
 sqlite = "3.50.3.0"
+r2dbcH2 = "1.0.0.RELEASE"
 lingua = "1.2.2"
 discord = "5.6.1"
 ktor = "3.2.3"
@@ -78,6 +79,8 @@ discord = { module = "net.dv8tion:JDA", version.ref = "discord" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
+# R2DBC drivers
+r2dbc-h2 = { module = "io.r2dbc:r2dbc-h2", version.ref = "r2dbcH2" }
 
 [bundles]
 kotlinxEcosystem = ["kotlinxDatetime", "kotlinxCoroutines", "kotlinxSerializer"]

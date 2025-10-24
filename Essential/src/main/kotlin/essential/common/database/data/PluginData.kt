@@ -6,11 +6,10 @@ import essential.common.database.data.plugin.WarpCount
 import essential.common.database.data.plugin.WarpTotal
 import essential.common.database.data.plugin.WarpZone
 import essential.common.database.table.PluginTable
-import kotlinx.coroutines.flow.single
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ksp.table.GenerateCode
-import org.jetbrains.exposed.v1.r2dbc.insertReturning
+import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
@@ -46,10 +45,13 @@ suspend fun getPluginData(): PluginData? {
 suspend fun createPluginData(): PluginData {
     val displayData = DisplayData()
     return suspendTransaction {
-        PluginTable.insertReturning {
+        PluginTable.insert {
             it[PluginTable.databaseVersion] = DATABASE_VERSION
             it[PluginTable.hubMapName] = null
             it[PluginTable.data] = Json.encodeToString(displayData)
-        }.single().toPluginData()
+        }
+        PluginTable.selectAll()
+            .mapToPluginDataList()
+            .first()
     }
 }

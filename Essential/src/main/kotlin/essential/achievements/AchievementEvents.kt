@@ -22,8 +22,10 @@ private fun incrementActionCount(data: PlayerData) {
 
 @Event
 fun blockBuildEnd(event: BlockBuildEndEvent) {
-    if (event.unit.isPlayer) {
-        val data: PlayerData? = findPlayerByUuid(event.unit.player.uuid())
+    val unit = event.unit ?: return
+    if (unit.isPlayer) {
+        val playerc = unit.player
+        val data: PlayerData? = if (playerc != null) findPlayerByUuid(playerc.uuid()) else null
         if (data != null) {
             // Increment action count for APM calculation
             incrementActionCount(data)
@@ -276,7 +278,7 @@ fun achievementClear(event: CustomEvents.AchievementClear) {
             ResourceBundle.getBundle(
                 "bundle",
                 Locale(data.player.locale()),
-                Main::class.java.getClassLoader()
+                AchievementService::class.java.getClassLoader()
             )
         )
 
@@ -362,9 +364,10 @@ fun unitDestroy(event: UnitDestroyEvent) {
         if (data != null && event.unit != null && event.unit.team() != player.team()) {
             // Increment action count for APM calculation
             incrementActionCount(data)
+            val playerUnit = player.unit() ?: continue
 
             // Check for CrawlerBlockDestroyer achievement
-            if (player.unit().type.name.equals("crawler", true)) {
+            if (playerUnit.type.name.equals("crawler", true)) {
                 // Check if the destroyed unit is a wall, turret, or factory
                 if (event.unit.type.name.contains("wall") || event.unit.type.name.contains("turret") || event.unit.type.name.contains(
                         "factory"
@@ -379,7 +382,7 @@ fun unitDestroy(event: UnitDestroyEvent) {
             }
 
             // Check for TurretMultiKill achievement
-            if (player.unit().type.name.contains("turret")) {
+            if (playerUnit.type.name.contains("turret")) {
                 val multiKillCount =
                     data.status.getOrDefault("record.turret.multikill.current", "0").toInt() + 1
                 data.status.put("record.turret.multikill.current", multiKillCount.toString())
@@ -396,7 +399,7 @@ fun unitDestroy(event: UnitDestroyEvent) {
             }
 
             // Check for QuillKiller achievement
-            if (player.unit().type.name.contains("turret") && event.unit.type.name.equals("quill", true)) {
+            if (playerUnit.type.name.contains("turret") && event.unit.type.name.equals("quill", true)) {
                 val currentTime = System.currentTimeMillis()
                 val lastKillTime = data.status.getOrDefault("record.turret.quill.kill.time", "0").toLong()
                 val killCount = if (currentTime - lastKillTime < 10000) {
@@ -414,7 +417,7 @@ fun unitDestroy(event: UnitDestroyEvent) {
             }
 
             // Check for ZenithKiller achievement
-            if (player.unit().type.name.contains("turret") && event.unit.type.name.equals("zenith", true)) {
+            if (playerUnit.type.name.contains("turret") && event.unit.type.name.equals("zenith", true)) {
                 val currentTime = System.currentTimeMillis()
                 val lastKillTime = data.status.getOrDefault("record.turret.zenith.kill.time", "0").toLong()
                 val killCount = if (currentTime - lastKillTime < 10000) {
@@ -432,7 +435,7 @@ fun unitDestroy(event: UnitDestroyEvent) {
             }
 
             // Check for OmuraHorizonKiller achievement
-            if (player.unit().type.name.equals("omura", true) && event.unit.type.name.equals("horizon", true)) {
+            if (playerUnit.type.name.equals("omura", true) && event.unit.type.name.equals("horizon", true)) {
                 val multiKillCount =
                     data.status.getOrDefault("record.omura.horizon.kill.current", "0").toInt() + 1
                 data.status.put("record.omura.horizon.kill.current", multiKillCount.toString())
@@ -642,7 +645,8 @@ fun playerLeave(event: PlayerLeave) {
 
 @Event
 fun withdraw(event: WithdrawEvent) {
-    val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+    val player = event.player ?: return
+    val data: PlayerData? = findPlayerByUuid(player.uuid())
     if (data != null) {
         // Increment action count for APM calculation
         incrementActionCount(data)
@@ -651,7 +655,8 @@ fun withdraw(event: WithdrawEvent) {
 
 @Event
 fun deposit(event: DepositEvent) {
-    val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+    val player = event.player ?: return
+    val data: PlayerData? = findPlayerByUuid(player.uuid())
     if (data != null) {
         // Increment action count for APM calculation
         incrementActionCount(data)
@@ -660,7 +665,8 @@ fun deposit(event: DepositEvent) {
 
 @Event
 fun config(event: ConfigEvent) {
-    val data: PlayerData? = findPlayerByUuid(event.player.uuid())
+    val player = event.player ?: return
+    val data: PlayerData? = findPlayerByUuid(player.uuid())
     if (data != null) {
         // Increment action count for APM calculation
         incrementActionCount(data)
