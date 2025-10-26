@@ -34,13 +34,14 @@ import org.mockito.MockitoAnnotations
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Paths
-import java.text.MessageFormat
 import java.util.*
 import java.util.zip.ZipFile
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.fail
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class PluginTest {
     companion object {
@@ -140,6 +141,8 @@ class PluginTest {
 
                     override fun init() {
                         super.init()
+                        loadPlugin()
+
                         begins[0] = true
                         testMap = maps.loadInternalMap("groundZero")
                     }
@@ -157,7 +160,7 @@ class PluginTest {
                 while (testMap == null) {
                     sleep(10)
                 }
-                world.loadMap(testMap!!)
+                world.loadMap(testMap)
                 state.set(GameState.State.playing)
 
                 Version.build = 145
@@ -221,6 +224,7 @@ class PluginTest {
          * 플레이어 생성
          * @return 플레이어
          */
+        @OptIn(ExperimentalTime::class)
         fun createPlayer() : Player {
             val player = Player.create()
             val faker = Faker(Locale.ENGLISH)
@@ -236,9 +240,8 @@ class PluginTest {
                     return
                 }
             }
-            val name = faker.name().lastName().toCharArray()
-            name.shuffle()
-            player.name(name.concatToString())
+            val name = faker.name().lastName() + Clock.System.now().toEpochMilliseconds()
+            player.name(name)
             player.con.uuid = getSaltString()
             player.con.usid = getSaltString()
             player.set(r.nextInt(300).toFloat(), r.nextInt(500).toFloat())
@@ -329,6 +332,40 @@ class PluginTest {
         fun log(msg : String, vararg parameters : Any) : String {
             return Bundle().get(msg, *parameters)
         }
+
+        /**
+         * Waits until the given condition becomes true or the timeout elapses.
+         */
+        fun waitUntil(timeoutMs: Long = 2000, intervalMs: Long = 16, condition: () -> Boolean): Boolean {
+            val start = System.currentTimeMillis()
+            while (System.currentTimeMillis() - start < timeoutMs) {
+                if (condition()) return true
+                sleep(intervalMs)
+            }
+            return condition()
+        }
+
+        /**
+         * Wait for a player's lastReceivedMessage to satisfy the predicate.
+         * Returns the final message that satisfied the predicate (or the latest one when timed out).
+         */
+        fun waitForMessage(
+            data: PlayerData,
+            timeoutMs: Long = 2000,
+            intervalMs: Long = 16,
+            predicate: (String) -> Boolean
+        ): String {
+            val start = System.currentTimeMillis()
+            var last = data.lastReceivedMessage
+            while (System.currentTimeMillis() - start < timeoutMs) {
+                val msg = data.lastReceivedMessage
+                if (msg != last && predicate(msg)) return msg
+                if (predicate(msg)) return msg
+                last = msg
+                sleep(intervalMs)
+            }
+            return data.lastReceivedMessage
+        }
     }
 
     @Test
@@ -336,7 +373,6 @@ class PluginTest {
         System.setProperty("test", "yes")
 
         loadGame()
-        loadPlugin()
         stopPlugin()
     }
 

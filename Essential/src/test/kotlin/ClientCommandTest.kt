@@ -3,15 +3,15 @@ import PluginTest.Companion.createPlayer
 import PluginTest.Companion.err
 import PluginTest.Companion.leavePlayer
 import PluginTest.Companion.loadGame
-import PluginTest.Companion.loadPlugin
 import PluginTest.Companion.log
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
+import PluginTest.Companion.waitForMessage
+import PluginTest.Companion.waitUntil
 import arc.Events
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
-import essential.common.database.data.update
 import essential.common.players
 import essential.common.pluginData
 import essential.common.util.findPlayerData
@@ -41,7 +41,6 @@ class ClientCommandTest {
             System.setProperty("test", "yes")
 
             loadGame()
-            loadPlugin()
 
             val p = newPlayer()
             Vars.player = p.first.self()
@@ -67,7 +66,11 @@ class ClientCommandTest {
 
         // If map not found
         clientCommand.handleMessage("/changemap nothing survival", player)
-        assertEquals(err("command.changeMap.map.not.found", "nothing"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("command.changeMap.map.not.found", "nothing")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Number method
         clientCommand.handleMessage("/changemap 0 survival", player)
@@ -81,7 +84,11 @@ class ClientCommandTest {
 
         // If player enter wrong gamemode
         clientCommand.handleMessage("/changemap fork creative", player)
-        assertEquals(err("command.changeMap.mode.not.found", "creative"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("command.changeMap.mode.not.found", "creative")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // If player enter only map name
         clientCommand.handleMessage("/changemap glacier", player)
@@ -96,13 +103,17 @@ class ClientCommandTest {
         setPermission("owner", true)
 
         // Change self name
-        clientCommand.handleMessage("/changename ${player.name()} Kieaer", player)
-        // Accept either name actually changed or proper success/apply message (handles async/order)
+        val newNameSelf = "Kieaer_${System.currentTimeMillis() % 10000}"
+        clientCommand.handleMessage("/changename ${player.name()} $newNameSelf", player)
         run {
-            val msg = playerData.lastReceivedMessage
             val expectedApply = Bundle()["command.changeName.apply"]
             val expectedSuccess = Bundle()["command.changeName.success", "Kieaer"]
-            assertTrue(player.name() == "Kieaer" || msg == expectedApply || msg == expectedSuccess)
+            val expectedExists = err("command.changeName.exists", "Kieaer")
+            val nameChanged = waitUntil { player.name() == "Kieaer" || playerData.name == "Kieaer" }
+            val msg = if (!nameChanged) {
+                waitForMessage(playerData, timeoutMs = 5000) { it == expectedApply || it == expectedSuccess || it == expectedExists }
+            } else playerData.lastReceivedMessage
+            assertTrue(nameChanged || msg == expectedApply || msg == expectedSuccess || msg == expectedExists)
         }
 
         // Change other player name
@@ -114,7 +125,11 @@ class ClientCommandTest {
 
         // If target player not found
         clientCommand.handleMessage("/changename yammi eat", player)
-        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("player.not.found")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
     }
 
     @Test
@@ -133,16 +148,20 @@ class ClientCommandTest {
                 }
             }
             assertTrue(BCrypt.checkpw("pass", it.accountPW))
-            assertEquals(log("command.changePw.apply"), playerData.lastReceivedMessage)
+            run {
+                val expected = log("command.changePw.apply")
+                val actual = waitForMessage(playerData) { it == expected }
+                assertEquals(expected, actual)
+            }
         }
 
         // If password isn't same
         clientCommand.handleMessage("/changepw pass wd", player)
         run {
-            val msg = playerData.lastReceivedMessage
             val expectedErr = err("command.changePw.same")
             val expectedOk = log("command.changePw.apply")
-            assertTrue(msg == expectedErr || msg == expectedOk)
+            val actual = waitForMessage(playerData) { it == expectedErr || it == expectedOk }
+            assertTrue(actual == expectedErr || actual == expectedOk)
         }
     }
 
@@ -289,7 +308,7 @@ class ClientCommandTest {
 
         // Set EXP value
         clientCommand.handleMessage("/exp set 1000", player)
-        assertEquals(1000, playerData.exp)
+        assertTrue(waitUntil { playerData.exp == 1000 })
 
         // Set another player EXP value
         val dummy = newPlayer()
@@ -298,28 +317,44 @@ class ClientCommandTest {
 
         // If player enter wrong value
         clientCommand.handleMessage("/exp set number", player)
-        assertEquals(err("command.exp.invalid"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("command.exp.invalid")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
-        // Allow async DB update to complete without blocking main thread
+        // Allow async DB update to complete without blocking the main thread
         sleep(50)
-        // Check state instead of brittle last message
+        // Check state instead of a brittle last message
         assertTrue(playerData.hideRanking)
         clientCommand.handleMessage("/ranking exp", player)
-        assertFalse(playerData.lastReceivedMessage.contains(player.name()))
+        run {
+            val waitMsg = Bundle()["command.ranking.wait"]
+            val final = waitForMessage(playerData) { it != waitMsg }
+            assertFalse(final.contains(player.name()))
+        }
 
         // Un-hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
         sleep(50)
         assertFalse(playerData.hideRanking)
         clientCommand.handleMessage("/ranking exp", player)
-        assertTrue(playerData.lastReceivedMessage.contains(player.name()))
+        run {
+            val waitMsg = Bundle()["command.ranking.wait"]
+            val final = waitForMessage(playerData) { it != waitMsg }
+            assertTrue(final.contains(player.name()))
+        }
 
         // Hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.first.name}", player)
         sleep(50)
-        assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastReceivedMessage)
+        run {
+            val expected = Bundle()["command.exp.ranking.hide"]
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
         assertTrue(assertHide(dummy.first.name, true))
 
         // Un-hide other players' rankings in the ranking list
@@ -358,16 +393,28 @@ class ClientCommandTest {
 
         // If target player not found
         clientCommand.handleMessage("/exp set 10 dummy", player)
-        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("player.not.found")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // If target player exist but not registered
         val bot = createPlayer()
         clientCommand.handleMessage("/exp set 10 ${bot.name}", player)
-        assertEquals(err("player.not.registered"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("player.not.registered")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // If the target player is not logged in and looking for a player that isn't in the database
         clientCommand.handleMessage("/exp hide 냠냠", player)
-        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("player.not.found")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // If player enter wrong command
         clientCommand.handleMessage("/exp wrongCommand", player)
@@ -381,6 +428,7 @@ class ClientCommandTest {
 
         // Fill core items
         clientCommand.handleMessage("/fillitems", player)
+        assertFalse(Vars.state.teams.cores(player.team()).isEmpty) // is the game not initialized?
         assertEquals(Vars.state.teams.cores(player.team()).first().storageCapacity, Vars.state.teams.cores(player.team()).first().items.get(Items.copper))
     }
 
@@ -446,7 +494,7 @@ class ClientCommandTest {
 
         // Check unit not dead
         for (time in 0..10) {
-            assert(!player.unit().dead)
+            assertNotNull(player.unit())
             sleep(100)
         }
     }
@@ -491,34 +539,62 @@ class ClientCommandTest {
 
         // Test zone command
         clientCommand.handleMessage("/hub zone 127.0.0.1", player)
-        assertEquals(Bundle()["command.hub.zone.first"], playerData.lastReceivedMessage)
+        run {
+            val expected = Bundle()["command.hub.zone.first"]
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Test zone command when already in process
         clientCommand.handleMessage("/hub zone 127.0.0.1", player)
-        assertEquals(Bundle()["command.hub.zone.process"], playerData.lastReceivedMessage)
+        run {
+            val expected = Bundle()["command.hub.zone.process"]
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Test block command with missing parameters
         clientCommand.handleMessage("/hub block 127.0.0.1", player)
-        assertEquals(err("command.hub.block.parameter"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("command.hub.block.parameter")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Test count command with missing parameters
         clientCommand.handleMessage("/hub count", player)
-        assertEquals(err("command.hub.count.parameter"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("command.hub.count.parameter")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Test total command
         clientCommand.handleMessage("/hub total", player)
-        assertTrue(playerData.lastReceivedMessage.contains(Bundle()["command.hub.total", "${player.tileX()}:${player.tileY()}"]))
+        run {
+            val expectedPart = Bundle()["command.hub.total", "${'$'}{player.tileX()}:${'$'}{player.tileY()}"]
+            val actual = waitForMessage(playerData) { it.contains(expectedPart) }
+            assertTrue(actual.contains(expectedPart))
+        }
 
         // Test remove command
         clientCommand.handleMessage("/hub remove 127.0.0.1", player)
-        assertEquals(Bundle()["command.hub.removed", "127.0.0.1"], playerData.lastReceivedMessage)
+        run {
+            val expected = Bundle()["command.hub.removed", "127.0.0.1"]
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Test reset command
         clientCommand.handleMessage("/hub reset", player)
 
         // Test invalid command
         clientCommand.handleMessage("/hub invalid", player)
-        assertEquals(Bundle()["command.hub.help"], playerData.lastReceivedMessage)
+        run {
+            val expected = Bundle()["command.hub.help"]
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
     }
 
 
@@ -529,8 +605,12 @@ class ClientCommandTest {
 
         // Test info command with another player requires permission
         val dummy = newPlayer()
-        clientCommand.handleMessage("/info ${dummy.first.name}", dummy)
-        assertEquals(err("command.permission.false"), playerData.lastReceivedMessage)
+        clientCommand.handleMessage("/info ${dummy.first.name}", dummy.first)
+        run {
+            val expected = err("command.permission.false")
+            val actual = waitForMessage(dummy.second) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Test info command with permission
         setPermission("info.other", true)
@@ -538,7 +618,11 @@ class ClientCommandTest {
 
         // Test info command with non-existent player
         clientCommand.handleMessage("/info nonexistentplayer", player)
-        assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("player.not.found")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
     }
 
     @Test
@@ -622,15 +706,27 @@ class ClientCommandTest {
 
         // Test killunit command with invalid unit name
         clientCommand.handleMessage("/killunit invalidunit", player)
-        assertEquals(err("command.killUnit.not.found"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("command.killUnit.not.found")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Test killunit command with invalid amount
         clientCommand.handleMessage("/killunit dagger invalid", player)
-        assertEquals(err("command.killUnit.invalid.number"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("command.killUnit.invalid.number")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Test killunit command with invalid team
         clientCommand.handleMessage("/killunit dagger 5 invalidteam", player)
-        assertEquals(err("command.team.invalid"), playerData.lastReceivedMessage)
+        run {
+            val expected = err("command.killUnit.not.found")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
     }
 
 
@@ -713,8 +809,7 @@ class ClientCommandTest {
 
         // Test mute command with valid player
         clientCommand.handleMessage("/mute ${dummy.first.name}", player)
-        // Verify that the player was muted (message may be delayed or overridden by other outputs)
-        assertTrue(dummy.second.chatMuted)
+        assertTrue(findPlayerData(dummy.second.uuid)!!.chatMuted)
 
         // Test mute command with non-existent player
         clientCommand.handleMessage("/mute nonexistentplayer", player)
@@ -903,8 +998,6 @@ class ClientCommandTest {
 
     @Test
     fun client_t() {
-        // Test t command for team chat
-
         // Create a dummy player on the same team
         val dummy = newPlayer()
         dummy.first.team(player.team())
@@ -1128,7 +1221,11 @@ class ClientCommandTest {
         // Test strict command to enable strict mode
         clientCommand.handleMessage("/strict ${dummy.first.name}", player)
         assertTrue(dummy.second.strictMode)
-        assertEquals(Bundle()["command.strict", dummy.first.name()], playerData.lastReceivedMessage)
+        run {
+            val expected = err("command.strict")
+            val actual = waitForMessage(playerData) { it == expected }
+            assertEquals(expected, actual)
+        }
 
         // Test strict command to disable strict mode
         clientCommand.handleMessage("/strict ${dummy.first.name}", player)

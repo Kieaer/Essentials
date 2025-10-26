@@ -152,7 +152,11 @@ internal class Commands {
     fun changeName(playerData: PlayerData, arg: Array<out String>) {
         scope.launch {
             suspend fun change(data: PlayerData) {
-                val exists = PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq arg[1] }.firstOrNull()
+                val exists = suspendTransaction {
+                    PlayerTable.select(PlayerTable.name)
+                        .where { PlayerTable.name eq arg[1] }
+                        .firstOrNull()
+                }
                 if (exists != null) {
                     data.err("command.changeName.exists", arg[1])
                 } else {

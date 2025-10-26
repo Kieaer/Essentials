@@ -1,7 +1,6 @@
 import ClientCommandTest.Companion.playerData
 import PluginTest.Companion.clientCommand
 import PluginTest.Companion.loadGame
-import PluginTest.Companion.loadPlugin
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
@@ -23,7 +22,6 @@ class FeatureTest {
         if (!done) {
             System.setProperty("test", "yes")
             loadGame()
-            loadPlugin()
 
             val p = newPlayer()
             Vars.player = p.first.self()
