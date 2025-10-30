@@ -28,5 +28,4 @@ dependencyResolutionManagement {
 }
 
 include("Essential")
-include("EssentialWeb")
 include("ksp-processor")

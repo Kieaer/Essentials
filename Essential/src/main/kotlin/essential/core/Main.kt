@@ -22,6 +22,7 @@ import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
 import essential.discord.DiscordService
 import essential.protect.ProtectService
+import essential.web.WebService
 import kotlinx.coroutines.*
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -46,6 +47,7 @@ class Main : Plugin() {
         private var protectService: ProtectService? = null
         private var achievementService: AchievementService? = null
         private var discordService: DiscordService? = null
+        private var webService: WebService? = null
 
         val scope = CoroutineScope(Dispatchers.IO)
     }
@@ -130,10 +132,13 @@ class Main : Plugin() {
                 protectService = ProtectService().also { it.init() }
             }
             if (conf.plugin.enableAchievements) {
-                achievementService = essential.achievements.AchievementService().also { it.init() }
+                achievementService = AchievementService().also { it.init() }
             }
             if (conf.plugin.enableDiscord) {
-                discordService = essential.discord.DiscordService().also { it.init() }
+                discordService = DiscordService().also { it.init() }
+            }
+            if (conf.plugin.enableWeb) {
+                webService = WebService().also { it.init() }
             }
         } catch (e: Exception) {
             Log.err(bundle["event.plugin.load.failed"], e)
@@ -244,6 +249,10 @@ class Main : Plugin() {
         if (conf.plugin.enableDiscord) {
             if (discordService == null) discordService = essential.discord.DiscordService()
             discordService?.registerClientCommands(handler)
+        }
+        if (conf.plugin.enableWeb) {
+            if (webService == null) webService = WebService()
+            webService?.registerClientCommands(handler)
         }
     }
 

@@ -20,6 +20,7 @@ data class Plugin(
     val enableChat: Boolean = true,
     val enableAchievements: Boolean = true,
     val enableDiscord: Boolean = true,
+    val enableWeb: Boolean = true,
 )
 
 /** Database configuration */

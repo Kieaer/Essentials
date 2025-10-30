@@ -6,8 +6,8 @@ import arc.files.Fi
 import arc.util.Log
 import essential.common.database.data.getPlayerDataByName
 import essential.common.playTime
-import essential.web.Main.Companion.bundle
-import essential.web.Main.Companion.conf
+import essential.web.WebService.Companion.bundle
+import essential.web.WebService.Companion.conf
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
@@ -39,6 +39,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.*
 import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration.Companion.seconds
@@ -398,7 +399,7 @@ class WebServer {
 
             // Save the file
             val targetFile = File(conf.uploadPath, fileName)
-            Files.copy(tempFile.toPath(), targetFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+            Files.copy(tempFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
             tempFile.delete()
 
             // Reload maps

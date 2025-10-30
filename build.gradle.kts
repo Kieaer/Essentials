@@ -33,15 +33,10 @@ subprojects {
         exclude("mindustry/**")
         exclude("server/**")
 
-        if (project.name != "EssentialWeb") {
-            exclude("kotlin/reflect/**")
-        }
-
         from(project.configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
             exclude("META-INF/*.SF")
             exclude("META-INF/*.DSA")
             exclude("META-INF/*.RSA")
-
 
             include("org/sqlite/native/Linux/x86_64/**")
             include("org/sqlite/native/Linux/x86/**")

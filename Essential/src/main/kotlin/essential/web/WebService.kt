@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import mindustry.mod.Plugin
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 
-class Main : Plugin() {
+class WebService : Plugin() {
     companion object {
         var bundle: Bundle = Bundle()
         lateinit var conf: WebConfig
@@ -44,7 +44,7 @@ class Main : Plugin() {
                 rp.child("config").mkdirs()
                 val content = localYaml.encodeToString(WebConfig.serializer(), defaultConfig)
                 configFile.writeString(content)
-                Log.info(bundle["config.created", "config_web.yaml"])
+                Log.info(bundle["config.created", "configs/config_web.yaml"])
                 defaultConfig
             } catch (e: Exception) {
                 Log.err(bundle["event.plugin.load.failed"], e)
