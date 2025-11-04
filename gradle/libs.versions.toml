@@ -1,37 +1,44 @@
 [versions]
-kotlin = "2.2.10"
+kotlin = "2.2.21"
 kotlinxDatetime = "0.7.1-0.6.x-compat"
 kotlinxCoroutines = "1.10.2"
 kotlinxSerialization = "1.9.0"
-ksp = "2.2.10-2.0.2"
+ksp = "2.3.0"
 kotlinpoet = "2.2.0"
 
 game = "v152"
 local = "local-SNAPSHOT"
-kaml = "0.91.0"
-exposed = "1.0.0-rc-2"
+kaml = "0.102.0"
+exposed = "1.0.0-beta-5"
 hjson = "3.0.0-C11"
 jbcrypt = "0.4.3"
 mavenArtifact = "4.0.0-alpha-3"
 jackson = "2.19.0"
 jfiglet = "0.0.9"
 logback = "1.5.16"
-dataFaker = "2.4.4"
-mockito = "5.19.0"
+dataFaker = "2.5.3"
+mockito = "5.20.0"
 jts = "1.20.0"
 h2 = "2.3.232"
 sqlite = "3.50.3.0"
 r2dbcH2 = "1.0.0.RELEASE"
 lingua = "1.2.2"
 discord = "5.6.1"
-ktor = "3.2.3"
+ktor = "3.3.1"
 thymeleaf = "3.1.2.RELEASE"
 shadowJar = "9.0.0-beta12"
+
+r2dbcH2 = "1.1.0.RELEASE"
+r2dbcPool = "1.0.2.RELEASE"
+r2dbcMysql = "1.4.1"
+r2dbcMariadb = "1.3.0"
+r2dbcPostgresql = "1.1.1.RELEASE"
 
 [libraries]
 kotlinxSerializer = { module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization"}
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", version.ref = "kotlinxDatetime" }
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinxCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 
 arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "game" }
 core = { module = "com.github.Anuken.mindustryjitpack:core", version.ref = "game" }
@@ -71,25 +78,30 @@ logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 datafaker = { module = "net.datafaker:datafaker", version.ref = "dataFaker" }
 mockito = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 jts = { module = "org.locationtech.jts:jts-core", version.ref = "jts" }
-h2 = { module = "com.h2database:h2", version.ref = "h2" }
-sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
 jbcrypt = { module = "de.svenkubiak:jBCrypt", version.ref = "jbcrypt" }
 lingua = { module = "com.github.pemistahl:lingua", version.ref = "lingua" }
 discord = { module = "net.dv8tion:JDA", version.ref = "discord" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
+
 # R2DBC drivers
+r2dbc-pool = { module = "io.r2dbc:r2dbc-pool", version.ref = "r2dbcPool" }
 r2dbc-h2 = { module = "io.r2dbc:r2dbc-h2", version.ref = "r2dbcH2" }
+r2dbc-mysql = { module = "io.asyncer:r2dbc-mysql", version.ref = "r2dbcMysql"}
+r2dbc-mariadb = { module = "org.mariadb:r2dbc-mariadb", version.ref = "r2dbcMariadb"}
+r2dbc-postgresql = { module = "org.postgresql:r2dbc-postgresql", version.ref = "r2dbcPostgresql"}
+
+proguard = { module = "com.guardsquare:proguard-base", version.ref = "proguard"}
 
 [bundles]
 kotlinxEcosystem = ["kotlinxDatetime", "kotlinxCoroutines", "kotlinxSerializer"]
 exposed = ["exposed-core", "exposed-r2dbc", "exposed-kotlin-time", "exposed-json"]
 game = ["arc", "core", "server"]
 local-game = ["arc-local", "core-local", "server-local"]
-game-test = ["arc", "core", "server", "headless", "datafaker", "mockito", "jts", "h2"]
-local-game-test = ["arc-local", "core-local", "server-local", "headless-local", "datafaker", "mockito", "jts", "h2"]
-# Jackson bundle removed and replaced with Kotlin Serialization and KAML
+game-test = ["arc", "core", "server", "headless", "datafaker", "mockito", "jts"]
+local-game-test = ["arc-local", "core-local", "server-local", "headless-local", "datafaker", "mockito", "jts"]
+r2dbc-drivers = ["r2dbc-h2", "r2dbc-mariadb", "r2dbc-mysql", "r2dbc-pool", "r2dbc-postgresql"]
 ktor = ["ktor", "ktor-netty", "ktor-content", "ktor-serialize-json", "ktor-auth", "ktor-auth-jwt", "ktor-sessions", "ktor-html", "ktor-websockets"]
 
 [plugins]

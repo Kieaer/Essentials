@@ -5,9 +5,9 @@ import org.jetbrains.exposed.v1.datetime.CurrentDateTime
 import org.jetbrains.exposed.v1.datetime.datetime
 
 object PlayerTable : Table("players") {
-    val id = uinteger("id").autoIncrement().uniqueIndex()
+    val id = uinteger("id").autoIncrement()
     val name = varchar("name", 50).index()
-    val uuid = varchar("uuid", 25).uniqueIndex()
+    val uuid = varchar("uuid", 25).uniqueIndex("uuid")
     val blockPlaceCount = integer("block_place_count").default(0)
     val blockBreakCount = integer("block_break_count").default(0)
     val level = integer("level").default(0)
@@ -24,7 +24,7 @@ object PlayerTable : Table("players") {
     val permission = varchar("permission", 50).default("default")
     val accountID = varchar("account_id", 50).nullable().default(null)
     val accountPW = varchar("account_pw", 256).nullable().default(null)
-    val discordID = varchar("discord_id", 50).nullable().default(null)
+    val discordID = varchar("discord_id", 50).nullable().default(null).uniqueIndex("discord_id")
     val chatMuted = bool("chat_muted").default(false)
     val effectVisibility = bool("effect_visibility").default(false)
     val effectLevel = short("effect_level").nullable().default(null)

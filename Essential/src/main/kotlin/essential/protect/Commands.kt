@@ -23,7 +23,6 @@ import ksp.command.ClientCommand
 import mindustry.Vars
 import mindustry.net.Administration.PlayerInfo
 import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction

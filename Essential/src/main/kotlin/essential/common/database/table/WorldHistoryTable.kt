@@ -1,8 +1,9 @@
 package essential.common.database.table
 
 import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.datetime.CurrentDateTime
-import org.jetbrains.exposed.v1.datetime.datetime
+import org.jetbrains.exposed.v1.datetime.CurrentTimestamp
+import org.jetbrains.exposed.v1.datetime.timestamp
+import kotlin.time.ExperimentalTime
 
 object WorldHistoryTable : Table("world_history") {
     val id = uinteger("id").autoIncrement().uniqueIndex()
@@ -15,7 +16,8 @@ object WorldHistoryTable : Table("world_history") {
     val rotate = integer("rotate")
     val team = varchar("team", 50)
     val value = text("value").nullable()
-    val createdAt = datetime("created_at").defaultExpression(CurrentDateTime)
+    @OptIn(ExperimentalTime::class)
+    val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
 
     override val primaryKey = PrimaryKey(id)
 }

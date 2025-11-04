@@ -6,11 +6,16 @@ import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
+import essential.common.AppDispatchers
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
 import essential.common.players
 import essential.common.rootPath
 import essential.core.Main
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.UnitTypes
@@ -45,6 +50,13 @@ import kotlin.time.ExperimentalTime
 
 class PluginTest {
     companion object {
+        // Test dispatcher and scope for controlling background coroutines deterministically in tests
+        private val testDispatcher = StandardTestDispatcher()
+        private val testScope = TestScope(testDispatcher)
+
+        // Helpers to drive the coroutine scheduler from tests
+        fun runCurrentTasks() = testScope.runCurrent()
+        fun advanceUntilIdleTasks() = testScope.advanceUntilIdle()
         private lateinit var main : Main
         private val r = Random()
         lateinit var player : Playerc
@@ -60,6 +72,9 @@ class PluginTest {
 
         fun loadGame() {
             if (gameLoaded) return
+            // Use test dispatcher for all IO coroutines to make tests deterministic
+            AppDispatchers.io = testDispatcher
+
             /*if (System.getProperty("os.name").contains("Windows")) {
                 val pathToBeDeleted : Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
                 if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
@@ -271,14 +286,20 @@ class PluginTest {
             val player = createPlayer()
             Events.fire(EventType.PlayerJoin(player))
 
-            // Wait for database add time
-            var time = 0
-            while (players.find { data -> data.uuid == player.uuid() } == null) {
-                sleep(16)
-                ++time
-                if (time == 500) {
-                    fail()
-                }
+            // Drive coroutine scheduler to process PlayerJoin side-effects (e.g., DB insert)
+            runCatching {
+                advanceUntilIdleTasks()
+                runCurrentTasks()
+            }
+
+            // Fallback: wait up to 3s while pumping the scheduler
+            val ok = waitUntil(timeoutMs = 3000, intervalMs = 16) {
+                val exists = players.any { data -> data.uuid == player.uuid() }
+                if (!exists) runCatching { runCurrentTasks() }
+                exists
+            }
+            if (!ok) {
+                fail("Timed out waiting for PlayerData to be created for uuid=${player.uuid()}")
             }
             // todo 항상 데이터가 있는지 확인
             return Pair(player, players.find { data -> data.uuid == player.uuid() }!!)

@@ -88,7 +88,6 @@ class TableProcessor(
 
         // Imports
         sb.append("import org.jetbrains.exposed.v1.core.ResultRow\n")
-        sb.append("import org.jetbrains.exposed.v1.core.eq\n")
         sb.append("import org.jetbrains.exposed.v1.r2dbc.Query\n")
         sb.append("import org.jetbrains.exposed.v1.r2dbc.selectAll\n")
         sb.append("import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction\n")
@@ -100,7 +99,8 @@ class TableProcessor(
         sb.append("import kotlinx.serialization.decodeFromString\n")
         sb.append("import kotlinx.coroutines.flow.first\n")
         sb.append("import kotlinx.coroutines.flow.map\n")
-        sb.append("import kotlinx.coroutines.flow.toList\n\n")
+        sb.append("import kotlinx.coroutines.flow.toList\n")
+        sb.append("import kotlin.time.ExperimentalTime\n\n")
 
         // Helper: set of primitive/simple types that don't need JSON conversion
         fun isSimpleType(typeDecl: KSClassDeclaration?): Boolean {
@@ -129,6 +129,7 @@ class TableProcessor(
         sb.append(" * Converts a ResultRow to a $className instance.\n")
         sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
         sb.append(" */\n")
+        sb.append("@OptIn(ExperimentalTime::class)")
         sb.append("fun $tableClassName.toData(row: ResultRow): $className {\n")
 
         // Create variables for each property
@@ -201,6 +202,7 @@ class TableProcessor(
         sb.append(" * Updates a database record using a $className instance.\n")
         sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
         sb.append(" */\n")
+        sb.append("@OptIn(ExperimentalTime::class)")
         sb.append("suspend fun $className.update(): Boolean {\n")
         sb.append("    val data = this\n")
         sb.append("    return suspendTransaction {\n")

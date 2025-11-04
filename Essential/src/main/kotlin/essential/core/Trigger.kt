@@ -20,9 +20,7 @@ import essential.common.rootPath
 import essential.common.util.findPlayerData
 import essential.core.Main.Companion.conf
 import essential.core.service.effect.EffectSystem
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.EventType
@@ -44,7 +42,7 @@ import kotlin.random.Random
 
 
 class Trigger {
-    class Thread {
+    class PingThread: Thread() {
         private var ping = 0.000
 
         private fun calculateCenter(startTile: Tile, endTile: Tile): Pair<Int, Int> {
@@ -104,11 +102,13 @@ class Trigger {
             return findMedianCoordinates(startTile, endTile)
         }
 
-        suspend fun init() {
+        override fun start() {
             var isNotTargetMap: Boolean
-            while (currentCoroutineContext().isActive) {
+            while (currentThread().isInterrupted.not()) {
                 try {
-                    val pluginDataFromDatabase = getPluginData()
+                    val pluginDataFromDatabase = runBlocking {
+                        getPluginData()
+                    }
 
                     // 플러그인 데이터는 항상 존재 해야 합니다.
                     require(pluginDataFromDatabase != null) {
@@ -341,14 +341,16 @@ class Trigger {
                     }
 
                     ping = 0.000
-                    delay(3000)
+                    sleep(3000)
                 } catch (e: Exception) {
                     Log.err(e)
                     Core.app.exit()
                 }
             }
 
-            cleanupExpiredRoutingPermissions()
+            runBlocking {
+                cleanupExpiredRoutingPermissions()
+            }
         }
 
         private fun pingHostImpl(address: String, port: Int, listener: Consumer<Host>) {

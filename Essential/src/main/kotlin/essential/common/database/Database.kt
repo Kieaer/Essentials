@@ -6,350 +6,103 @@ import essential.common.bundle
 import essential.common.database.data.getPluginData
 import essential.common.database.table.*
 import essential.common.rootPath
-import io.r2dbc.spi.ConnectionFactoryOptions
-import io.r2dbc.spi.Option
-import kotlinx.coroutines.runBlocking
+import io.asyncer.r2dbc.mysql.MySqlConnectionConfiguration
+import io.asyncer.r2dbc.mysql.MySqlConnectionFactory
+import io.r2dbc.h2.H2ConnectionConfiguration
+import io.r2dbc.h2.H2ConnectionFactory
+import io.r2dbc.h2.H2ConnectionOption
+import io.r2dbc.pool.ConnectionPool
+import io.r2dbc.pool.ConnectionPoolConfiguration
+import io.r2dbc.postgresql.PostgresqlConnectionConfiguration
+import io.r2dbc.postgresql.PostgresqlConnectionFactory
+import io.r2dbc.spi.ConnectionFactory
+import io.r2dbc.spi.ValidationDepth
+import org.jetbrains.exposed.v1.core.Schema
+import org.jetbrains.exposed.v1.core.vendors.*
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import java.io.File
-import java.io.FileOutputStream
+import org.mariadb.r2dbc.MariadbConnectionConfiguration
+import org.mariadb.r2dbc.MariadbConnectionFactory
 import java.io.InputStream
-import java.net.URI
-import java.net.URL
-import java.net.URLClassLoader
-import java.nio.channels.Channels
 import java.nio.charset.StandardCharsets
-import java.sql.*
-import java.util.*
-import java.util.logging.Logger
-
-// Shim to register JDBC drivers loaded via a custom ClassLoader with DriverManager
-private class DriverShim(private val driver: Driver) : Driver {
-    override fun connect(url: String?, info: Properties?): Connection? = driver.connect(url, info)
-    override fun acceptsURL(url: String?): Boolean = driver.acceptsURL(url)
-    override fun getPropertyInfo(url: String?, info: Properties?): Array<DriverPropertyInfo> = driver.getPropertyInfo(url, info)
-    override fun getMajorVersion(): Int = driver.majorVersion
-    override fun getMinorVersion(): Int = driver.minorVersion
-    override fun jdbcCompliant(): Boolean = driver.jdbcCompliant()
-    override fun getParentLogger(): Logger = try {
-        driver.parentLogger
-    } catch (_: SQLFeatureNotSupportedException) {
-        Logger.getLogger("global")
-    }
-}
+import java.time.Duration
 
 var worldHistoryDatabase: R2dbcDatabase? = null
-
-// ClassLoaders for dynamically downloaded JDBC drivers
-private val driverClassLoaders = mutableMapOf<String, URLClassLoader>()
-
-private fun <T> withDriverClassLoader(dbType: String, block: () -> T): T {
-    val cl = driverClassLoaders[dbType]
-    if (cl == null) return block()
-    val thread = Thread.currentThread()
-    val prev = thread.contextClassLoader
-    return try {
-        thread.contextClassLoader = cl
-        block()
-    } finally {
-        thread.contextClassLoader = prev
-    }
-}
+var defaultDatabase: R2dbcDatabase? = null
 
 /** Initial database setup */
-fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
-    try {
-        rootPath.mkdirs()
-        val dataDir = rootPath.child("data")
-        if (!dataDir.exists()) dataDir.mkdirs()
-        val h2FilePath = rootPath.child("data/world_history").file().absolutePath.replace('\\', '/')
+suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
+    val h2 = h2("worldHistory")
 
-        worldHistoryDatabase = R2dbcDatabase.connect {
-            setUrl("r2dbc:h2:file:///$h2FilePath")
-            connectionFactoryOptions {
-                option(ConnectionFactoryOptions.USER, user)
-                option(ConnectionFactoryOptions.PASSWORD, pass)
-            }
+    rootPath.mkdirs()
+    val dataDir = rootPath.child("data")
+    if (!dataDir.exists()) dataDir.mkdirs()
+
+    worldHistoryDatabase = R2dbcDatabase.connect(
+        connectionFactory = h2.first,
+        databaseConfig = R2dbcDatabaseConfig {
+            defaultMaxAttempts = 1
+            defaultMinRetryDelay = 0
+            defaultMaxRetryDelay = 0
+            explicitDialect = h2.second
         }
-
-        worldHistoryDatabase?.let { db ->
-            runBlocking {
-                suspendTransaction(db) {
-                    SchemaUtils.create(WorldHistoryTable)
-                }
-            }
-        }
-    } catch (e: Throwable) {
-        Log.err("[database] Failed to initialize local H2 for world_history: @", e)
-    }
-
-    // Connect main database via R2DBC
-    R2dbcDatabase.connect {
-        setUrl(toR2dbcUrl(r2dbcUrl))
-        connectionFactoryOptions {
-            option(ConnectionFactoryOptions.USER, user)
-            option(ConnectionFactoryOptions.PASSWORD, pass)
-            option(Option.valueOf("maxSize"), 2)
-        }
-    }
-
-    runBlocking {
-        suspendTransaction {
-            SchemaUtils.create(
-                PlayerTable,
-                PluginTable,
-                PlayerBannedTable,
-                AchievementTable,
-                MapRatingTable,
-                ServerRoutingTable
-            )
-        }
-    }
-
-    upgradeDatabaseBlocking()
-}
-
-private fun extractDatabaseType(jdbcUrl: String): String {
-    val pattern = "jdbc:([^:]+):.*".toRegex()
-    val matchResult = pattern.find(jdbcUrl)
-
-    return matchResult?.groupValues?.get(1) ?: "sqlite"
-}
-
-/** Convert JDBC-style and shorthand H2/SQLite URLs to valid R2DBC URLs. */
-private fun toR2dbcUrl(url: String): String {
-    val u = url.trim()
-
-    // Already valid R2DBC H2 URLs we accept as-is
-    if (u.startsWith("r2dbc:h2:file:")) return u
-    if (u.startsWith("r2dbc:h2:mem:")) return u
-
-    // r2dbc:h2:... without file/mem -> assume file path
-    if (u.startsWith("r2dbc:h2:")) {
-        val rest = u.removePrefix("r2dbc:h2:")
-        if (rest.startsWith("file:") || rest.startsWith("mem:")) return u
-        val safe = rest.replace('\\', '/')
-        return "r2dbc:h2:file:///" + safe
-    }
-
-    // Map SQLite-like URLs to H2 file URLs
-    if (u.startsWith("r2dbc:sqlite:")) {
-        val path = u.removePrefix("r2dbc:sqlite:")
-        val safe = path.replace('\\', '/')
-        return "r2dbc:h2:file:///" + safe
-    }
-    if (u.startsWith("jdbc:sqlite:")) {
-        val path = u.removePrefix("jdbc:sqlite:")
-        val safe = path.replace('\\', '/')
-        return "r2dbc:h2:file:///" + safe
-    }
-    if (u.startsWith("sqlite:")) {
-        val path = u.removePrefix("sqlite:")
-        val safe = path.replace('\\', '/')
-        return "r2dbc:h2:file:///" + safe
-    }
-
-    // Handle JDBC/short H2 forms
-    if (u.startsWith("jdbc:h2:")) {
-        val rest = u.removePrefix("jdbc:h2:")
-        if (rest.startsWith("mem:")) return "r2dbc:h2:mem:" + rest.removePrefix("mem:")
-        if (rest.startsWith("file:")) {
-            var fileRest = rest.removePrefix("file:")
-            if (fileRest.startsWith("///")) fileRest = fileRest.removePrefix("///")
-            else if (fileRest.startsWith("//")) fileRest = fileRest.removePrefix("//")
-            val safe = fileRest.replace('\\', '/')
-            return "r2dbc:h2:file:///" + safe
-        }
-        val safe = rest.replace('\\', '/')
-        return "r2dbc:h2:file:///" + safe
-    }
-    if (u.startsWith("h2:")) {
-        val rest = u.removePrefix("h2:")
-        if (rest.startsWith("mem:")) return "r2dbc:h2:mem:" + rest.removePrefix("mem:")
-        if (rest.startsWith("file:")) {
-            var fileRest = rest.removePrefix("file:")
-            if (fileRest.startsWith("///")) fileRest = fileRest.removePrefix("///")
-            else if (fileRest.startsWith("//")) fileRest = fileRest.removePrefix("//")
-            val safe = fileRest.replace('\\', '/')
-            return "r2dbc:h2:file:///" + safe
-        }
-        val safe = rest.replace('\\', '/')
-        return "r2dbc:h2:file:///" + safe
-    }
-
-    if (u.startsWith("r2dbc:")) return u
-    if (u.startsWith("jdbc:")) return "r2dbc:" + u.removePrefix("jdbc:")
-    return u
-}
-
-/** Load the JDBC driver for the specified database type */
-private fun loadJdbcDriver(dbType: String) {
-    val driverMap = getDriverMap()
-    val driverInfo = driverMap[dbType]
-
-    if (driverInfo == null) {
-        Log.warn(bundle["database.driver.unknown", dbType])
-        return
-    }
-
-    val (_, _, driverClass) = driverInfo
-
-    // 1) Try to load with the current classpath
-    try {
-        Class.forName(driverClass)
-        Log.info(bundle["database.driver.loaded", dbType, driverClass])
-        return
-    } catch (_: ClassNotFoundException) {
-        // proceed to dynamic loading
-    }
-
-    // 2) Attempt to use a previously created URLClassLoader for this dbType
-    driverClassLoaders[dbType]?.let { cl ->
-        try {
-            Thread.currentThread().contextClassLoader = cl
-            Log.info(bundle["database.driver.loaded.after.download", dbType, driverClass])
-            return
-        } catch (_: Throwable) {
-            // we'll re-create it below
-        }
-    }
-
-    // 3) Ensure the driver jar exists (download if necessary), then create a URLClassLoader and load the class
-    val jarFile = rootPath.child("drivers").child("${dbType}-driver.jar").file()
-    if (!jarFile.exists()) {
-        try {
-            downloadSpecificDriver(dbType)
-        } catch (e: Exception) {
-            Log.err(bundle["database.download.driver.failed", dbType], e)
-        }
-    }
-
-    if (jarFile.exists()) {
-        try {
-            val cl = URLClassLoader(arrayOf(jarFile.toURI().toURL()), R2dbcDatabase::class.java.classLoader)
-            driverClassLoaders[dbType] = cl
-            Thread.currentThread().contextClassLoader = cl
-
-            // Ensure the driver class is initialized using the dedicated classloader
-            val drvClass = Class.forName(driverClass, true, cl)
-            val drvInstance = drvClass.getDeclaredConstructor().newInstance() as Driver
-
-            // Register the driver with DriverManager via a shim to avoid classloader issues
-            try {
-                DriverManager.registerDriver(DriverShim(drvInstance))
-            } catch (_: SQLException) {
-                // ignore duplicate registration or similar problems
-            }
-
-            Log.info(bundle["database.driver.loaded.after.download", dbType, driverClass])
-            return
-        } catch (e: Throwable) {
-            Log.err(bundle["database.driver.load.failed.after.download", dbType, driverClass], e)
-        }
-    } else {
-        Log.err(bundle["database.driver.load.failed", dbType, driverClass])
-    }
-}
-
-/** List of JDBC drivers */
-private fun getDriverMap(): Map<String, Triple<String, String, String>> {
-    return mapOf(
-        "mysql" to Triple("com.mysql", "mysql-connector-j", "com.mysql.cj.jdbc.Driver"),
-        "mariadb" to Triple("org.mariadb.jdbc", "mariadb-java-client", "org.mariadb.jdbc.MariaDbDriver"),
-        "postgresql" to Triple("org.postgresql", "postgresql", "org.postgresql.Driver"),
-        "h2" to Triple("com.h2database", "h2", "org.h2.Driver"),
-        "oracle" to Triple("com.oracle.ojdbc", "ojdbc", "com.oracle.jdbc.OracleDriver"),
-        "mssql" to Triple("com.microsoft.sqlserver", "mssql-jdbc", "com.microsoft.sqlserver.jdbc.SQLServerDriver"),
-        "sqlite" to Triple("org.xerial", "sqlite-jdbc", "org.sqlite.JDBC")
     )
-}
 
-/** Download JDBC driver */
-fun downloadSpecificDriver(dbType: String) {
-    val driverMap = getDriverMap()
-    val driverInfo = driverMap[dbType] ?: return
-
-    val (groupId, artifactId, _) = driverInfo
-
-    val driversDir = rootPath.child("drivers")
-    if (!driversDir.exists()) {
-        driversDir.mkdirs()
-    }
-
-    try {
-        val groupPath = groupId.replace('.', '/')
-
-        // 1) Try central.sonatype.com search API to resolve latest version
-        var latestVersion: String? = null
-        try {
-            val centralUrl = URI("https://central.sonatype.com/api/search?q=g:$groupId+AND+a:$artifactId&rows=1&wt=json").toURL()
-            Log.info("https://central.sonatype.com/api/search?q=g:$groupId+AND+a:$artifactId&rows=1&wt=json")
-            val centralConn = centralUrl.openConnection()
-            centralConn.getInputStream().bufferedReader().use { reader ->
-                val resp = reader.readText()
-                val regexes = listOf(
-                    """"latestVersion"\s*:\s*"([^"]+)"""".toRegex(),
-                    """"version"\s*:\s*"([^"]+)"""".toRegex()
-                )
-                for (re in regexes) {
-                    val m = re.find(resp)
-                    if (m != null) {
-                        latestVersion = m.groupValues[1]
-                        break
-                    }
-                }
-            }
-        } catch (_: Exception) {
-            // Ignore, we'll fallback to maven-metadata.xml
-        }
-
-        // 2) Fallback: fetch maven-metadata.xml from Maven Central repository
-        if (latestVersion == null) {
-            val metadataUrl = URI("https://repo1.maven.org/maven2/$groupPath/$artifactId/maven-metadata.xml").toURL()
-            Log.info("https://repo1.maven.org/maven2/$groupPath/$artifactId/maven-metadata.xml")
-            val metadataConn = metadataUrl.openConnection()
-            val metadata = metadataConn.getInputStream().bufferedReader().use { it.readText() }
-
-            val releaseRegex = "<release>([^<]+)</release>".toRegex()
-            val latestRegex = "<latest>([^<]+)</latest>".toRegex()
-            val versionsRegex = "<version>([^<]+)</version>".toRegex()
-
-            latestVersion = releaseRegex.find(metadata)?.groupValues?.get(1)
-                ?: latestRegex.find(metadata)?.groupValues?.get(1)
-                ?: versionsRegex.findAll(metadata).map { it.groupValues[1] }.toList().lastOrNull()
-        }
-
-        if (latestVersion != null) {
-            val filePath = "$groupPath/$artifactId/$latestVersion/$artifactId-$latestVersion.jar"
-            val downloadUrl = URI("https://repo1.maven.org/maven2/$filePath").toURL()
-            val outputFile = rootPath.child("drivers").child("$dbType-driver.jar").file()
-            downloadFile(downloadUrl, outputFile)
-
-            Log.info(bundle["database.download.driver", dbType, artifactId, latestVersion!!])
-        } else {
-            Log.warn(bundle["database.download.driver.failed", dbType])
-        }
-    } catch (e: Exception) {
-        Log.err(bundle["database.download.driver.failed", dbType], e)
-    }
-}
-
-/** Download file from URL */
-private fun downloadFile(url: URL, outputFile: File) {
-    url.openStream().use { inputStream ->
-        val readableByteChannel = Channels.newChannel(inputStream)
-        FileOutputStream(outputFile).use { fileOutputStream ->
-            fileOutputStream.channel.transferFrom(readableByteChannel, 0, Long.MAX_VALUE)
+    worldHistoryDatabase?.let { db ->
+        suspendTransaction(db = db) {
+            SchemaUtils.createSchema(Schema("public"))
+            SchemaUtils.create(WorldHistoryTable)
         }
     }
+
+
+    val selected = h2("main")
+
+    val poolConfig = ConnectionPoolConfiguration.builder(selected.first)
+        .maxSize(2)
+        .initialSize(1)
+        .maxIdleTime(Duration.ofMinutes(10))
+        .maxAcquireTime(Duration.ofSeconds(10))
+        .maxCreateConnectionTime(Duration.ofSeconds(1))
+        .maxLifeTime(Duration.ofMinutes(5))
+        .validationQuery("SELECT 1")
+        .validationDepth(ValidationDepth.REMOTE)
+        .build()
+
+    defaultDatabase = R2dbcDatabase.connect(
+        connectionFactory = ConnectionPool(poolConfig),
+        databaseConfig = R2dbcDatabaseConfig {
+            defaultMaxAttempts = 1
+            defaultMinRetryDelay = 0
+            defaultMaxRetryDelay = 0
+            explicitDialect = selected.second
+        }
+    )
+
+    TransactionManager.defaultDatabase = defaultDatabase!!
+
+    suspendTransaction {
+        SchemaUtils.create(
+            PlayerTable,
+            PluginTable,
+            PlayerBannedTable,
+            AchievementTable,
+            MapRatingTable,
+            ServerRoutingTable
+        )
+    }
+
+    upgradeDatabase()
 }
 
 /**
  * Update database schema when necessary.
  * Compares the current database version with the plugin's database version and runs SQL scripts.
  */
-suspend fun upgradeDatabase() {
+private suspend fun upgradeDatabase() {
     val pluginData = getPluginData()
     val currentVersion = pluginData?.databaseVersion ?: DATABASE_VERSION
 
@@ -357,8 +110,22 @@ suspend fun upgradeDatabase() {
         Log.info(bundle["database.upgrade.start", currentVersion, DATABASE_VERSION])
 
         for (version in (currentVersion.toUInt() + 1u).toUByte()..DATABASE_VERSION) {
-            val sqlFileName = "v${version}.sql"
-            executeSqlScript(sqlFileName)
+            val fileName = "v${version}.sql"
+            val sqlFilePath = "sql/$fileName"
+            val inputStream: InputStream? = Thread.currentThread().contextClassLoader.getResourceAsStream(sqlFilePath)
+
+            if (inputStream != null) {
+                val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+                Log.info(bundle["database.upgrade.execute", fileName])
+
+                suspendTransaction {
+                    sqlScript.split(";").filter { it.trim().isNotEmpty() }.forEach { statement ->
+                        exec(statement)
+                    }
+                }
+            } else {
+                Log.warn(bundle["database.upgrade.notFound", fileName])
+            }
         }
 
         Log.info(bundle["database.upgrade.end"])
@@ -367,51 +134,57 @@ suspend fun upgradeDatabase() {
     }
 }
 
-/**
- * Execute an SQL file from the resources/sql folder.
- * @param fileName Name of the SQL file to execute
- */
-private fun executeSqlScript(fileName: String) {
-    val sqlFilePath = "sql/$fileName"
-    val inputStream: InputStream? = Thread.currentThread().contextClassLoader.getResourceAsStream(sqlFilePath)
-
-    if (inputStream != null) {
-        val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
-        Log.info(bundle["database.upgrade.execute", fileName])
-
-        runBlocking {
-            suspendTransaction {
-                sqlScript.split(";").filter { it.trim().isNotEmpty() }.forEach { statement ->
-                    exec(statement)
-                }
-            }
-        }
-    } else {
-        Log.warn(bundle["database.upgrade.notFound", fileName])
-    }
-}
-
-/** Database upgrade (blocking) */
-fun upgradeDatabaseBlocking() {
-    runBlocking {
-        upgradeDatabase()
-    }
-}
+fun postgresql(): Pair<ConnectionFactory, DatabaseDialect> =
+    Pair(
+        PostgresqlConnectionFactory(
+            PostgresqlConnectionConfiguration.builder()
+                .host("localhost")
+                .port(5432)
+                .database("essential")
+                .username("postgres")
+                .password("postgres")
+                .schema("public")
+                .build()
+        ), PostgreSQLDialect()
+    )
 
 
-// Ensure parent directory exists for SQLite file paths in jdbc:sqlite: URLs
-private fun ensureSqliteFileParentExists(jdbcUrl: String) {
-    val prefix = "jdbc:sqlite:"
-    if (!jdbcUrl.startsWith(prefix)) return
-    val path = jdbcUrl.substring(prefix.length)
-    // Skip special paths like :memory:
-    if (path.startsWith(":")) return
-    try {
-        val file = File(path)
-        file.parentFile?.let { parent ->
-            if (!parent.exists()) parent.mkdirs()
-        }
-    } catch (_: Throwable) {
-        // Ignore; connection will fail and be logged by Hikari/Exposed if the path is invalid
-    }
-}
+fun h2(name: String): Pair<ConnectionFactory, DatabaseDialect> = Pair(
+    H2ConnectionFactory(
+        H2ConnectionConfiguration.builder()
+            .url("./config/mods/Essentials/data/$name")
+            .property(H2ConnectionOption.DB_CLOSE_DELAY, "-1")
+            .property(H2ConnectionOption.DB_CLOSE_ON_EXIT, "FALSE")
+            .property(H2ConnectionOption.MODE, "PostgreSQL")
+            .property("DATABASE_TO_LOWER", "TRUE")
+            .property("DEFAULT_NULL_ORDERING", "HIGH")
+            .build()
+    ),
+    H2Dialect()
+)
+
+fun mysql(): Pair<ConnectionFactory, DatabaseDialect> = Pair(
+    MySqlConnectionFactory.from(
+        MySqlConnectionConfiguration.builder()
+            .host("localhost")
+            .port(3306)
+            .database("essential")
+            .username("root")
+            .password("1234")
+            .build()
+    ),
+    MysqlDialect()
+)
+
+fun mariadb(): Pair<ConnectionFactory, DatabaseDialect> = Pair(
+    MariadbConnectionFactory.from(
+        MariadbConnectionConfiguration.builder()
+            .host("localhost")
+            .port(3306)
+            .database("essential")
+            .username("root")
+            .password("1234")
+            .build()
+    ),
+    MariaDBDialect()
+)

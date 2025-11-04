@@ -3,18 +3,16 @@ package essential.common.service
 import arc.Events
 import essential.common.event.CustomEvents
 import essential.common.rootPath
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.isActive
 import java.nio.file.*
 
-suspend fun fileWatchService() {
+fun fileWatchService() {
     val watchService: WatchService = FileSystems.getDefault().newWatchService()
 
     Paths.get(rootPath.child("config/").absolutePath())
         .register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
 
     try {
-        while (currentCoroutineContext().isActive) {
+        while (Thread.currentThread().isInterrupted.not()) {
             val watchKey = watchService.take()
             for (event in watchKey.pollEvents()) {
                 val kind = event.kind()
@@ -26,6 +24,8 @@ suspend fun fileWatchService() {
                 break
             }
         }
+    } catch (e: InterruptedException) {
+        Thread.currentThread().interrupt()
     } finally {
         watchService.close()
     }

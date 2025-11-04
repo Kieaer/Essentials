@@ -1,4 +1,3 @@
-import ClientCommandTest.Companion.playerData
 import PluginTest.Companion.clientCommand
 import PluginTest.Companion.loadGame
 import PluginTest.Companion.newPlayer
@@ -7,7 +6,6 @@ import PluginTest.Companion.setPermission
 import essential.common.players
 import mindustry.Vars
 import mindustry.game.Team
-import mindustry.gen.Groups
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 
@@ -26,7 +24,6 @@ class FeatureTest {
             val p = newPlayer()
             Vars.player = p.first.self()
             player = p.first.self()
-            playerData = p.second
 
             done = true
         }
@@ -54,13 +51,10 @@ class FeatureTest {
 
         clientCommand.handleMessage("/status", player)
 
-        println("core 개수: " + Vars.state.teams.active.size)
-
         val s = StringBuilder()
         for (team in Vars.state.teams.active) {
             s.append(team.team.name + " ")
         }
-        println("활성화된 팀 : $s")
 
         var data = mutableListOf<Pair<Team, Double>>()
         players.forEach {
@@ -79,8 +73,5 @@ class FeatureTest {
             val rate = targetTeam.map { it.second }
             return rate.average()
         }
-
-        println("플레이어 인원 : " + Groups.player.size())
-        println("플레이어 비율 : $players")
     }
 }

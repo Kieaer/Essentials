@@ -60,7 +60,6 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
@@ -625,8 +624,8 @@ internal class Commands {
             )
 
             val mainMenu = Menus.registerMenu { p, select ->
-                when {
-                    select == 1 && !isBanned -> {
+                when (select) {
+                    1 if !isBanned -> {
                         val innerMenu = Menus.registerMenu { _, s ->
                             val time: Int = when (s) {
                                 0 -> 10
@@ -716,8 +715,7 @@ internal class Commands {
                             banMenus
                         )
                     }
-
-                    select == 1 -> {
+                    1 -> {
                         val unbanConfirmMenu = Menus.registerMenu { _, i ->
                             if (i == 0) {
                                 targetData!!.banExpireDate = null
@@ -735,8 +733,7 @@ internal class Commands {
                             arrayOf(arrayOf(bundle["info.button.unban"], bundle[cancel]))
                         )
                     }
-
-                    select == 2 -> {
+                    2 -> {
                         if (targetData != null) {
                             targetData!!.player.kick(Packets.KickReason.kick)
                         }
@@ -802,13 +799,7 @@ internal class Commands {
                 }
             }
         } else {
-            Call.menu(
-                playerData.player.con(),
-                -1,
-                bundle["info.title"],
-                show(playerData) + lineBreak,
-                arrayOf(arrayOf(bundle[close]))
-            )
+            playerData.err("command.permission.false")
         }
     }
 
@@ -1189,7 +1180,7 @@ internal class Commands {
                         }
 
                         playerData.status["router"] = "true"
-                        while (!playerData.player.unit().dead) {
+                        while (playerData.player.unit() != null && !playerData.player.unit().dead()) {
                             loop.forEach {
                                 change(it)
                             }
@@ -1661,7 +1652,7 @@ internal class Commands {
                         pluginData.hubMapName = Vars.state.map.name()
                         playerData.send("command.hub.mode.on")
                     } else if (pluginData.hubMapName != Vars.state.map.name()) {
-                        playerData.send("command.hub.mode.exists")
+                        playerData.err("command.hub.mode.exists")
                     } else {
                         pluginData.hubMapName = null
                         playerData.send("command.hub.mode.off")

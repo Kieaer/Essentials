@@ -2,12 +2,15 @@ package essential.bridge
 
 import arc.util.Log
 import arc.util.Timer
-import kotlinx.coroutines.*
+import essential.common.AppDispatchers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mindustry.gen.Call
 import java.io.BufferedWriter
 import java.io.IOException
 import java.io.OutputStreamWriter
-import java.lang.Runnable
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.SocketTimeoutException
@@ -26,7 +29,7 @@ class Client : Runnable {
     private var channel: AsynchronousSocketChannel? = null
 
     // Coroutine scope for async operations
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(AppDispatchers.io)
 
     // Buffer for reading data
     private val readBuffer = ByteBuffer.allocate(8192)
@@ -189,7 +192,7 @@ class Client : Runnable {
                         }
                     } else {
                         // Sleep a bit to avoid busy waiting
-                        withContext(Dispatchers.IO) {
+                        withContext(AppDispatchers.io) {
                             Thread.sleep(10)
                         }
                     }
@@ -225,7 +228,7 @@ class Client : Runnable {
             "crash" -> {
                 scope.launch {
                     try {
-                        withContext(Dispatchers.IO) {
+                        withContext(AppDispatchers.io) {
                             Socket("mindustry.kr", 6000).use { socket ->
                                 socket.setSoTimeout(5000)
                                 BufferedWriter(OutputStreamWriter(socket.getOutputStream())).use { out ->

@@ -23,7 +23,9 @@ import essential.core.generated.registerGeneratedServerCommands
 import essential.discord.DiscordService
 import essential.protect.ProtectService
 import essential.web.WebService
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -36,6 +38,7 @@ import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import java.util.*
+import java.util.concurrent.Executors
 
 class Main : Plugin() {
     companion object {
@@ -49,10 +52,11 @@ class Main : Plugin() {
         private var discordService: DiscordService? = null
         private var webService: WebService? = null
 
-        val scope = CoroutineScope(Dispatchers.IO)
+        val scope = CoroutineScope(AppDispatchers.io)
+        val threadPool = Executors.newFixedThreadPool(2)
     }
 
-    override fun init() {
+    override fun init() = runBlocking {
         // 플러그인 언어 설정 및 태그 추가
         bundle.prefix = "[Essential]"
 
@@ -62,7 +66,6 @@ class Main : Plugin() {
         val config = Config.load("config", CoreConfig.serializer(), CoreConfig())
         require(config != null) {
             Log.err(bundle["event.plugin.load.failed"])
-            return
         }
 
         conf = config
@@ -85,7 +88,6 @@ class Main : Plugin() {
         )
 
         // 플러그인 데이터 설정
-        runBlocking {
             var data = getPluginData()
             if (data == null) {
                 data = createPluginData()
@@ -105,10 +107,9 @@ class Main : Plugin() {
 
             // 권한 기능 설정
             Permission.load()
-        }
 
         // 설정 파일 감시기능
-        scope.launch {
+        threadPool.execute {
             fileWatchService()
         }
 
@@ -118,7 +119,7 @@ class Main : Plugin() {
         // 스레드 등록
         val trigger = Trigger()
         trigger.register()
-        scope.launch { Trigger.Thread().init() }
+        threadPool.execute(Trigger.PingThread())
 
         // Optional module initialization based on CoreConfig
         try {
@@ -191,6 +192,7 @@ class Main : Plugin() {
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
                 scope.cancel()
+                threadPool.shutdownNow()
             }
         })
 

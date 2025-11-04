@@ -31,7 +31,6 @@ import mindustry.net.NetworkIO
 import mindustry.net.Packets
 import mindustry.world.Tile
 import mindustry.world.blocks.power.PowerGraph
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import java.net.InetAddress
@@ -214,13 +213,6 @@ fun blockDestroy(e: EventType.BlockDestroyEvent) {
 fun playerDataLoaded(e: CustomEvents.PlayerDataLoadEnd) {
     if (conf.rules.strict) {
         Groups.player.find { p -> p.uuid() == e.playerData.uuid }.name(e.playerData.name)
-    }
-}
-
-@Event
-fun serverLoaded(e: EventType.ServerLoadEvent) {
-    if (Vars.mods.getMod("essential-discord") == null) {
-        Log.warn(Bundle()["command.reg.plugin-enough"])
     }
 }
 

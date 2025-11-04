@@ -43,7 +43,6 @@ import mindustry.net.Administration
 import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import java.io.IOException
@@ -506,7 +505,7 @@ internal fun serverLoad(event: ServerLoadEvent) {
         }
     })
 
-    if (Vars.mods.getMod("essential-protect") == null) {
+    if (!conf.plugin.enableProtect) {
         Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
             it.player.admin(false)
 
@@ -881,7 +880,7 @@ internal fun playerLeave(event: PlayerLeave) {
                 Events.fire(GameOverEvent(data.player.team()))
             }
         }
-        players.removeAll { e -> e.uuid == data.uuid }
+        players.remove(data)
     }
 }
 
@@ -1086,6 +1085,7 @@ internal fun configFileModified(event: CustomEvents.ConfigFileModified) {
 @Event
 internal fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     val playerData = event.playerData
+    playerData.player = Groups.player.find { p -> p.uuid() == playerData.uuid }
     val player = playerData.player
     val message = StringBuilder()
 

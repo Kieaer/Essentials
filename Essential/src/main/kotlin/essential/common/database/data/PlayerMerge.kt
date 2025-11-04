@@ -5,7 +5,7 @@ import essential.common.systemTimezone
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction

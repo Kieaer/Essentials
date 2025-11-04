@@ -11,7 +11,6 @@ import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -125,20 +124,16 @@ data class PlayerData(
 
 /** Create player data */
 suspend fun createPlayerData(player: Playerc): PlayerData {
-    return createPlayerData(player.name(), player.uuid())
-}
-
-suspend fun createPlayerData(name: String, uuid: String): PlayerData {
     // Fast-path: if already exists, return it
     suspendTransaction {
-        val exists = PlayerTable.select(PlayerTable.id)
-            .where { PlayerTable.uuid eq uuid }
+        val notExists = PlayerTable.select(PlayerTable.id)
+            .where { PlayerTable.uuid eq player.uuid() }
             .empty()
-        if (!exists) return@suspendTransaction
+        if (!notExists) return@suspendTransaction
         try {
             PlayerTable.insert {
-                it[PlayerTable.name] = name
-                it[PlayerTable.uuid] = uuid
+                it[PlayerTable.name] = player.name()
+                it[PlayerTable.uuid] = player.uuid()
             }
         } catch (_: Throwable) {
             // Another concurrent inserter may have created the row; ignore and proceed to fetch
@@ -147,11 +142,12 @@ suspend fun createPlayerData(name: String, uuid: String): PlayerData {
 
     val entity = suspendTransaction {
         PlayerTable.select(PlayerTable.columns)
-            .where { PlayerTable.uuid eq uuid }
+            .where { PlayerTable.uuid eq player.uuid() }
             .map { row -> row.toPlayerData() }
             .first()
     }
 
+    entity.player = player
     return entity
 }
 

@@ -3,17 +3,17 @@ package essential.common.database.data
 import essential.common.database.table.WorldHistoryTable
 import essential.common.database.worldHistoryDatabase
 import kotlinx.coroutines.flow.single
-import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.deleteAll
 import org.jetbrains.exposed.v1.r2dbc.insertReturning
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 @GenerateCode
-data class WorldHistoryData(
+data class WorldHistoryData @OptIn(ExperimentalTime::class) constructor(
     val id: UInt,
     val time: Long,
     val player: String,
@@ -24,7 +24,7 @@ data class WorldHistoryData(
     val rotate: Int,
     val team: String,
     val value: String?,
-    val createdAt: LocalDateTime
+    val createdAt: Instant
 )
 
 /**
