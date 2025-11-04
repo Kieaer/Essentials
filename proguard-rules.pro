@@ -1,329 +1,105 @@
-# Disable obfuscation (no random package names)
+# Essentials ProGuard configuration
+# Entry point: essential.core.Main (Mindustry Plugin)
+# Safe defaults: we disable obfuscation to avoid breaking reflection-heavy frameworks.
+# You can enable obfuscation later by removing -dontobfuscate and relying on the keep rules below.
+
+# 1) Global settings
+# Ignore all warnings to unblock optimization and preverification.
+-ignorewarnings
+# Ensure ProGuard analyzes all library classes fully (JDK modules, etc.)
+-dontskipnonpubliclibraryclasses
+-dontskipnonpubliclibraryclassmembers
+# Keep obfuscation disabled (safer for reflection-heavy Mindustry/Kotlin)
 -dontobfuscate
+# Enable shrinking and optimization/preverification (default when not disabled).
 
-# Keep the main entry points
--keep class essential.**.*Main { *; }
--keep class essential.**.Main { *; }
-
-# Keep all classes in the essential package
--keep class essential.** { *; }
-
-# Keep essential.web classes specifically
--keep class essential.web.** { *; }
--keepclassmembers class essential.web.** {
-    <fields>;
-    <methods>;
-}
--keep class essential.web.Main { *; }
--keep class essential.web.WebServer { *; }
--keepclassmembers class essential.web.Main {
-    <fields>;
-    <methods>;
-    public void init();
-}
--keepclassmembers class essential.web.WebServer {
-    <fields>;
-    <methods>;
-    public void start();
-}
-
-# Keep Kotlin metadata
--keep class kotlin.Metadata { *; }
-
-# Keep Kotlin reflection classes
--keep class kotlin.jvm.internal.** { *; }
--keep class kotlin.jvm.** { *; }
+# Keep important class and parameter/annotation metadata used by Kotlin, serialization, and reflection.
+-keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,Exceptions,SourceFile,LineNumberTable,Record
+# Keep Kotlin metadata classes broadly without naming a specific class (avoids config-time validation issues)
 -keep class kotlin.** { *; }
--dontwarn kotlin.**
 
-# Keep Java reflection and enum classes
--keep class java.lang.reflect.** { *; }
--keep class java.util.EnumMap { *; }
--keep class java.util.EnumSet { *; }
--keep class java.lang.Enum { *; }
--keepclassmembers class * extends java.lang.Enum {
-    <fields>;
-    public static **[] values();
-    public static ** valueOf(java.lang.String);
+# Provide Java runtime modules to ProGuard for analysis (required on JDK 9+)
+# Using <java.home> makes this portable across machines and CI agents
+-libraryjars '<java.home>/jmods/java.base.jmod'(!**.jar;!module-info.class)
+-libraryjars '<java.home>/jmods/java.logging.jmod'(!**.jar;!module-info.class)
+-libraryjars '<java.home>/jmods/java.xml.jmod'(!**.jar;!module-info.class)
+-libraryjars '<java.home>/jmods/java.sql.jmod'(!**.jar;!module-info.class)
+-libraryjars '<java.home>/jmods/java.desktop.jmod'(!**.jar;!module-info.class)
+-libraryjars '<java.home>/jmods/jdk.unsupported.jmod'(!**.jar;!module-info.class)
+-libraryjars '<java.home>/jmods/java.management.jmod'(!**.jar;!module-info.class)
+-libraryjars '<java.home>/jmods/java.naming.jmod'(!**.jar;!module-info.class)
+-libraryjars '<java.home>/jmods/jdk.jfr.jmod'(!**.jar;!module-info.class)
+
+# 2) Mindustry plugin entry points
+# Keep Essentials core package and any classes that extend Mindustry's Plugin (wildcard to avoid config-time validation)
+-keep class essential.core.** { *; }
+-keep class ** extends mindustry.mod.** { *; }
+
+# 2b) Stabilize optimizer: don’t optimize our own code (but still allow shrinking)
+# This avoids rare evaluator crashes in methods like essential.core.Main#init when
+# host-provided supertypes (e.g., mindustry.mod.Plugin) are only provided as library jars.
+-keep,allowshrinking class essential.** { *; }
+
+# Optionally, avoid optimizing known reflection-heavy third-party libs while still shrinking them.
+-keep,allowshrinking class com.fasterxml.jackson.** { *; }
+-keep,allowshrinking class com.auth0.jwk.** { *; }
+-keep,allowshrinking class it.krzeminski.snakeyaml.** { *; }
+-keep,allowshrinking class com.charleskorn.kaml.** { *; }
+-keep,allowshrinking class org.apache.logging.log4j.** { *; }
+-keep,allowshrinking class kotlinx.datetime.** { *; }
+
+# Mindustry/Arc live on the host, not inside our shaded jar; suppress missing-type warnings
+-dontwarn mindustry.**
+-dontwarn arc.**
+
+# 3) Kotlinx Serialization
+# Keep generated serializers
+-keep class **$$serializer { *; }
+# Serializer discovery helpers (Companion.serializer() and top-level serializer(...) functions)
+-keepclassmembers class ** {
+    public static ** Companion;
+    public static ** serializer(...);
 }
-
-# Keep enum fields and methods
--keepclassmembers enum * {
-    public static **[] values();
-    public static ** valueOf(java.lang.String);
-    **[] $VALUES;
-    public *;
-}
-
-# Keep serialization-related classes
--keepattributes *Annotation*
--keepattributes Signature
--keepattributes Exceptions
-
-# Keep kotlinx.serialization
 -keep class kotlinx.serialization.** { *; }
--keepclassmembers class kotlinx.serialization.** { *; }
+-dontwarn kotlinx.serialization.**
 
-# Keep Arc and Mindustry classes
--keep class arc.** { *; }
--keep class mindustry.** { *; }
+# 4) Coroutines
+-keep class kotlinx.coroutines.** { *; }
+-dontwarn kotlinx.coroutines.**
 
-# Keep JDA (Discord) classes if used
--keep class net.dv8tion.jda.** { *; }
+# 5) Generated code by KSP (command/event registrations, etc.)
+-keep class essential.**.generated.** { *; }
 
-# Keep Exposed (database) classes
--keep class org.jetbrains.exposed.** { *; }
--keep class org.jetbrains.exposed.exceptions.** { *; }
--keep class org.jetbrains.exposed.sql.** { *; }
--keep class org.jetbrains.exposed.sql.transactions.** { *; }
-
-# Specifically keep the problematic class and method
--keep class org.jetbrains.exposed.sql.transactions.ThreadLocalTransactionManagerKt {
-    public static void handleSQLException(java.sql.SQLException, org.jetbrains.exposed.sql.Transaction, int);
-}
-
-# Don't optimize the problematic method to avoid stack manipulation issues
--keepclassmembers,allowshrinking class org.jetbrains.exposed.sql.transactions.ThreadLocalTransactionManagerKt {
-    public static void handleSQLException(java.sql.SQLException, org.jetbrains.exposed.sql.Transaction, int);
-}
-
-# Disable optimization for this class
--optimizations !class/merging/*, !code/allocation/variable
-
-# Completely disable optimization for the specific method
--keep,allowshrinking class org.jetbrains.exposed.sql.transactions.ThreadLocalTransactionManagerKt {
-    public static void handleSQLException(java.sql.SQLException, org.jetbrains.exposed.sql.Transaction, int);
-}
--dontoptimize
-
-# Preserve the stack for this method
--keepclasseswithmembers,includedescriptorclasses class org.jetbrains.exposed.sql.transactions.ThreadLocalTransactionManagerKt {
-    public static void handleSQLException(java.sql.SQLException, org.jetbrains.exposed.sql.Transaction, int);
-}
-
-# Keep SQL-related classes
--keep class java.sql.** { *; }
--dontwarn java.sql.**
--keep class javax.sql.** { *; }
--dontwarn javax.sql.**
-
-# Keep java.util collections
--keep class java.util.** { *; }
--dontwarn java.util.**
-
-# Keep Ktor classes if used
+# 6) Web server stack (Ktor Netty) and JSON
 -keep class io.ktor.** { *; }
-
-# Keep Netty classes used by Ktor
+-dontwarn io.ktor.**
 -keep class io.netty.** { *; }
 -dontwarn io.netty.**
 
-# Keep specific Netty classes mentioned in the stack trace
--keep class io.netty.util.internal.PlatformDependent { *; }
--keep class io.netty.util.internal.PlatformDependent$* { *; }
--keep class io.netty.util.internal.UnsafeAccess { *; }
--keep class io.netty.util.internal.UnsafeAccess$* { *; }
--keep class io.netty.util.concurrent.** { *; }
--keep class io.netty.channel.** { *; }
--keep class io.netty.channel.nio.** { *; }
--keep class io.netty.channel.socket.** { *; }
+# 6b) Reactor / Reactor Netty metrics: avoid optimizing classes that depend on optional Micrometer
+# Reactor Netty has handlers that reference io.micrometer.observation.* when metrics are enabled.
+# On the analysis classpath these may be absent, which can crash optimizer with IncompleteClassHierarchyException.
+# Keep them from being optimized (but still allow shrink if unused), and suppress warnings about optional types.
+-keep,allowshrinking class reactor.netty.** { *; }
+-keep,allowshrinking class io.projectreactor.** { *; }
+-dontwarn reactor.netty.**
+-dontwarn io.projectreactor.**
+-dontwarn io.micrometer.**
 
-# Keep Netty internal classes and their fields
--keep class io.netty.util.internal.** { *; }
--keepclassmembers class io.netty.util.internal.** {
-    <fields>;
-    <methods>;
-}
+# 7) Database stack (Exposed R2DBC)
+-keep class org.jetbrains.exposed.** { *; }
+-dontwarn org.jetbrains.exposed.**
+-dontwarn io.r2dbc.**
 
-# Keep Netty NIO event loop classes
--keep class io.netty.channel.nio.NioEventLoop { *; }
--keep class io.netty.channel.nio.NioEventLoopGroup { *; }
--keepclassmembers class io.netty.channel.nio.NioEventLoop {
-    <fields>;
-    <methods>;
-}
--keepclassmembers class io.netty.channel.nio.NioEventLoopGroup {
-    <fields>;
-    <methods>;
-}
+# Keep R2DBC providers to ensure ServiceLoader discovery works
+-keep class io.r2dbc.** { *; }
+-keep class org.postgresql.** { *; }
 
-# Keep Netty MultithreadEventExecutorGroup and related classes
--keep class io.netty.util.concurrent.MultithreadEventExecutorGroup { *; }
--keep class io.netty.util.concurrent.MultithreadEventLoopGroup { *; }
--keep class io.netty.channel.MultithreadEventLoopGroup { *; }
--keep class io.netty.channel.AbstractEventLoopGroup { *; }
--keepclassmembers class io.netty.util.concurrent.MultithreadEventExecutorGroup {
-    <fields>;
-    <methods>;
-}
+# 8) (Optional) Resource handling
+# ProGuard doesn't remove or rename resources unless configured with -adaptresourcefilenames/-adaptresourcefilecontents.
+# Since we don't use those options here, no explicit resource keep rules are required.
 
-# Keep specific Netty queue classes
--keep class io.netty.util.internal.shaded.org.jctools.queues.** { *; }
--keep class io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueue { *; }
--keepclassmembers class io.netty.util.internal.shaded.org.jctools.queues.BaseMpscLinkedArrayQueue {
-    <fields>;
-    <methods>;
-}
-
-# Keep JCTools classes (might be used directly or shaded by Netty)
--keep class org.jctools.** { *; }
--dontwarn org.jctools.**
--keep class org.jctools.queues.** { *; }
--keep class org.jctools.queues.BaseMpscLinkedArrayQueue { *; }
--keepclassmembers class org.jctools.queues.BaseMpscLinkedArrayQueue {
-    <fields>;
-    <methods>;
-}
-
-# Keep specific fields in queue classes
--keepclassmembers class ** {
-    ** producerIndex;
-    ** consumerIndex;
-    ** producerLimit;
-    ** consumerLimit;
-}
-
-# Keep field names accessed via reflection
--keepclassmembers class ** {
-    long producerIndex;
-    long consumerIndex;
-    java.lang.Object[] elements;
-}
-
-# Keep sun.misc.Unsafe and related classes
--keep class sun.misc.Unsafe { *; }
--dontwarn sun.misc.Unsafe
--keep class sun.misc.** { *; }
--dontwarn sun.misc.**
-
-# Keep JDK internal classes that might be used by Netty
--keep class java.nio.** { *; }
--dontwarn java.nio.**
--keep class sun.nio.** { *; }
--dontwarn sun.nio.**
-
-# Keep Ktor Netty server classes
--keep class io.ktor.server.netty.** { *; }
--keep class io.ktor.server.netty.NettyApplicationEngine { *; }
--keep class io.ktor.server.netty.EventLoopGroupProxy { *; }
--keep class io.ktor.server.netty.EventLoopGroupProxy$Companion { *; }
--keepclassmembers class io.ktor.server.netty.** {
-    <fields>;
-    <methods>;
-}
--keepclassmembers class io.ktor.server.netty.NettyApplicationEngine {
-    <fields>;
-    <methods>;
-}
--keepclassmembers class io.ktor.server.netty.EventLoopGroupProxy {
-    <fields>;
-    <methods>;
-}
--keepclassmembers class io.ktor.server.netty.EventLoopGroupProxy$Companion {
-    <fields>;
-    <methods>;
-}
-
-# Keep Ktor server engine classes
--keep class io.ktor.server.engine.** { *; }
--keepclassmembers class io.ktor.server.engine.** {
-    <fields>;
-    <methods>;
-}
--keep class io.ktor.server.engine.EmbeddedServer { *; }
--keepclassmembers class io.ktor.server.engine.EmbeddedServer {
-    <fields>;
-    <methods>;
-}
-
-# Specifically keep EmbeddedServer inner classes
--keep class io.ktor.server.engine.EmbeddedServer$* { *; }
--keepclassmembers class io.ktor.server.engine.EmbeddedServer$* {
-    <fields>;
-    <methods>;
-}
-
-# Specifically keep the applicationInstance inner class
--keep class io.ktor.server.engine.EmbeddedServer$applicationInstance$1 { *; }
--keepclassmembers class io.ktor.server.engine.EmbeddedServer$applicationInstance$1 {
-    <fields>;
-    <methods>;
-}
-
-# Keep reflection data
--keepattributes InnerClasses
--keepattributes EnclosingMethod
-
-# Keep source file names for better debugging
--keepattributes SourceFile,LineNumberTable
-
-# Specify that we want to create a single jar
--dontusemixedcaseclassnames
--dontskipnonpubliclibraryclasses
--verbose
-
-# Ignore warnings about missing classes
--dontwarn **
--ignorewarnings
-
-# Keep classes accessed via reflection
--keepclassmembers class * {
-    ** valueOf(java.lang.String);
-    ** values();
-}
-
-# Keep any classes that might be accessed via reflection
--keepclassmembers class * {
-    public <init>(java.lang.reflect.InvocationHandler);
-}
-
-# Keep Kotlin classes that might be accessed via reflection
--keepclassmembers class kotlin.** {
-    <fields>;
-    <methods>;
-}
-
-# Keep classes with @Serializable annotation
--keepclassmembers class * {
-    @kotlinx.serialization.Serializable <methods>;
-}
-
-# Keep classes with constructors that might be used by serialization
--keepclassmembers class * {
-    public <init>(...);
-}
-
-# Keep JDK internal classes that might be accessed
--keep class jdk.internal.** { *; }
--dontwarn jdk.internal.**
-
-# Keep Rhino classes
--keep class rhino.** { *; }
--dontwarn rhino.**
-
-# Keep Kotlin Serialization classes
--keep class kotlinx.serialization.** { *; }
--keepclassmembers class kotlinx.serialization.** { *; }
--keep class kotlinx.serialization.json.** { *; }
--keepclassmembers class kotlinx.serialization.json.** { *; }
-
-# Keep KAML classes
--keep class com.charleskorn.kaml.** { *; }
--keepclassmembers class com.charleskorn.kaml.** { *; }
-
-# Keep Permission classes
--keep class essential.permission.Permission { *; }
--keep class essential.permission.Permission$PermissionData { *; }
--keep class essential.permission.Permission$RoleConfig { *; }
--keepclassmembers class essential.permission.Permission {
-    <fields>;
-    <methods>;
-}
--keepclassmembers class essential.permission.Permission$PermissionData {
-    <fields>;
-    <methods>;
-}
--keepclassmembers class essential.permission.Permission$RoleConfig {
-    <fields>;
-    <methods>;
-}
+# 9) If you enable obfuscation later, you may also want to preserve names in these packages to be extra safe:
+# -keepnames class essential.** { *; }
+# -keepnames class io.ktor.** { *; }
+# -keepnames class org.jetbrains.exposed.** { *; }
