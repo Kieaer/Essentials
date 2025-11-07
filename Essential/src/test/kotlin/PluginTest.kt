@@ -6,20 +6,17 @@ import arc.graphics.Color
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
-import essential.common.AppDispatchers
+import arc.util.Time
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
 import essential.common.players
 import essential.common.rootPath
 import essential.core.Main
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runCurrent
 import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.UnitTypes
 import mindustry.core.*
+import mindustry.ctype.ContentType
 import mindustry.game.EventType
 import mindustry.game.EventType.ServerLoadEvent
 import mindustry.game.Team
@@ -30,6 +27,7 @@ import mindustry.maps.Map
 import mindustry.mod.Mod
 import mindustry.net.Net
 import mindustry.net.NetConnection
+import mindustry.world.Block
 import mindustry.world.Tile
 import net.datafaker.Faker
 import org.mockito.ArgumentMatchers.any
@@ -41,22 +39,12 @@ import java.lang.Thread.sleep
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
-import kotlin.test.AfterTest
-import kotlin.test.Test
-import kotlin.test.assertNotNull
-import kotlin.test.fail
+import kotlin.test.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class PluginTest {
     companion object {
-        // Test dispatcher and scope for controlling background coroutines deterministically in tests
-        private val testDispatcher = StandardTestDispatcher()
-        private val testScope = TestScope(testDispatcher)
-
-        // Helpers to drive the coroutine scheduler from tests
-        fun runCurrentTasks() = testScope.runCurrent()
-        fun advanceUntilIdleTasks() = testScope.advanceUntilIdle()
         private lateinit var main : Main
         private val r = Random()
         lateinit var player : Playerc
@@ -70,11 +58,10 @@ class PluginTest {
         @Mock
         lateinit var mockApplication : Application
 
+        var testMap : Map? = null
+
         fun loadGame() {
             if (gameLoaded) return
-            // Use test dispatcher for all IO coroutines to make tests deterministic
-            AppDispatchers.io = testDispatcher
-
             /*if (System.getProperty("os.name").contains("Windows")) {
                 val pathToBeDeleted : Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
                 if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
@@ -120,11 +107,11 @@ class PluginTest {
                 }
             }
 
-            var testMap : Map? = null
             try {
                 val begins = booleanArrayOf(false)
                 val exceptionThrown = arrayOf<Throwable?>(null)
                 Log.useColors = false
+
                 val core : ApplicationCore = object: ApplicationCore() {
                     override fun setup() {
                         headless = true
@@ -139,10 +126,14 @@ class PluginTest {
                         content.createBaseContent()
                         mods.loadScripts()
                         content.createModContent()
+
                         add(Logic().also { logic = it })
                         add(NetServer().also { netServer = it })
+
                         content.init()
+
                         mods.eachClass(Mod::init)
+
                         if (mods.hasContentErrors()) {
                             for (mod in mods.list()) {
                                 if (mod.hasContentErrors()) {
@@ -159,7 +150,8 @@ class PluginTest {
                         loadPlugin()
 
                         begins[0] = true
-                        testMap = maps.loadInternalMap("groundZero")
+                        testMap = maps.loadInternalMap("maze")
+                        Thread.currentThread().interrupt()
                     }
                 }
                 HeadlessApplication(core) { throwable: Throwable? -> exceptionThrown[0] = throwable }
@@ -170,15 +162,16 @@ class PluginTest {
                     sleep(10)
                 }
 
-                Groups.init()
-                // wait for map load
-                while (testMap == null) {
-                    sleep(10)
-                }
-                world.loadMap(testMap)
-                state.set(GameState.State.playing)
+                val block: Block? = content.getByName(ContentType.block, "build2")
+                assertEquals("build2", block?.name, "2x2 construct block doesn't exist?")
 
-                Version.build = 145
+                // Reset status
+                Time.setDeltaProvider { 1f }
+                logic.reset()
+                state.set(GameState.State.menu)
+
+                // Avoid load errors
+                Version.build = 146
                 Version.revision = 1
 
                 path.child("locales").delete()
@@ -188,6 +181,12 @@ class PluginTest {
 
                 netClient = NetClient()
                 Core.camera = Camera()
+
+                // Load map
+                world.loadMap(testMap)
+                state.set(GameState.State.playing)
+                state.rules.limitMapArea = false
+
                 gameLoaded = true
             } catch (r : Throwable) {
                 fail(r.stackTraceToString())
@@ -212,6 +211,23 @@ class PluginTest {
             Core.app.exit()
             gameLoaded = false
             pluginLoaded = false
+        }
+
+        fun updateBlocks(times: Int) {
+            for (tile in world.tiles) {
+                if (tile.build != null && tile.isCenter) {
+                    tile.build.updateProximity()
+                }
+            }
+
+            for (i in 0..<times) {
+                Time.update()
+                for (tile in world.tiles) {
+                    if (tile.build != null && tile.isCenter) {
+                        tile.build.update()
+                    }
+                }
+            }
         }
 
         fun runPost() {
@@ -286,20 +302,14 @@ class PluginTest {
             val player = createPlayer()
             Events.fire(EventType.PlayerJoin(player))
 
-            // Drive coroutine scheduler to process PlayerJoin side-effects (e.g., DB insert)
-            runCatching {
-                advanceUntilIdleTasks()
-                runCurrentTasks()
-            }
-
-            // Fallback: wait up to 3s while pumping the scheduler
-            val ok = waitUntil(timeoutMs = 3000, intervalMs = 16) {
-                val exists = players.any { data -> data.uuid == player.uuid() }
-                if (!exists) runCatching { runCurrentTasks() }
-                exists
-            }
-            if (!ok) {
-                fail("Timed out waiting for PlayerData to be created for uuid=${player.uuid()}")
+            // Wait for database add time
+            var time = 0
+            while (players.find { data -> data.uuid == player.uuid() } == null) {
+                sleep(16)
+                ++time
+                if (time == 500) {
+                    fail()
+                }
             }
             // todo 항상 데이터가 있는지 확인
             return Pair(player, players.find { data -> data.uuid == player.uuid() }!!)

@@ -150,42 +150,42 @@ internal class Commands {
     @ClientCommand("changename", "<target> <new_name>", "Change player name")
     fun changeName(playerData: PlayerData, arg: Array<out String>) {
         scope.launch {
-            suspend fun change(data: PlayerData) {
-                val exists = suspendTransaction {
-                    PlayerTable.select(PlayerTable.name)
-                        .where { PlayerTable.name eq arg[1] }
-                        .firstOrNull()
-                }
-                if (exists != null) {
-                    data.err("command.changeName.exists", arg[1])
-                } else {
-                    Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
-                    if (data.uuid == playerData.uuid) {
-                        playerData.send("command.changeName.apply")
+            suspendTransaction {
+                suspend fun change(data: PlayerData) {
+                    val exists = PlayerTable.select(PlayerTable.name)
+                            .where { PlayerTable.name eq arg[1] }
+                            .firstOrNull()
+                    if (exists != null) {
+                        data.err("command.changeName.exists", arg[1])
                     } else {
-                        data.send("command.changeName.apply.other", data.name, arg[1])
+                        Events.fire(CustomEvents.PlayerNameChanged(data.name, arg[1], data.uuid))
+                        if (data.uuid == playerData.uuid) {
+                            playerData.send("command.changeName.apply")
+                        } else {
+                            data.send("command.changeName.apply.other", data.name, arg[1])
+                        }
+                        data.name = arg[1]
+                        data.player.name(arg[1])
+                        data.update()
+                        data.send("command.changeName.success", data.name)
                     }
-                    data.name = arg[1]
-                    data.player.name(arg[1])
-                    data.update()
-                    data.send("command.changeName.success", data.name)
                 }
-            }
 
-            val target = findPlayers(arg[0])
-            if (target != null) {
-                val data = findPlayerData(target.uuid())
-                if (data != null) {
-                    change(data)
+                val target = findPlayers(arg[0])
+                if (target != null) {
+                    val data = findPlayerData(target.uuid())
+                    if (data != null) {
+                        change(data)
+                    } else {
+                        playerData.err(PLAYER_NOT_REGISTERED)
+                    }
                 } else {
-                    playerData.err(PLAYER_NOT_REGISTERED)
-                }
-            } else {
-                val offline = getPlayerData(arg[0])
-                if (offline != null) {
-                    change(offline)
-                } else {
-                    playerData.err(PLAYER_NOT_FOUND)
+                    val offline = getPlayerData(arg[0])
+                    if (offline != null) {
+                        change(offline)
+                    } else {
+                        playerData.err(PLAYER_NOT_FOUND)
+                    }
                 }
             }
         }
@@ -1640,9 +1640,6 @@ internal class Commands {
             } else {
                 ip = arg[1]
             }
-        } else if (type != "set" && type != "reset" && ip.isBlank()) {
-            playerData.err("command.hub.address.invalid")
-            return
         }
 
         scope.launch {
@@ -1661,10 +1658,14 @@ internal class Commands {
 
                 "zone" -> {
                     if (!playerData.status.containsKey("hub_first") && !playerData.status.containsKey("hub_second")) {
-                        playerData.status["hub_ip"] = ip
-                        playerData.status["hub_port"] = port.toString()
-                        playerData.status["hub_first"] = "true"
-                        playerData.send("command.hub.zone.first")
+                        if (ip.isEmpty()) {
+                            playerData.err("command.hub.address.invalid")
+                        } else {
+                            playerData.status["hub_ip"] = ip
+                            playerData.status["hub_port"] = port.toString()
+                            playerData.status["hub_first"] = "true"
+                            playerData.send("command.hub.zone.first")
+                        }
                     } else {
                         playerData.send("command.hub.zone.process")
                     }
@@ -1673,28 +1674,36 @@ internal class Commands {
                 "block" -> if (arg.size != 3) {
                     playerData.err("command.hub.block.parameter")
                 } else {
-                    val t: Tile = playerData.player.tileOn()
-                    pluginData.data.warpBlock.add(
-                        WarpBlock(
-                            name,
-                            t.build.tileX(),
-                            t.build.tileY(),
-                            t.block().name,
-                            t.block().size,
-                            ip,
-                            port,
-                            arg[2]
+                    if (ip.isEmpty()) {
+                        playerData.err("command.hub.address.invalid")
+                    } else {
+                        val t: Tile = playerData.player.tileOn()
+                        pluginData.data.warpBlock.add(
+                            WarpBlock(
+                                name,
+                                t.build.tileX(),
+                                t.build.tileY(),
+                                t.block().name,
+                                t.block().size,
+                                ip,
+                                port,
+                                arg[2]
+                            )
                         )
-                    )
-                    playerData.send("command.hub.block.added", "$x:$y", arg[1])
+                        playerData.send("command.hub.block.added", "$x:$y", arg[1])
+                    }
                 }
 
                 "count" -> {
                     if (arg.size < 2) {
                         playerData.err("command.hub.count.parameter")
                     } else {
-                        pluginData.data.warpCount.add(WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 1))
-                        playerData.send("command.hub.count", "$x:$y", arg[1])
+                        if (ip.isEmpty()) {
+                            playerData.err("command.hub.address.invalid")
+                        } else {
+                            pluginData.data.warpCount.add(WarpCount(name, Vars.world.tile(x, y).pos(), ip, port, 0, 1))
+                            playerData.send("command.hub.count", "$x:$y", arg[1])
+                        }
                     }
                 }
 
@@ -1704,9 +1713,13 @@ internal class Commands {
                 }
 
                 "remove" -> {
-                    pluginData.data.warpBlock.removeAll { a -> a.ip == ip && a.port == port }
-                    pluginData.data.warpZone.removeAll { a -> a.ip == ip && a.port == port }
-                    playerData.send("command.hub.removed", arg[1])
+                    if (ip.isEmpty()) {
+                        playerData.err("command.hub.address.invalid")
+                    } else {
+                        pluginData.data.warpBlock.removeAll { a -> a.ip == ip && a.port == port }
+                        pluginData.data.warpZone.removeAll { a -> a.ip == ip && a.port == port }
+                        playerData.send("command.hub.removed", arg[1])
+                    }
                 }
 
                 "reset" -> {

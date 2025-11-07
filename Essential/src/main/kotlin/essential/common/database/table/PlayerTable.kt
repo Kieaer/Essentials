@@ -6,7 +6,7 @@ import org.jetbrains.exposed.v1.datetime.datetime
 
 object PlayerTable : Table("players") {
     val id = uinteger("id").autoIncrement()
-    val name = varchar("name", 50).index()
+    val name = varchar("name", 50).uniqueIndex("name")
     val uuid = varchar("uuid", 25).uniqueIndex("uuid")
     val blockPlaceCount = integer("block_place_count").default(0)
     val blockBreakCount = integer("block_break_count").default(0)

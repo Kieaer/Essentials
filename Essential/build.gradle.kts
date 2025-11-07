@@ -26,7 +26,6 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.bundles.game.test)
     testImplementation(libs.bundles.kotlinxEcosystem)
-    testImplementation(libs.kotlinxCoroutinesTest)
     testImplementation(libs.bundles.exposed)
     testImplementation(libs.bundles.r2dbc.drivers)
     testImplementation(libs.jbcrypt)

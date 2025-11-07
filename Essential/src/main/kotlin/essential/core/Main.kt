@@ -24,6 +24,7 @@ import essential.discord.DiscordService
 import essential.protect.ProtectService
 import essential.web.WebService
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -52,7 +53,7 @@ class Main : Plugin() {
         private var discordService: DiscordService? = null
         private var webService: WebService? = null
 
-        val scope = CoroutineScope(AppDispatchers.io)
+        val scope = CoroutineScope(Dispatchers.IO)
         val threadPool = Executors.newFixedThreadPool(2)
     }
 

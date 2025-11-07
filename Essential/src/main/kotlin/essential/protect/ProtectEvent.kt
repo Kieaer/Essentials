@@ -149,41 +149,45 @@ fun playerJoin(e: EventType.PlayerJoin) {
         val data: PlayerData? = getPlayerData(e.player.uuid())
         if (conf.account.getAuthType() == ProtectConfig.AuthType.None || !conf.account.enabled) {
             if (data == null) {
-                if (suspendTransaction {
-                        PlayerTable
-                            .select(PlayerTable.name)
-                            .where { PlayerTable.name eq e.player.plainName() }
-                            .empty()
-                    }) {
+                suspendTransaction {
+                    if (
+                            PlayerTable
+                                .select(PlayerTable.name)
+                                .where { PlayerTable.name eq e.player.plainName() }
+                                .empty()
+                        ) {
 
-                    val data = createPlayerData(e.player)
-                    data.permission = "user"
-                    data.update()
-                    Events.fire(CustomEvents.PlayerDataLoad(data))
-                } else {
-                    e.player.con.kick(
-                        Bundle(e.player.locale)["event.player.name.duplicate"],
-                        0L
-                    )
+                        val data = createPlayerData(e.player)
+                        data.permission = "user"
+                        data.update()
+                        Events.fire(CustomEvents.PlayerDataLoad(data))
+                    } else {
+                        e.player.con.kick(
+                            Bundle(e.player.locale)["event.player.name.duplicate"],
+                            0L
+                        )
+                    }
                 }
             } else {
                 Events.fire(CustomEvents.PlayerDataLoad(data))
             }
         } else if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
             if (data == null) {
-                if (suspendTransaction() {
+                suspendTransaction {
+                    if (
                         PlayerTable
                             .select(PlayerTable.name)
                             .where { PlayerTable.name eq e.player.plainName() }
                             .empty()
-                    }) {
-                    //data.send("event.discord.not.registered")
-                    // TODO discord 로그인 추가
-                } else {
-                    e.player.con.kick(
-                        Bundle(e.player.locale)["event.player.name.duplicate"],
-                        0L
-                    )
+                    ) {
+                        //data.send("event.discord.not.registered")
+                        // TODO discord 로그인 추가
+                    } else {
+                        e.player.con.kick(
+                            Bundle(e.player.locale)["event.player.name.duplicate"],
+                            0L
+                        )
+                    }
                 }
             } else {
                 Events.fire(CustomEvents.PlayerDataLoad(data))

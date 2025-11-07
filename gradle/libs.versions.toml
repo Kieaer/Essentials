@@ -37,7 +37,6 @@ r2dbcPostgresql = "1.1.1.RELEASE"
 kotlinxSerializer = { module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization"}
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", version.ref = "kotlinxDatetime" }
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
-kotlinxCoroutinesTest = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 
 arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "game" }
 core = { module = "com.github.Anuken.mindustryjitpack:core", version.ref = "game" }

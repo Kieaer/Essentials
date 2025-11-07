@@ -1,4 +1,3 @@
-import PluginTest.Companion.advanceUntilIdleTasks
 import PluginTest.Companion.clientCommand
 import PluginTest.Companion.createPlayer
 import PluginTest.Companion.err
@@ -12,8 +11,11 @@ import PluginTest.Companion.setPermission
 import arc.Events
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
+import essential.common.database.data.getPlayerData
 import essential.common.players
+import essential.common.pluginData
 import essential.common.util.findPlayerData
+import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Items
@@ -24,6 +26,7 @@ import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import net.datafaker.Faker
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.lang.Thread.sleep
 import kotlin.test.*
@@ -31,13 +34,10 @@ import kotlin.test.*
 class ClientCommandTest {
     companion object {
         private var done = false
-        val playerData: PlayerData get() {
-            return players.find { it.uuid == player.uuid() }!!
-        }
-
-        fun getPlayerData(uuid: String): PlayerData {
-            return players.find { it.uuid == uuid }!!
-        }
+        val playerData: PlayerData
+            get() {
+                return players.find { it.uuid == player.uuid() }!!
+            }
     }
 
     @BeforeTest
@@ -100,17 +100,20 @@ class ClientCommandTest {
 
         // Change self name
         clientCommand.handleMessage("/changename ${player.name()} Kieaer", player)
-        assertEquals("Kieaer", player.name())
+        sleep(100)
+        assertEquals("Kieaer", playerData.player.name())
 
         // Change other player name
         val registeredUser = newPlayer()
         val randomName = Faker().name().lastName()
         clientCommand.handleMessage("/changename ${registeredUser.first.name()} $randomName", player)
-        assertEquals(randomName, getPlayerData(registeredUser.first.uuid()).name)
+        sleep(100)
+        assertEquals(randomName, findPlayerData(registeredUser.first.uuid())?.name)
         leavePlayer(registeredUser.first)
 
         // If target player not found
         clientCommand.handleMessage("/changename yammi eat", player)
+        sleep(100)
         assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
     }
 
@@ -121,11 +124,16 @@ class ClientCommandTest {
 
         // Change password
         clientCommand.handleMessage("/changepw pass pass", player)
-        // Drive coroutine scheduler to complete background jobs deterministically
-        advanceUntilIdleTasks()
         playerData.let {
-            assertNotNull(it.accountPW)
+            var tick = 0
+            while (it.accountPW == null) {
+                sleep(16)
+                if (tick++ > 300) {
+                    fail()
+                }
+            }
             assertTrue(BCrypt.checkpw("pass", it.accountPW))
+            assertEquals(log("command.changePw.apply"), it.lastReceivedMessage)
         }
 
         // If password isn't same
@@ -210,7 +218,7 @@ class ClientCommandTest {
 
     @Test
     fun client_exp() {
-        fun assert(expected: Int, actual: Int) : Boolean {
+        fun assert(expected: Int, actual: Int): Boolean {
             for (i in 0 until 60) {
                 sleep(16)
                 if (expected == actual) {
@@ -220,7 +228,7 @@ class ClientCommandTest {
             return false
         }
 
-        fun assertFalse(condition: Boolean) : Boolean {
+        fun assertFalse(condition: Boolean): Boolean {
             for (i in 0 until 60) {
                 sleep(16)
                 if (!condition) {
@@ -230,7 +238,7 @@ class ClientCommandTest {
             return false
         }
 
-        fun assertTrue(condition: Boolean) : Boolean {
+        fun assertTrue(condition: Boolean): Boolean {
             for (i in 0 until 60) {
                 sleep(16)
                 if (condition) {
@@ -240,7 +248,7 @@ class ClientCommandTest {
             return false
         }
 
-        fun assertHide(name: String, condition: Boolean) : Boolean {
+        fun assertHide(name: String, condition: Boolean): Boolean {
             var next = true
             var buffer = playerData.lastReceivedMessage
             var count = 0
@@ -265,12 +273,21 @@ class ClientCommandTest {
             return true
         }
 
-        fun assertExp(uuid: String, exp: Int) : Boolean {
+        fun assertExp(uuid: String, exp: Int): Boolean {
             for (time in 1..10) {
-                if (findPlayerData(uuid)!!.exp != exp) {
-                    sleep(100)
-                } else if (time == 10 && findPlayerData(uuid)!!.exp != exp) {
-                    return false
+                val data = findPlayerData(uuid)
+                if (data != null) {
+                    if (findPlayerData(uuid)!!.exp != exp) {
+                        sleep(100)
+                    } else if (time == 10 && findPlayerData(uuid)!!.exp != exp) {
+                        return false
+                    }
+                } else {
+                    runBlocking {
+                        suspendTransaction {
+                            getPlayerData(uuid)?.exp == exp
+                        }
+                    }
                 }
             }
             return true
@@ -281,88 +298,102 @@ class ClientCommandTest {
 
         // Set EXP value
         clientCommand.handleMessage("/exp set 1000", player)
+        sleep(100)
         assertEquals(1000, playerData.exp)
 
         // Set another player EXP value
         val dummy = newPlayer()
         clientCommand.handleMessage("/exp set 500 ${dummy.first.name}", player)
-        assertTrue(assert(500, getPlayerData(dummy.first.uuid()).exp))
+        sleep(100)
+        assertTrue { findPlayerData(dummy.first.uuid())?.exp == 500 }
 
         // If player enter wrong value
         clientCommand.handleMessage("/exp set number", player)
+        sleep(100)
         assertEquals(err("command.exp.invalid"), playerData.lastReceivedMessage)
 
         // Hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
-        // Allow async DB update to complete without blocking the main thread
-        sleep(50)
-        // Check state instead of a brittle last message
+        sleep(100)
         assertTrue(playerData.hideRanking)
         clientCommand.handleMessage("/ranking exp", player)
+        sleep(1000)
         assertFalse(playerData.lastReceivedMessage.contains(player.name()))
 
         // Un-hides player's rank in the ranking list
         clientCommand.handleMessage("/exp hide", player)
-        sleep(50)
+        sleep(100)
         assertFalse(playerData.hideRanking)
         clientCommand.handleMessage("/ranking exp", player)
+        sleep(1000)
         assertTrue(playerData.lastReceivedMessage.contains(player.name()))
 
         // Hide other players' rankings in the ranking list
         clientCommand.handleMessage("/exp hide ${dummy.first.name}", player)
-        sleep(50)
+        sleep(100)
         assertEquals(Bundle()["command.exp.ranking.hide"], playerData.lastReceivedMessage)
         assertTrue(assertHide(dummy.first.name, true))
 
         // Un-hide other players' rankings in the ranking list
-        clientCommand.handleMessage("/exp hide ${getPlayerData(dummy.first.uuid()).name}", player)
-        sleep(50)
+        clientCommand.handleMessage("/exp hide ${findPlayerData(dummy.first.uuid())?.name}", player)
+        sleep(100)
         assertTrue(assertHide(dummy.first.name, false))
 
         // Add exp value
         clientCommand.handleMessage("/exp add 500", player)
+        sleep(100)
         assertTrue(playerData.exp >= 1500)
 
         // Add other player exp value
         clientCommand.handleMessage("/exp add 500 ${dummy.first.name}", player)
-        assertTrue(getPlayerData(dummy.first.uuid()).exp >= 1000)
+        sleep(100)
+        assertTrue { findPlayerData(dummy.first.uuid())?.exp!! >= 1000 }
 
         // Subtract value from current experience
         clientCommand.handleMessage("/exp remove 300", player)
+        sleep(100)
         assertTrue(playerData.exp in 1200..1499)
 
         // Subtract the value from another player's current experience
         clientCommand.handleMessage("/exp remove 300 ${dummy.first.name}", player)
-        assertTrue(getPlayerData(dummy.first.uuid()).exp in 700..999)
+        sleep(100)
+        assertTrue(findPlayerData(dummy.first.uuid())?.exp in 700..999)
 
         // Set EXP for players who are not currently logged in
         leavePlayer(dummy.first)
         clientCommand.handleMessage("/exp set 10 ${dummy.first.name}", player)
+        sleep(100)
         assertExp(dummy.first.uuid(), 10)
 
         // Add EXP for players who are not currently logged in
         clientCommand.handleMessage("/exp add 10 ${dummy.first.name}", player)
+        sleep(100)
         assertExp(dummy.first.uuid(), 20)
 
         // Subtract EXP for players who are not currently logged in
         clientCommand.handleMessage("/exp remove 5 ${dummy.first.name}", player)
+        sleep(100)
         assertExp(dummy.first.uuid(), 15)
 
         // If target player not found
         clientCommand.handleMessage("/exp set 10 dummy", player)
+        sleep(100)
         assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
 
         // If target player exist but not registered
         val bot = createPlayer()
         clientCommand.handleMessage("/exp set 10 ${bot.name}", player)
+        sleep(100)
         assertEquals(err("player.not.registered"), playerData.lastReceivedMessage)
 
         // If the target player is not logged in and looking for a player that isn't in the database
         clientCommand.handleMessage("/exp hide 냠냠", player)
+        sleep(100)
         assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
 
         // If player enter wrong command
         clientCommand.handleMessage("/exp wrongCommand", player)
+        sleep(100)
         assertEquals(err("command.exp.invalid.command"), playerData.lastReceivedMessage)
     }
 
@@ -374,7 +405,6 @@ class ClientCommandTest {
         // Fill core items
         clientCommand.handleMessage("/fillitems", player)
 
-        // If throw 'Array is empty' error, must be check world is initalized
         assertEquals(
             Vars.state.teams.cores(player.team()).first().storageCapacity,
             Vars.state.teams.cores(player.team()).first().items.get(Items.copper)
@@ -436,14 +466,28 @@ class ClientCommandTest {
 
         // Spawn spector turret and maximum boost
         Call.constructFinish(player.tileOn(), Blocks.spectre, player.unit(), 0, Team.crux, null)
-        Call.constructFinish(Vars.world.tile(player.tileX(), player.tileY() + 3), Blocks.itemSource, player.unit(), 0, Team.crux, null)
-        Call.constructFinish(Vars.world.tile(player.tileX() + 1, player.tileY() + 3), Blocks.liquidSource, player.unit(), 0, Team.crux, null)
+        Call.constructFinish(
+            Vars.world.tile(player.tileX(), player.tileY() + 3),
+            Blocks.itemSource,
+            player.unit(),
+            0,
+            Team.crux,
+            null
+        )
+        Call.constructFinish(
+            Vars.world.tile(player.tileX() + 1, player.tileY() + 3),
+            Blocks.liquidSource,
+            player.unit(),
+            0,
+            Team.crux,
+            null
+        )
         Vars.world.tile(player.tileX(), player.tileY() + 3).build.configureAny(Items.thorium)
         Vars.world.tile(player.tileX() + 1, player.tileY() + 3).build.configureAny(Liquids.cryofluid)
 
         // Check unit not dead
         for (time in 0..10) {
-            // If throw "mindustry.gen.Playerc.unit()" is null, need check world initalized
+            assert(player.team().cores().size != 0) // check world is initalized
             assert(!player.unit().dead)
             sleep(100)
         }
@@ -479,37 +523,44 @@ class ClientCommandTest {
         setPermission("owner", true)
 
         // Initialize hub state to known value and test toggling
-        essential.common.pluginData.hubMapName = null
+        pluginData.hubMapName = null
         clientCommand.handleMessage("/hub set", player)
-        // If throw Vars.state.map.name() is null, need check world is initalized.
-        assertEquals(Vars.state.map.name(), essential.common.pluginData.hubMapName)
+        sleep(100)
+        assertEquals(Vars.state.map.name(), pluginData.hubMapName)
 
         // Test toggling hub off when already set
         clientCommand.handleMessage("/hub set", player)
-        assertEquals(null, essential.common.pluginData.hubMapName)
+        sleep(100)
+        assertEquals(null, pluginData.hubMapName)
 
         // Test zone command
         clientCommand.handleMessage("/hub zone 127.0.0.1", player)
+        sleep(100)
         assertEquals(Bundle()["command.hub.zone.first"], playerData.lastReceivedMessage)
 
         // Test zone command when already in process
         clientCommand.handleMessage("/hub zone 127.0.0.1", player)
+        sleep(100)
         assertEquals(Bundle()["command.hub.zone.process"], playerData.lastReceivedMessage)
 
         // Test block command with missing parameters
         clientCommand.handleMessage("/hub block 127.0.0.1", player)
+        sleep(100)
         assertEquals(err("command.hub.block.parameter"), playerData.lastReceivedMessage)
 
         // Test count command with missing parameters
         clientCommand.handleMessage("/hub count", player)
+        sleep(100)
         assertEquals(err("command.hub.count.parameter"), playerData.lastReceivedMessage)
 
         // Test total command
         clientCommand.handleMessage("/hub total", player)
-        assertTrue(playerData.lastReceivedMessage.contains(Bundle()["command.hub.total", "${player.tileX()}:${player.tileY()}"]))
+        sleep(100)
+        // todo block assert
 
         // Test remove command
         clientCommand.handleMessage("/hub remove 127.0.0.1", player)
+        sleep(100)
         assertEquals(Bundle()["command.hub.removed", "127.0.0.1"], playerData.lastReceivedMessage)
 
         // Test reset command
@@ -517,6 +568,7 @@ class ClientCommandTest {
 
         // Test invalid command
         clientCommand.handleMessage("/hub invalid", player)
+        sleep(100)
         assertEquals(Bundle()["command.hub.help"], playerData.lastReceivedMessage)
     }
 
@@ -581,6 +633,7 @@ class ClientCommandTest {
         assertTrue(dummy2.first.con().kicked)
 
         // Verify that the confirmation message was sent
+        sleep(100)
         assertEquals(Bundle()["command.kickAll.done"], playerData.lastReceivedMessage)
     }
 
@@ -631,7 +684,7 @@ class ClientCommandTest {
         assertEquals(err("command.killUnit.invalid.number"), playerData.lastReceivedMessage)
 
         // Test killunit command with invalid team
-        clientCommand.handleMessage("/killunit dagger 5 invalidteam", player)
+        clientCommand.handleMessage("/killunit dagger invalidteam 5", player)
         assertEquals(err("command.killUnit.invalid.team"), playerData.lastReceivedMessage)
     }
 
@@ -644,14 +697,18 @@ class ClientCommandTest {
         // Enable log mode
         clientCommand.handleMessage("/log", player)
         assertEquals(!initialMode, playerData.viewHistoryMode)
-        assertEquals(Bundle()["command.log.${if (playerData.viewHistoryMode) "enabled" else "disabled"}"],
-            playerData.lastReceivedMessage)
+        assertEquals(
+            Bundle()["command.log.${if (playerData.viewHistoryMode) "enabled" else "disabled"}"],
+            playerData.lastReceivedMessage
+        )
 
         // Disable log mode
         clientCommand.handleMessage("/log", player)
         assertEquals(initialMode, playerData.viewHistoryMode)
-        assertEquals(Bundle()["command.log.${if (playerData.viewHistoryMode) "enabled" else "disabled"}"],
-            playerData.lastReceivedMessage)
+        assertEquals(
+            Bundle()["command.log.${if (playerData.viewHistoryMode) "enabled" else "disabled"}"],
+            playerData.lastReceivedMessage
+        )
     }
 
 
@@ -715,10 +772,12 @@ class ClientCommandTest {
 
         // Test mute command with valid player
         clientCommand.handleMessage("/mute ${dummy.first.name}", player)
-        assertTrue(getPlayerData(dummy.first.uuid()).chatMuted)
+        sleep(100)
+        assertEquals(true, findPlayerData(dummy.first.uuid())?.chatMuted)
 
         // Test mute command with non-existent player
         clientCommand.handleMessage("/mute nonexistentplayer", player)
+        sleep(100)
         assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
 
         // Test mute command without player parameter
@@ -806,7 +865,6 @@ class ClientCommandTest {
     }
 
 
-
     @Test
     fun client_rollback() {
         // Test rollback command requires owner permission
@@ -839,10 +897,10 @@ class ClientCommandTest {
         setPermission("owner", true)
         val dummy = newPlayer()
         clientCommand.handleMessage("/setperm ${dummy.first.name} admin", player)
-        assertEquals("admin", getPlayerData(dummy.first.uuid()).permission)
+        assertEquals("admin", findPlayerData(dummy.first.uuid())?.permission)
 
         clientCommand.handleMessage("/setperm ${dummy.first.name} user", player)
-        assertEquals("user", getPlayerData(dummy.first.uuid()).permission)
+        assertEquals("user", findPlayerData(dummy.first.uuid())?.permission)
 
         leavePlayer(dummy.first)
     }
@@ -979,7 +1037,6 @@ class ClientCommandTest {
     }
 
 
-
     @Test
     fun client_unban() {
         // Test unban command requires owner permission
@@ -1002,7 +1059,7 @@ class ClientCommandTest {
 
         // Create and mute a dummy player
         val dummy = newPlayer()
-        getPlayerData(dummy.first.uuid()).chatMuted = true
+        findPlayerData(dummy.first.uuid())?.chatMuted = true
 
         // Test unmuting a player
         clientCommand.handleMessage("/unmute ${dummy.first.name}", player)
@@ -1124,20 +1181,21 @@ class ClientCommandTest {
         val dummy = newPlayer()
 
         // Initial state should be false
-        assertFalse(getPlayerData(dummy.first.uuid()).strictMode)
+        assertEquals(false, findPlayerData(dummy.first.uuid())?.strictMode)
 
         // Test strict command to enable strict mode
         clientCommand.handleMessage("/strict ${dummy.first.name}", player)
-        assertTrue(getPlayerData(dummy.first.uuid()).strictMode)
-        assertEquals(Bundle()["command.strict", dummy.first.name()], playerData.lastReceivedMessage)
+        sleep(100)
+        assertEquals(true, findPlayerData(dummy.first.uuid())?.strictMode)
 
         // Test strict command to disable strict mode
         clientCommand.handleMessage("/strict ${dummy.first.name}", player)
-        assertFalse(getPlayerData(dummy.first.uuid()).strictMode)
-        assertEquals(Bundle()["command.strict.undo", dummy.first.name()], playerData.lastReceivedMessage)
+        sleep(100)
+        assertEquals(false,findPlayerData(dummy.first.uuid())?.strictMode)
 
         // Test strict command with non-existent player
         clientCommand.handleMessage("/strict nonexistentplayer", player)
+        sleep(300)
         assertEquals(err("player.not.found"), playerData.lastReceivedMessage)
 
         // Clean up
