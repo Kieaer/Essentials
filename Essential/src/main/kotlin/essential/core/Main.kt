@@ -6,9 +6,6 @@ import arc.Events
 import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
-import essential.achievements.AchievementService
-import essential.bridge.BridgeService
-import essential.chat.ChatService
 import essential.common.*
 import essential.common.config.Config
 import essential.common.database.data.createPluginData
@@ -20,9 +17,12 @@ import essential.common.service.fileWatchService
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
-import essential.discord.DiscordService
-import essential.protect.ProtectService
-import essential.web.WebService
+import essential.feature.achievements.AchievementService
+import essential.feature.bridge.BridgeService
+import essential.feature.chat.ChatService
+import essential.feature.discord.DiscordService
+import essential.feature.protect.ProtectService
+import essential.feature.web.WebService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -246,11 +246,11 @@ class Main : Plugin() {
             protectService?.registerClientCommands(handler)
         }
         if (conf.plugin.enableAchievements) {
-            if (achievementService == null) achievementService = essential.achievements.AchievementService()
+            if (achievementService == null) achievementService = AchievementService()
             achievementService?.registerClientCommands(handler)
         }
         if (conf.plugin.enableDiscord) {
-            if (discordService == null) discordService = essential.discord.DiscordService()
+            if (discordService == null) discordService = DiscordService()
             discordService?.registerClientCommands(handler)
         }
         if (conf.plugin.enableWeb) {

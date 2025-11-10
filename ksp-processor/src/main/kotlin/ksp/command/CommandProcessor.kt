@@ -149,6 +149,11 @@ class CommandProcessor(
         fileSpec.writeTo(codeGenerator, Dependencies(true, *functions.mapNotNull { it.containingFile }.toTypedArray()))
     }
 
+    private fun isEssentialModule(functions: List<KSFunctionDeclaration>): Boolean {
+        val pkg = functions.firstOrNull()?.containingFile?.packageName?.asString() ?: return false
+        return pkg.startsWith("essential.")
+    }
+
     private fun generateClientCommandsFile(functions: List<KSFunctionDeclaration>) {
         // Determine package name based on the package of the first function
         val packageName = determinePackageName(functions)
@@ -156,18 +161,24 @@ class CommandProcessor(
         // Find the package of the Commands class by looking at the parent class or file declarations
         val commandsPackage = findCommandsPackage(functions)
 
-        val fileSpec = FileSpec.builder(packageName, "ClientCommandsGenerated")
+        val builder = FileSpec.builder(packageName, "ClientCommandsGenerated")
             .addImport(commandsPackage, "Commands")
             .addImport("ksp.command", "ClientCommand")
             .addImport("arc.util", "CommandHandler")
             .addImport("mindustry.gen", "Playerc")
-            .addImport("essential.common.util", "findPlayerData")
-            .addImport("essential.common.permission", "Permission")
-            .addImport("essential.common.bundle", "Bundle")
-            .addImport("essential.common.database.data", "PlayerData")
-            .addFunction(generateRegisterClientCommandsFunction(functions))
-            .build()
 
+        if (isEssentialModule(functions)) {
+            builder
+                .addImport("essential.common.util", "findPlayerData")
+                .addImport("essential.common.permission", "Permission")
+                .addImport("essential.common.bundle", "Bundle")
+                .addImport("essential.common.database.data", "PlayerData")
+                .addFunction(generateRegisterClientCommandsFunction(functions))
+        } else {
+            builder.addFunction(generateRegisterClientCommandsFunctionGeneric(functions))
+        }
+
+        val fileSpec = builder.build()
         fileSpec.writeTo(codeGenerator, Dependencies(true, *functions.mapNotNull { it.containingFile }.toTypedArray()))
     }
 
@@ -286,6 +297,58 @@ class CommandProcessor(
                                 }
                             }
                         }
+                    }
+                }
+                """.trimIndent()
+            )
+            .build()
+    }
+
+    private fun generateRegisterClientCommandsFunctionGeneric(functions: List<KSFunctionDeclaration>): FunSpec {
+        val annotationValues = functions.map { function ->
+            val annotation = function.annotations.find {
+                it.shortName.asString() == "ClientCommand" ||
+                it.shortName.asString() == "ksp.command.ClientCommand"
+            }
+
+            val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString() ?: function.simpleName.asString()
+            val parameter = annotation?.arguments?.find { it.name?.asString() == "parameter" }?.value?.toString() ?: ""
+            val description = annotation?.arguments?.find { it.name?.asString() == "description" }?.value?.toString() ?: "Generated client command"
+
+            Triple(name, parameter, description)
+        }
+
+        return FunSpec.builder("registerGeneratedClientCommands")
+            .addModifiers(KModifier.INTERNAL)
+            .addParameter("handler", CommandHandler::class)
+            .addCode(
+                """
+                val commands = Commands()
+                val clientCommands = listOf(
+                ${functions.joinToString(",\n                    ") { function ->
+                    if (function.parameters.size == 0) {
+                        "{ p: Playerc, args: Array<String> -> commands.${function.simpleName.asString()}() }"
+                    } else if (function.parameters.size == 1) {
+                        "{ p: Playerc, args: Array<String> -> commands.${function.simpleName.asString()}(p) }"
+                    } else {
+                        "{ p: Playerc, args: Array<String> -> commands.${function.simpleName.asString()}(p, args) }"
+                    }
+                }}
+                )
+
+                val annotations = listOf(
+                ${functions.mapIndexed { index, _ ->
+                    val (name, parameter, description) = annotationValues[index]
+                    "ClientCommand(\"$name\", \"$parameter\", \"$description\")"
+                }.joinToString(",\n                    ")}
+                )
+
+                for (i in clientCommands.indices) {
+                    val command = clientCommands[i]
+                    val annotation = annotations[i]
+
+                    handler.register<Playerc>(annotation.name, annotation.parameter, annotation.description) { args, player ->
+                        command(player, args)
                     }
                 }
                 """.trimIndent()
