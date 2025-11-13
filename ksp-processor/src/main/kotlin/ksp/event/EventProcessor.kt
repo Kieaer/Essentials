@@ -5,7 +5,6 @@ import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ksp.writeTo
 import mindustry.game.EventType
 
@@ -40,17 +39,9 @@ class EventProcessor(
 
         logger.info("Package name: $packageName")
 
-        // Extract the base package (e.g., essential.core, essential.achievements)
-        // The pattern is "essential.X" where X is the module name
-        val regex = "essential\\.[a-zA-Z0-9]+"
-        val pattern = Regex(regex)
-        val matchResult = pattern.find(packageName)
-
-        return if (matchResult != null) {
-            "${matchResult.value}.generated"
-        } else {
-            "essential.core.generated" // Default fallback
-        }
+        // Always append .generated to the full original package to respect nested structures
+        val base = if (packageName.isNotBlank()) packageName else "essential.core"
+        return "$base.generated"
     }
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -114,7 +105,6 @@ class EventProcessor(
         }
 
         return FunSpec.builder("registerGeneratedEventHandlers")
-            .addModifiers(KModifier.INTERNAL)
             .addCode(
                 """
                 ${eventTypes.joinToString("\n\n") { (typeInfo, isEnum) ->

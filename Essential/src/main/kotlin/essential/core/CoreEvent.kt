@@ -71,17 +71,17 @@ val mapVotes = HashMap<String, Map>()
 val mapRatings = HashMap<String, Boolean>()
 
 /** PvP spectator player list */
-internal var pvpSpecters = mutableListOf<String>()
+var pvpSpecters = mutableListOf<String>()
 
 /** PvP player team map */
-internal var pvpPlayer = mutableMapOf<String, Team>()
+var pvpPlayer = mutableMapOf<String, Team>()
 
 /** Whether global chat is muted */
-internal var isGlobalMute = false
+var isGlobalMute = false
 private var unitLimitMessageCooldown = 0
 
 /** Whether server routing is forced - becomes true when isNotTargetMap is false */
-internal var isNotTargetMap = false
+var isNotTargetMap = false
 
 val eventListeners: HashMap<Class<*>, Cons<*>> = hashMapOf()
 val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
@@ -90,7 +90,7 @@ lateinit var actionFilter: Administration.ActionFilter
 private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}$")
 
 @Event
-internal fun withdraw(event: WithdrawEvent) {
+fun withdraw(event: WithdrawEvent) {
     if (event.tile != null && event.player.unit().item() != null && event.player.name != null) {
         writeLog(
             LogType.WithDraw,
@@ -114,7 +114,7 @@ internal fun withdraw(event: WithdrawEvent) {
 }
 
 @Event
-internal fun deposit(event: DepositEvent) {
+fun deposit(event: DepositEvent) {
     if (event.tile != null && event.player.unit().item() != null && event.player.name != null) {
         writeLog(
             LogType.Deposit,
@@ -138,7 +138,7 @@ internal fun deposit(event: DepositEvent) {
 }
 
 @Event
-internal fun config(event: ConfigEvent) {
+fun config(event: ConfigEvent) {
     if (event.tile != null && event.tile.block != null && event.player != null) {
         addLog(
             TileLog(
@@ -172,7 +172,7 @@ internal fun config(event: ConfigEvent) {
 }
 
 @Event
-internal fun tap(event: TapEvent) {
+fun tap(event: TapEvent) {
     writeLog(LogType.Tap, Bundle()["log.tap", event.player.plainName(), checkValidBlock(event.tile)])
     addLog(
         TileLog(
@@ -306,7 +306,7 @@ internal fun tap(event: TapEvent) {
                     // todo this file does not exist
 
                     val coreBundle =
-                        Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.player.locale())))
+                        Bundle(ResourceBundle.getBundle("bundles/mindustry/bundle", Locale(data.player.locale())))
 
                     buf.forEach { two ->
                         val action = when (two.action) {
@@ -351,7 +351,7 @@ internal fun tap(event: TapEvent) {
                     val str = StringBuilder()
                     val bundle = data.bundle
                     val coreBundle =
-                        Bundle(ResourceBundle.getBundle("mindustry/bundle", Locale(data.player.locale())))
+                        Bundle(ResourceBundle.getBundle("bundles/mindustry/bundle", Locale(data.player.locale())))
 
                     buf.forEach { two ->
                         val action = when (two.action) {
@@ -453,7 +453,7 @@ internal fun tap(event: TapEvent) {
 }
 
 @Event
-internal fun wave(event: WaveEvent) {
+fun wave(event: WaveEvent) {
     for (data in players) {
         data.exp += 500
     }
@@ -470,7 +470,7 @@ internal fun wave(event: WaveEvent) {
 }
 
 @Event
-internal fun serverLoad(event: ServerLoadEvent) {
+fun serverLoad(event: ServerLoadEvent) {
     Vars.content.blocks().each { two ->
         var buf = 0
         two.requirements.forEach { item ->
@@ -505,7 +505,7 @@ internal fun serverLoad(event: ServerLoadEvent) {
         }
     })
 
-    if (!conf.plugin.enableProtect) {
+    if (!conf.module.protect) {
         Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
             it.player.admin(false)
 
@@ -533,7 +533,7 @@ internal fun serverLoad(event: ServerLoadEvent) {
 }
 
 @Event
-internal fun gameOver(event: GameOverEvent) {
+fun gameOver(event: GameOverEvent) {
     if (mapVotes.isNotEmpty()) {
         val voteCount = HashMap<Map, Int>()
         mapVotes.values.forEach { map ->
@@ -643,14 +643,14 @@ internal fun gameOver(event: GameOverEvent) {
 }
 
 @Event
-internal fun blockBuildBegin(event: BlockBuildBeginEvent) {
+fun blockBuildBegin(event: BlockBuildBeginEvent) {
     Events.on(BlockBuildBeginEvent::class.java, Cons<BlockBuildBeginEvent> {
 
     }.also { listener -> eventListeners[BlockBuildEndEvent::class.java] = listener })
 }
 
 @Event
-internal fun blockBuildEnd(event: BlockBuildEndEvent) {
+fun blockBuildEnd(event: BlockBuildEndEvent) {
     val isDebug = Core.settings.getBool("debugMode")
 
     if (event.unit != null && event.unit.isPlayer) {
@@ -775,7 +775,7 @@ internal fun blockBuildEnd(event: BlockBuildEndEvent) {
 }
 
 @Event
-internal fun buildSelect(event: BuildSelectEvent) {
+fun buildSelect(event: BuildSelectEvent) {
     if (event.builder is Playerc && event.builder.buildPlan() != null && event.tile.block() !== Blocks.air && event.breaking) {
         writeLog(
             LogType.Block,
@@ -798,7 +798,7 @@ internal fun buildSelect(event: BuildSelectEvent) {
 }
 
 @Event
-internal fun blockDestroy(event: BlockDestroyEvent) {
+fun blockDestroy(event: BlockDestroyEvent) {
     if (Vars.state.rules.attackMode) {
         for (a in players) {
             if (event.tile.team() != Vars.state.rules.defaultTeam) {
@@ -811,7 +811,7 @@ internal fun blockDestroy(event: BlockDestroyEvent) {
 }
 
 @Event
-internal fun unitDestroy(event: UnitDestroyEvent) {
+fun unitDestroy(event: UnitDestroyEvent) {
     if (!Vars.state.rules.pvp) {
         for (a in players) {
             if (event.unit.team() != a.player.team()) {
@@ -822,7 +822,7 @@ internal fun unitDestroy(event: UnitDestroyEvent) {
 }
 
 @Event
-internal fun unitCreate(event: UnitCreateEvent) {
+fun unitCreate(event: UnitCreateEvent) {
     if (conf.feature.unit.enabled && Groups.unit.size() > conf.feature.unit.limit) {
         event.unit.kill()
 
@@ -839,7 +839,7 @@ internal fun unitCreate(event: UnitCreateEvent) {
 }
 
 @Event
-internal fun playerJoin(event: PlayerJoin) {
+fun playerJoin(event: PlayerJoin) {
     writeLog(
         LogType.Player,
         Bundle()["log.joined", event.player.plainName(), event.player.uuid(), event.player.con.address]
@@ -848,7 +848,7 @@ internal fun playerJoin(event: PlayerJoin) {
 
 @OptIn(ExperimentalTime::class)
 @Event
-internal fun playerLeave(event: PlayerLeave) {
+fun playerLeave(event: PlayerLeave) {
     writeLog(
         LogType.Player,
         Bundle()["log.player.disconnect", event.player.plainName(), event.player.uuid(), event.player.con.address]
@@ -885,7 +885,7 @@ internal fun playerLeave(event: PlayerLeave) {
 }
 
 @Event
-internal fun playerBan(event: PlayerBanEvent) {
+fun playerBan(event: PlayerBanEvent) {
     writeLog(
         LogType.Player,
         Bundle()["log.player.banned", Vars.netServer.admins.getInfo(event.uuid).ips.first(), Vars.netServer.admins.getInfo(
@@ -898,7 +898,7 @@ internal fun playerBan(event: PlayerBanEvent) {
 }
 
 @Event
-internal fun playerUnban(event: PlayerUnbanEvent) {
+fun playerUnban(event: PlayerUnbanEvent) {
     Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.getInfo(event.uuid).lastName, currentTime()))
     scope.launch {
         removeBanInfoByUUID(event.uuid)
@@ -906,7 +906,7 @@ internal fun playerUnban(event: PlayerUnbanEvent) {
 }
 
 @Event
-internal fun playerIpUnban(eent: PlayerIpUnbanEvent) {
+fun playerIpUnban(eent: PlayerIpUnbanEvent) {
     Events.fire(CustomEvents.PlayerUnbanned(Vars.netServer.admins.findByIP(eent.ip).lastName, currentTime()))
     scope.launch {
         removeBanInfoByIP(eent.ip)
@@ -914,7 +914,7 @@ internal fun playerIpUnban(eent: PlayerIpUnbanEvent) {
 }
 
 @Event
-internal fun worldLoad(event: WorldLoadEvent) {
+fun worldLoad(event: WorldLoadEvent) {
     mapStartTime = timeSource.markNow()
     isSurrender = false
     isCheated = false
@@ -964,7 +964,7 @@ internal fun worldLoad(event: WorldLoadEvent) {
 }
 
 @Event
-internal fun connectPacket(event: ConnectPacketEvent) {
+fun connectPacket(event: ConnectPacketEvent) {
     if (conf.feature.blacklist.enabled) {
         pluginData.data.blacklistedNames.forEach { text ->
             val pattern = Regex(text)
@@ -1021,7 +1021,7 @@ internal fun connectPacket(event: ConnectPacketEvent) {
 }
 
 @Event
-internal fun playerConnect(event: PlayerConnect) {
+fun playerConnect(event: PlayerConnect) {
     writeLog(
         LogType.Player,
         Bundle()["event.player.connected", event.player.plainName(), event.player.uuid(), event.player.con.address]
@@ -1029,7 +1029,7 @@ internal fun playerConnect(event: PlayerConnect) {
 }
 
 @Event
-internal fun buildingBulletDestroy(event: BuildingBulletDestroyEvent) {
+fun buildingBulletDestroy(event: BuildingBulletDestroyEvent) {
     val cores = listOf(
         Blocks.coreAcropolis,
         Blocks.coreBastion,
@@ -1058,7 +1058,7 @@ internal fun buildingBulletDestroy(event: BuildingBulletDestroyEvent) {
 }
 
 @Event
-internal fun configFileModified(event: CustomEvents.ConfigFileModified) {
+fun configFileModified(event: CustomEvents.ConfigFileModified) {
     if (event.kind == StandardWatchEventKinds.ENTRY_MODIFY) {
         when (event.paths) {
             "permission_user.yaml", "permission.yaml" -> {
@@ -1083,7 +1083,7 @@ internal fun configFileModified(event: CustomEvents.ConfigFileModified) {
 
 @OptIn(ExperimentalTime::class)
 @Event
-internal fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
+fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     val playerData = event.playerData
     playerData.player = Groups.player.find { p -> p.uuid() == playerData.uuid }
     val player = playerData.player

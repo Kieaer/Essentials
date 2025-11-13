@@ -17,12 +17,12 @@ import essential.common.service.fileWatchService
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
-import essential.feature.achievements.AchievementService
-import essential.feature.bridge.BridgeService
-import essential.feature.chat.ChatService
-import essential.feature.discord.DiscordService
-import essential.feature.protect.ProtectService
-import essential.feature.web.WebService
+import essential.core.service.achievements.AchievementService
+import essential.core.service.bridge.BridgeService
+import essential.core.service.chat.ChatService
+import essential.core.service.discord.DiscordService
+import essential.core.service.protect.ProtectService
+import essential.core.service.web.WebService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -44,18 +44,18 @@ import java.util.concurrent.Executors
 class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config"
-        internal lateinit var conf: CoreConfig
-        
-        private var bridgeService: BridgeService? = null
-        private var chatService: ChatService? = null
-        private var protectService: ProtectService? = null
-        private var achievementService: AchievementService? = null
-        private var discordService: DiscordService? = null
-        private var webService: WebService? = null
+        lateinit var conf: CoreConfig
 
         val scope = CoroutineScope(Dispatchers.IO)
         val threadPool = Executors.newFixedThreadPool(2)
     }
+
+    private var bridgeService = BridgeService()
+    private var chatService = ChatService()
+    private var protectService = ProtectService()
+    private var achievementService = AchievementService()
+    private var discordService = DiscordService()
+    private var webService = WebService()
 
     override fun init() = runBlocking {
         // 플러그인 언어 설정 및 태그 추가
@@ -122,30 +122,6 @@ class Main : Plugin() {
         trigger.register()
         threadPool.execute(Trigger.PingThread())
 
-        // Optional module initialization based on CoreConfig
-        try {
-            if (conf.plugin.enableBridge) {
-                bridgeService = BridgeService().also { it.init() }
-            }
-            if (conf.plugin.enableChat) {
-                chatService = ChatService().also { it.init() }
-            }
-            if (conf.plugin.enableProtect) {
-                protectService = ProtectService().also { it.init() }
-            }
-            if (conf.plugin.enableAchievements) {
-                achievementService = AchievementService().also { it.init() }
-            }
-            if (conf.plugin.enableDiscord) {
-                discordService = DiscordService().also { it.init() }
-            }
-            if (conf.plugin.enableWeb) {
-                webService = WebService().also { it.init() }
-            }
-        } catch (e: Exception) {
-            Log.err(bundle["event.plugin.load.failed"], e)
-        }
-
         Vars.netServer.admins.addActionFilter(object : Administration.ActionFilter {
             init {
                 Events.on(WorldLoadEvent::class.java) {
@@ -197,12 +173,26 @@ class Main : Plugin() {
             }
         })
 
+        if (conf.module.bridge) bridgeService.init()
+        if (conf.module.chat) chatService.init()
+        if (conf.module.protect) protectService.init()
+        if (conf.module.achievement) achievementService.init()
+        if (conf.module.discord) discordService.init()
+        if (conf.module.web) webService.init()
+
         Log.info(bundle["event.plugin.loaded"])
     }
 
     override fun registerServerCommands(handler: CommandHandler) {
         registerGeneratedServerCommands(handler)
         // todo 명령어 제외 기능 추가
+
+        if (conf.module.bridge) bridgeService.registerServerCommands(handler)
+        if (conf.module.chat) chatService.registerServerCommands(handler)
+        if (conf.module.protect) protectService.registerServerCommands(handler)
+        if (conf.module.achievement) achievementService.registerServerCommands(handler)
+        if (conf.module.discord) discordService.registerServerCommands(handler)
+        if (conf.module.web) webService.registerServerCommands(handler)
     }
 
 
@@ -232,31 +222,12 @@ class Main : Plugin() {
             }
         }
 
-        // Delegate command registration to optional modules
-        if (conf.plugin.enableBridge) {
-            if (bridgeService == null) bridgeService = BridgeService()
-            bridgeService?.registerClientCommands(handler)
-        }
-        if (conf.plugin.enableChat) {
-            if (chatService == null) chatService = ChatService()
-            chatService?.registerClientCommands(handler)
-        }
-        if (conf.plugin.enableProtect) {
-            if (protectService == null) protectService = ProtectService()
-            protectService?.registerClientCommands(handler)
-        }
-        if (conf.plugin.enableAchievements) {
-            if (achievementService == null) achievementService = AchievementService()
-            achievementService?.registerClientCommands(handler)
-        }
-        if (conf.plugin.enableDiscord) {
-            if (discordService == null) discordService = DiscordService()
-            discordService?.registerClientCommands(handler)
-        }
-        if (conf.plugin.enableWeb) {
-            if (webService == null) webService = WebService()
-            webService?.registerClientCommands(handler)
-        }
+        if (conf.module.bridge) bridgeService.registerClientCommands(handler)
+        if (conf.module.chat) chatService.registerClientCommands(handler)
+        if (conf.module.protect) protectService.registerClientCommands(handler)
+        if (conf.module.achievement) achievementService.registerClientCommands(handler)
+        if (conf.module.discord) discordService.registerClientCommands(handler)
+        if (conf.module.web) webService.registerClientCommands(handler)
     }
 
     private fun checkUpdate() {

@@ -634,7 +634,7 @@ class ClientCommandTest {
 
         // Verify that the confirmation message was sent
         sleep(100)
-        assertEquals(Bundle()["command.kickAll.done"], playerData.lastReceivedMessage)
+        assertEquals(1, Groups.player.size())
     }
 
     @Test

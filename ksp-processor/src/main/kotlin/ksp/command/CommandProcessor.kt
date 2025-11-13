@@ -8,7 +8,6 @@ import com.google.devtools.ksp.validate
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ksp.writeTo
 
 class CommandProcessor(
@@ -33,17 +32,9 @@ class CommandProcessor(
 
         logger.info("Package name: $packageName")
 
-        // Extract the base package (e.g., essential.core, essential.achievements)
-        // The pattern is "essential.X" where X is the module name
-        val regex = "essential\\.[a-zA-Z0-9]+"
-        val pattern = Regex(regex)
-        val matchResult = pattern.find(packageName)
-
-        return if (matchResult != null) {
-            "${matchResult.value}.generated"
-        } else {
-            "essential.core.generated" // Default fallback
-        }
+        // Always append .generated to the full original package to respect nested structures
+        val base = if (packageName.isNotBlank()) packageName else "essential.core"
+        return "$base.generated"
     }
 
     /**
@@ -104,7 +95,7 @@ class CommandProcessor(
 
                 // 각 패키지별로 파일 생성
                 serverFunctionsByPackage.forEach { (packageName, functions) ->
-                    generateServerCommandsFile(functions)
+                    generateServerCommandsFile(packageName, functions)
                 }
             }
         }
@@ -132,14 +123,14 @@ class CommandProcessor(
         return unprocessedServer + unprocessedClient
     }
 
-    private fun generateServerCommandsFile(functions: List<KSFunctionDeclaration>) {
-        // Determine package name based on the package of the first function
-        val packageName = determinePackageName(functions)
+    private fun generateServerCommandsFile(packageName: String, functions: List<KSFunctionDeclaration>) {
+        // Determine target package for generated file based on module base (use .generated suffix)
+        val targetPackage = determinePackageName(functions)
 
         // Find the package of the Commands class by looking at the parent class or file declarations
         val commandsPackage = findCommandsPackage(functions)
 
-        val fileSpec = FileSpec.builder(packageName, "ServerCommandsGenerated")
+        val fileSpec = FileSpec.builder(targetPackage, "ServerCommandsGenerated")
             .addImport(commandsPackage, "Commands")
             .addImport("ksp.command", "ServerCommand")
             .addImport("arc.util", "CommandHandler")
@@ -198,7 +189,6 @@ class CommandProcessor(
         }
 
         return FunSpec.builder("registerGeneratedServerCommands")
-            .addModifiers(KModifier.INTERNAL)
             .addParameter("handler", ClassName("arc.util", "CommandHandler"))
             .addCode(
                 """
@@ -258,7 +248,6 @@ class CommandProcessor(
         }
 
         return FunSpec.builder("registerGeneratedClientCommands")
-            .addModifiers(KModifier.INTERNAL)
             .addParameter("handler", CommandHandler::class)
             .addCode(
                 """
@@ -319,7 +308,6 @@ class CommandProcessor(
         }
 
         return FunSpec.builder("registerGeneratedClientCommands")
-            .addModifiers(KModifier.INTERNAL)
             .addParameter("handler", CommandHandler::class)
             .addCode(
                 """

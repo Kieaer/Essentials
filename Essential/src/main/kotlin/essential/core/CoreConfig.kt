@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 data class CoreConfig(
     val plugin: Plugin = Plugin(),
     val feature: Feature = Feature(),
+    val module: Module = Module(),
     val command: Command = Command(),
 )
 
@@ -15,12 +16,6 @@ data class Plugin(
     val lang: String = "en",
     val autoUpdate: Boolean = true,
     val database: DatabaseConfig = DatabaseConfig(),
-    val enableBridge: Boolean = true,
-    val enableProtect: Boolean = true,
-    val enableChat: Boolean = true,
-    val enableAchievements: Boolean = true,
-    val enableDiscord: Boolean = true,
-    val enableWeb: Boolean = true,
 )
 
 /** Database configuration */
@@ -94,6 +89,16 @@ data class LevelConfig(
 data class Effects(
     val enabled: Boolean = false,
     val moving: Boolean = false,
+)
+
+@Serializable
+data class Module(
+    val achievement: Boolean = false,
+    val bridge: Boolean = false,
+    val chat: Boolean = false,
+    val discord: Boolean = false,
+    val protect: Boolean = false,
+    val web: Boolean = false,
 )
 
 /** Feature - Command settings */

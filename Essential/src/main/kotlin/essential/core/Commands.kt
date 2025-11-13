@@ -76,11 +76,10 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 
-internal class Commands {
+class Commands {
     companion object {
         const val PLAYER_NOT_FOUND = "player.not.found"
         const val PLAYER_NOT_REGISTERED = "player.not.registered"
-        const val DATABASE_ERROR = "database.io.error"
 
         /**
          * Calculate the Levenshtein distance between two strings
