@@ -140,11 +140,6 @@ class CommandProcessor(
         fileSpec.writeTo(codeGenerator, Dependencies(true, *functions.mapNotNull { it.containingFile }.toTypedArray()))
     }
 
-    private fun isEssentialModule(functions: List<KSFunctionDeclaration>): Boolean {
-        val pkg = functions.firstOrNull()?.containingFile?.packageName?.asString() ?: return false
-        return pkg.startsWith("essential.")
-    }
-
     private fun generateClientCommandsFile(functions: List<KSFunctionDeclaration>) {
         // Determine package name based on the package of the first function
         val packageName = determinePackageName(functions)
@@ -158,16 +153,12 @@ class CommandProcessor(
             .addImport("arc.util", "CommandHandler")
             .addImport("mindustry.gen", "Playerc")
 
-        if (isEssentialModule(functions)) {
-            builder
-                .addImport("essential.common.util", "findPlayerData")
-                .addImport("essential.common.permission", "Permission")
-                .addImport("essential.common.bundle", "Bundle")
-                .addImport("essential.common.database.data", "PlayerData")
-                .addFunction(generateRegisterClientCommandsFunction(functions))
-        } else {
-            builder.addFunction(generateRegisterClientCommandsFunctionGeneric(functions))
-        }
+        builder
+            .addImport("essential.common.util", "findPlayerData")
+            .addImport("essential.common.permission", "Permission")
+            .addImport("essential.common.bundle", "Bundle")
+            .addImport("essential.common.database.data", "PlayerData")
+            .addFunction(generateRegisterClientCommandsFunction(functions))
 
         val fileSpec = builder.build()
         fileSpec.writeTo(codeGenerator, Dependencies(true, *functions.mapNotNull { it.containingFile }.toTypedArray()))
@@ -176,14 +167,16 @@ class CommandProcessor(
     private fun generateRegisterServerCommandsFunction(functions: List<KSFunctionDeclaration>): FunSpec {
         // Here get annotation parameter values
         val annotationValues = functions.map { function ->
-            val annotation = function.annotations.find { 
-                it.shortName.asString() == "ServerCommand" || 
-                it.shortName.asString() == "ksp.command.ServerCommand"
+            val annotation = function.annotations.find {
+                it.shortName.asString() == "ServerCommand" ||
+                        it.shortName.asString() == "ksp.command.ServerCommand"
             }
 
-            val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString() ?: function.simpleName.asString()
+            val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString()
+                ?: function.simpleName.asString()
             val parameter = annotation?.arguments?.find { it.name?.asString() == "parameter" }?.value?.toString() ?: ""
-            val description = annotation?.arguments?.find { it.name?.asString() == "description" }?.value?.toString() ?: "Generated server command"
+            val description = annotation?.arguments?.find { it.name?.asString() == "description" }?.value?.toString()
+                ?: "Generated server command"
 
             Triple(name, parameter, description)
         }
@@ -194,20 +187,24 @@ class CommandProcessor(
                 """
                 val commands = Commands()
                 val serverCommands = listOf(
-                ${functions.joinToString(",\n                    ") { function ->
-                    if (function.parameters.isEmpty()) {
-                        "{ args: Array<String> -> commands.${function.simpleName.asString()}() }"
-                    } else {
-                        "{ args: Array<String> -> commands.${function.simpleName.asString()}(args) }"
+                ${
+                    functions.joinToString(",\n                    ") { function ->
+                        if (function.parameters.isEmpty()) {
+                            "{ args: Array<String> -> commands.${function.simpleName.asString()}() }"
+                        } else {
+                            "{ args: Array<String> -> commands.${function.simpleName.asString()}(args) }"
+                        }
                     }
-                }}
+                }
                 )
 
                 val annotations = listOf(
-                ${functions.mapIndexed { index, _ ->
-                    val (name, parameter, description) = annotationValues[index]
-                    "ServerCommand(\"$name\", \"$parameter\", \"$description\")"
-                }.joinToString(",\n                    ")}
+                ${
+                    functions.mapIndexed { index, _ ->
+                        val (name, parameter, description) = annotationValues[index]
+                        "ServerCommand(\"$name\", \"$parameter\", \"$description\")"
+                    }.joinToString(",\n                    ")
+                }
                 )
 
                 for (i in serverCommands.indices) {
@@ -235,14 +232,16 @@ class CommandProcessor(
     private fun generateRegisterClientCommandsFunction(functions: List<KSFunctionDeclaration>): FunSpec {
         // Get annotation parameter values
         val annotationValues = functions.map { function ->
-            val annotation = function.annotations.find { 
-                it.shortName.asString() == "ClientCommand" || 
-                it.shortName.asString() == "ksp.command.ClientCommand"
+            val annotation = function.annotations.find {
+                it.shortName.asString() == "ClientCommand" ||
+                        it.shortName.asString() == "ksp.command.ClientCommand"
             }
 
-            val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString() ?: function.simpleName.asString()
+            val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString()
+                ?: function.simpleName.asString()
             val parameter = annotation?.arguments?.find { it.name?.asString() == "parameter" }?.value?.toString() ?: ""
-            val description = annotation?.arguments?.find { it.name?.asString() == "description" }?.value?.toString() ?: "Generated client command"
+            val description = annotation?.arguments?.find { it.name?.asString() == "description" }?.value?.toString()
+                ?: "Generated client command"
 
             Triple(name, parameter, description)
         }
@@ -253,20 +252,24 @@ class CommandProcessor(
                 """
                 val commands = Commands()
                 val clientCommands = listOf(
-                ${functions.joinToString(",\n                    ") { function ->
-                    if (function.parameters.size == 1) {
-                        "{ data: PlayerData, args: Array<String> -> commands.${function.simpleName.asString()}(data) }"
-                    } else {
-                        "{ data: PlayerData, args: Array<String> -> commands.${function.simpleName.asString()}(data, args) }"
+                ${
+                    functions.joinToString(",\n                    ") { function ->
+                        if (function.parameters.size == 1) {
+                            "{ data: PlayerData, args: Array<String> -> commands.${function.simpleName.asString()}(data) }"
+                        } else {
+                            "{ data: PlayerData, args: Array<String> -> commands.${function.simpleName.asString()}(data, args) }"
+                        }
                     }
-                }}
+                }
                 )
 
                 val annotations = listOf(
-                ${functions.mapIndexed { index, _ ->
-                    val (name, parameter, description) = annotationValues[index]
-                    "ClientCommand(\"$name\", \"$parameter\", \"$description\")"
-                }.joinToString(",\n                    ")}
+                ${
+                    functions.mapIndexed { index, _ ->
+                        val (name, parameter, description) = annotationValues[index]
+                        "ClientCommand(\"$name\", \"$parameter\", \"$description\")"
+                    }.joinToString(",\n                    ")
+                }
                 )
 
                 for (i in clientCommands.indices) {
@@ -286,57 +289,6 @@ class CommandProcessor(
                                 }
                             }
                         }
-                    }
-                }
-                """.trimIndent()
-            )
-            .build()
-    }
-
-    private fun generateRegisterClientCommandsFunctionGeneric(functions: List<KSFunctionDeclaration>): FunSpec {
-        val annotationValues = functions.map { function ->
-            val annotation = function.annotations.find {
-                it.shortName.asString() == "ClientCommand" ||
-                it.shortName.asString() == "ksp.command.ClientCommand"
-            }
-
-            val name = annotation?.arguments?.find { it.name?.asString() == "name" }?.value?.toString() ?: function.simpleName.asString()
-            val parameter = annotation?.arguments?.find { it.name?.asString() == "parameter" }?.value?.toString() ?: ""
-            val description = annotation?.arguments?.find { it.name?.asString() == "description" }?.value?.toString() ?: "Generated client command"
-
-            Triple(name, parameter, description)
-        }
-
-        return FunSpec.builder("registerGeneratedClientCommands")
-            .addParameter("handler", CommandHandler::class)
-            .addCode(
-                """
-                val commands = Commands()
-                val clientCommands = listOf(
-                ${functions.joinToString(",\n                    ") { function ->
-                    if (function.parameters.size == 0) {
-                        "{ p: Playerc, args: Array<String> -> commands.${function.simpleName.asString()}() }"
-                    } else if (function.parameters.size == 1) {
-                        "{ p: Playerc, args: Array<String> -> commands.${function.simpleName.asString()}(p) }"
-                    } else {
-                        "{ p: Playerc, args: Array<String> -> commands.${function.simpleName.asString()}(p, args) }"
-                    }
-                }}
-                )
-
-                val annotations = listOf(
-                ${functions.mapIndexed { index, _ ->
-                    val (name, parameter, description) = annotationValues[index]
-                    "ClientCommand(\"$name\", \"$parameter\", \"$description\")"
-                }.joinToString(",\n                    ")}
-                )
-
-                for (i in clientCommands.indices) {
-                    val command = clientCommands[i]
-                    val annotation = annotations[i]
-
-                    handler.register<Playerc>(annotation.name, annotation.parameter, annotation.description) { args, player ->
-                        command(player, args)
                     }
                 }
                 """.trimIndent()
