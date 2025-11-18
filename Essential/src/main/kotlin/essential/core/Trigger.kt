@@ -42,6 +42,29 @@ import kotlin.random.Random
 
 
 class Trigger {
+    companion object {
+        fun pingHostImpl(address: String, port: Int, listener: Consumer<Host>) {
+            val packetSupplier: Prov<DatagramPacket> = Prov<DatagramPacket> { DatagramPacket(ByteArray(512), 512) }
+
+            try {
+                DatagramSocket().use { socket ->
+                    val s: Long = Time.millis()
+                    socket.send(DatagramPacket(byteArrayOf(-2, 1), 2, InetAddress.getByName(address), port))
+                    socket.soTimeout = 1000
+                    val packet: DatagramPacket = packetSupplier.get()
+                    socket.receive(packet)
+                    val buffer = ByteBuffer.wrap(packet.data)
+                    val host =
+                        NetworkIO.readServerData(Time.timeSinceMillis(s).toInt(), packet.address.hostAddress, buffer)
+                    host.port = port
+                    listener.accept(host)
+                }
+            } catch (_: Exception) {
+                listener.accept(Host(0, null, null, null, 0, 0, 0, null, null, 0, null, null))
+            }
+        }
+    }
+
     class PingThread: Thread() {
         private var ping = 0.000
 
@@ -350,27 +373,6 @@ class Trigger {
 
             runBlocking {
                 cleanupExpiredRoutingPermissions()
-            }
-        }
-
-        private fun pingHostImpl(address: String, port: Int, listener: Consumer<Host>) {
-            val packetSupplier: Prov<DatagramPacket> = Prov<DatagramPacket> { DatagramPacket(ByteArray(512), 512) }
-
-            try {
-                DatagramSocket().use { socket ->
-                    val s: Long = Time.millis()
-                    socket.send(DatagramPacket(byteArrayOf(-2, 1), 2, InetAddress.getByName(address), port))
-                    socket.soTimeout = 1000
-                    val packet: DatagramPacket = packetSupplier.get()
-                    socket.receive(packet)
-                    val buffer = ByteBuffer.wrap(packet.data)
-                    val host =
-                        NetworkIO.readServerData(Time.timeSinceMillis(s).toInt(), packet.address.hostAddress, buffer)
-                    host.port = port
-                    listener.accept(host)
-                }
-            } catch (_: Exception) {
-                listener.accept(Host(0, null, null, null, 0, 0, 0, null, null, 0, null, null))
             }
         }
 
