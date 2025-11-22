@@ -44,7 +44,14 @@ import java.util.concurrent.Executors
 class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config"
-        lateinit var conf: CoreConfig
+        var conf: CoreConfig = runBlocking {
+            // 플러그인 설정 불러오기
+            val config = Config.load("config", CoreConfig.serializer(), CoreConfig())
+            require(config != null) {
+                Log.err(bundle["event.plugin.load.failed"])
+            }
+            config
+        }
 
         val scope = CoroutineScope(Dispatchers.IO)
         val threadPool = Executors.newFixedThreadPool(2)
@@ -62,14 +69,6 @@ class Main : Plugin() {
         bundle.prefix = "[Essential]"
 
         Log.debug(bundle["event.plugin.starting"])
-
-        // 플러그인 설정 불러오기
-        val config = Config.load("config", CoreConfig.serializer(), CoreConfig())
-        require(config != null) {
-            Log.err(bundle["event.plugin.load.failed"])
-        }
-
-        conf = config
 
         bundle.locale = Locale(conf.plugin.lang)
 

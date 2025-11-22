@@ -6,7 +6,7 @@ kotlinxSerialization = "1.9.0"
 ksp = "2.3.0"
 kotlinpoet = "2.2.0"
 
-game = "v152"
+game = "v153"
 local = "local-SNAPSHOT"
 kaml = "0.102.0"
 exposed = "1.0.0-beta-5"
@@ -39,13 +39,13 @@ kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", versi
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 
 arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "game" }
-core = { module = "com.github.Anuken.mindustryjitpack:core", version.ref = "game" }
-server = { module = "com.github.Anuken.mindustryjitpack:server", version.ref = "game" }
+core = { module = "com.github.Anuken.mindustry:core", version.ref = "game" }
+server = { module = "com.github.Anuken.mindustry:server", version.ref = "game" }
 headless = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "game" }
 
 arc-local = { module = "com.github.Anuken.Arc:arc-core", version.ref = "local" }
-core-local = { module = "com.github.Anuken.mindustryjitpack:core", version.ref = "local" }
-server-local = { module = "com.github.Anuken.mindustryjitpack:server", version.ref = "local" }
+core-local = { module = "com.github.Anuken.mindustry:core", version.ref = "local" }
+server-local = { module = "com.github.Anuken.mindustry:server", version.ref = "local" }
 headless-local = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "local" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
