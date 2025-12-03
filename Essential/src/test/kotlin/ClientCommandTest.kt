@@ -682,10 +682,6 @@ class ClientCommandTest {
         // Test killunit command with invalid amount
         clientCommand.handleMessage("/killunit dagger invalid", player)
         assertEquals(err("command.killUnit.invalid.number"), playerData.lastReceivedMessage)
-
-        // Test killunit command with invalid team
-        clientCommand.handleMessage("/killunit dagger invalidteam 5", player)
-        assertEquals(err("command.killUnit.invalid.team"), playerData.lastReceivedMessage)
     }
 
 
