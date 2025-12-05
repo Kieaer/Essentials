@@ -1993,6 +1993,8 @@ class Commands {
             } else {
                 playerData.err(PLAYER_NOT_FOUND)
             }
+        } else {
+            playerData.err(PLAYER_NOT_FOUND)
         }
     }
 
