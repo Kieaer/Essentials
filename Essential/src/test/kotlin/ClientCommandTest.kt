@@ -402,6 +402,9 @@ class ClientCommandTest {
         // Require admin or above permission
         setPermission("admin", true)
 
+        // Set player's team
+        clientCommand.handleMessage("/team sharded", player)
+
         // Fill core items
         clientCommand.handleMessage("/fillitems", player)
 
