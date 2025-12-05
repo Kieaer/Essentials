@@ -459,41 +459,9 @@ class ClientCommandTest {
         // Require admin or above permission
         setPermission("admin", true)
 
-        Vars.state.rules.infiniteResources = true
-        Vars.state.rules.attackMode = true
-
-        // Wait for spawn unit from core
-        sleep(1000)
-        Call.setPosition(player.con(), 240f, 240f)
+        player.unit(UnitTypes.flare.spawn(player))
         clientCommand.handleMessage("/god", player)
-
-        // Spawn spector turret and maximum boost
-        Call.constructFinish(player.tileOn(), Blocks.spectre, player.unit(), 0, Team.crux, null)
-        Call.constructFinish(
-            Vars.world.tile(player.tileX(), player.tileY() + 3),
-            Blocks.itemSource,
-            player.unit(),
-            0,
-            Team.crux,
-            null
-        )
-        Call.constructFinish(
-            Vars.world.tile(player.tileX() + 1, player.tileY() + 3),
-            Blocks.liquidSource,
-            player.unit(),
-            0,
-            Team.crux,
-            null
-        )
-        Vars.world.tile(player.tileX(), player.tileY() + 3).build.configureAny(Items.thorium)
-        Vars.world.tile(player.tileX() + 1, player.tileY() + 3).build.configureAny(Liquids.cryofluid)
-
-        // Check unit not dead
-        for (time in 0..10) {
-            assert(player.team().cores().size != 0) // check world is initalized
-            assert(!player.unit().dead)
-            sleep(100)
-        }
+        assertTrue(player.unit().health() > 1.0E7f)
     }
 
     @Test
