@@ -58,8 +58,26 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
         }
     }
 
+    val name = "database"
+    val dbBasePath = "${rootPath.absolutePath()}/$name"
+    val hasExistingDb = java.io.File("${dbBasePath}.mv.db").exists()
 
-    val selected = h2("main")
+    if (hasExistingDb) {
+        val probe = h2Probe(name)
+        val tempDb = R2dbcDatabase.connect(
+            connectionFactory = probe.first,
+            databaseConfig = R2dbcDatabaseConfig {
+                defaultMaxAttempts = 1
+                defaultMinRetryDelay = 0
+                defaultMaxRetryDelay = 0
+                explicitDialect = probe.second
+            }
+        )
+        TransactionManager.defaultDatabase = tempDb
+        upgradeDatabase()
+    }
+
+    val selected = h2(name)
 
     val poolConfig = ConnectionPoolConfiguration.builder(selected.first)
         .maxSize(2)
@@ -84,6 +102,8 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
 
     TransactionManager.defaultDatabase = defaultDatabase!!
 
+    upgradeDatabase()
+
     suspendTransaction {
         SchemaUtils.create(
             PlayerTable,
@@ -94,8 +114,6 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
             ServerRoutingTable
         )
     }
-
-    upgradeDatabase()
 }
 
 /**
@@ -103,8 +121,7 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
  * Compares the current database version with the plugin's database version and runs SQL scripts.
  */
 private suspend fun upgradeDatabase() {
-    val pluginData = getPluginData()
-    val currentVersion = pluginData?.databaseVersion ?: DATABASE_VERSION
+    val currentVersion = detectDatabaseVersion()
 
     if (currentVersion < DATABASE_VERSION) {
         Log.info(bundle["database.upgrade.start", currentVersion, DATABASE_VERSION])
@@ -119,9 +136,16 @@ private suspend fun upgradeDatabase() {
                 Log.info(bundle["database.upgrade.execute", fileName])
 
                 suspendTransaction {
-                    sqlScript.split(";").filter { it.trim().isNotEmpty() }.forEach { statement ->
-                        exec(statement)
-                    }
+                    sqlScript.split(";")
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                        .forEach { statement ->
+                            try {
+                                exec(statement)
+                            } catch (e: Throwable) {
+                                e.printStackTrace()
+                            }
+                        }
                 }
             } else {
                 Log.warn(bundle["database.upgrade.notFound", fileName])
@@ -131,6 +155,40 @@ private suspend fun upgradeDatabase() {
         Log.info(bundle["database.upgrade.end"])
     } else {
         Log.info(bundle["database.upgrade.upToDate", DATABASE_VERSION])
+    }
+}
+
+/**
+ * Detect current database version without relying on new schema being present.
+ * - If new table `plugin_data` exists, read version from it; else if legacy tables exist, assume version 2; otherwise assume up-to-date (fresh install).
+ */
+private suspend fun detectDatabaseVersion(): UByte {
+    return suspendTransaction {
+        val hasPluginData = tableExists("plugin_data")
+        if (hasPluginData) {
+            try {
+                val data = getPluginData()
+                return@suspendTransaction data?.databaseVersion ?: DATABASE_VERSION
+            } catch (_: Throwable) {
+                return@suspendTransaction DATABASE_VERSION
+            }
+        }
+
+        val hasLegacyDb = tableExists("db") || tableExists("player") || tableExists("data") || tableExists("banned")
+        if (hasLegacyDb) return@suspendTransaction 2u
+
+        DATABASE_VERSION
+    }
+}
+
+private suspend fun tableExists(tableName: String): Boolean {
+    return try {
+        suspendTransaction {
+            exec("SELECT 1 FROM $tableName LIMIT 1")
+        }
+        true
+    } catch (_: Throwable) {
+        false
     }
 }
 
@@ -152,7 +210,22 @@ fun postgresql(): Pair<ConnectionFactory, DatabaseDialect> =
 fun h2(name: String): Pair<ConnectionFactory, DatabaseDialect> = Pair(
     H2ConnectionFactory(
         H2ConnectionConfiguration.builder()
-            .url("./config/mods/Essentials/data/$name")
+            .url("${rootPath.absolutePath()}/$name")
+            .property(H2ConnectionOption.DB_CLOSE_DELAY, "-1")
+            .property(H2ConnectionOption.DB_CLOSE_ON_EXIT, "FALSE")
+            .property(H2ConnectionOption.MODE, "PostgreSQL")
+            .property("DATABASE_TO_LOWER", "TRUE")
+            .property("DEFAULT_NULL_ORDERING", "HIGH")
+            .build()
+    ),
+    H2Dialect()
+)
+
+fun h2Probe(name: String): Pair<ConnectionFactory, DatabaseDialect> = Pair(
+    H2ConnectionFactory(
+        H2ConnectionConfiguration.builder()
+            .url("${rootPath.absolutePath()}/$name")
+            .property(H2ConnectionOption.IFEXISTS, "TRUE")
             .property(H2ConnectionOption.DB_CLOSE_DELAY, "-1")
             .property(H2ConnectionOption.DB_CLOSE_ON_EXIT, "FALSE")
             .property(H2ConnectionOption.MODE, "PostgreSQL")
