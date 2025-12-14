@@ -33,7 +33,7 @@ subprojects {
     publishing {
         publications {
             create<MavenPublication>("maven") {
-                groupId = "essential"
+                groupId = "essentials"
                 artifactId = project.name.lowercase()
                 version = "1.0.0"
 

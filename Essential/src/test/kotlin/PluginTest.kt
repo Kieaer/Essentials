@@ -30,12 +30,10 @@ import mindustry.net.NetConnection
 import mindustry.world.Block
 import mindustry.world.Tile
 import net.datafaker.Faker
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mock
-import org.mockito.Mockito.`when`
-import org.mockito.MockitoAnnotations
 import java.io.File
 import java.lang.Thread.sleep
+import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
@@ -45,29 +43,26 @@ import kotlin.time.ExperimentalTime
 
 class PluginTest {
     companion object {
-        private lateinit var main : Main
+        private lateinit var main: Main
         private val r = Random()
-        lateinit var player : Playerc
-        lateinit var path : Fi
-        val serverCommand : CommandHandler = CommandHandler("")
-        val clientCommand : CommandHandler = CommandHandler("/")
-        
+        lateinit var player: Playerc
+        lateinit var path: Fi
+        val serverCommand: CommandHandler = CommandHandler("")
+        val clientCommand: CommandHandler = CommandHandler("/")
+
         private var gameLoaded = false
         private var pluginLoaded = false
 
-        @Mock
-        lateinit var mockApplication : Application
+        var testMap: Map? = null
 
-        var testMap : Map? = null
-
-        fun loadGame() {
+        fun loadGame(loadPlugin: Boolean = true) {
             if (gameLoaded) return
-            /*if (System.getProperty("os.name").contains("Windows")) {
+            if (System.getProperty("os.name").contains("Windows")) {
                 val pathToBeDeleted : Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
                 if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
                     Files.walk(pathToBeDeleted).sorted(Comparator.reverseOrder()).map { obj : Path -> obj.toFile() }.forEach { obj : File -> obj.delete() }
                 }
-            }*/
+            }
 
             Core.settings = Settings()
             Core.settings.dataDirectory = Fi("")
@@ -77,7 +72,8 @@ class PluginTest {
             path.child("scripts").deleteDirectory()
 
             path.child("locales").writeString("en", false)
-            path.child("version.properties").writeString("modifier=release\ntype=official\nnumber=7\nbuild=custom build", false)
+            path.child("version.properties")
+                .writeString("modifier=release\ntype=official\nnumber=7\nbuild=custom build", false)
 
             if (!path.child("maps").exists()) {
                 path.child("maps").mkdirs()
@@ -99,12 +95,14 @@ class PluginTest {
 
             if (!path.child("scripts").exists()) {
                 path.child("scripts").mkdirs()
-                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/refs/heads/master/core/assets/scripts/global.js").submit { res ->
-                    path.child("scripts/global.js").writeString(res.resultAsString)
-                }
-                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/refs/heads/master/core/assets/scripts/base.js").submit { res ->
-                    path.child("scripts/base.js").writeString(res.resultAsString)
-                }
+                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/refs/heads/master/core/assets/scripts/global.js")
+                    .submit { res ->
+                        path.child("scripts/global.js").writeString(res.resultAsString)
+                    }
+                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/refs/heads/master/core/assets/scripts/base.js")
+                    .submit { res ->
+                        path.child("scripts/base.js").writeString(res.resultAsString)
+                    }
             }
 
             try {
@@ -112,14 +110,14 @@ class PluginTest {
                 val exceptionThrown = arrayOf<Throwable?>(null)
                 Log.useColors = false
 
-                val core : ApplicationCore = object: ApplicationCore() {
+                val core: ApplicationCore = object : ApplicationCore() {
                     override fun setup() {
                         headless = true
                         net = Net(null)
                         tree = FileTree()
                         Vars.init()
-                        world = object: World() {
-                            override fun getDarkness(x : Int, y : Int) : Float {
+                        world = object : World() {
+                            override fun getDarkness(x: Int, y: Int): Float {
                                 return 0F
                             }
                         }
@@ -138,7 +136,10 @@ class PluginTest {
                             for (mod in mods.list()) {
                                 if (mod.hasContentErrors()) {
                                     for (cont in mod.erroredContent) {
-                                        throw RuntimeException("error in file: " + cont.minfo.sourceFile.path(), cont.minfo.baseError)
+                                        throw RuntimeException(
+                                            "error in file: " + cont.minfo.sourceFile.path(),
+                                            cont.minfo.baseError
+                                        )
                                     }
                                 }
                             }
@@ -147,7 +148,7 @@ class PluginTest {
 
                     override fun init() {
                         super.init()
-                        loadPlugin()
+                        if (loadPlugin) loadPlugin()
 
                         begins[0] = true
                         testMap = maps.loadInternalMap("maze")
@@ -184,18 +185,23 @@ class PluginTest {
 
                 // Load map
                 world.loadMap(testMap)
+                logic.play()
                 state.set(GameState.State.playing)
                 state.rules.limitMapArea = false
 
                 gameLoaded = true
-            } catch (r : Throwable) {
+            } catch (r: Throwable) {
                 fail(r.stackTraceToString())
             }
         }
 
         fun loadPlugin() {
             if (pluginLoaded) return
-            path.child("mods/Essentials").deleteDirectory()
+            // In tests we may prepare files under mods/Essentials (e.g., legacy DB).
+            // Skip deleting the directory when test mode is enabled.
+            if (System.getProperty("test") != "yes") {
+                path.child("mods/Essentials").deleteDirectory()
+            }
 
             main = Main()
 
@@ -213,35 +219,21 @@ class PluginTest {
             pluginLoaded = false
         }
 
-        fun updateBlocks(times: Int) {
+        fun updateTick(times: Int) {
             for (tile in world.tiles) {
                 if (tile.build != null && tile.isCenter) {
                     tile.build.updateProximity()
                 }
             }
 
-            for (i in 0..<times) {
+            repeat(times) {
+                // Update global time delta
                 Time.update()
-                for (tile in world.tiles) {
-                    if (tile.build != null && tile.isCenter) {
-                        tile.build.update()
-                    }
-                }
+                Groups.update()
             }
         }
 
-        fun runPost() {
-            MockitoAnnotations.openMocks(this)
-            Core.app = mockApplication
-
-            `when`(mockApplication.post(any(Runnable::class.java))).thenAnswer { invocation ->
-                val task = invocation.getArgument(0) as Runnable
-                task.run()
-                null
-            }
-        }
-
-        private fun getSaltString() : String {
+        private fun getSaltString(): String {
             val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890"
             val salt = StringBuilder()
             while (salt.length < 25) {
@@ -256,14 +248,14 @@ class PluginTest {
          * @return 플레이어
          */
         @OptIn(ExperimentalTime::class)
-        fun createPlayer() : Player {
+        fun createPlayer(): Player {
             val player = Player.create()
             val faker = Faker(Locale.ENGLISH)
             val ip = r.nextInt(255).toString() + "." + r.nextInt(255) + "." + r.nextInt(255) + "." + r.nextInt(255)
 
             player.reset()
-            player.con = object: NetConnection(ip) {
-                override fun send(`object` : Any?, reliable : Boolean) {
+            player.con = object : NetConnection(ip) {
+                override fun send(`object`: Any?, reliable: Boolean) {
                     return
                 }
 
@@ -289,7 +281,7 @@ class PluginTest {
             return player
         }
 
-        fun randomTile() : Tile {
+        fun randomTile(): Tile {
             val random = Random()
             return world.tile(random.nextInt(100), random.nextInt(100))
         }
@@ -298,7 +290,7 @@ class PluginTest {
          * DB 에 계정이 등록된 플레이어 생성
          * @return 1번째 값에 플레이어, 2번째 값에 플레이어 정보
          */
-        fun newPlayer() : Pair<Player, PlayerData> {
+        fun newPlayer(): Pair<Player, PlayerData> {
             val player = createPlayer()
             Events.fire(EventType.PlayerJoin(player))
 
@@ -319,7 +311,8 @@ class PluginTest {
          * 대상 플레이어가 서버에서 나갔다고 하기
          * @param player 플레이어
          */
-        fun leavePlayer(player : Playerc) {
+        fun leavePlayer(player: Playerc) {
+            NetServer.onDisconnect(player.self(), "Player leaved")
             Events.fire(EventType.PlayerLeave(player.self()))
             player.remove()
             Groups.player.update()
@@ -328,6 +321,7 @@ class PluginTest {
             while (Groups.player.find { a -> a.uuid() == player.uuid() } != null) {
                 sleep(10)
             }
+
             sleep(500)
         }
 
@@ -336,7 +330,7 @@ class PluginTest {
          * @param group 그룹명 (visitor, user, admin, owner)
          * @param admin 관리자 유무 (true, false)
          */
-        fun setPermission(group : String, admin : Boolean) {
+        fun setPermission(group: String, admin: Boolean) {
             serverCommand.handleMessage("setperm ${player.name()} $group")
             if (admin) {
                 serverCommand.handleMessage("admin ${player.name()}")
@@ -349,18 +343,18 @@ class PluginTest {
          * @param group 그룹명 (visitor, user, admin, owner)
          * @param admin 관리자 유무 (true, false)
          */
-        fun setPermission(player: Playerc, group : String, admin : Boolean) {
+        fun setPermission(player: Playerc, group: String, admin: Boolean) {
             serverCommand.handleMessage("setperm ${player.name()} $group")
             if (admin) {
                 serverCommand.handleMessage("admin ${player.name()}")
             }
         }
 
-        fun err(key : String, vararg parameters : Any) : String {
+        fun err(key: String, vararg parameters: Any): String {
             return "[scarlet]" + Bundle().get(key, *parameters)
         }
 
-        fun log(msg : String, vararg parameters : Any) : String {
+        fun log(msg: String, vararg parameters: Any): String {
             return Bundle().get(msg, *parameters)
         }
 
@@ -413,31 +407,16 @@ class PluginTest {
     }
 
     @Test
-    fun dbUpgradeTest_14() {
-        loadGame()
+    fun dbUpgradeTest_20() {
+        loadGame(loadPlugin = false)
 
-        // Copy Essentials 14.1 database
-        val file = Paths.get("src", "test", "resources", "database-v0.db").toFile()
-        val desc = File("database.mv.db")
-        file.copyRecursively(desc, true)
-
-        loadPlugin()
-        stopPlugin()
-    }
-
-    @Test
-    fun dbUpgradeTest_18() {
-        loadGame()
-
-        // Copy Essentials 18.2 database
-        val file = Paths.get("src", "test", "resources", "database-v1.db").toFile()
-        val desc = rootPath.child("database.mv.db").file()
-        file.copyRecursively(desc, true)
-        // todo db 업글 확인
-        /*Config.database = "C:/Users/cloud/AppData/Roaming/app/mods/Essentials/database"
-        println(Config.database)*/
+        val legacy = Paths.get("src", "test", "resources", "database-v2.db").toFile()
+        val modsDir = Fi("mods/Essentials")
+        if (!modsDir.exists()) modsDir.mkdirs()
+        legacy.copyTo(Fi("mods/Essentials/database.mv.db").file(), true)
 
         loadPlugin()
+
         stopPlugin()
     }
 }

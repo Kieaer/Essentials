@@ -17,13 +17,12 @@ import essential.common.pluginData
 import essential.common.util.findPlayerData
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
-import mindustry.content.Blocks
 import mindustry.content.Items
-import mindustry.content.Liquids
+import mindustry.content.UnitTypes
+import mindustry.core.NetServer
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
-import mindustry.gen.Call
 import mindustry.gen.Groups
 import net.datafaker.Faker
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
@@ -55,7 +54,6 @@ class ClientCommandTest {
             done = true
         }
     }
-
 
     @Test
     fun client_changemap() {
@@ -218,18 +216,8 @@ class ClientCommandTest {
 
     @Test
     fun client_exp() {
-        fun assert(expected: Int, actual: Int): Boolean {
-            for (i in 0 until 60) {
-                sleep(16)
-                if (expected == actual) {
-                    return true
-                }
-            }
-            return false
-        }
-
         fun assertFalse(condition: Boolean): Boolean {
-            for (i in 0 until 60) {
+            repeat(60) {
                 sleep(16)
                 if (!condition) {
                     return true
@@ -239,7 +227,7 @@ class ClientCommandTest {
         }
 
         fun assertTrue(condition: Boolean): Boolean {
-            for (i in 0 until 60) {
+            repeat(60) {
                 sleep(16)
                 if (condition) {
                     return true
@@ -413,7 +401,6 @@ class ClientCommandTest {
             Vars.state.teams.cores(player.team()).first().items.get(Items.copper)
         )
     }
-
 
     @Test
     fun client_gg() {
@@ -602,6 +589,12 @@ class ClientCommandTest {
         // Verify that all non-admin players were kicked
         assertTrue(dummy1.first.con().kicked)
         assertTrue(dummy2.first.con().kicked)
+
+        Groups.player.forEach { player ->
+            if (!player.admin()) {
+                NetServer.onDisconnect(player, "kicked")
+            }
+        }
 
         // Verify that the confirmation message was sent
         sleep(100)

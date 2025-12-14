@@ -4,13 +4,9 @@ plugins {
 }
 
 dependencies {
-    if (System.getenv("LOCAL_REPO_IP") != null) {
-        implementation(libs.bundles.local.game)
-    } else {
-        implementation(libs.bundles.game)
-    }
     compileOnly(libs.ksp.api)
     compileOnly(libs.kotlinpoet)
+    implementation(libs.bundles.game)
     implementation(libs.kotlinpoet.ksp)
     implementation("com.squareup:javapoet:1.13.0")
 }
