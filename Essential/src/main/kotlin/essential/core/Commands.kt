@@ -152,8 +152,8 @@ class Commands {
             suspendTransaction {
                 suspend fun change(data: PlayerData) {
                     val exists = PlayerTable.select(PlayerTable.name)
-                            .where { PlayerTable.name eq arg[1] }
-                            .firstOrNull()
+                        .where { PlayerTable.name eq arg[1] }
+                        .firstOrNull()
                     if (exists != null) {
                         data.err("command.changeName.exists", arg[1])
                     } else {
@@ -714,6 +714,7 @@ class Commands {
                             banMenus
                         )
                     }
+
                     1 -> {
                         val unbanConfirmMenu = Menus.registerMenu { _, i ->
                             if (i == 0) {
@@ -732,6 +733,7 @@ class Commands {
                             arrayOf(arrayOf(bundle["info.button.unban"], bundle[cancel]))
                         )
                     }
+
                     2 -> {
                         if (targetData != null) {
                             targetData!!.player.kick(Packets.KickReason.kick)
@@ -809,7 +811,7 @@ class Commands {
         } else {
             Vars.mods.scripts.runConsole(arg[0]).also { result ->
                 try {
-                    val errorName: String = result.substring(0, result.indexOf(' ') - 1)
+                    val errorName: String = result.take(result.indexOf(' ') - 1)
                     Class.forName("org.mozilla.javascript.$errorName")
                     playerData.sendDirect("[scarlet]> $result")
                 } catch (_: Throwable) {
@@ -819,14 +821,17 @@ class Commands {
         }
     }
 
-    @ClientCommand("kickall", description = "Kick all players without you.")
+    @ClientCommand("kickall", description = "Kick all players without admins.")
     fun kickAll(playerData: PlayerData, arg: Array<out String>) {
-        Groups.player.forEach {
-            if (!it.admin) it.kick(Packets.KickReason.kick)
+        Groups.player.forEach { player ->
+            if (player.uuid() == playerData.uuid) return@forEach
+            val target = findPlayerData(player.uuid())
+            if (target == null || !Permission.check(target, "kick.admin")) {
+                player.kick(Packets.KickReason.kick)
+                player.remove()
+            }
         }
-        if (playerData.player.unit() != null) {
-            playerData.send("command.kickAll.done")
-        }
+        playerData.send("command.kickAll.done")
     }
 
     @ServerCommand("kickall", description = "Kick all players.")
@@ -1546,6 +1551,7 @@ class Commands {
                                 desiredRot = e.rotate
                                 return
                             }
+
                             "break" -> {
                                 desiredBlockName = null // air
                                 desiredTeam = Team.derelict
@@ -1567,12 +1573,14 @@ class Commands {
                             // Before placing, it must have been air (or unknown -> assume air)
                             desiredBlockName = null
                         }
+
                         "break" -> {
                             // Before breaking, the block existed and is recorded in 'tile'
                             desiredBlockName = first.tile
                             desiredTeam = Team.all.find { t -> t.name == first.team } ?: Team.derelict
                             desiredRot = first.rotate
                         }
+
                         else -> {
                             // For non-occupancy actions, assume no change (keep current)
                             // But for safety, try to infer any previous occupancy (none exists), default to current state
