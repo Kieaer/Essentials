@@ -3,12 +3,13 @@ kotlin = "2.2.21"
 kotlinxDatetime = "0.7.1-0.6.x-compat"
 kotlinxCoroutines = "1.10.2"
 kotlinxSerialization = "1.9.0"
-ksp = "2.3.0"
+ksp = "2.3.3"
 kotlinpoet = "2.2.0"
 
-game = "v153"
+game = "v152"
+arc = "master-SNAPSHOT"
 local = "local-SNAPSHOT"
-kaml = "0.102.0"
+kaml = "0.104.0"
 exposed = "1.0.0-beta-5"
 hjson = "3.0.0-C11"
 jbcrypt = "0.4.3"
@@ -17,13 +18,13 @@ jackson = "2.19.0"
 jfiglet = "0.0.9"
 logback = "1.5.16"
 dataFaker = "2.5.3"
-mockito = "5.20.0"
+mockito = "5.21.0"
 jts = "1.20.0"
-proguard = "7.8.1"
+proguard = "7.8.2"
 
 lingua = "1.2.2"
 discord = "5.6.1"
-ktor = "3.3.1"
+ktor = "3.3.3"
 thymeleaf = "3.1.2.RELEASE"
 shadowJar = "9.0.0-beta12"
 
@@ -38,10 +39,10 @@ kotlinxSerializer = { module="org.jetbrains.kotlinx:kotlinx-serialization-json",
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", version.ref = "kotlinxDatetime" }
 kotlinxCoroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 
-arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "game" }
-core = { module = "com.github.Anuken.mindustry:core", version.ref = "game" }
-server = { module = "com.github.Anuken.mindustry:server", version.ref = "game" }
-headless = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "game" }
+arc = { module = "com.github.Anuken.Arc:arc-core", version.ref = "arc" }
+core = { module = "com.github.Anuken.mindustryjitpack:core", version.ref = "game" }
+server = { module = "com.github.Anuken.mindustryjitpack:server", version.ref = "game" }
+headless = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "arc" }
 
 arc-local = { module = "com.github.Anuken.Arc:arc-core", version.ref = "local" }
 core-local = { module = "com.github.Anuken.mindustry:core", version.ref = "local" }
