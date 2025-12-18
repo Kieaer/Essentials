@@ -5,7 +5,7 @@ import org.jetbrains.exposed.v1.datetime.CurrentDateTime
 import org.jetbrains.exposed.v1.datetime.datetime
 
 object ServerRoutingTable : Table("server_routing") {
-    val id = uinteger("id").autoIncrement().uniqueIndex()
+    val id = uinteger("id").autoIncrement()
     val playerUuid = varchar("player_uuid", 25).index()
     val hubServerName = varchar("hub_server_name", 100)
     val targetServerName = varchar("target_server_name", 100)
