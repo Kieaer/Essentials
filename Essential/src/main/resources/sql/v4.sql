@@ -28,7 +28,7 @@ ALTER TABLE players RENAME COLUMN pvpDefeatCount to pvp_lose_count;
 ALTER TABLE players RENAME COLUMN pvpEliminationTeamCount to pvp_eliminated_count;
 ALTER TABLE players RENAME COLUMN mvpTime to pvp_mvp_count;
 ALTER TABLE players RENAME COLUMN accountID to account_id;
-ALTER TABLE players RENAME COLUMN accountPW to account_id;
+ALTER TABLE players RENAME COLUMN accountPW to account_pw;
 ALTER TABLE players RENAME COLUMN discord to discord_id;
 ALTER TABLE players RENAME COLUMN mute to chat_muted;
 ALTER TABLE players RENAME COLUMN showLevelEffects to effect_visibility;
@@ -51,6 +51,3 @@ ALTER TABLE players ADD COLUMN is_banned boolean AFTER is_connected;
 
 /* 더이상 사용되지 않는 Table 삭제 */
 DROP TABLE db;
-
-/* 현재 DB 버전 추가 */
-INSERT INTO plugin_data VALUES (21, 4, {})
