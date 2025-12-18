@@ -10,7 +10,6 @@ import arc.util.Time
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
 import essential.common.players
-import essential.common.rootPath
 import essential.core.Main
 import mindustry.Vars
 import mindustry.Vars.*
@@ -55,7 +54,7 @@ class PluginTest {
 
         var testMap: Map? = null
 
-        fun loadGame(loadPlugin: Boolean = true) {
+        fun loadGame(loadPlugin: Boolean = false) {
             if (gameLoaded) return
             if (System.getProperty("os.name").contains("Windows")) {
                 val pathToBeDeleted : Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
@@ -103,6 +102,10 @@ class PluginTest {
                     .submit { res ->
                         path.child("scripts/base.js").writeString(res.resultAsString)
                     }
+            }
+
+            if (loadPlugin) {
+                path.child("mods/Essentials").deleteDirectory()
             }
 
             try {
@@ -197,11 +200,6 @@ class PluginTest {
 
         fun loadPlugin() {
             if (pluginLoaded) return
-            // In tests we may prepare files under mods/Essentials (e.g., legacy DB).
-            // Skip deleting the directory when test mode is enabled.
-            if (System.getProperty("test") != "yes") {
-                path.child("mods/Essentials").deleteDirectory()
-            }
 
             main = Main()
 
@@ -397,7 +395,7 @@ class PluginTest {
     fun startPlugin() {
         System.setProperty("test", "yes")
 
-        loadGame()
+        loadGame(true)
         stopPlugin()
     }
 
@@ -408,15 +406,14 @@ class PluginTest {
 
     @Test
     fun dbUpgradeTest_20() {
-        loadGame(loadPlugin = false)
+        loadGame()
 
-        val legacy = Paths.get("src", "test", "resources", "database-v2.db").toFile()
-        val modsDir = Fi("mods/Essentials")
-        if (!modsDir.exists()) modsDir.mkdirs()
-        legacy.copyTo(Fi("mods/Essentials/database.mv.db").file(), true)
+        val file = Paths.get("src", "test", "resources", "database-v3.mv.db").toFile()
+        val target = Core.settings.dataDirectory.child("mods/Essentials/data/database.mv.db").file()
+        target.parentFile.mkdirs()
+        file.copyTo(target, true)
 
         loadPlugin()
-
         stopPlugin()
     }
 }
