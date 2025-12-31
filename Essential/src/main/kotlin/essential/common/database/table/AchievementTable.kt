@@ -9,7 +9,7 @@ import kotlin.time.ExperimentalTime
  * Table for storing player achievement data
  */
 object AchievementTable : Table("player_achievements") {
-    val id = uinteger("id").autoIncrement().uniqueIndex()
+    val id = uinteger("id").autoIncrement()
     val playerId = uinteger("player_id").references(PlayerTable.id)
     val achievementName = varchar("achievement_name", 50)
     @OptIn(ExperimentalTime::class)

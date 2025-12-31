@@ -60,6 +60,7 @@ import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt

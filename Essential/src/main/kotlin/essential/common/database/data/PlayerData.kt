@@ -11,6 +11,7 @@ import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll

@@ -6,8 +6,10 @@ import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.less
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greater
+import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.insertReturning
 import org.jetbrains.exposed.v1.r2dbc.selectAll

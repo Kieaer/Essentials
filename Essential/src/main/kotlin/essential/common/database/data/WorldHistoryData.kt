@@ -5,6 +5,7 @@ import essential.common.database.worldHistoryDatabase
 import kotlinx.coroutines.flow.single
 import ksp.table.GenerateCode
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.deleteAll
 import org.jetbrains.exposed.v1.r2dbc.insertReturning
 import org.jetbrains.exposed.v1.r2dbc.selectAll

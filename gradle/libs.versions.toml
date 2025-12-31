@@ -7,10 +7,10 @@ ksp = "2.3.3"
 kotlinpoet = "2.2.0"
 
 game = "v152"
-arc = "master-SNAPSHOT"
+arc = "v152"
 local = "local-SNAPSHOT"
 kaml = "0.104.0"
-exposed = "1.0.0-beta-5"
+exposed = "1.0.0-rc-4"
 hjson = "3.0.0-C11"
 jbcrypt = "0.4.3"
 mavenArtifact = "4.0.0-alpha-3"
@@ -54,6 +54,8 @@ exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "e
 exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
 exposed-kotlin-time = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
+exposed-migration-core = { module = "org.jetbrains.exposed:exposed-migration-core", version.ref = "exposed" }
+exposed-migration-r2dbc = { module = "org.jetbrains.exposed:exposed-migration-r2dbc", version.ref = "exposed" }
 
 kaml = { module = "com.charleskorn.kaml:kaml-jvm", version.ref = "kaml" }
 
@@ -95,7 +97,7 @@ proguard = { module = "com.guardsquare:proguard-base", version.ref = "proguard"}
 
 [bundles]
 kotlinxEcosystem = ["kotlinxDatetime", "kotlinxCoroutines", "kotlinxSerializer"]
-exposed = ["exposed-core", "exposed-r2dbc", "exposed-kotlin-time", "exposed-json"]
+exposed = ["exposed-core", "exposed-r2dbc", "exposed-kotlin-time", "exposed-json", "exposed-migration-core", "exposed-migration-r2dbc"]
 game = ["arc", "core", "server"]
 local-game = ["arc-local", "core-local", "server-local"]
 game-test = ["arc", "core", "server", "headless", "datafaker", "mockito", "jts"]

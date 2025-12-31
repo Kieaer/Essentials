@@ -6,7 +6,7 @@ import org.jetbrains.exposed.v1.datetime.timestamp
 import kotlin.time.ExperimentalTime
 
 object WorldHistoryTable : Table("world_history") {
-    val id = uinteger("id").autoIncrement().uniqueIndex()
+    val id = uinteger("id").autoIncrement()
     val time = long("time")
     val player = varchar("player", 100)
     val action = varchar("action", 50)

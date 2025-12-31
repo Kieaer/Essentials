@@ -5,10 +5,10 @@ import essential.common.database.table.PlayerBannedTable
 import ksp.table.GenerateCode
 import mindustry.gen.Playerc
 import mindustry.net.Administration
-import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.v1.core.SqlExpressionBuilder.like
 import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.core.castTo
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.like
 import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.json.contains
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
@@ -64,12 +64,12 @@ suspend fun checkPlayerBanned(uuid: String, ip: String, name: String): Boolean {
         return suspendTransaction {
             val nameCond =
                 PlayerBannedTable.names
-                    .castTo<String>(TextColumnType())
+                    .castTo(TextColumnType())
                     .like("%\"$name\"%")
 
             val ipCond =
                 PlayerBannedTable.ips
-                    .castTo<String>(TextColumnType())
+                    .castTo(TextColumnType())
                     .like("%\"$ip\"%")
 
             PlayerBannedTable

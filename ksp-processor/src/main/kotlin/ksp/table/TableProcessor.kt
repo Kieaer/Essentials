@@ -100,6 +100,7 @@ class TableProcessor(
         sb.append("import kotlinx.coroutines.flow.first\n")
         sb.append("import kotlinx.coroutines.flow.map\n")
         sb.append("import kotlinx.coroutines.flow.toList\n")
+        sb.append("import org.jetbrains.exposed.v1.core.eq\n")
         sb.append("import kotlin.time.ExperimentalTime\n\n")
 
         // Helper: set of primitive/simple types that don't need JSON conversion
@@ -139,7 +140,7 @@ class TableProcessor(
             val needsJson = !isSimpleType(typeDecl) && isSerializableType(typeDecl)
             if (needsJson) {
                 val typeName = typeDecl!!.simpleName.asString()
-                sb.append("    val $propertyName = Json.decodeFromString<$typeName>(row[$tableClassName.$propertyName])\n")
+                sb.append("    val $propertyName = Json { ignoreUnknownKeys = true }.decodeFromString<$typeName>(row[$tableClassName.$propertyName])\n")
             } else {
                 sb.append("    val $propertyName = row[$tableClassName.$propertyName]\n")
             }
