@@ -409,9 +409,11 @@ class PluginTest {
         loadGame()
 
         val file = Paths.get("src", "test", "resources", "database-v3.mv.db").toFile()
-        val target = Core.settings.dataDirectory.child("mods/Essentials/data/database.mv.db").file()
-        target.parentFile.mkdirs()
+        val target = Paths.get("config", "mods", "Essentials", "data", "database.mv.db").toFile()
+        val target1 = Paths.get("config", "mods", "Essentials", "data", "database-v3.mv.db").toFile()
         file.copyTo(target, true)
+        file.copyTo(target1, true)
+        println(target.absolutePath)
 
         loadPlugin()
         stopPlugin()

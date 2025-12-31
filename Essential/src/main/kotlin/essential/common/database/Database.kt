@@ -4,6 +4,7 @@ import arc.util.Log
 import essential.common.DATABASE_VERSION
 import essential.common.bundle
 import essential.common.database.data.getPluginData
+import essential.common.database.data.update
 import essential.common.database.table.*
 import essential.common.rootPath
 import io.asyncer.r2dbc.mysql.MySqlConnectionConfiguration
@@ -28,28 +29,37 @@ import org.mariadb.r2dbc.MariadbConnectionConfiguration
 import org.mariadb.r2dbc.MariadbConnectionFactory
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
+import java.nio.file.Paths
 import java.time.Duration
 
 var worldHistoryDatabase: R2dbcDatabase? = null
 var defaultDatabase: R2dbcDatabase? = null
+private var upgradeDialectIsH2: Boolean = false
 
 /** Initial database setup */
 suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
-    val h2 = h2("worldHistory")
+    // Parse database URL to determine the database type
+    val databaseType = when {
+        r2dbcUrl.startsWith("h2:") -> "h2"
+        r2dbcUrl.startsWith("postgresql:") -> "postgresql"
+        r2dbcUrl.startsWith("mysql:") -> "mysql"
+        r2dbcUrl.startsWith("mariadb:") -> "mariadb"
+        else -> "h2" // Default to H2
+    }
 
-    rootPath.mkdirs()
-    val dataDir = rootPath.child("data")
-    if (!dataDir.exists()) dataDir.mkdirs()
+    val h2History = h2("worldHistory")
 
     worldHistoryDatabase = R2dbcDatabase.connect(
-        connectionFactory = h2.first,
+        connectionFactory = h2History.first,
         databaseConfig = R2dbcDatabaseConfig {
             defaultMaxAttempts = 1
             defaultMinRetryDelay = 0
             defaultMaxRetryDelay = 0
-            explicitDialect = h2.second
+            explicitDialect = h2History.second
         }
     )
+
+    rootPath.child("data").mkdirs()
 
     worldHistoryDatabase?.let { db ->
         suspendTransaction(db = db) {
@@ -58,10 +68,16 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
         }
     }
 
+    val (connectionFactory, dialect) = when (databaseType) {
+        "postgresql" -> postgresql()
+        "mysql" -> mysql()
+        "mariadb" -> mariadb()
+        else -> h2("database")
+    }
 
-    val selected = h2("main")
+    upgradeDialectIsH2 = dialect is H2Dialect
 
-    val poolConfig = ConnectionPoolConfiguration.builder(selected.first)
+    val poolConfig = ConnectionPoolConfiguration.builder(connectionFactory)
         .maxSize(2)
         .initialSize(1)
         .maxIdleTime(Duration.ofMinutes(10))
@@ -78,14 +94,16 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
             defaultMaxAttempts = 1
             defaultMinRetryDelay = 0
             defaultMaxRetryDelay = 0
-            explicitDialect = selected.second
+            explicitDialect = dialect
         }
     )
 
     TransactionManager.defaultDatabase = defaultDatabase!!
 
+    upgradeDatabase()
+
     suspendTransaction {
-        SchemaUtils.create(
+        val tablesToCreate = listOf(
             PlayerTable,
             PluginTable,
             PlayerBannedTable,
@@ -93,45 +111,115 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
             MapRatingTable,
             ServerRoutingTable
         )
-    }
 
-    upgradeDatabase()
+        tablesToCreate.forEach { table ->
+            try {
+                exec("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='${table.tableName}'")
+            } catch (_: Throwable) {
+                SchemaUtils.create(table)
+            }
+        }
+    }
 }
 
-/**
- * Update database schema when necessary.
- * Compares the current database version with the plugin's database version and runs SQL scripts.
- */
+private fun migrateSqliteToH2IfNeeded() {
+    try {
+        val dir = arc.Core.settings.dataDirectory.child("mods/Essentials/data")
+        val h2File = dir.child("database.mv.db").file()
+        if (h2File.exists()) {
+            Log.info("H2 database already present. Skipping SQLite migration.")
+            return
+        }
+
+        Class.forName("org.sqlite.JDBC")
+
+        // write here
+    } catch (_: Throwable) {
+    }
+}
+
 private suspend fun upgradeDatabase() {
-    val pluginData = getPluginData()
-    val currentVersion = pluginData?.databaseVersion ?: DATABASE_VERSION
+    try {
+        migrateSqliteToH2IfNeeded()
 
-    if (currentVersion < DATABASE_VERSION) {
-        Log.info(bundle["database.upgrade.start", currentVersion, DATABASE_VERSION])
+        var currentVersion: UByte? = null
 
-        for (version in (currentVersion.toUInt() + 1u).toUByte()..DATABASE_VERSION) {
-            val fileName = "v${version}.sql"
-            val sqlFilePath = "sql/$fileName"
-            val inputStream: InputStream? = Thread.currentThread().contextClassLoader.getResourceAsStream(sqlFilePath)
+        val candidates = listOf(
+            Paths.get("config/mods/Essentials/data/database.mv.db").toFile(),
+            rootPath.child("data/database.mv.db").file(),
+        )
+        val found = candidates.firstOrNull { it.exists() }
+        if (found != null) {
+            currentVersion = 3u
+        }
 
-            if (inputStream != null) {
-                val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
-                Log.info(bundle["database.upgrade.execute", fileName])
+        if (currentVersion == null) {
+            currentVersion = getPluginData()?.databaseVersion
+        }
 
-                suspendTransaction {
-                    sqlScript.split(";").filter { it.trim().isNotEmpty() }.forEach { statement ->
-                        exec(statement)
-                    }
-                }
-            } else {
-                Log.warn(bundle["database.upgrade.notFound", fileName])
+        if (currentVersion == null) {
+            suspendTransaction {
+                exec("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='DATA'")
+                    ?.let { currentVersion = 3u }
+                    ?: exec("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='PLAYER'")
+                        ?.let { currentVersion = 3u }
+                    ?: exec("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='BANNED'")
+                        ?.let { currentVersion = 3u }
             }
         }
 
-        Log.info(bundle["database.upgrade.end"])
-    } else {
-        Log.info(bundle["database.upgrade.upToDate", DATABASE_VERSION])
-    }
+        if (currentVersion == null) {
+            Log.info(bundle["database.upgrade.upToDate", DATABASE_VERSION])
+            return
+        }
+
+        if (currentVersion < DATABASE_VERSION) {
+            Log.info(bundle["database.upgrade.start", currentVersion, DATABASE_VERSION])
+
+            for (v in (currentVersion.toUInt() + 1u)..DATABASE_VERSION.toUInt()) {
+                val version = v.toUByte()
+                val sqlFiles = listOf("v${version}_h2.sql", "v${version}.sql")
+
+                for (sqlFile in sqlFiles) {
+                    val inputStream = Thread.currentThread().contextClassLoader.getResourceAsStream("sql/$sqlFile")
+                    if (inputStream != null) {
+                        try {
+                            val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
+                            Log.info(bundle["database.upgrade.execute", sqlFile])
+
+                            suspendTransaction {
+                                exec(sqlScript)
+                            }
+
+                            val data = getPluginData()
+                            if (data != null) {
+                                data.databaseVersion = version
+                                data.update()
+                            }
+                            break
+                        } catch (e: Throwable) {
+                            e.printStackTrace()
+                            continue
+                        }
+                    }
+                }
+            }
+
+            // Final version update
+            val data = getPluginData()
+            if (data != null) {
+                data.databaseVersion = DATABASE_VERSION
+                data.update()
+            }
+
+            Log.info(bundle["database.upgrade.end"])
+        } else {
+            Log.info(bundle["database.upgrade.upToDate", DATABASE_VERSION])
+        }
+        } catch (e: Exception) {
+            Log.warn("Database upgrade failed: ${e.message}")
+            e.printStackTrace()
+        }
 }
 
 fun postgresql(): Pair<ConnectionFactory, DatabaseDialect> =
@@ -141,8 +229,8 @@ fun postgresql(): Pair<ConnectionFactory, DatabaseDialect> =
                 .host("localhost")
                 .port(5432)
                 .database("essential")
-                .username("postgres")
-                .password("postgres")
+                .username("plugins")
+                .password("plugind")
                 .schema("public")
                 .build()
         ), PostgreSQLDialect()
@@ -155,9 +243,9 @@ fun h2(name: String): Pair<ConnectionFactory, DatabaseDialect> = Pair(
             .url("./config/mods/Essentials/data/$name")
             .property(H2ConnectionOption.DB_CLOSE_DELAY, "-1")
             .property(H2ConnectionOption.DB_CLOSE_ON_EXIT, "FALSE")
-            .property(H2ConnectionOption.MODE, "PostgreSQL")
-            .property("DATABASE_TO_LOWER", "TRUE")
             .property("DEFAULT_NULL_ORDERING", "HIGH")
+            .username("sa")
+            .password("123")
             .build()
     ),
     H2Dialect()
