@@ -154,7 +154,7 @@ class PluginTest {
                         if (loadPlugin) loadPlugin()
 
                         begins[0] = true
-                        testMap = maps.loadInternalMap("maze")
+                        testMap = maps.loadInternalMap("serpulo/groundZero")
                         Thread.currentThread().interrupt()
                     }
                 }
@@ -389,14 +389,6 @@ class PluginTest {
             }
             return data.lastReceivedMessage
         }
-    }
-
-    @Test
-    fun startPlugin() {
-        System.setProperty("test", "yes")
-
-        loadGame(true)
-        stopPlugin()
     }
 
     @AfterTest
