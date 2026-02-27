@@ -590,11 +590,13 @@ class ClientCommandTest {
         assertTrue(dummy1.first.con().kicked)
         assertTrue(dummy2.first.con().kicked)
 
-        Groups.player.forEach { player ->
-            if (!player.admin()) {
-                NetServer.onDisconnect(player, "kicked")
+        Groups.player.toList().forEach { p ->
+            if (p.uuid() != player.uuid() && !p.admin()) {
+                NetServer.onDisconnect(p, "kicked")
             }
         }
+
+        Groups.player.update()
 
         // Verify that the confirmation message was sent
         sleep(100)
