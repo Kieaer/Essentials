@@ -824,7 +824,7 @@ class Commands {
 
     @ClientCommand("kickall", description = "Kick all players without admins.")
     fun kickAll(playerData: PlayerData, arg: Array<out String>) {
-        Groups.player.forEach { player ->
+        Groups.player.toList().forEach { player ->
             if (player.uuid() == playerData.uuid) return@forEach
             val target = findPlayerData(player.uuid())
             if (target == null || !Permission.check(target, "kick.admin")) {
@@ -837,7 +837,7 @@ class Commands {
 
     @ServerCommand("kickall", description = "Kick all players.")
     fun kickAll() {
-        Groups.player.forEach {
+        Groups.player.toList().forEach {
             if (!it.admin) it.kick(Packets.KickReason.kick)
         }
         Log.info(Bundle()["command.kickAll.done"])
