@@ -1,4 +1,7 @@
-import arc.*
+import arc.ApplicationCore
+import arc.Core
+import arc.Events
+import arc.Settings
 import arc.backend.headless.HeadlessApplication
 import arc.files.Fi
 import arc.graphics.Camera
@@ -7,10 +10,14 @@ import arc.util.CommandHandler
 import arc.util.Http
 import arc.util.Log
 import arc.util.Time
+import essential.common.DATABASE_VERSION
+import essential.common.bundle
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
+import essential.common.database.data.getPlayerData
 import essential.common.players
 import essential.core.Main
+import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.Vars.*
 import mindustry.content.UnitTypes
@@ -36,6 +43,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.test.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -54,12 +62,14 @@ class PluginTest {
 
         var testMap: Map? = null
 
-        fun loadGame(loadPlugin: Boolean = false) {
+        @OptIn(ExperimentalPathApi::class)
+        fun loadGame(loadPlugin: Boolean = false, deleteConfig: Boolean = true, logHandler: (String) -> Unit = {}) {
             if (gameLoaded) return
             if (System.getProperty("os.name").contains("Windows")) {
-                val pathToBeDeleted : Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
+                val pathToBeDeleted: Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
                 if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
-                    Files.walk(pathToBeDeleted).sorted(Comparator.reverseOrder()).map { obj : Path -> obj.toFile() }.forEach { obj : File -> obj.delete() }
+                    Files.walk(pathToBeDeleted).sorted(Comparator.reverseOrder()).map { obj: Path -> obj.toFile() }
+                        .forEach { obj: File -> obj.delete() }
                 }
             }
 
@@ -69,6 +79,9 @@ class PluginTest {
 
             path.child("maps").deleteDirectory()
             path.child("scripts").deleteDirectory()
+            if (deleteConfig) {
+                path.child("config").deleteDirectory()
+            }
 
             path.child("locales").writeString("en", false)
             path.child("version.properties")
@@ -106,6 +119,7 @@ class PluginTest {
 
             if (loadPlugin) {
                 path.child("mods/Essentials").deleteDirectory()
+                path.child("config/mods/Essentials").deleteDirectory()
             }
 
             try {
@@ -115,6 +129,14 @@ class PluginTest {
 
                 val core: ApplicationCore = object : ApplicationCore() {
                     override fun setup() {
+                        val originalLogger = Log.logger
+                        Log.logger = Log.LogHandler { level, text ->
+                            originalLogger.log(level, text)
+                            logHandler(text)
+                            if (level == Log.LogLevel.err) {
+                                throw RuntimeException("Error detected in logs: $text")
+                            }
+                        }
                         headless = true
                         net = Net(null)
                         tree = FileTree()
@@ -406,16 +428,31 @@ class PluginTest {
 
     @Test
     fun dbUpgradeTest_20() {
-        loadGame()
-
+        val dataDir = Paths.get("config", "mods", "Essentials", "data")
+        dataDir.toFile().mkdirs()
         val file = Paths.get("src", "test", "resources", "database-v3.mv.db").toFile()
-        val target = Paths.get("config", "mods", "Essentials", "data", "database.mv.db").toFile()
-        val target1 = Paths.get("config", "mods", "Essentials", "data", "database-v3.mv.db").toFile()
+        val target = dataDir.resolve("database.mv.db").toFile()
         file.copyTo(target, true)
-        file.copyTo(target1, true)
-        println(target.absolutePath)
+
+        loadGame(deleteConfig = false, logHandler = {
+            println("LOG: $it")
+            val alreadyUpgraded = bundle["database.upgrade.upToDate", DATABASE_VERSION]
+            if (it.contains(alreadyUpgraded)) {
+                println("Detected log: $it")
+                fail("Upgrade logic not executed")
+            }
+        })
 
         loadPlugin()
+
+        runBlocking {
+            val uuid = "UPQJIWNSHAQAAAAAAAAAAA=="
+            val player = getPlayerData(uuid)
+            assertNotNull(player)
+            assertEquals(56, player.exp)
+            assertEquals(uuid, player.uuid)
+        }
+
         stopPlugin()
     }
 }

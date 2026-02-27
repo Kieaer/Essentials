@@ -7,6 +7,7 @@ import essential.common.database.data.getPluginData
 import essential.common.database.data.update
 import essential.common.database.table.*
 import essential.common.rootPath
+import essential.core.Main
 import io.asyncer.r2dbc.mysql.MySqlConnectionConfiguration
 import io.asyncer.r2dbc.mysql.MySqlConnectionFactory
 import io.r2dbc.h2.H2ConnectionConfiguration
@@ -18,7 +19,6 @@ import io.r2dbc.postgresql.PostgresqlConnectionConfiguration
 import io.r2dbc.postgresql.PostgresqlConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
 import io.r2dbc.spi.ValidationDepth
-import org.jetbrains.exposed.v1.core.Schema
 import org.jetbrains.exposed.v1.core.vendors.*
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
@@ -27,14 +27,12 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mariadb.r2dbc.MariadbConnectionConfiguration
 import org.mariadb.r2dbc.MariadbConnectionFactory
-import java.io.InputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import java.time.Duration
 
 var worldHistoryDatabase: R2dbcDatabase? = null
 var defaultDatabase: R2dbcDatabase? = null
-private var upgradeDialectIsH2: Boolean = false
 
 /** Initial database setup */
 suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
@@ -49,33 +47,22 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
 
     val h2History = h2("worldHistory")
 
-    worldHistoryDatabase = R2dbcDatabase.connect(
-        connectionFactory = h2History.first,
-        databaseConfig = R2dbcDatabaseConfig {
-            defaultMaxAttempts = 1
-            defaultMinRetryDelay = 0
-            defaultMaxRetryDelay = 0
-            explicitDialect = h2History.second
-        }
-    )
+    worldHistoryDatabase = connectDatabase(h2History.first, h2History.second)
 
     rootPath.child("data").mkdirs()
 
     worldHistoryDatabase?.let { db ->
         suspendTransaction(db = db) {
-            SchemaUtils.createSchema(Schema("public"))
             SchemaUtils.create(WorldHistoryTable)
         }
     }
 
     val (connectionFactory, dialect) = when (databaseType) {
-        "postgresql" -> postgresql()
-        "mysql" -> mysql()
-        "mariadb" -> mariadb()
+        "postgresql" -> postgresql(r2dbcUrl, user, pass)
+        "mysql" -> mysql(r2dbcUrl, user, pass)
+        "mariadb" -> mariadb(r2dbcUrl, user, pass)
         else -> h2("database")
     }
-
-    upgradeDialectIsH2 = dialect is H2Dialect
 
     val poolConfig = ConnectionPoolConfiguration.builder(connectionFactory)
         .maxSize(2)
@@ -88,15 +75,7 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
         .validationDepth(ValidationDepth.REMOTE)
         .build()
 
-    defaultDatabase = R2dbcDatabase.connect(
-        connectionFactory = ConnectionPool(poolConfig),
-        databaseConfig = R2dbcDatabaseConfig {
-            defaultMaxAttempts = 1
-            defaultMinRetryDelay = 0
-            defaultMaxRetryDelay = 0
-            explicitDialect = dialect
-        }
-    )
+    defaultDatabase = connectDatabase(ConnectionPool(poolConfig), dialect)
 
     TransactionManager.defaultDatabase = defaultDatabase!!
 
@@ -112,36 +91,32 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
             ServerRoutingTable
         )
 
-        tablesToCreate.forEach { table ->
-            try {
-                exec("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='${table.tableName}'")
-            } catch (_: Throwable) {
-                SchemaUtils.create(table)
-            }
-        }
+        SchemaUtils.create(*tablesToCreate.toTypedArray())
     }
 }
 
-private fun migrateSqliteToH2IfNeeded() {
-    try {
-        val dir = arc.Core.settings.dataDirectory.child("mods/Essentials/data")
-        val h2File = dir.child("database.mv.db").file()
-        if (h2File.exists()) {
-            Log.info("H2 database already present. Skipping SQLite migration.")
-            return
+private fun connectDatabase(factory: ConnectionFactory, dialect: DatabaseDialect): R2dbcDatabase {
+    return R2dbcDatabase.connect(
+        connectionFactory = factory,
+        databaseConfig = R2dbcDatabaseConfig {
+            defaultMaxAttempts = 1
+            defaultMinRetryDelay = 0
+            defaultMaxRetryDelay = 0
+            explicitDialect = dialect
         }
+    )
+}
 
-        Class.forName("org.sqlite.JDBC")
-
-        // write here
-    } catch (_: Throwable) {
+private suspend fun updatePluginVersion(version: UByte) {
+    val data = getPluginData()
+    if (data != null) {
+        data.databaseVersion = version
+        data.update()
     }
 }
 
 private suspend fun upgradeDatabase() {
     try {
-        migrateSqliteToH2IfNeeded()
-
         var currentVersion: UByte? = null
 
         val candidates = listOf(
@@ -149,23 +124,18 @@ private suspend fun upgradeDatabase() {
             rootPath.child("data/database.mv.db").file(),
         )
         val found = candidates.firstOrNull { it.exists() }
-        if (found != null) {
-            currentVersion = 3u
-        }
-
-        if (currentVersion == null) {
-            currentVersion = getPluginData()?.databaseVersion
-        }
-
-        if (currentVersion == null) {
-            suspendTransaction {
-                exec("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='DATA'")
-                    ?.let { currentVersion = 3u }
-                    ?: exec("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='PLAYER'")
-                        ?.let { currentVersion = 3u }
-                    ?: exec("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='BANNED'")
-                        ?.let { currentVersion = 3u }
+        currentVersion = try {
+            getPluginData()?.databaseVersion
+        } catch (_: Throwable) {
+            val dbExists = try {
+                suspendTransaction {
+                    exec("SELECT 1 FROM db LIMIT 1")
+                    true
+                }
+            } catch (_: Throwable) {
+                false
             }
+            if (found != null || dbExists) 3u else null
         }
 
         if (currentVersion == null) {
@@ -178,64 +148,86 @@ private suspend fun upgradeDatabase() {
 
             for (v in (currentVersion.toUInt() + 1u)..DATABASE_VERSION.toUInt()) {
                 val version = v.toUByte()
-                val sqlFiles = listOf("v${version}_h2.sql", "v${version}.sql")
+                val dialectSuffix = when (defaultDatabase!!.config.explicitDialect) {
+                    is H2Dialect -> "_h2"
+                    is PostgreSQLDialect -> "_postgres"
+                    is MariaDBDialect -> "_mariadb"
+                    is MysqlDialect -> "_mysql"
+                    else -> ""
+                }
+                val sqlFiles = listOf("v${version}${dialectSuffix}.sql", "v${version}_h2.sql", "v${version}.sql")
 
                 for (sqlFile in sqlFiles) {
-                    val inputStream = Thread.currentThread().contextClassLoader.getResourceAsStream("sql/$sqlFile")
+                    val inputStream = Main::class.java.classLoader.getResourceAsStream("sql/$sqlFile")
                     if (inputStream != null) {
                         try {
                             val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
                             Log.info(bundle["database.upgrade.execute", sqlFile])
 
                             suspendTransaction {
-                                exec(sqlScript)
-                            }
+                                sqlScript.split(";").forEach {
+                                    val statement = it.trim()
+                                    if (statement.isNotEmpty()) {
+                                        try {
+                                            exec(statement)
+                                        } catch (e: Throwable) {
+                                            val isCritical = statement.contains("plugin_data", true) ||
+                                                    statement.contains("players", true)
+                                            if (isCritical) {
+                                                throw IllegalStateException("Critical statement failed: $statement", e)
+                                            }
+                                            Log.warn("Failed to execute statement: $statement. Reason: ${e.message}")
+                                        }
+                                    }
+                                }
 
-                            val data = getPluginData()
-                            if (data != null) {
-                                data.databaseVersion = version
-                                data.update()
+                                updatePluginVersion(version)
                             }
                             break
                         } catch (e: Throwable) {
                             e.printStackTrace()
-                            continue
+                            throw e
                         }
                     }
                 }
             }
 
             // Final version update
-            val data = getPluginData()
-            if (data != null) {
-                data.databaseVersion = DATABASE_VERSION
-                data.update()
-            }
+            updatePluginVersion(DATABASE_VERSION)
 
             Log.info(bundle["database.upgrade.end"])
         } else {
             Log.info(bundle["database.upgrade.upToDate", DATABASE_VERSION])
         }
-        } catch (e: Exception) {
-            Log.warn("Database upgrade failed: ${e.message}")
-            e.printStackTrace()
-        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }
 
-fun postgresql(): Pair<ConnectionFactory, DatabaseDialect> =
-    Pair(
+private fun parseR2dbcUrl(r2dbcUrl: String, prefix: String, defaultPort: String): Triple<String, Int, String> {
+    val url = r2dbcUrl.removePrefix(prefix)
+    val host = url.substringBefore(":").substringBefore("/")
+    val port = url.substringAfter(":", defaultPort).substringBefore("/")
+    val database = url.substringAfter("/")
+    return Triple(host, port.toInt(), database)
+}
+
+fun postgresql(r2dbcUrl: String, user: String, pass: String): Pair<ConnectionFactory, DatabaseDialect> {
+    val (host, port, database) = parseR2dbcUrl(r2dbcUrl, "postgresql://", "5432")
+
+    return Pair(
         PostgresqlConnectionFactory(
             PostgresqlConnectionConfiguration.builder()
-                .host("localhost")
-                .port(5432)
-                .database("essential")
-                .username("plugins")
-                .password("plugind")
+                .host(host)
+                .port(port)
+                .database(database)
+                .username(user)
+                .password(pass)
                 .schema("public")
                 .build()
         ), PostgreSQLDialect()
     )
-
+}
 
 fun h2(name: String): Pair<ConnectionFactory, DatabaseDialect> = Pair(
     H2ConnectionFactory(
@@ -251,28 +243,36 @@ fun h2(name: String): Pair<ConnectionFactory, DatabaseDialect> = Pair(
     H2Dialect()
 )
 
-fun mysql(): Pair<ConnectionFactory, DatabaseDialect> = Pair(
-    MySqlConnectionFactory.from(
-        MySqlConnectionConfiguration.builder()
-            .host("localhost")
-            .port(3306)
-            .database("essential")
-            .username("root")
-            .password("1234")
-            .build()
-    ),
-    MysqlDialect()
-)
+fun mysql(r2dbcUrl: String, user: String, pass: String): Pair<ConnectionFactory, DatabaseDialect> {
+    val (host, port, database) = parseR2dbcUrl(r2dbcUrl, "mysql://", "3306")
 
-fun mariadb(): Pair<ConnectionFactory, DatabaseDialect> = Pair(
-    MariadbConnectionFactory.from(
-        MariadbConnectionConfiguration.builder()
-            .host("localhost")
-            .port(3306)
-            .database("essential")
-            .username("root")
-            .password("1234")
-            .build()
-    ),
-    MariaDBDialect()
-)
+    return Pair(
+        MySqlConnectionFactory.from(
+            MySqlConnectionConfiguration.builder()
+                .host(host)
+                .port(port)
+                .database(database)
+                .username(user)
+                .password(pass)
+                .build()
+        ),
+        MysqlDialect()
+    )
+}
+
+fun mariadb(r2dbcUrl: String, user: String, pass: String): Pair<ConnectionFactory, DatabaseDialect> {
+    val (host, port, database) = parseR2dbcUrl(r2dbcUrl, "mariadb://", "3306")
+
+    return Pair(
+        MariadbConnectionFactory.from(
+            MariadbConnectionConfiguration.builder()
+                .host(host)
+                .port(port)
+                .database(database)
+                .username(user)
+                .password(pass)
+                .build()
+        ),
+        MariaDBDialect()
+    )
+}

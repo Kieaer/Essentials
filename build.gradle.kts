@@ -14,15 +14,11 @@ subprojects {
     apply(plugin = "maven-publish")
 
     tasks.shadowJar {
+        mergeServiceFiles()
+
         exclude("arc/**")
         exclude("mindustry/**")
         exclude("server/**")
-
-        from(project.configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }) {
-            exclude("META-INF/*.SF")
-            exclude("META-INF/*.DSA")
-            exclude("META-INF/*.RSA")
-        }
 
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         from(rootDir) {

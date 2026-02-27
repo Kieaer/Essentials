@@ -176,6 +176,11 @@ object Permission {
             result.chatFormat = ""
         }
 
+        val group = main[result.group]
+        if (group != null && result.chatFormat.isEmpty()) {
+            result.chatFormat = group.chatFormat
+        }
+
         return result
     }
 
@@ -207,5 +212,6 @@ object Permission {
         val inheritance: String? = null,
         val permission: MutableList<String> = mutableListOf(),
         val default: Boolean? = null,
+        val chatFormat: String = "",
     )
 }

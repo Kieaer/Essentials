@@ -44,11 +44,26 @@ ALTER TABLE players RENAME COLUMN "isConnected" to is_connected;
 ALTER TABLE players RENAME COLUMN "banTime" to ban_expire_date;
 ALTER TABLE players RENAME COLUMN "joinStacks" to attendance_days;
 
+/* Date-Time Type Conversion */
+ALTER TABLE players ALTER COLUMN first_played TYPE TIMESTAMP WITHOUT TIME ZONE USING to_timestamp(first_played / 1000.0);
+ALTER TABLE players ALTER COLUMN last_played TYPE TIMESTAMP WITHOUT TIME ZONE USING to_timestamp(last_played / 1000.0);
+ALTER TABLE players ALTER COLUMN last_login_date TYPE TIMESTAMP WITHOUT TIME ZONE USING last_login_date::timestamp;
+ALTER TABLE players ALTER COLUMN last_logout_date TYPE TIMESTAMP WITHOUT TIME ZONE USING last_logout_date::timestamp;
+ALTER TABLE players ALTER COLUMN ban_expire_date TYPE TIMESTAMP WITHOUT TIME ZONE USING ban_expire_date::timestamp;
+
+/* Column Length Increase */
+ALTER TABLE players ALTER COLUMN name TYPE VARCHAR(256);
+ALTER TABLE players ALTER COLUMN permission TYPE VARCHAR(100);
+
 /* 새 데이터 추가 */
-ALTER TABLE players ADD COLUMN wave_clear integer;
-ALTER TABLE players ADD COLUMN is_banned boolean;
+
+ALTER TABLE players ADD COLUMN wave_clear integer DEFAULT 0 NOT NULL;
+ALTER TABLE players ADD COLUMN is_banned boolean DEFAULT false NOT NULL;
 ALTER TABLE plugin_data ADD COLUMN id integer;
 ALTER TABLE plugin_data ADD COLUMN database_version integer;
+
+UPDATE players SET wave_clear = 0 WHERE wave_clear IS NULL;
+UPDATE players SET is_banned = false WHERE is_banned IS NULL;
 
 /* 더이상 사용되지 않는 Table 삭제 */
 DROP TABLE db;
