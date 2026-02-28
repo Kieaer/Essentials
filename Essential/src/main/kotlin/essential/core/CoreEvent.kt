@@ -1130,6 +1130,10 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
         }
     }
 
+    playerData.isConnected = true
+    players.add(playerData)
+    playerNumber++
+
     // If the current mode is PvP
     if (Vars.state.rules.pvp) {
         when {
@@ -1148,42 +1152,47 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
 
 
             conf.feature.pvp.autoTeam -> {
-                val teamRate = mutableMapOf<Team, Double>()
-                var teams = arrayOf<Pair<Team, Int>>()
-                for (team in Vars.state.teams.active) {
-                    var list = arrayOf<Pair<Team, Double>>()
+                val state = Vars.state
+                if (state != null && state.teams != null) {
+                    val activeTeams = state.teams.active
+                    if (activeTeams != null && activeTeams.any()) {
+                        val teamStats = activeTeams.map { teamData ->
+                            val team = teamData.team
+                            // teamData.players.size might not be accurate in tests, use our players list
+                            // We calculate stats excluding the current player (playerData) who is being assigned
+                            val teamPlayers = players.filter {
+                                val p = it.player
+                                p != null && p.team() == team && it.uuid != playerData.uuid
+                            }
+                            val playerCount = teamPlayers.size
+                            val avgWinRate = if (teamPlayers.isEmpty()) 0.5 else teamPlayers.map {
+                                val total = it.pvpWinCount + it.pvpLoseCount
+                                if (total == 0) 0.5 else it.pvpWinCount.toDouble() / total
+                            }.average()
+                            team to (playerCount to avgWinRate)
+                        }.toList()
 
-                    players.forEach {
-                        val rate =
-                            it.pvpWinCount.toDouble() / (it.pvpWinCount + it.pvpLoseCount).toDouble()
-                        list += Pair(it.player.team(), if (rate.isNaN()) 0.0 else rate)
+                        if (teamStats.isNotEmpty()) {
+                            // Sort teams by average win rate ascending (weakest first)
+                            val sortedByWinRate = teamStats.sortedBy { it.second.second }
+
+                            // User Rule: Assign to the weakest team until it has 2 more players than ANY other team
+                            // Find the first team (from weakest to strongest) that hasn't reached the limit
+                            val bestTeam = sortedByWinRate.find { stats ->
+                                val team = stats.first
+                                val count = stats.second.first
+                                val otherTeams = teamStats.filter { it.first != team }
+                                val minOthers = if (otherTeams.isEmpty()) count else otherTeams.minOf { it.second.first }
+                                count < minOthers + 2
+                            }?.first ?: sortedByWinRate.first().first
+
+                            player.team(bestTeam)
+                        }
                     }
-
-                    teamRate[team.team] = list.filter { it.first == team }.map { it.second }.average()
-                    teams += Pair(team.team, team.players.size)
-                }
-
-                val teamSorted = teams.toList().sortedByDescending { it.second }
-                val rate = teamRate.toList().sortedWith(compareBy { it.second })
-                if ((teamSorted.first().second - teamSorted.last().second) >= 2) {
-                    player.team(teamSorted.last().first)
-                } else {
-                    player.team(rate.last().first)
                 }
             }
         }
     }
-
-
-
-    if (playerData.expMultiplier != 1.0) {
-        message.appendLine(playerData.bundle["event.player.expboost", playerData.attendanceDays, playerData.expMultiplier])
-    }
-
-    playerData.isConnected = true
-    players.add(playerData)
-    playerNumber++
-    player.sendMessage(message.toString())
 
     runBlocking {
         val data = getPlayerAchievements(playerData)

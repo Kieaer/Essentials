@@ -1,0 +1,62 @@
+CREATE CACHED TABLE "PUBLIC"."BANNED"(
+                                         "type" INTEGER NOT NULL,
+                                         "data" CHARACTER VARYING NOT NULL
+)
+
+CREATE CACHED TABLE "PUBLIC"."data"(
+                                       "data" CHARACTER VARYING NOT NULL
+)
+
+CREATE CACHED TABLE "PUBLIC"."DB"(
+                                     "VERSION" INTEGER NOT NULL
+)
+
+CREATE CACHED TABLE "PUBLIC"."PLAYER"(
+                                         "name" CHARACTER VARYING NOT NULL,
+                                         "UUID" CHARACTER VARYING NOT NULL,
+                                         "languageTag" CHARACTER VARYING NOT NULL,
+                                         "blockPlaceCount" INTEGER NOT NULL,
+                                         "blockBreakCount" INTEGER NOT NULL,
+                                         "totalJoinCount" INTEGER NOT NULL,
+                                         "totalKickCount" INTEGER NOT NULL,
+                                         "level" INTEGER NOT NULL,
+                                         "exp" INTEGER NOT NULL,
+                                         "firstPlayDate" BIGINT NOT NULL,
+                                         "lastLoginTime" BIGINT NOT NULL,
+                                         "totalPlayTime" BIGINT NOT NULL,
+                                         "attackModeClear" INTEGER NOT NULL,
+                                         "pvpVictoriesCount" INTEGER NOT NULL,
+                                         "pvpDefeatCount" INTEGER NOT NULL,
+                                         "animatedName" BOOLEAN NOT NULL,
+                                         "PERMISSION" CHARACTER VARYING NOT NULL,
+                                         "MUTE" BOOLEAN NOT NULL,
+                                         "accountID" CHARACTER VARYING NOT NULL,
+                                         "accountPW" CHARACTER VARYING NOT NULL,
+                                         "STATUS" CHARACTER VARYING NOT NULL,
+                                         "DISCORD" CHARACTER VARYING,
+                                         "effectLevel" INTEGER,
+                                         "effectColor" CHARACTER VARYING,
+                                         "hideRanking" BOOLEAN NOT NULL,
+                                         "FREEZE" BOOLEAN NOT NULL,
+                                         "HUD" CHARACTER VARYING,
+                                         "TPP" CHARACTER VARYING,
+                                         "tppTeam" INTEGER,
+                                         "LOG" BOOLEAN NOT NULL,
+                                         "oldUUID" CHARACTER VARYING,
+                                         "banTime" CHARACTER VARYING,
+                                         "duplicateName" CHARACTER VARYING,
+                                         "TRACKING" BOOLEAN NOT NULL,
+                                         "joinStacks" INTEGER NOT NULL,
+                                         "lastLoginDate" CHARACTER VARYING,
+                                         "lastLeaveDate" CHARACTER VARYING,
+                                         "showLevelEffects" BOOLEAN NOT NULL,
+                                         "currentPlayTime" BIGINT NOT NULL,
+                                         "isConnected" BOOLEAN NOT NULL,
+                                         "lastPlayedWorldName" CHARACTER VARYING,
+                                         "lastPlayedWorldMode" CHARACTER VARYING,
+                                         "lastPlayedWorldId" INTEGER,
+                                         "mvpTime" INTEGER NOT NULL,
+                                         "pvpEliminationTeamCount" INTEGER NOT NULL,
+                                         "STRICT" BOOLEAN NOT NULL
+)
+
