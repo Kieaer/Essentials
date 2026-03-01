@@ -28,8 +28,12 @@ dependencies {
     testImplementation(libs.bundles.kotlinxEcosystem)
     testImplementation(libs.bundles.exposed)
     testImplementation(libs.bundles.r2dbc.drivers)
+    testImplementation("org.postgresql:postgresql:42.7.7")
     testImplementation(libs.jbcrypt)
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainers.postgresql)
 }
+
 
 tasks.register<JavaExec>("proguardJar") {
     val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile

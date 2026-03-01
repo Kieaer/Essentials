@@ -7,7 +7,6 @@ import essential.common.database.data.getPluginData
 import essential.common.database.data.update
 import essential.common.database.table.*
 import essential.common.rootPath
-import essential.core.Main
 import io.asyncer.r2dbc.mysql.MySqlConnectionConfiguration
 import io.asyncer.r2dbc.mysql.MySqlConnectionFactory
 import io.r2dbc.h2.H2ConnectionConfiguration
@@ -158,7 +157,7 @@ private suspend fun upgradeDatabase() {
                 val sqlFiles = listOf("v${version}${dialectSuffix}.sql", "v${version}_h2.sql", "v${version}.sql")
 
                 for (sqlFile in sqlFiles) {
-                    val inputStream = Main::class.java.classLoader.getResourceAsStream("sql/$sqlFile")
+                    val inputStream = Thread.currentThread().contextClassLoader.getResourceAsStream("sql/$sqlFile")
                     if (inputStream != null) {
                         try {
                             val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
@@ -172,7 +171,7 @@ private suspend fun upgradeDatabase() {
                                             exec(statement)
                                         } catch (e: Throwable) {
                                             val isCritical = statement.contains("plugin_data", true) ||
-                                                    statement.contains("players", true)
+                                                statement.contains("players", true)
                                             if (isCritical) {
                                                 throw IllegalStateException("Critical statement failed: $statement", e)
                                             }
@@ -180,9 +179,9 @@ private suspend fun upgradeDatabase() {
                                         }
                                     }
                                 }
-
-                                updatePluginVersion(version)
                             }
+
+                            updatePluginVersion(version)
                             break
                         } catch (e: Throwable) {
                             e.printStackTrace()

@@ -36,7 +36,9 @@ import mindustry.net.NetConnection
 import mindustry.world.Block
 import mindustry.world.Tile
 import net.datafaker.Faker
+import org.testcontainers.containers.PostgreSQLContainer
 import java.io.File
+
 import java.lang.Thread.sleep
 import java.nio.file.Files
 import java.nio.file.Path
@@ -453,4 +455,46 @@ class PluginTest {
 
         stopPlugin()
     }
+
+    @Test
+    fun dbUpgradeTest_20_postgres() {
+        loadGame(deleteConfig = false)
+        val originalConf = Main.conf
+        PostgreSQLContainer<Nothing>("postgres:17.0").apply {
+
+            withDatabaseName("essential")
+            withUsername("plugins")
+            withPassword("plugind")
+            withInitScript("v3_postgres.sql")
+            start()
+        }.use { container ->
+            try {
+                loadGame()
+
+                Main.conf = Main.conf.copy(
+                    plugin = Main.conf.plugin.copy(
+                        database = Main.conf.plugin.database.copy(
+                            url = "postgresql://${container.host}:${container.getMappedPort(5432)}/essential",
+                            username = container.username,
+                            password = container.password
+                        )
+                    )
+                )
+
+                loadPlugin()
+
+                runBlocking {
+                    val uuid = "hMHCIDJpHKQAAAAAbzCq5A=="
+                    val player = getPlayerData(uuid)
+                    assertNotNull(player)
+                    assertNotNull(player, "Player should exist after upgrade")
+                    assertEquals(uuid, player.uuid)
+                }
+            } finally {
+                stopPlugin()
+                Main.conf = originalConf
+            }
+        }
+    }
+
 }
