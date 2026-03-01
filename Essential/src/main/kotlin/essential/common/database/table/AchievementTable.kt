@@ -11,7 +11,7 @@ import kotlin.time.ExperimentalTime
 object AchievementTable : Table("player_achievements") {
     val id = uinteger("id").autoIncrement()
     val playerId = uinteger("player_id").references(PlayerTable.id)
-    val achievementName = varchar("achievement_name", 50)
+    val achievementName = varchar("achievement_name", 100)
     @OptIn(ExperimentalTime::class)
     val completedAt = datetime("completed_at").defaultExpression(CurrentDateTime)
     
