@@ -2,7 +2,6 @@ package essential.core
 
 import arc.Core
 import arc.Events
-import arc.func.Cons
 import arc.graphics.Color
 import arc.graphics.Colors
 import arc.math.Mathf
@@ -31,7 +30,6 @@ import essential.core.Main.Companion.scope
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
@@ -55,7 +53,6 @@ import mindustry.gen.Unit
 import mindustry.maps.Map
 import mindustry.net.Packets
 import mindustry.net.WorldReloader
-import mindustry.server.ServerControl.instance
 import mindustry.type.Item
 import mindustry.type.UnitType
 import mindustry.ui.Menus
@@ -2661,51 +2658,6 @@ class Commands {
             Log.info(Bundle()["config.reloaded"])
         } catch (e: Exception) {
             e.printStackTrace()
-        }
-    }
-
-    @ServerCommand("unload", description = "unload essential plugin (experimental)")
-    fun unload() {
-        // todo unload 만들기
-        Core.app.post {
-            Log.info("unloading")
-            // 스레드 종료
-            scope.cancel()
-
-            val commands = Commands()
-
-            // 명령어 삭제
-            for (functions in commands::class.declaredFunctions) {
-                val clients = functions.findAnnotation<ClientCommand>()
-                if (clients != null) {
-                    Vars.netServer.clientCommands.removeCommand(clients.name)
-                } else {
-                    val servers = functions.findAnnotation<ServerCommand>()
-                    if (servers != null) {
-                        instance.handler.removeCommand(servers.name)
-                    }
-                }
-            }
-
-            // 이벤트 삭제
-            eventListeners.forEach { (t, u) ->
-                // 성공??
-                @Suppress("UNCHECKED_CAST")
-                Events.remove(t as Class<Any>, u as Cons<Any>)
-            }
-
-            coreListeners.forEach {
-                Core.app.removeListener(it)
-            }
-
-            Vars.netServer.admins.actionFilters.remove(actionFilter)
-
-            Vars.mods.getMod("essential").dispose()
-            Vars.mods.list().remove(Vars.mods.getMod("essential"))
-
-            // 메모리 정리
-            System.gc()
-            Log.info("unloaded")
         }
     }
 
