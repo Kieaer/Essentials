@@ -157,29 +157,25 @@ private suspend fun upgradeDatabase() {
                 val sqlFiles = listOf("v${version}${dialectSuffix}.sql", "v${version}_h2.sql", "v${version}.sql")
 
                 for (sqlFile in sqlFiles) {
-                    val inputStream = Thread.currentThread().contextClassLoader.getResourceAsStream("sql/$sqlFile")
+                    val inputStream = Main::class.java.classLoader.getResourceAsStream("sql/$sqlFile")
                     if (inputStream != null) {
                         try {
                             val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
                             Log.info(bundle["database.upgrade.execute", sqlFile])
 
-                            suspendTransaction {
-                                sqlScript.split(";").forEach {
-                                    val statement = it.trim()
-                                    if (statement.isNotEmpty()) {
-                                        try {
-                                            exec(statement)
-                                        } catch (e: Throwable) {
-                                            val isCritical = statement.contains("plugin_data", true) ||
-                                                statement.contains("players", true)
-                                            if (isCritical) {
-                                                throw IllegalStateException("Critical statement failed: $statement", e)
-                                            }
-                                            Log.warn("Failed to execute statement: $statement. Reason: ${e.message}")
-                                        }
-                                    }
-                                }
-                            }
+                             suspendTransaction {
+                                 sqlScript.split(";").map { it.trim() }.filter { it.isNotEmpty() }.forEach { statement ->
+                                     try {
+                                         exec(statement)
+                                     } catch (e: Throwable) {
+                                         val isCritical = statement.contains("plugin_data", true) ||
+                                             statement.contains("players", true)
+                                         if (isCritical) {
+                                             throw IllegalStateException("Critical statement failed: $statement", e)
+                                         }
+                                         Log.warn("Failed to execute statement: $statement. Reason: ${e.message}")
+                                     }
+                                 }
 
                             updatePluginVersion(version)
                             break

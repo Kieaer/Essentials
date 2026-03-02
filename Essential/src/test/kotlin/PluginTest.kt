@@ -474,7 +474,7 @@ class PluginTest {
                 Main.conf = Main.conf.copy(
                     plugin = Main.conf.plugin.copy(
                         database = Main.conf.plugin.database.copy(
-                            url = "postgresql://${container.host}:${container.getMappedPort(5432)}/essential",
+                            url = "postgresql://${container.host}:${container.getMappedPort(5432)}/essentials",
                             username = container.username,
                             password = container.password
                         )

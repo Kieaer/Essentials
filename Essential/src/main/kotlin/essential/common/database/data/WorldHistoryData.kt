@@ -2,12 +2,11 @@ package essential.common.database.data
 
 import essential.common.database.table.WorldHistoryTable
 import essential.common.database.worldHistoryDatabase
-import kotlinx.coroutines.flow.single
 import ksp.table.GenerateCode
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.deleteAll
-import org.jetbrains.exposed.v1.r2dbc.insertReturning
+import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import kotlin.time.ExperimentalTime
@@ -41,9 +40,9 @@ suspend fun createWorldHistory(
     rotate: Int,
     team: String,
     value: String?
-): WorldHistoryData {
-    return suspendTransaction(db = worldHistoryDatabase) {
-        WorldHistoryTable.insertReturning {
+) {
+    suspendTransaction(db = worldHistoryDatabase) {
+        WorldHistoryTable.insert {
             it[WorldHistoryTable.time] = time
             it[WorldHistoryTable.player] = player
             it[WorldHistoryTable.action] = action
@@ -53,7 +52,7 @@ suspend fun createWorldHistory(
             it[WorldHistoryTable.rotate] = rotate
             it[WorldHistoryTable.team] = team
             it[WorldHistoryTable.value] = value
-        }.single().toWorldHistoryData()
+        }
     }
 }
 
