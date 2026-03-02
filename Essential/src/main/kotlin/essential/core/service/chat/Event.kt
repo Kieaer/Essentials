@@ -24,7 +24,7 @@ fun load() {
 
             if (conf.blacklist.enabled) {
                 val file: Array<String> =
-                    rootPath.child("chat_blacklist.txt").readString("UTF-8").split("\r\n").toTypedArray()
+                    rootPath.child("chat_blacklist.txt").readString("UTF-8").split(Regex("\\R")).filter { it.isNotBlank() }.toTypedArray()
                 for (text in file) {
                     if (conf.blacklist.regex) {
                         if (Pattern.compile(text).matcher(message).find()) {
