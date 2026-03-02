@@ -204,6 +204,12 @@ class Client : Runnable {
         }
     }
 
+    fun cancel() {
+        isConnected.set(false)
+        scope.cancel()
+        closeConnection()
+    }
+
     private fun closeConnection() {
         isConnected.set(false)
         try {

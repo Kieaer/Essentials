@@ -60,8 +60,9 @@ class BridgeService : Plugin() {
                     (network as Server).shutdown()
                 } else {
                     (network as Client).send("exit")
+                    (network as Client).cancel()
                 }
-                daemon.shutdown()
+                daemon.shutdownNow()
             }
         })
     }

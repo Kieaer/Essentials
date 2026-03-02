@@ -39,6 +39,7 @@ import mindustry.mod.Plugin
 import mindustry.net.Administration
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import java.util.*
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class Main : Plugin() {
@@ -54,7 +55,7 @@ class Main : Plugin() {
         }
 
         val scope = CoroutineScope(Dispatchers.IO)
-        val threadPool = Executors.newFixedThreadPool(2)
+        val threadPool: ExecutorService = Executors.newFixedThreadPool(2)
     }
 
     private var bridgeService = BridgeService()
@@ -65,6 +66,9 @@ class Main : Plugin() {
     private var webService = WebService()
 
     override fun init() = runBlocking {
+        Config.migrate()
+        conf = Config.load("config", CoreConfig.serializer(), CoreConfig()) ?: conf
+
         // 플러그인 언어 설정 및 태그 추가
         bundle.prefix = "[Essential]"
 
@@ -180,7 +184,7 @@ class Main : Plugin() {
 
     override fun registerServerCommands(handler: CommandHandler) {
         registerGeneratedServerCommands(handler)
-        // todo 명령어 제외 기능 추가
+        removeBannedCommands(handler)
 
         if (conf.module.bridge) bridgeService.registerServerCommands(handler)
         if (conf.module.chat) chatService.registerServerCommands(handler)
@@ -200,6 +204,7 @@ class Main : Plugin() {
         val votekick = Vars.netServer.clientCommands.commandList.find { command -> command.text.equals("votekick", true) }
 
         registerGeneratedClientCommands(handler)
+        removeBannedCommands(handler)
 
         if (!conf.feature.vote.enabled && vote != null) {
             val voteRunner = runnerField.get(vote)
@@ -223,6 +228,20 @@ class Main : Plugin() {
         if (conf.module.achievement) achievementService.registerClientCommands(handler)
         if (conf.module.discord) discordService.registerClientCommands(handler)
         if (conf.module.web) webService.registerClientCommands(handler)
+    }
+
+    private fun removeBannedCommands(handler: CommandHandler) {
+        val file = rootPath.child("bannedCommands.txt")
+        if (file.exists()) {
+            try {
+                val banned: List<String> = Json.decodeFromString(file.readString())
+                for (command in banned) {
+                    handler.removeCommand(command)
+                }
+            } catch (e: Exception) {
+                Log.err("Failed to load bannedCommands.txt", e)
+            }
+        }
     }
 
     private fun checkUpdate() {

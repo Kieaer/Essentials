@@ -10,6 +10,8 @@ import kotlinx.serialization.SerializationException
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+
 
 object Config {
     val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
@@ -100,5 +102,46 @@ object Config {
         crossinline onReload: (T) -> Unit
     ) {
         Log.info(bundle["config.watch", name])
+    }
+
+    /**
+     * Migrate old configuration files to the new location.
+     */
+    fun migrate() {
+        val marker = rootPath.child("config/.migrated")
+        if (marker.exists()) return
+
+        val oldDirPath = "D:\\민더\\config\\mods\\Essentials\\config"
+        val oldDir = Paths.get(oldDirPath).toFile()
+        val newDir = rootPath.child("config")
+
+        if (oldDir.exists() && oldDir.isDirectory) {
+            Log.info("[Essential] Old configuration found, starting migration...")
+            val configFiles = listOf(
+                "config.yaml",
+                "config_bridge.yaml",
+                "config_chat.yaml",
+                "config_discord.yaml",
+                "config_protect.yaml",
+                "config_web.yaml"
+            )
+
+            if (!newDir.exists()) newDir.mkdirs()
+
+            for (fileName in configFiles) {
+                val oldFile = oldDir.resolve(fileName)
+                val newFile = newDir.child(fileName).file()
+
+                if (oldFile.exists()) {
+                    try {
+                        Files.copy(oldFile.toPath(), newFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                        Log.info("[Essential] Migrated config file: $fileName")
+                    } catch (e: Exception) {
+                        Log.err("[Essential] Failed to migrate config file: $fileName", e)
+                    }
+                }
+            }
+            marker.writeString(System.currentTimeMillis().toString())
+        }
     }
 }

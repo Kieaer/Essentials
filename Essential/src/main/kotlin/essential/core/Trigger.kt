@@ -32,6 +32,8 @@ import mindustry.io.SaveIO
 import mindustry.net.Host
 import mindustry.net.NetworkIO
 import mindustry.world.Tile
+import java.lang.Thread.currentThread
+import java.lang.Thread.sleep
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -65,7 +67,7 @@ class Trigger {
         }
     }
 
-    class PingThread: Thread() {
+    class PingThread: Runnable {
         private var ping = 0.000
 
         private fun calculateCenter(startTile: Tile, endTile: Tile): Pair<Int, Int> {
@@ -125,10 +127,10 @@ class Trigger {
             return findMedianCoordinates(startTile, endTile)
         }
 
-        override fun start() {
+        override fun run() {
             var isNotTargetMap: Boolean
-            while (currentThread().isInterrupted.not()) {
-                try {
+            try {
+                while (currentThread().isInterrupted.not()) {
                     val pluginDataFromDatabase = runBlocking {
                         getPluginData()
                     }
@@ -145,7 +147,8 @@ class Trigger {
                     if (data.warpCount.none { f -> f.mapName == Vars.state.map.name() } &&
                         data.warpTotal.none { f -> f.mapName == Vars.state.map.name() } &&
                         data.warpZone.none { f -> f.mapName == Vars.state.map.name() } &&
-                        data.warpBlock.none { f -> f.mapName == Vars.state.map.name() }) {
+                        data.warpBlock.none { f -> f.mapName == Vars.state.map.name() }
+                    ) {
                         isNotTargetMap = true
                     }
 
@@ -365,10 +368,12 @@ class Trigger {
 
                     ping = 0.000
                     sleep(3000)
-                } catch (e: Exception) {
-                    Log.err(e)
-                    Core.app.exit()
                 }
+            } catch (_: InterruptedException) {
+                currentThread().interrupt()
+            } catch (e: Exception) {
+                Log.err(e)
+                Core.app.exit()
             }
 
             runBlocking {

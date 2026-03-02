@@ -68,7 +68,11 @@ class EffectSystem : Timer.Task() {
             buffer.add(EffectPos(data.player, effect, rotate, customColor))
         }
 
+        // If the unit is destroyed
+        if (data.player.unit() == null) return
+
         when (data.effectLevel ?: data.level) {
+            in 0..9 -> {}
             in 10..19 -> runEffect(Fx.freezing)
             in 20..29 -> runEffect(Fx.overdriven)
             in 30..39 -> {
@@ -216,7 +220,7 @@ class EffectSystem : Timer.Task() {
                 runEffect(Fx.vapor)
             }
 
-            in 300..Int.MAX_VALUE -> {
+            else -> {
                 var rot = data.player.unit().rotation
                 val customColor = Color.HSVtoRGB(252f, 164f, 0f, 0.22f)
                 rot += 180f

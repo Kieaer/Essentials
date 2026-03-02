@@ -559,7 +559,9 @@ class Commands {
         val ban = "info.button.ban"
         val cancel = "info.button.cancel"
 
-        if (arg.isNotEmpty() && Permission.check(playerData, "info.other")) {
+        if (arg.isEmpty()) {
+            Call.menu(playerData.player.con(), 0, bundle["info.title"], show(playerData), arrayOf(arrayOf(bundle[close])))
+        } else if (Permission.check(playerData, "info.other")) {
             val target = findPlayers(arg[0])
             var targetData: PlayerData? = null
             var isBanned = false

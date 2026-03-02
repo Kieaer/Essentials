@@ -12,13 +12,14 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.time.LocalDateTime
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class Server : Runnable {
     private var server: ServerSocket? = null
     var lastSentMessage: String = ""
-    var clients = ArrayList<Socket>()
+    val clients = CopyOnWriteArrayList<Socket>()
     val executor: ExecutorService = Executors.newCachedThreadPool()
 
     override fun run() {
@@ -43,7 +44,8 @@ class Server : Runnable {
 
     fun shutdown() {
         try {
-            server!!.close()
+            executor.shutdownNow()
+            server?.close()
         } catch (e: IOException) {
             Log.err(e)
         }
@@ -79,7 +81,7 @@ class Server : Runnable {
             val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
             var isAlive = true
 
-            while (isAlive) {
+            while (isAlive && !Thread.currentThread().isInterrupted) {
                 val d = reader.readLine()
                 if (d == null) {
                     println("reader data received null")
@@ -87,7 +89,8 @@ class Server : Runnable {
                 } else {
                     when (d) {
                         "isBanned" -> {
-                            val info: Administration.PlayerInfo = Json().fromJson(Administration.PlayerInfo::class.java, reader.readLine())
+                            val info: Administration.PlayerInfo =
+                                Json().fromJson(Administration.PlayerInfo::class.java, reader.readLine())
                             var banned: Boolean = Vars.netServer.admins.isIDBanned(info.id)
                             for (ip in info.ips) {
                                 if (Vars.netServer.admins.isIPBanned(ip)) {
