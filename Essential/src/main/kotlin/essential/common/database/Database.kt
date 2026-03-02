@@ -7,6 +7,7 @@ import essential.common.database.data.getPluginData
 import essential.common.database.data.update
 import essential.common.database.table.*
 import essential.common.rootPath
+import essential.core.Main
 import io.asyncer.r2dbc.mysql.MySqlConnectionConfiguration
 import io.asyncer.r2dbc.mysql.MySqlConnectionFactory
 import io.r2dbc.h2.H2ConnectionConfiguration
@@ -18,10 +19,18 @@ import io.r2dbc.postgresql.PostgresqlConnectionConfiguration
 import io.r2dbc.postgresql.PostgresqlConnectionFactory
 import io.r2dbc.spi.ConnectionFactory
 import io.r2dbc.spi.ValidationDepth
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.vendors.*
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
-import org.jetbrains.exposed.v1.r2dbc.SchemaUtils
+import org.jetbrains.exposed.v1.datetime.datetime
+import org.jetbrains.exposed.v1.r2dbc.*
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mariadb.r2dbc.MariadbConnectionConfiguration
@@ -91,6 +100,72 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
         )
 
         SchemaUtils.create(*tablesToCreate.toTypedArray())
+    }
+}
+
+/**
+ * Migration for player achievements from status column to player_achievements table
+ */
+private suspend fun migrateStatusToAchievements() {
+    val playerTable = object : org.jetbrains.exposed.v1.core.Table("players") {
+        val id = uinteger("id")
+        val status = text("status")
+    }
+
+    val achievementTable = object : org.jetbrains.exposed.v1.core.Table("player_achievements") {
+        val id = uinteger("id").autoIncrement()
+        val playerId = uinteger("player_id")
+        val achievementName = varchar("achievement_name", 100)
+        val completedAt = datetime("completed_at")
+        override val primaryKey = PrimaryKey(id)
+    }
+
+    try {
+        suspendTransaction {
+            playerTable.selectAll().map { row ->
+                row[playerTable.id] to row[playerTable.status]
+            }.toList().forEach { (playerId, statusStr) ->
+                if (statusStr.isNotEmpty() && statusStr != "{}") {
+                    try {
+                        val json = Json.parseToJsonElement(statusStr).jsonObject
+                        val achievements = json.filter { it.key.startsWith("achievement.") }
+
+                        if (achievements.isNotEmpty()) {
+                            achievements.forEach { (key, value) ->
+                                val name = key.removePrefix("achievement.")
+                                val dateStr = value.jsonPrimitive.content
+
+                                val exists = achievementTable.selectAll()
+                                    .where { (achievementTable.playerId eq playerId) and (achievementTable.achievementName eq name) }
+                                    .firstOrNull() != null
+
+                                if (!exists) {
+                                    achievementTable.insert {
+                                        it[achievementTable.playerId] = playerId
+                                        it[achievementTable.achievementName] = name
+                                        try {
+                                            it[achievementTable.completedAt] = kotlinx.datetime.LocalDateTime.parse(dateStr)
+                                        } catch (_: Exception) {
+                                            // Keep default (CurrentDateTime)
+                                        }
+                                    }
+                                }
+                            }
+
+                            val newStatus = json.filter { !it.key.startsWith("achievement.") }
+                            playerTable.update({ playerTable.id eq playerId }) {
+                                it[playerTable.status] = JsonObject(newStatus).toString()
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.warn("Failed to parse status for player $playerId: ${e.message}")
+                    }
+                }
+            }
+        }
+    } catch (e: Exception) {
+        Log.err("Achievement migration failed: ${e.message}")
+        e.printStackTrace()
     }
 }
 
@@ -177,9 +252,14 @@ private suspend fun upgradeDatabase() {
                                      }
                                  }
 
-                            updatePluginVersion(version)
-                            break
-                        } catch (e: Throwable) {
+                                 updatePluginVersion(version)
+                                 
+                                 if (version == 4u.toUByte()) {
+                                     migrateStatusToAchievements()
+                                 }
+                             }
+                             break
+                         } catch (e: Throwable) {
                             e.printStackTrace()
                             throw e
                         }
