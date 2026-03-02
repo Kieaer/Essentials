@@ -44,6 +44,9 @@ private val startupTime = timeSource.markNow()
 /** Map start time */
 var mapStartTime = timeSource.markNow()
 
+/** Game over count */
+var gameOverCount = 0
+
 /** Server uptime */
 val uptime : String get() = (timeSource.markNow() - startupTime).toHString()
 

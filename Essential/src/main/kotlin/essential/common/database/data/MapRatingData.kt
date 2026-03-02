@@ -83,23 +83,39 @@ suspend fun updateOrCreateMapRating(
     playerUuid: String,
     isUpvote: Boolean
 ): MapRatingData {
-    val existing = getMapRating(playerUuid, mapName)
+    return try {
+        val existing = getMapRating(playerUuid, mapName)
 
-    return if (existing != null) {
-        // If the rating exists but the vote is different, update it
-        if (existing.isUpvote != isUpvote) {
-            suspendTransaction {
-                MapRatingTable.update({ (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }) {
-                    it[MapRatingTable.isUpvote] = isUpvote
+        if (existing != null) {
+            if (existing.isUpvote != isUpvote) {
+                suspendTransaction {
+                    MapRatingTable.update({ (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }) {
+                        it[MapRatingTable.isUpvote] = isUpvote
+                    }
                 }
+                getMapRating(playerUuid, mapName)!!
+            } else {
+                existing
             }
-            getMapRating(playerUuid, mapName)!!
         } else {
-            existing
+            createMapRating(mapName, mapHash, playerUuid, isUpvote)
         }
-    } else {
-        // Create a new rating
-        createMapRating(mapName, mapHash, playerUuid, isUpvote)
+    } catch (e: Exception) {
+        val existingAfterError = getMapRating(playerUuid, mapName)
+        if (existingAfterError != null) {
+            if (existingAfterError.isUpvote != isUpvote) {
+                suspendTransaction {
+                    MapRatingTable.update({ (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }) {
+                        it[MapRatingTable.isUpvote] = isUpvote
+                    }
+                }
+                getMapRating(playerUuid, mapName)!!
+            } else {
+                existingAfterError
+            }
+        } else {
+            throw e
+        }
     }
 }
 
@@ -108,21 +124,16 @@ suspend fun updateOrCreateMapRating(
  */
 suspend fun migrateMapRatingsFromPluginData(pluginData: PluginData) {
     suspendTransaction {
-        // Iterate through all map ratings in PluginData
         for ((mapName, ratings) in pluginData.data.mapRatings) {
-            // For each map, iterate through all player ratings
             for ((playerUuid, isUpvote) in ratings) {
-                // Create a new MapRating entry
-                // We don't have the map hash, so we'll use an empty string for now
                 try {
                     MapRatingTable.insertReturning {
                         it[MapRatingTable.mapName] = mapName
-                        it[MapRatingTable.mapHash] = "" // Empty hash as we don't have it
+                        it[MapRatingTable.mapHash] = ""
                         it[MapRatingTable.playerUuid] = playerUuid
                         it[MapRatingTable.isUpvote] = isUpvote
                     }
                 } catch (e: Exception) {
-                    // If there's an error (like duplicate entry), just log it and continue
                     println("Error migrating map rating for map $mapName and player $playerUuid: ${e.message}")
                 }
             }

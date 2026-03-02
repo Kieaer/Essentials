@@ -206,11 +206,9 @@ fun tap(event: TapEvent) {
                         )]
                     )
 
-                    // Grant routing permission when moving from the hub server to another server
                     val currentMapName = Vars.state.map.name()
                     val hubMapName = pluginData.hubMapName
                     if (hubMapName != null && currentMapName == hubMapName) {
-                        // Extract target server name from description, or use IP:PORT combination
                         scope.launch {
                             val targetServerName = two.description.takeIf { it.isNotEmpty() } ?: "${two.ip}:${two.port}"
                             grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
@@ -233,7 +231,6 @@ fun tap(event: TapEvent) {
             ) {
                 Log.info(Bundle()["log.warp.move", event.player.plainName(), two.ip, two.port.toString()])
 
-                // Grant routing permission when moving from the hub server to another server
                 val currentMapName = Vars.state.map.name()
                 val hubMapName = pluginData.hubMapName
                 if (hubMapName != null && currentMapName == hubMapName) {
@@ -254,107 +251,36 @@ fun tap(event: TapEvent) {
                 val buf = ArrayList<TileLog>()
 
                 try {
-                    val all = getAllWorldHistory()
-                    all.forEach { entry ->
-                        if (entry.x == event.tile.x && entry.y == event.tile.y) {
-                            buf.add(
-                                TileLog(
-                                    time = entry.time,
-                                    player = entry.player,
-                                    action = entry.action,
-                                    x = entry.x,
-                                    y = entry.y,
-                                    tile = entry.tile,
-                                    rotate = entry.rotate,
-                                    team = Team.all.find { it.name == entry.team } ?: Team.derelict,
-                                    value = entry.value
-                                )
+                    val dbEntries = getWorldHistoryByCoordinates(event.tile.x, event.tile.y)
+                    dbEntries.forEach { entry ->
+                        buf.add(
+                            TileLog(
+                                time = entry.time,
+                                player = entry.player,
+                                action = entry.action,
+                                x = entry.x,
+                                y = entry.y,
+                                tile = entry.tile,
+                                rotate = entry.rotate,
+                                team = Team.all.find { it.name == entry.team } ?: Team.derelict,
+                                value = entry.value
                             )
-                        }
-                    }
-
-                    // Get entries from the database
-                    val dbEntries = getWorldHistoryByCoordinates(event.tile.x.toShort(), event.tile.y.toShort())
-
-                    // Convert database entries to TileLog objects
-                    val dbTileLogs = dbEntries.map { entry ->
-                        TileLog(
-                            time = entry.time,
-                            player = entry.player,
-                            action = entry.action,
-                            x = entry.x,
-                            y = entry.y,
-                            tile = entry.tile,
-                            rotate = entry.rotate,
-                            team = Team.all.find { it.name == entry.team } ?: Team.derelict,
-                            value = entry.value
-                        )
-                    }
-
-                    // Add database entries to the buffer if they're not already in the ArrayList
-                    dbTileLogs.forEach { dbLog ->
-                        if (!buf.any { it.time == dbLog.time && it.player == dbLog.player && it.action == dbLog.action }) {
-                            buf.add(dbLog)
-                        }
-                    }
-
-                    // Sort the buffer by time
-                    buf.sortBy { it.time }
-
-                    // Process the combined results
-                    val str = StringBuilder()
-                    val bundle = data.bundle
-                    // todo this file does not exist
-
-                    val coreBundle =
-                        Bundle(ResourceBundle.getBundle("bundles/mindustry/bundle", Locale(data.player.locale())))
-
-                    buf.forEach { two ->
-                        val action = when (two.action) {
-                            "tap" -> "[royal]${bundle["event.log.tap"]}[]"
-                            "break" -> "[scarlet]${bundle["event.log.break"]}[]"
-                            "place" -> "[sky]${bundle["event.log.place"]}[]"
-                            "config" -> "[cyan]${bundle["event.log.config"]}[]"
-                            "withdraw" -> "[green]${bundle["event.log.withdraw"]}[]"
-                            "deposit" -> "[brown]${bundle["event.log.deposit"]}[]"
-                            "message" -> "[orange]${bundle["event.log.message"]}"
-                            else -> ""
-                        }
-
-                        if (two.action == "message") {
-                            str.append(
-                                bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], two.value as String]
-                            ).append("\n")
-                        } else {
-                            str.append(
-                                bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], action]
-                            ).append("\n")
-                        }
-                    }
-
-                    Call.effect(event.player.con(), Fx.shockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
-                    if (str.toString().lines().size > 10) {
-                        str.append(bundle["event.log.position", event.tile.x, event.tile.y] + "\n")
-                        val lines: List<String> = str.toString().split("\n").reversed()
-                        for (i in 0 until 10) {
-                            str.append(lines[i]).append("\n")
-                        }
-                        event.player.sendMessage(str.toString().trim())
-                    } else {
-                        event.player.sendMessage(
-                            bundle["event.log.position", event.tile.x, event.tile.y] + "\n" + str.toString().trim()
                         )
                     }
                 } catch (e: Exception) {
                     Log.err("Error retrieving world history from database", e)
+                }
 
-                    // Fallback to using only the ArrayList if there's an error
-                    val str = StringBuilder()
-                    val bundle = data.bundle
-                    val coreBundle =
-                        Bundle(ResourceBundle.getBundle("bundles/mindustry/bundle", Locale(data.player.locale())))
+                val str = StringBuilder()
+                val bundle = data.bundle
+                val coreBundle =
+                    Bundle(ResourceBundle.getBundle("bundles/mindustry/bundle", Locale(data.player.locale())))
 
-                    buf.forEach { two ->
+                str.append(bundle["event.log.position", event.tile.x, event.tile.y]).append("\n")
+
+                buf.sortedByDescending { it.time }
+                    .take(8)
+                    .forEach { two ->
                         val action = when (two.action) {
                             "tap" -> "[royal]${bundle["event.log.tap"]}[]"
                             "break" -> "[scarlet]${bundle["event.log.break"]}[]"
@@ -377,20 +303,8 @@ fun tap(event: TapEvent) {
                         }
                     }
 
-                    Call.effect(event.player.con(), Fx.shockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
-                    if (str.toString().lines().size > 10) {
-                        str.append(bundle["event.log.position", event.tile.x, event.tile.y] + "\n")
-                        val lines: List<String> = str.toString().split("\n").reversed()
-                        for (i in 0 until 10) {
-                            str.append(lines[i]).append("\n")
-                        }
-                        event.player.sendMessage(str.toString().trim())
-                    } else {
-                        event.player.sendMessage(
-                            bundle["event.log.position", event.tile.x, event.tile.y] + "\n" + str.toString().trim()
-                        )
-                    }
-                }
+                Call.effect(event.player.con(), Fx.shockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
+                event.player.sendMessage(str.toString().trim())
             }
         }
 
@@ -535,6 +449,7 @@ fun serverLoad(event: ServerLoadEvent) {
 
 @Event
 fun gameOver(event: GameOverEvent) {
+    gameOverCount++
     if (mapVotes.isNotEmpty()) {
         val voteCount = HashMap<Map, Int>()
         mapVotes.values.forEach { map ->
@@ -550,28 +465,29 @@ fun gameOver(event: GameOverEvent) {
         mapVotes.clear()
     }
 
-    // Show map rating menu to players if 5 minutes have passed since game start
     val fiveMinutesPassed = (timeSource.markNow() - mapStartTime).inWholeMinutes >= 5
     if (fiveMinutesPassed) {
         val currentMap = Vars.state.map
         val mapName = currentMap.plainName()
+        val currentCount = gameOverCount
 
         for (data in players) {
-
-            // Only show the menu if the player hasn't already voted
-            val hasVoted = runBlocking { getMapRating(data.uuid, mapName) != null }
+            val hasVoted = mapRatings.containsKey(data.uuid) || runBlocking { getMapRating(data.uuid, mapName) != null }
+            if (gameOverCount != currentCount) break
             if (!hasVoted) {
                 val rateMapMenu = Menus.registerMenu { player, select ->
+                    if (gameOverCount != currentCount) {
+                        player.sendMessage(Bundle(player.locale())["command.map.rate.timeout"])
+                        return@registerMenu
+                    }
+
+                    if (mapRatings.containsKey(data.uuid)) return@registerMenu
+
                     if (select == 0) {
                         // Upvote
                         runBlocking {
-                            // Get the map hash (MD5 hash of the map file)
                             val mapHash = calculateMapMD5Hash(currentMap)
-
-                            // Save to database
                             updateOrCreateMapRating(mapName, mapHash, data.uuid, true)
-
-                            // Keep in-memory cache for current session
                             mapRatings[data.uuid] = true
                         }
 
@@ -579,19 +495,13 @@ fun gameOver(event: GameOverEvent) {
                     } else if (select == 1) {
                         // Downvote
                         runBlocking {
-                            // Get the map hash (MD5 hash of the map file)
                             val mapHash = calculateMapMD5Hash(currentMap)
-
-                            // Save to database
                             updateOrCreateMapRating(mapName, mapHash, data.uuid, false)
-
-                            // Keep in-memory cache for current session
                             mapRatings[data.uuid] = false
                         }
 
                         data.send("command.map.rate.downvote", mapName)
                     }
-                    // If select == 2, it's "Cancel" so do nothing
                 }
 
                 Call.menu(
@@ -674,7 +584,7 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
                     try {
                         val all = getAllWorldHistory()
                         all.forEach { entry ->
-                            if (entry.x == event.tile.x.toShort() && entry.y == event.tile.y.toShort()) {
+                            if (entry.x == event.tile.x && entry.y == event.tile.y) {
                                 buf.add(
                                     TileLog(
                                         time = entry.time,
@@ -692,7 +602,7 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
                         }
 
                         // Get entries from the database
-                        val dbEntries = getWorldHistoryByCoordinates(event.tile.x.toShort(), event.tile.y.toShort())
+                        val dbEntries = getWorldHistoryByCoordinates(event.tile.x, event.tile.y)
 
                         // Convert database entries to TileLog objects
                         val dbTileLogs = dbEntries.map { entry ->
@@ -709,14 +619,12 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
                             )
                         }
 
-                        // Add database entries to the buffer if they're not already in the ArrayList
                         dbTileLogs.forEach { dbLog ->
                             if (!buf.any { it.time == dbLog.time && it.player == dbLog.player && it.action == dbLog.action }) {
                                 buf.add(dbLog)
                             }
                         }
 
-                        // Sort the buffer by time
                         buf.sortBy { it.time }
                     } catch (e: Exception) {
                         Log.err("Error retrieving world history from database", e)
@@ -881,9 +789,10 @@ fun playerLeave(event: PlayerLeave) {
                 Events.fire(GameOverEvent(data.player.team()))
             }
         }
-        players.remove(data)
+        players.removeIf { it.uuid == data.uuid }
     }
 }
+
 
 @Event
 fun playerBan(event: PlayerBanEvent) {
@@ -989,7 +898,7 @@ fun connectPacket(event: ConnectPacketEvent) {
     }
 
     // Server routing validation - applied only when hub_map_name is not null
-    val hubMapName = pluginData.hubMapName
+    /*val hubMapName = pluginData.hubMapName
     if (hubMapName != null) {
         val currentMapName = Vars.state.map.name()
 
@@ -1018,7 +927,7 @@ fun connectPacket(event: ConnectPacketEvent) {
                 }
             }
         }
-    }
+    }*/
 }
 
 @Event
@@ -1131,8 +1040,10 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     }
 
     playerData.isConnected = true
+    players.removeIf { it.uuid == playerData.uuid }
     players.add(playerData)
     playerNumber++
+
 
     // If the current mode is PvP
     if (Vars.state.rules.pvp) {
