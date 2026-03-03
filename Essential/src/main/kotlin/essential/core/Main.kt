@@ -74,7 +74,8 @@ class Main : Plugin() {
 
         Log.debug(bundle["event.plugin.starting"])
 
-        bundle.locale = Locale(conf.plugin.lang)
+        bundle.locale = Locale.forLanguageTag(conf.plugin.lang.replace("_", "-"))
+        bundle.resource = ResourceBundle.getBundle("bundles/common/bundle", bundle.locale)
 
         // 업데이트 확인
         checkUpdate()

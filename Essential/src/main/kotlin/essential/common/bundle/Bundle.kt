@@ -4,7 +4,7 @@ import java.text.MessageFormat
 import java.util.*
 
 class Bundle {
-    val resource: ResourceBundle
+    var resource: ResourceBundle
     var prefix: String = ""
     var locale: Locale = Locale.getDefault()
 
@@ -16,13 +16,18 @@ class Bundle {
         resource = source
     }
 
+    constructor(baseName: String, locale: Locale) {
+        this.locale = locale
+        resource = ResourceBundle.getBundle(baseName, locale)
+    }
+
     constructor(languageTag: String) {
-        locale = Locale.forLanguageTag(languageTag)
+        this.locale = Locale.forLanguageTag(languageTag.replace("_", "-"))
         resource = ResourceBundle.getBundle("bundles/common/bundle", locale)
     }
 
     constructor(languageTag: String, source: ResourceBundle) {
-        locale = Locale.forLanguageTag(languageTag)
+        this.locale = Locale.forLanguageTag(languageTag.replace("_", "-"))
         resource = source
     }
 
@@ -30,9 +35,9 @@ class Bundle {
         if (!resource.containsKey(key)) return key
 
         return if (prefix.isEmpty()) {
-            MessageFormat.format(resource.getString(key))
+            MessageFormat(resource.getString(key), locale).format(arrayOf<Any>())
         } else {
-            "$prefix " + MessageFormat.format(resource.getString(key))
+            "$prefix " + MessageFormat(resource.getString(key), locale).format(arrayOf<Any>())
         }
     }
 
@@ -40,9 +45,9 @@ class Bundle {
         if (!resource.containsKey(key)) return key
 
         return if (prefix.isEmpty()) {
-            MessageFormat.format(resource.getString(key), *parameter)
+            MessageFormat(resource.getString(key), locale).format(parameter)
         } else {
-            "$prefix " + MessageFormat.format(resource.getString(key), *parameter)
+            "$prefix " + MessageFormat(resource.getString(key), locale).format(parameter)
         }
     }
 }

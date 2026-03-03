@@ -274,7 +274,7 @@ fun tap(event: TapEvent) {
                 val str = StringBuilder()
                 val bundle = data.bundle
                 val coreBundle =
-                    Bundle(ResourceBundle.getBundle("bundles/mindustry/bundle", Locale(data.player.locale())))
+                    Bundle(ResourceBundle.getBundle("bundles/mindustry/bundle", Locale.forLanguageTag(data.player.locale().replace("_", "-"))))
 
                 str.append(bundle["event.log.position", event.tile.x, event.tile.y]).append("\n")
 

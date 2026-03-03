@@ -270,14 +270,14 @@ fun wave(event: WaveEvent) {
 
 @Event
 fun achievementClear(event: CustomEvents.AchievementClear) {
-    val bundle = Bundle(ResourceBundle.getBundle("bundles/achievements/bundle", Locale(event.playerData.player.locale())))
+    val bundle = Bundle(ResourceBundle.getBundle("bundles/achievements/bundle", Locale.forLanguageTag(event.playerData.player.locale().replace("_", "-"))))
 
     event.playerData.send(bundle, "event.achievement.success", event.achievement.toString().lowercase())
     players.forEach { data ->
         val b = Bundle(
             ResourceBundle.getBundle(
                 "bundles/achievements/bundle",
-                Locale(data.player.locale()),
+                Locale.forLanguageTag(data.player.locale().replace("_", "-")),
                 AchievementService::class.java.getClassLoader()
             )
         )

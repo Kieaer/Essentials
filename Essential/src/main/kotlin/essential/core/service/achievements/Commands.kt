@@ -16,7 +16,7 @@ class Commands {
     fun achievements(playerData: PlayerData, args: Array<String>) {
         val temp: MutableList<String?> = arrayListOf()
         val bundle = try {
-            ResourceBundle.getBundle("bundles/achievements/bundle", Locale(playerData.player.locale().split("_")[0]))
+            ResourceBundle.getBundle("bundles/achievements/bundle", Locale.forLanguageTag(playerData.player.locale().replace("_", "-")))
         } catch (e: MissingResourceException) {
             ResourceBundle.getBundle("bundles/achievements/bundle", Locale.ENGLISH)
         }
