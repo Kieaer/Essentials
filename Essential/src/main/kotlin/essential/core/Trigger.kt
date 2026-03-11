@@ -193,11 +193,13 @@ class Trigger {
                             }
 
                             val memory = mutableListOf<Pair<Playerc, Triple<String, Float, Float>>>()
-                            for (value in data.warpBlock) {
+                            val iterator = data.warpBlock.iterator()
+                            while (iterator.hasNext()) {
+                                val value = iterator.next()
                                 if (Vars.state.map.name() == value.mapName) {
                                     val tile = Vars.world.tile(value.x, value.y)
                                     if (tile.block() == Blocks.air) {
-                                        data.warpBlock.remove(value)
+                                        iterator.remove()
                                     } else {
                                         var margin = 0f
                                         var isDup = false
