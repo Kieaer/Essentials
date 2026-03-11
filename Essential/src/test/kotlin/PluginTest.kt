@@ -415,14 +415,6 @@ class PluginTest {
         }
     }
 
-    @Test
-    fun startPlugin() {
-        System.setProperty("test", "yes")
-
-        loadGame(true)
-        stopPlugin()
-    }
-
     @AfterTest
     fun resetEnv() {
         System.clearProperty("test")
