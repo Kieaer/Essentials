@@ -178,7 +178,7 @@ class PluginTest {
                         if (loadPlugin) loadPlugin()
 
                         begins[0] = true
-                        testMap = maps.loadInternalMap("maze")
+                        testMap = maps.loadInternalMap("serpulo/groundZero")
                         Thread.currentThread().interrupt()
                     }
                 }
