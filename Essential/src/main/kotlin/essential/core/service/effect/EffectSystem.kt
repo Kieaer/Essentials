@@ -71,7 +71,9 @@ class EffectSystem : Timer.Task() {
         // If the unit is destroyed
         if (data.player.unit() == null) return
 
-        when (data.effectLevel ?: data.level) {
+        val level = data.effectLevel?.toInt() ?: data.level
+
+        when (level) {
             in 0..9 -> {}
             in 10..19 -> runEffect(Fx.freezing)
             in 20..29 -> runEffect(Fx.overdriven)
