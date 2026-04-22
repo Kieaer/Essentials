@@ -52,6 +52,7 @@ suspend fun createPluginData(): PluginData {
         }
         PluginTable.selectAll()
             .mapToPluginDataList()
-            .first()
+            .firstOrNull()
+            ?: throw IllegalStateException("PluginData not found after creation")
     }
 }

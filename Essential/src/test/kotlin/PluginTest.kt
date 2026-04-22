@@ -424,6 +424,11 @@ class PluginTest {
     }
 
     @Test
+    fun startPluginTest() {
+        loadGame(true)
+    }
+
+    @Test
     fun dbUpgradeTest_20() {
         val dataDir = Paths.get("config", "mods", "Essentials", "data")
         dataDir.toFile().mkdirs()

@@ -21,6 +21,7 @@ ALTER TABLE players ALTER COLUMN "blockPlaceCount" RENAME TO block_place_count;
 ALTER TABLE players ALTER COLUMN "blockBreakCount" RENAME TO block_break_count;
 ALTER TABLE players ALTER COLUMN "firstPlayDate" RENAME TO first_played;
 ALTER TABLE players ALTER COLUMN "lastLoginTime" RENAME TO last_played;
+ALTER TABLE players ALTER COLUMN "languageTag" RENAME TO language_tag;
 ALTER TABLE players ALTER COLUMN "totalPlayTime" RENAME TO total_played;
 ALTER TABLE players ALTER COLUMN "attackModeClear" RENAME TO attack_clear;
 ALTER TABLE players ALTER COLUMN "pvpVictoriesCount" RENAME TO pvp_win_count;
@@ -44,12 +45,60 @@ ALTER TABLE players ALTER COLUMN "isConnected" RENAME TO is_connected;
 ALTER TABLE players ALTER COLUMN "banTime" RENAME TO ban_expire_date;
 ALTER TABLE players ALTER COLUMN "joinStacks" RENAME TO attendance_days;
 
+/* Date-Time 변환 */
+ALTER TABLE PLAYERS ADD COLUMN first_played_tmp TIMESTAMP(9);
+ALTER TABLE PLAYERS ADD COLUMN last_played_tmp TIMESTAMP(9);
+UPDATE PLAYERS SET
+                   first_played_tmp = DATEADD('MS', first_played, DATE '1970-01-01'),
+                   last_played_tmp = DATEADD('MS', last_played, DATE '1970-01-01');
+ALTER TABLE PLAYERS DROP COLUMN first_played;
+ALTER TABLE PLAYERS DROP COLUMN last_played;
+ALTER TABLE PLAYERS ALTER COLUMN first_played_tmp RENAME TO first_played;
+ALTER TABLE PLAYERS ALTER COLUMN last_played_tmp RENAME TO last_played;
+
+ALTER TABLE PLAYERS ADD COLUMN last_login_date_tmp TIMESTAMP(9);
+UPDATE PLAYERS SET last_login_date_tmp = (
+    CASE
+        WHEN last_login_date REGEXP '^\d{4}-\d{2}-\d{2}.*'
+            THEN CAST(last_login_date AS TIMESTAMP(9))
+        ELSE NULL
+        END
+    );
+ALTER TABLE PLAYERS DROP COLUMN last_login_date;
+ALTER TABLE PLAYERS ALTER COLUMN last_login_date_TMP RENAME TO last_login_date;
+
+ALTER TABLE PLAYERS ADD COLUMN last_logout_date_tmp TIMESTAMP(9);
+UPDATE PLAYERS SET last_logout_date_tmp = (
+    CASE
+        WHEN last_logout_date REGEXP '^\d{4}-\d{2}-\d{2}.*'
+            THEN CAST(last_logout_date AS TIMESTAMP(9))
+        ELSE NULL
+        END
+    );
+ALTER TABLE PLAYERS DROP COLUMN last_logout_date;
+ALTER TABLE PLAYERS ALTER COLUMN last_logout_date_tmp RENAME TO last_logout_date;
+
+ALTER TABLE PLAYERS ADD COLUMN ban_expire_date_tmp TIMESTAMP(9);
+UPDATE PLAYERS SET ban_expire_date_tmp = (
+    CASE
+        WHEN ban_expire_date REGEXP '^\d{4}-\d{2}-\d{2}.*'
+            THEN CAST(ban_expire_date AS TIMESTAMP(9))
+        ELSE NULL
+        END
+    );
+ALTER TABLE PLAYERS DROP COLUMN ban_expire_date;
+ALTER TABLE PLAYERS ALTER COLUMN ban_expire_date_tmp RENAME TO ban_expire_date;
+
 /* 새 데이터 추가 */
 ALTER TABLE players ADD COLUMN wave_clear integer AFTER attack_clear;
 ALTER TABLE players ADD COLUMN is_banned boolean AFTER is_connected;
 ALTER TABLE plugin_data ADD COLUMN id integer;
 ALTER TABLE plugin_data ADD COLUMN database_version integer;
 ALTER TABLE plugin_data ADD COLUMN hub_map_name text;
+
+UPDATE players SET wave_clear = 0 WHERE wave_clear IS NULL;
+UPDATE players SET is_banned = false WHERE is_banned IS NULL;
+
 UPDATE plugin_data SET id = 1 WHERE id IS NULL;
 UPDATE plugin_data SET database_version = 4 WHERE database_version IS NULL;
 

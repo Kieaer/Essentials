@@ -20,6 +20,7 @@ ALTER TABLE IF EXISTS players RENAME COLUMN "blockPlaceCount" to block_place_cou
 ALTER TABLE IF EXISTS players RENAME COLUMN "blockBreakCount" to block_break_count;
 ALTER TABLE IF EXISTS players RENAME COLUMN "firstPlayDate" to first_played;
 ALTER TABLE IF EXISTS players RENAME COLUMN "lastLoginTime" to last_played;
+ALTER TABLE IF EXISTS players RENAME COLUMN "languageTag" to language_tag;
 ALTER TABLE IF EXISTS players RENAME COLUMN "totalPlayTime" to total_played;
 ALTER TABLE IF EXISTS players RENAME COLUMN "attackModeClear" to attack_clear;
 ALTER TABLE IF EXISTS players RENAME COLUMN "pvpVictoriesCount" to pvp_win_count;
@@ -46,9 +47,9 @@ ALTER TABLE IF EXISTS players RENAME COLUMN "joinStacks" to attendance_days;
 /* Date-Time 변환 */
 ALTER TABLE IF EXISTS players ALTER COLUMN first_played TYPE TIMESTAMP WITHOUT TIME ZONE USING to_timestamp(first_played / 1000.0);
 ALTER TABLE IF EXISTS players ALTER COLUMN last_played TYPE TIMESTAMP WITHOUT TIME ZONE USING to_timestamp(last_played / 1000.0);
-ALTER TABLE IF EXISTS players ALTER COLUMN last_login_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN last_login_date ~ '^\d{4}-\d{2}-\d{2}' THEN last_login_date::timestamp ELSE NULL END);
-ALTER TABLE IF EXISTS players ALTER COLUMN last_logout_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN last_logout_date ~ '^\d{4}-\d{2}-\d{2}' THEN last_logout_date::timestamp ELSE NULL END);
-ALTER TABLE IF EXISTS players ALTER COLUMN ban_expire_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN ban_expire_date ~ '^\d{4}-\d{2}-\d{2}' THEN ban_expire_date::timestamp ELSE NULL END);
+ALTER TABLE IF EXISTS players ALTER COLUMN last_login_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN last_login_date ~ '^\d{4}-\d{2}-\d{2}' THEN last_login_date::timestamp END);
+ALTER TABLE IF EXISTS players ALTER COLUMN last_logout_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN last_logout_date ~ '^\d{4}-\d{2}-\d{2}' THEN last_logout_date::timestamp END);
+ALTER TABLE IF EXISTS players ALTER COLUMN ban_expire_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN ban_expire_date ~ '^\d{4}-\d{2}-\d{2}' THEN ban_expire_date::timestamp END);
 
 /* Column 길이 증가 */
 ALTER TABLE IF EXISTS players ALTER COLUMN name TYPE VARCHAR(256);

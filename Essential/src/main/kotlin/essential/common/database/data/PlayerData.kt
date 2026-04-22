@@ -23,6 +23,7 @@ data class PlayerData(
     val id: UInt,
     var name: String,
     var uuid: String,
+    var languageTag: String = "en",
     var blockPlaceCount: Int = 0,
     var blockBreakCount: Int = 0,
     var level: Int = 0,

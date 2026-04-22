@@ -1,12 +1,11 @@
 package essential.common.database.data
 
 import essential.common.database.table.MapRatingTable
-import kotlinx.coroutines.flow.single
 import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.r2dbc.insertReturning
+import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.r2dbc.update
@@ -31,12 +30,16 @@ suspend fun createMapRating(
     isUpvote: Boolean
 ): MapRatingData {
     return suspendTransaction {
-        MapRatingTable.insertReturning {
+        MapRatingTable.insert {
             it[MapRatingTable.mapName] = mapName
             it[MapRatingTable.mapHash] = mapHash
             it[MapRatingTable.playerUuid] = playerUuid
             it[MapRatingTable.isUpvote] = isUpvote
-        }.single().toMapRatingData()
+        }
+        MapRatingTable.selectAll()
+            .where { (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }
+            .mapToMapRatingDataList()
+            .single()
     }
 }
 
@@ -127,7 +130,7 @@ suspend fun migrateMapRatingsFromPluginData(pluginData: PluginData) {
         for ((mapName, ratings) in pluginData.data.mapRatings) {
             for ((playerUuid, isUpvote) in ratings) {
                 try {
-                    MapRatingTable.insertReturning {
+                    MapRatingTable.insert {
                         it[MapRatingTable.mapName] = mapName
                         it[MapRatingTable.mapHash] = ""
                         it[MapRatingTable.playerUuid] = playerUuid

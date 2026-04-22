@@ -2,16 +2,13 @@ package essential.common.database.data
 
 import essential.common.database.table.ServerRoutingTable
 import essential.common.systemTimezone
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.greater
-import org.jetbrains.exposed.v1.core.less
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
-import org.jetbrains.exposed.v1.r2dbc.insertReturning
+import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.r2dbc.update
@@ -59,9 +56,9 @@ suspend fun grantRoutingPermission(
 ): ServerRoutingData? {
     val routingAllowedTime = Clock.System.now().toLocalDateTime(systemTimezone)
     val expiresAt = (Clock.System.now() + validSeconds.seconds).toLocalDateTime(systemTimezone)
-    
+
     return suspendTransaction {
-        ServerRoutingTable.insertReturning {
+        ServerRoutingTable.insert {
             it[ServerRoutingTable.playerUuid] = playerUuid
             it[ServerRoutingTable.hubServerName] = hubServerName
             it[ServerRoutingTable.targetServerName] = targetServerName
@@ -71,7 +68,11 @@ suspend fun grantRoutingPermission(
             it[ServerRoutingTable.isUsed] = false
             it[ServerRoutingTable.usedTime] = null
             it[ServerRoutingTable.expiresAt] = expiresAt
-        }.singleOrNull()?.toServerRoutingData()
+        }
+        ServerRoutingTable.selectAll()
+            .where { ServerRoutingTable.playerUuid eq playerUuid }
+            .map { row -> row.toServerRoutingData() }
+            .singleOrNull()
     }
 }
 

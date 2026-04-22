@@ -21,6 +21,7 @@ ALTER TABLE players RENAME COLUMN "blockPlaceCount" to block_place_count;
 ALTER TABLE players RENAME COLUMN "blockBreakCount" to block_break_count;
 ALTER TABLE players RENAME COLUMN "firstPlayDate" to first_played;
 ALTER TABLE players RENAME COLUMN "lastLoginTime" to last_played;
+ALTER TABLE players RENAME COLUMN "languageTag" to language_tag;
 ALTER TABLE players RENAME COLUMN "totalPlayTime" to total_played;
 ALTER TABLE players RENAME COLUMN "attackModeClear" to attack_clear;
 ALTER TABLE players RENAME COLUMN "pvpVictoriesCount" to pvp_win_count;
@@ -56,7 +57,6 @@ ALTER TABLE players ALTER COLUMN name TYPE VARCHAR(256);
 ALTER TABLE players ALTER COLUMN permission TYPE VARCHAR(100);
 
 /* 새 데이터 추가 */
-
 ALTER TABLE players ADD COLUMN wave_clear integer DEFAULT 0 NOT NULL;
 ALTER TABLE players ADD COLUMN is_banned boolean DEFAULT false NOT NULL;
 ALTER TABLE plugin_data ADD COLUMN id integer;

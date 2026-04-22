@@ -8,6 +8,7 @@ object PlayerTable : Table("players") {
     val id = uinteger("id").autoIncrement()
     val name = varchar("name", 256).uniqueIndex("name")
     val uuid = varchar("uuid", 25).uniqueIndex("uuid")
+    val languageTag = varchar("language_tag", 10).default("en")
     val blockPlaceCount = integer("block_place_count").default(0)
     val blockBreakCount = integer("block_break_count").default(0)
     val level = integer("level").default(0)
