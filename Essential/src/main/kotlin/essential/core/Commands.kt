@@ -1732,10 +1732,13 @@ class Commands {
                 "reset" -> {
                     pluginData.data.warpTotal.clear()
                     pluginData.data.warpCount.clear()
+                    playerData.send("command.hub.reset")
                 }
 
                 else -> playerData.send("command.hub.help")
             }
+
+            pluginData.update()
         }
     }
 

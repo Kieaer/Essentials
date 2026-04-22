@@ -523,6 +523,8 @@ class ClientCommandTest {
 
         // Test reset command
         clientCommand.handleMessage("/hub reset", player)
+        sleep(100)
+        assertEquals(Bundle()["command.hub.reset"], playerData.lastReceivedMessage)
 
         // Test invalid command
         clientCommand.handleMessage("/hub invalid", player)
