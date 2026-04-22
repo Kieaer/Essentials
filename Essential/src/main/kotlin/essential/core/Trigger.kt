@@ -12,15 +12,20 @@ import essential.common.bundle.Bundle
 import essential.common.database.data.PluginData
 import essential.common.database.data.cleanupExpiredRoutingPermissions
 import essential.common.database.data.getPluginData
+import essential.common.database.data.grantRoutingPermission
 import essential.common.database.data.plugin.WarpCount
 import essential.common.permission.Permission
 import essential.common.players
 import essential.common.pluginData
 import essential.common.rootPath
+import essential.common.systemTimezone
 import essential.common.util.findPlayerData
 import essential.core.Main.Companion.conf
+import essential.core.Main.Companion.scope
 import essential.core.service.effect.EffectSystem
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.EventType
@@ -41,6 +46,7 @@ import java.nio.ByteBuffer
 import java.util.function.Consumer
 import kotlin.math.floor
 import kotlin.random.Random
+import kotlin.time.Instant
 
 
 class Trigger {
@@ -496,7 +502,19 @@ class Trigger {
                         )
                     ) {
                         Log.info(Bundle()["log.warp.move", data.player.plainName(), two.ip, two.port.toString()])
-                        Call.connect(data.player.con(), two.ip, two.port)
+
+                        val currentMapName = Vars.state.map.name()
+                        val hubMapName = pluginData.hubMapName
+                        if (hubMapName != null && currentMapName == hubMapName) {
+                            scope.launch {
+                                val targetServerName = "${two.ip}:${two.port}"
+                                val hubConnectionTime = Instant.fromEpochMilliseconds(data.player.con().connectTime).toLocalDateTime(systemTimezone)
+                                grantRoutingPermission(data.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
+                                Call.connect(data.player.con(), two.ip, two.port)
+                            }
+                        } else {
+                            Call.connect(data.player.con(), two.ip, two.port)
+                        }
                         break
                     }
                 }
@@ -540,7 +558,20 @@ class Trigger {
                                 } else {
                                     server[1].toInt()
                                 }
-                                Call.connect(it.player.con(), server[0], port)
+
+                                val currentMapName = Vars.state.map.name()
+                                val hubMapName = pluginData.hubMapName
+                                if (hubMapName != null && currentMapName == hubMapName) {
+                                    scope.launch {
+                                        val targetServerName = if (server.size == 1) "${server[0]}:6567" else "${server[0]}:${server[1]}"
+                                        val hubConnectionTime = Instant.fromEpochMilliseconds(it.player.con().connectTime).toLocalDateTime(systemTimezone)
+                                        grantRoutingPermission(it.player.uuid(), hubMapName, targetServerName, port, hubConnectionTime)
+                                        Log.debug("Granted routing permission for ${it.player.plainName()} to $targetServerName (AFK)")
+                                        Call.connect(it.player.con(), server[0], port)
+                                    }
+                                } else {
+                                    Call.connect(it.player.con(), server[0], port)
+                                }
                             }
                         }
                     }

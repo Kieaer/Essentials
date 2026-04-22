@@ -24,6 +24,7 @@ data class ServerRoutingData(
     val playerUuid: String,
     val hubServerName: String,
     val targetServerName: String,
+    val targetPort: Int,
     val hubConnectionTime: LocalDateTime,
     val routingAllowedTime: LocalDateTime,
     val isUsed: Boolean,
@@ -36,6 +37,7 @@ fun ResultRow.toServerRoutingData() = ServerRoutingData(
     playerUuid = this[ServerRoutingTable.playerUuid],
     hubServerName = this[ServerRoutingTable.hubServerName],
     targetServerName = this[ServerRoutingTable.targetServerName],
+    targetPort = this[ServerRoutingTable.targetPort],
     hubConnectionTime = this[ServerRoutingTable.hubConnectionTime],
     routingAllowedTime = this[ServerRoutingTable.routingAllowedTime],
     isUsed = this[ServerRoutingTable.isUsed],
@@ -47,8 +49,15 @@ fun ResultRow.toServerRoutingData() = ServerRoutingData(
  * Grants routing permission via the hub server.
  */
 @OptIn(ExperimentalTime::class)
-suspend fun grantRoutingPermission(playerUuid: String, hubServerName: String, targetServerName: String, validSeconds: Int = 10): ServerRoutingData? {
-    val now = Clock.System.now().toLocalDateTime(systemTimezone)
+suspend fun grantRoutingPermission(
+    playerUuid: String,
+    hubServerName: String,
+    targetServerName: String,
+    targetPort: Int,
+    hubConnectionTime: LocalDateTime,
+    validSeconds: Int = 60
+): ServerRoutingData? {
+    val routingAllowedTime = Clock.System.now().toLocalDateTime(systemTimezone)
     val expiresAt = (Clock.System.now() + validSeconds.seconds).toLocalDateTime(systemTimezone)
     
     return suspendTransaction {
@@ -56,8 +65,9 @@ suspend fun grantRoutingPermission(playerUuid: String, hubServerName: String, ta
             it[ServerRoutingTable.playerUuid] = playerUuid
             it[ServerRoutingTable.hubServerName] = hubServerName
             it[ServerRoutingTable.targetServerName] = targetServerName
-            it[ServerRoutingTable.hubConnectionTime] = now
-            it[ServerRoutingTable.routingAllowedTime] = now
+            it[ServerRoutingTable.targetPort] = targetPort
+            it[ServerRoutingTable.hubConnectionTime] = hubConnectionTime
+            it[ServerRoutingTable.routingAllowedTime] = routingAllowedTime
             it[ServerRoutingTable.isUsed] = false
             it[ServerRoutingTable.usedTime] = null
             it[ServerRoutingTable.expiresAt] = expiresAt
@@ -69,16 +79,18 @@ suspend fun grantRoutingPermission(playerUuid: String, hubServerName: String, ta
  * Checks whether the player has permission to connect to a specific server.
  */
 @OptIn(ExperimentalTime::class)
-suspend fun checkRoutingPermission(playerUuid: String, targetServerName: String): Boolean {
+suspend fun checkRoutingPermission(playerUuid: String, targetPort: Int): Boolean {
     val now = Clock.System.now().toLocalDateTime(systemTimezone)
     
     return suspendTransaction {
-        ServerRoutingTable.selectAll().where {
+        val sort = ServerRoutingTable.selectAll().where {
             (ServerRoutingTable.playerUuid eq playerUuid) and
-            (ServerRoutingTable.targetServerName eq targetServerName) and
+            (ServerRoutingTable.targetPort eq targetPort) and
             (ServerRoutingTable.isUsed eq false) and
             (ServerRoutingTable.expiresAt greater now)
-        }.count() > 0
+        }.count()
+
+        sort > 0
     }
 }
 
@@ -86,13 +98,13 @@ suspend fun checkRoutingPermission(playerUuid: String, targetServerName: String)
  * Marks routing permission as used.
  */
 @OptIn(ExperimentalTime::class)
-suspend fun useRoutingPermission(playerUuid: String, targetServerName: String): Boolean {
+suspend fun useRoutingPermission(playerUuid: String, targetPort: Int): Boolean {
     val now = Clock.System.now().toLocalDateTime(systemTimezone)
     
     return suspendTransaction {
         val updatedCount = ServerRoutingTable.update({
             (ServerRoutingTable.playerUuid eq playerUuid) and
-            (ServerRoutingTable.targetServerName eq targetServerName) and
+            (ServerRoutingTable.targetPort eq targetPort) and
             (ServerRoutingTable.isUsed eq false) and
             (ServerRoutingTable.expiresAt greater now)
         }) {

@@ -9,6 +9,7 @@ object ServerRoutingTable : Table("server_routing") {
     val playerUuid = varchar("player_uuid", 25).index()
     val hubServerName = varchar("hub_server_name", 100)
     val targetServerName = varchar("target_server_name", 100)
+    val targetPort = integer("target_port").default(6567)
     val hubConnectionTime = datetime("hub_connection_time").defaultExpression(CurrentDateTime)
     val routingAllowedTime = datetime("routing_allowed_time").defaultExpression(CurrentDateTime)
     val isUsed = bool("is_used").default(false)

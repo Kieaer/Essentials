@@ -60,6 +60,7 @@ import java.util.regex.Pattern
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /** World history - Now stored in the database */
 private var dateformat = SimpleDateFormat("HH:mm:ss")
@@ -211,12 +212,13 @@ fun tap(event: TapEvent) {
                     if (hubMapName != null && currentMapName == hubMapName) {
                         scope.launch {
                             val targetServerName = two.description.takeIf { it.isNotEmpty() } ?: "${two.ip}:${two.port}"
-                            grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
-                            Log.debug("Granted routing permission for ${event.player.plainName()} to $targetServerName")
+                            val hubConnectionTime = Instant.fromEpochMilliseconds(event.player.con().connectTime).toLocalDateTime(systemTimezone)
+                            grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
+                            Call.connect(event.player.con(), two.ip, two.port)
                         }
+                    } else {
+                        Call.connect(event.player.con(), two.ip, two.port)
                     }
-
-                    Call.connect(event.player.con(), two.ip, two.port)
                 }
                 return@forEach
             }
@@ -236,12 +238,13 @@ fun tap(event: TapEvent) {
                 if (hubMapName != null && currentMapName == hubMapName) {
                     scope.launch {
                         val targetServerName = "${two.ip}:${two.port}"
-                        grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, 10)
-                        Log.debug("Granted routing permission for ${event.player.plainName()} to $targetServerName via warp zone")
+                        val hubConnectionTime = Instant.fromEpochMilliseconds(event.player.con().connectTime).toLocalDateTime(systemTimezone)
+                        grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
+                        Call.connect(event.player.con(), two.ip, two.port)
                     }
+                } else {
+                    Call.connect(event.player.con(), two.ip, two.port)
                 }
-
-                Call.connect(event.player.con(), two.ip, two.port)
                 continue
             }
         }
@@ -906,7 +909,8 @@ fun connectPacket(event: ConnectPacketEvent) {
         if (currentMapName != hubMapName) {
             scope.launch {
                 // Check whether the player has routing permission via the hub
-                val hasRoutingPermission = checkRoutingPermission(event.packet.uuid, currentMapName)
+                val targetPort = Administration.Config.port.num()
+                val hasRoutingPermission = checkRoutingPermission(event.packet.uuid, targetPort)
 
                 if (!hasRoutingPermission) {
                     event.connection.kick("Direct connection denied - must route through hub server", 0L)
@@ -920,10 +924,8 @@ fun connectPacket(event: ConnectPacketEvent) {
                             "Direct connection denied - must route through hub"
                         )
                     )
-                    return@launch
                 } else {
-                    // Mark routing permission as used
-                    useRoutingPermission(event.packet.uuid, currentMapName)
+                    useRoutingPermission(event.packet.uuid, targetPort)
                 }
             }
         }
