@@ -11,12 +11,25 @@ import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
+import java.util.Locale
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
+
+private fun parseLocaleOrDefault(rawLocale: String): String? {
+    val normalized = rawLocale.replace('_', '-')
+    val locale = Locale.forLanguageTag(normalized)
+    if (locale.language.isBlank()) return null
+
+    return if (locale.country.isBlank()) {
+        locale.language
+    } else {
+        "${locale.language}_${locale.country}"
+    }
+}
 
 @GenerateCode
 data class PlayerData(
@@ -126,7 +139,14 @@ data class PlayerData(
 
 /** Create player data */
 suspend fun createPlayerData(player: Playerc): PlayerData {
-    // Fast-path: if already exists, return it
+    val now = Clock.System.now().toLocalDateTime(systemTimezone)
+    val rawLocale = player.locale()
+    val locale = parseLocaleOrDefault(rawLocale)
+    if (locale == null) {
+        Log.warn("Invalid player locale detected: '${rawLocale}' (player=${player.name()}, uuid=${player.uuid()})")
+        player.sendMessage(Bundle(rawLocale)["event.player.invalid.info"])
+    }
+
     suspendTransaction {
         val notExists = PlayerTable.select(PlayerTable.id)
             .where { PlayerTable.uuid eq player.uuid() }
@@ -139,6 +159,7 @@ suspend fun createPlayerData(player: Playerc): PlayerData {
             }
         } catch (_: Throwable) {
             // Another concurrent inserter may have created the row; ignore and proceed to fetch
+            it[PlayerTable.languageTag] = locale ?: "en"
         }
     }
 
