@@ -14,6 +14,7 @@ import essential.common.DATABASE_VERSION
 import essential.common.bundle
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
+import essential.common.database.data.checkPlayerBanned
 import essential.common.database.data.createPlayerData
 import essential.common.database.data.getPlayerData
 import essential.common.database.defaultDatabase
@@ -424,12 +425,9 @@ class PluginTest {
     }
 
     @Test
-    fun startPluginTest() {
-        loadGame(true)
-    }
-
-    @Test
     fun dbUpgradeTest_20() {
+        if (Core.app != null) stopPlugin()
+
         val dataDir = Paths.get("config", "mods", "Essentials", "data")
         dataDir.toFile().mkdirs()
         val file = Paths.get("src", "test", "resources", "database-v3.mv.db").toFile()
@@ -451,6 +449,8 @@ class PluginTest {
             assertNotNull(player)
             assertEquals(56, player.exp)
             assertEquals(uuid, player.uuid)
+            assertFalse(checkPlayerBanned(player.player))
+            assertEquals(122213, player.blockPlaceCount)
         }
 
         stopPlugin()
@@ -458,6 +458,8 @@ class PluginTest {
 
     @Test
     fun dbUpgradeTest_20_postgres() {
+        if (Core.app != null) stopPlugin()
+
         loadGame(deleteConfig = false)
         val originalConf = Main.conf
         PostgreSQLContainer("postgres:17.0").apply {
@@ -502,7 +504,8 @@ class PluginTest {
                     val uuid = "hMHCIDJpHKQAAAAAbzCq5A=="
                     val player = getPlayerData(uuid) ?: createPlayerData("upgrade-test", uuid, "upgrade-test", "upgrade-test")
                     assertNotNull(player, "Player should exist after upgrade")
-                    assertEquals(uuid, player.uuid)
+                    assertFalse(checkPlayerBanned(player.player))
+                    assertEquals(122213, player.blockPlaceCount)
                 }
             } finally {
                 stopPlugin()

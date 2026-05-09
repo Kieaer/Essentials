@@ -223,8 +223,7 @@ class FeatureTest {
         Main.conf = Main.conf.copy(feature = Main.conf.feature.copy(pvp = Main.conf.feature.pvp.copy(autoTeam = true)))
 
         clientCommand.handleMessage("/changemap Glacier pvp", player)
-        Thread.sleep(2000)
-        assertTrue(Vars.state.rules.pvp)
+        assertTrue(awaitCondition(7000L, 100L) { Vars.state.rules.pvp })
 
         // Scenario: 4 teams (A, B, C, D) with 2 players each
         // Win rates: A=100%, B=75%, C=50%, D=25%
