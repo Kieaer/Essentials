@@ -1,7 +1,6 @@
 package essential.common.database.data
 
 import essential.common.database.table.MapRatingTable
-import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
@@ -17,7 +16,6 @@ data class MapRatingData(
     val mapHash: String,
     val playerUuid: String,
     val isUpvote: Boolean,
-    val ratedAt: LocalDateTime
 )
 
 /**
