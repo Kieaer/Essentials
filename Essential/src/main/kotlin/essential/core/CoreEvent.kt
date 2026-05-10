@@ -46,6 +46,7 @@ import mindustry.world.blocks.ConstructBlock
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.math.BigInteger
 import java.nio.file.Files
@@ -983,11 +984,15 @@ fun configFileModified(event: CustomEvents.ConfigFileModified) {
             }
 
             "config.yaml" -> {
-                conf = Yaml.default.decodeFromString(
-                    CoreConfig.serializer(),
-                    rootPath.child(Main.CONFIG_PATH).readString()
-                )
-                Log.info(Bundle()["config.reloaded"])
+                try {
+                    conf = Yaml.default.decodeFromString(
+                        CoreConfig.serializer(),
+                        rootPath.child(Main.CONFIG_PATH).readString()
+                    )
+                    Log.info(Bundle()["config.reloaded"])
+                } catch (_: FileNotFoundException) {
+                    Log.debug(Bundle()["config.file.missing"])
+                }
             }
         }
     }
