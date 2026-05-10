@@ -525,6 +525,10 @@ class ClientCommandTest {
         clientCommand.handleMessage("/hub reset", player)
         sleep(100)
         assertEquals(Bundle()["command.hub.reset"], playerData.lastReceivedMessage)
+        assertTrue(pluginData.data.warpZone.isEmpty())
+        assertTrue(pluginData.data.warpBlock.isEmpty())
+        assertTrue(pluginData.data.warpTotal.isEmpty())
+        assertTrue(pluginData.data.warpCount.isEmpty())
 
         // Test invalid command
         clientCommand.handleMessage("/hub invalid", player)
@@ -563,6 +567,9 @@ class ClientCommandTest {
 
         clientCommand.handleMessage("/js Vars.state.rules.infiniteResources = false", player)
         assertFalse(Vars.state.rules.infiniteResources)
+
+        clientCommand.handleMessage("/js badCommand", player)
+        assertContains(playerData.lastReceivedMessage, ">")
 
         // Test js command works only owner
         val dummy = newPlayer()

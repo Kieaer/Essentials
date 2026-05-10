@@ -42,6 +42,7 @@ import java.lang.Thread.sleep
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
+import java.net.UnknownHostException
 import java.nio.ByteBuffer
 import java.util.function.Consumer
 import kotlin.math.floor
@@ -239,10 +240,17 @@ class Trigger {
                                         var alivePlayer = 0
                                         var currentMap = ""
                                         serverInfo.forEach {
-                                            if ((it.address == value.ip || it.address == InetAddress.getByName(value.ip).hostAddress) && it.port == value.port) {
-                                                alive = true
-                                                alivePlayer = it.players
-                                                currentMap = it.mapname
+                                            try {
+                                                val address = InetAddress.getByName(value.ip).hostAddress
+                                                if ((it.address == value.ip || it.address == address) && it.port == value.port) {
+                                                    alive = true
+                                                    alivePlayer = it.players
+                                                    currentMap = it.mapname
+                                                }
+                                            } catch (_: UnknownHostException) {
+                                                Log.warn("Could not find a matching address $value.ip:$value.port")
+                                            } catch (_: Exception) {
+
                                             }
                                         }
 
