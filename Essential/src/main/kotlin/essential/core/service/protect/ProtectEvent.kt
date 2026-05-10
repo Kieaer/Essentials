@@ -148,45 +148,48 @@ fun playerJoin(e: EventType.PlayerJoin) {
         val data: PlayerData? = getPlayerData(e.player.uuid())
         if (conf.account.getAuthType() == ProtectConfig.AuthType.None || !conf.account.enabled) {
             if (data == null) {
-                suspendTransaction {
-                    if (
-                            PlayerTable
-                                .select(PlayerTable.name)
-                                .where { PlayerTable.name eq e.player.plainName() }
-                                .empty()
-                        ) {
+                val exists = suspendTransaction {
+                    !PlayerTable
+                        .select(PlayerTable.name)
+                        .where { PlayerTable.name eq e.player.plainName() }
+                        .empty()
+                }
 
-                        val data = createPlayerData(e.player)
-                        data.permission = "user"
-                        data.update()
-                        Events.fire(CustomEvents.PlayerDataLoad(data))
-                    } else {
-                        e.player.con.kick(
-                            Bundle(e.player.locale)["event.player.name.duplicate"],
-                            0L
-                        )
+                if (!exists) {
+                    try {
+                        val newData = createPlayerData(e.player)
+                        newData.permission = "user"
+                        newData.update()
+                        Events.fire(CustomEvents.PlayerDataLoad(newData))
+                    } catch (e: Exception) {
+                        Log.err("Failed to create player data", e)
                     }
+                } else {
+                    e.player.con.kick(
+                        Bundle(e.player.locale)["event.player.name.duplicate"],
+                        0L
+                    )
                 }
             } else {
                 Events.fire(CustomEvents.PlayerDataLoad(data))
             }
         } else if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
             if (data == null) {
-                suspendTransaction {
-                    if (
-                        PlayerTable
-                            .select(PlayerTable.name)
-                            .where { PlayerTable.name eq e.player.plainName() }
-                            .empty()
-                    ) {
-                        //data.send("event.discord.not.registered")
-                        // TODO discord 로그인 추가
-                    } else {
-                        e.player.con.kick(
-                            Bundle(e.player.locale)["event.player.name.duplicate"],
-                            0L
-                        )
-                    }
+                val exists = suspendTransaction {
+                    !PlayerTable
+                        .select(PlayerTable.name)
+                        .where { PlayerTable.name eq e.player.plainName() }
+                        .empty()
+                }
+
+                if (!exists) {
+                    //data.send("event.discord.not.registered")
+                    // TODO discord 로그인 추가
+                } else {
+                    e.player.con.kick(
+                        Bundle(e.player.locale)["event.player.name.duplicate"],
+                        0L
+                    )
                 }
             } else {
                 Events.fire(CustomEvents.PlayerDataLoad(data))

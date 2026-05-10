@@ -139,7 +139,6 @@ data class PlayerData(
 
 /** Create player data */
 suspend fun createPlayerData(player: Playerc): PlayerData {
-    val now = Clock.System.now().toLocalDateTime(systemTimezone)
     val rawLocale = player.locale()
     val locale = parseLocaleOrDefault(rawLocale)
     if (locale == null) {
@@ -152,13 +151,9 @@ suspend fun createPlayerData(player: Playerc): PlayerData {
             .where { PlayerTable.uuid eq player.uuid() }
             .empty()
         if (!notExists) return@suspendTransaction
-        try {
-            PlayerTable.insert {
-                it[PlayerTable.name] = player.name()
-                it[PlayerTable.uuid] = player.uuid()
-            }
-        } catch (_: Throwable) {
-            // Another concurrent inserter may have created the row; ignore and proceed to fetch
+        PlayerTable.insert {
+            it[PlayerTable.name] = player.name()
+            it[PlayerTable.uuid] = player.uuid()
             it[PlayerTable.languageTag] = locale ?: "en"
         }
     }
