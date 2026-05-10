@@ -29,7 +29,7 @@ object PlayerTable : Table("players") {
     val chatMuted = bool("chat_muted").default(false)
     val effectVisibility = bool("effect_visibility").default(false)
     val effectLevel = short("effect_level").nullable().default(null)
-    val effectColor = varchar("effect_color", 10).nullable().default(null)
+    val effectColor = varchar("effect_color", 20).nullable().default(null)
     val hideRanking = bool("hide_ranking").default(false)
     val strictMode = bool("strict_mode").default(false)
     val lastLoginDate = datetime("last_login_date").defaultExpression(CurrentDateTime)
