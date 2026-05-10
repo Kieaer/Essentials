@@ -7,11 +7,9 @@ import arc.util.Align
 import arc.util.Log
 import arc.util.Time
 import arc.util.Timer
-import essential.common.bundle
 import essential.common.bundle.Bundle
 import essential.common.database.data.PluginData
 import essential.common.database.data.cleanupExpiredRoutingPermissions
-import essential.common.database.data.getPluginData
 import essential.common.database.data.grantRoutingPermission
 import essential.common.database.data.plugin.WarpCount
 import essential.common.permission.Permission
@@ -138,17 +136,7 @@ class Trigger {
             var isNotTargetMap: Boolean
             try {
                 while (currentThread().isInterrupted.not()) {
-                    val pluginDataFromDatabase = runBlocking {
-                        getPluginData()
-                    }
-
-                    // 플러그인 데이터는 항상 존재 해야 합니다.
-                    require(pluginDataFromDatabase != null) {
-                        bundle["plugin.data.null"]
-                    }
-
-                    pluginData = pluginDataFromDatabase
-                    val data = pluginDataFromDatabase.data
+                    val data = pluginData.data
 
                     isNotTargetMap = false
                     if (data.warpCount.none { f -> f.mapName == Vars.state.map.name() } &&
