@@ -1,5 +1,6 @@
 package essential.common.database.data
 
+import essential.common.database.table.AchievementTable
 import essential.common.database.table.PlayerTable
 import essential.common.systemTimezone
 import kotlinx.coroutines.flow.singleOrNull
@@ -92,10 +93,9 @@ suspend fun mergePlayerAccounts(fromUuid: String, toUuid: String): String = susp
         it[isBanned] = mergedIsBanned
         it[banExpireDate] = mergedBanExpire
         it[attendanceDays] = to.attendanceDays + from.attendanceDays
-        // Keep other fields (chatMuted, effect*, hideRanking, strictMode, isConnected, name, uuid) unchanged intentionally
     }
 
-    // Delete source row
+    AchievementTable.deleteWhere { AchievementTable.playerId eq from.id }
     PlayerTable.deleteWhere { PlayerTable.id eq from.id }
 
     return@suspendTransaction "Merged ${from.name} ($fromUuid) into ${to.name} ($toUuid)."
