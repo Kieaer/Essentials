@@ -1,83 +1,151 @@
 /* 예약된 table 이름과 linux 문제 해결 */
 ALTER TABLE player RENAME TO players;
 ALTER TABLE data RENAME TO plugin_data;
-ALTER TABLE banned RENAME TO player_banned;
+
+CREATE TABLE IF NOT EXISTS player_banned (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    names JSON,
+    ips JSON,
+    uuid VARCHAR(25),
+    reason VARCHAR(256) DEFAULT 'Legacy ban',
+    date BIGINT DEFAULT 0
+);
+
+INSERT INTO player_banned (names, uuid, reason)
+SELECT JSON_ARRAY(data), data, 'Legacy ban (name/UUID)'
+FROM banned WHERE type = 0
+GROUP BY data;
+
+INSERT INTO player_banned (ips, reason)
+SELECT JSON_ARRAY(data), 'Legacy ban (IP)'
+FROM banned WHERE type = 1
+GROUP BY data;
+
+DROP TABLE IF EXISTS banned;
 
 /* 더이상 사용하지 않는 column 삭제 */
-ALTER TABLE players DROP COLUMN "freeze";
-ALTER TABLE players DROP COLUMN hud;
-ALTER TABLE players DROP COLUMN tpp;
-ALTER TABLE players DROP COLUMN "tppTeam";
-ALTER TABLE players DROP COLUMN log;
-ALTER TABLE players DROP COLUMN "oldUUID";
-ALTER TABLE players DROP COLUMN "duplicateName";
-ALTER TABLE players DROP COLUMN tracking;
-ALTER TABLE players DROP COLUMN "lastPlayedWorldId";
-ALTER TABLE players DROP COLUMN "totalJoinCount";
-ALTER TABLE players DROP COLUMN "totalKickCount";
+ALTER TABLE players DROP COLUMN IF EXISTS freeze;
+ALTER TABLE players DROP COLUMN IF EXISTS hud;
+ALTER TABLE players DROP COLUMN IF EXISTS tpp;
+ALTER TABLE players DROP COLUMN IF EXISTS tppTeam;
+ALTER TABLE players DROP COLUMN IF EXISTS log;
+ALTER TABLE players DROP COLUMN IF EXISTS oldUUID;
+ALTER TABLE players DROP COLUMN IF EXISTS duplicateName;
+ALTER TABLE players DROP COLUMN IF EXISTS tracking;
+ALTER TABLE players DROP COLUMN IF EXISTS lastPlayedWorldId;
+ALTER TABLE players DROP COLUMN IF EXISTS totalJoinCount;
+ALTER TABLE players DROP COLUMN IF EXISTS totalKickCount;
+ALTER TABLE players DROP COLUMN IF EXISTS animatedName;
+ALTER TABLE players DROP COLUMN IF EXISTS currentPlayTime;
 
 /* RDBMS Linux 기본 설정으로 인한 이름 변경 */
-ALTER TABLE players RENAME COLUMN "blockPlaceCount" to block_place_count;
-ALTER TABLE players RENAME COLUMN "blockBreakCount" to block_break_count;
-ALTER TABLE players RENAME COLUMN "firstPlayDate" to first_played;
-ALTER TABLE players RENAME COLUMN "lastLoginTime" to last_played;
-ALTER TABLE players RENAME COLUMN "languageTag" to language_tag;
-ALTER TABLE players RENAME COLUMN "totalPlayTime" to total_played;
-ALTER TABLE players RENAME COLUMN "attackModeClear" to attack_clear;
-ALTER TABLE players RENAME COLUMN "pvpVictoriesCount" to pvp_win_count;
-ALTER TABLE players RENAME COLUMN "pvpDefeatCount" to pvp_lose_count;
-ALTER TABLE players RENAME COLUMN "pvpEliminationTeamCount" to pvp_eliminated_count;
-ALTER TABLE players RENAME COLUMN "mvpTime" to pvp_mvp_count;
-ALTER TABLE players RENAME COLUMN "accountID" to account_id;
-ALTER TABLE players RENAME COLUMN "accountPW" to account_pw;
-ALTER TABLE players RENAME COLUMN discord to discord_id;
-ALTER TABLE players RENAME COLUMN mute to chat_muted;
-ALTER TABLE players RENAME COLUMN "showLevelEffects" to effect_visibility;
-ALTER TABLE players RENAME COLUMN "effectLevel" to effect_level;
-ALTER TABLE players RENAME COLUMN "effectColor" to effect_color;
-ALTER TABLE players RENAME COLUMN "hideRanking" to hide_ranking;
-ALTER TABLE players RENAME COLUMN strict to strict_mode;
-ALTER TABLE players RENAME COLUMN "lastLoginDate" to last_login_date;
-ALTER TABLE players RENAME COLUMN "lastLeaveDate" to last_logout_date;
-ALTER TABLE players RENAME COLUMN "lastPlayedWorldName" to last_played_world_name;
-ALTER TABLE players RENAME COLUMN "lastPlayedWorldMode" to last_played_world_mode;
-ALTER TABLE players RENAME COLUMN "isConnected" to is_connected;
-ALTER TABLE players RENAME COLUMN "banTime" to ban_expire_date;
-ALTER TABLE players RENAME COLUMN "joinStacks" to attendance_days;
+ALTER TABLE players CHANGE blockPlaceCount block_place_count INTEGER;
+ALTER TABLE players CHANGE blockBreakCount block_break_count INTEGER;
+ALTER TABLE players CHANGE firstPlayDate first_played BIGINT;
+ALTER TABLE players CHANGE lastLoginTime last_played BIGINT;
+ALTER TABLE players CHANGE languageTag language_tag VARCHAR(10);
+ALTER TABLE players CHANGE totalPlayTime total_played INTEGER;
+ALTER TABLE players CHANGE attackModeClear attack_clear INTEGER;
+ALTER TABLE players CHANGE pvpVictoriesCount pvp_win_count SMALLINT;
+ALTER TABLE players CHANGE pvpDefeatCount pvp_lose_count SMALLINT;
+ALTER TABLE players CHANGE pvpEliminationTeamCount pvp_eliminated_count SMALLINT;
+ALTER TABLE players CHANGE mvpTime pvp_mvp_count SMALLINT;
+ALTER TABLE players CHANGE accountID account_id VARCHAR(50);
+ALTER TABLE players CHANGE accountPW account_pw VARCHAR(256);
+ALTER TABLE players CHANGE DISCORD discord_id VARCHAR(50);
+ALTER TABLE players CHANGE MUTE chat_muted BOOLEAN;
+ALTER TABLE players CHANGE showLevelEffects effect_visibility BOOLEAN;
+ALTER TABLE players CHANGE effectLevel effect_level SMALLINT;
+ALTER TABLE players CHANGE effectColor effect_color VARCHAR(20);
+ALTER TABLE players CHANGE hideRanking hide_ranking BOOLEAN;
+ALTER TABLE players CHANGE STRICT strict_mode BOOLEAN;
+ALTER TABLE players CHANGE lastLoginDate last_login_date VARCHAR(50);
+ALTER TABLE players CHANGE lastLeaveDate last_logout_date VARCHAR(50);
+ALTER TABLE players CHANGE lastPlayedWorldName last_played_world_name VARCHAR(50);
+ALTER TABLE players CHANGE lastPlayedWorldMode last_played_world_mode VARCHAR(50);
+ALTER TABLE players CHANGE isConnected is_connected BOOLEAN;
+ALTER TABLE players CHANGE banTime ban_expire_date VARCHAR(50);
+ALTER TABLE players CHANGE joinStacks attendance_days INTEGER;
 
-/* Date-Time Type Conversion */
-ALTER TABLE players ALTER COLUMN first_played TYPE TIMESTAMP WITHOUT TIME ZONE USING to_timestamp(first_played / 1000.0);
-ALTER TABLE players ALTER COLUMN last_played TYPE TIMESTAMP WITHOUT TIME ZONE USING to_timestamp(last_played / 1000.0);
-ALTER TABLE players ALTER COLUMN last_login_date TYPE TIMESTAMP WITHOUT TIME ZONE USING last_login_date::timestamp;
-ALTER TABLE players ALTER COLUMN last_logout_date TYPE TIMESTAMP WITHOUT TIME ZONE USING last_logout_date::timestamp;
-ALTER TABLE players ALTER COLUMN ban_expire_date TYPE TIMESTAMP WITHOUT TIME ZONE USING ban_expire_date::timestamp;
+ALTER TABLE players MODIFY name VARCHAR(256);
+ALTER TABLE players MODIFY uuid VARCHAR(25);
 
-/* Column Length Increase */
-ALTER TABLE players ALTER COLUMN name TYPE VARCHAR(256);
-ALTER TABLE players ALTER COLUMN permission TYPE VARCHAR(100);
+ALTER TABLE players ADD COLUMN level INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players ADD COLUMN exp INTEGER NOT NULL DEFAULT 0;
 
-/* 새 데이터 추가 */
-ALTER TABLE players ADD COLUMN wave_clear integer DEFAULT 0 NOT NULL;
-ALTER TABLE players ADD COLUMN is_banned boolean DEFAULT false NOT NULL;
-ALTER TABLE plugin_data ADD COLUMN id integer;
-ALTER TABLE plugin_data ADD COLUMN database_version integer;
+/* Use temp column pattern for timestamp conversion (MySQL bug fix) */
+ALTER TABLE players ADD COLUMN first_played_tmp TIMESTAMP NULL;
+ALTER TABLE players ADD COLUMN last_played_tmp TIMESTAMP NULL;
+UPDATE players SET first_played_tmp = FROM_UNIXTIME(first_played / 1000) WHERE first_played IS NOT NULL AND first_played != 0;
+UPDATE players SET last_played_tmp = FROM_UNIXTIME(last_played / 1000) WHERE last_played IS NOT NULL AND last_played != 0;
+ALTER TABLE players DROP COLUMN first_played;
+ALTER TABLE players DROP COLUMN last_played;
+ALTER TABLE players CHANGE first_played_tmp first_played TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE players CHANGE last_played_tmp last_played TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP;
+
+UPDATE players SET last_login_date = last_login_date WHERE last_login_date IS NOT NULL AND last_login_date != '';
+ALTER TABLE players MODIFY last_login_date TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP;
+
+UPDATE players SET last_logout_date = last_logout_date WHERE last_logout_date IS NOT NULL AND last_logout_date != '';
+ALTER TABLE players MODIFY last_logout_date TIMESTAMP NULL;
+
+UPDATE players SET ban_expire_date = ban_expire_date WHERE ban_expire_date IS NOT NULL AND ban_expire_date != '';
+ALTER TABLE players MODIFY ban_expire_date TIMESTAMP NULL;
+
+ALTER TABLE players MODIFY account_id VARCHAR(50) NULL DEFAULT NULL;
+ALTER TABLE players MODIFY account_pw VARCHAR(256) NULL DEFAULT NULL;
+ALTER TABLE players MODIFY discord_id VARCHAR(50) NULL DEFAULT NULL;
+ALTER TABLE players MODIFY effect_level SMALLINT NULL DEFAULT NULL;
+ALTER TABLE players MODIFY effect_color VARCHAR(20) NULL DEFAULT NULL;
+ALTER TABLE players MODIFY last_played_world_name VARCHAR(50) NULL DEFAULT NULL;
+ALTER TABLE players MODIFY last_played_world_mode VARCHAR(50) NULL DEFAULT NULL;
+ALTER TABLE players MODIFY language_tag VARCHAR(10) NOT NULL DEFAULT 'en';
+ALTER TABLE players MODIFY block_place_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY block_break_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY total_played INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY attack_clear INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY level INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY exp INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY attendance_days INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY pvp_win_count SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY pvp_lose_count SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY pvp_eliminated_count SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY pvp_mvp_count SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE players MODIFY chat_muted BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE players MODIFY effect_visibility BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE players MODIFY hide_ranking BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE players MODIFY strict_mode BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE players MODIFY is_connected BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE players MODIFY permission VARCHAR(50) NOT NULL DEFAULT 'default';
+UPDATE players SET permission = 'default' WHERE permission IS NULL OR permission = '';
+
+UPDATE players SET language_tag = 'en' WHERE language_tag IS NULL OR language_tag = '';
+
+ALTER TABLE plugin_data ADD COLUMN id INTEGER;
+ALTER TABLE plugin_data ADD COLUMN database_version INTEGER;
+ALTER TABLE plugin_data ADD COLUMN hub_map_name TEXT;
+
+UPDATE plugin_data SET id = 1 WHERE id IS NULL;
+UPDATE plugin_data SET database_version = 4 WHERE database_version IS NULL;
+
+ALTER TABLE players ADD COLUMN wave_clear INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE players ADD COLUMN is_banned BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE players ADD COLUMN id BIGINT AUTO_INCREMENT PRIMARY KEY FIRST;
 
 UPDATE players SET wave_clear = 0 WHERE wave_clear IS NULL;
-UPDATE players SET is_banned = false WHERE is_banned IS NULL;
+UPDATE players SET is_banned = FALSE WHERE is_banned IS NULL;
 
-/* 더이상 사용되지 않는 Table 삭제 */
-DROP TABLE db;
+DROP TABLE IF EXISTS db;
 
-/* players 테이블에 id 컬럼 추가 (PLAYER_ACHIEVEMENTS 테이블의 외래 키 제약 조건을 위해 필요) */
-ALTER TABLE players ADD COLUMN id BIGINT AUTO_INCREMENT PRIMARY KEY;
+DELETE p1 FROM players p1
+INNER JOIN players p2
+WHERE p1.uuid = p2.uuid AND p1.id > p2.id;
 
-/* 새 테이블 추가 */
-CREATE TABLE IF NOT EXISTS PLAYER_ACHIEVEMENTS (
+CREATE TABLE IF NOT EXISTS player_achievements (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     player_id BIGINT NOT NULL,
     achievement_name VARCHAR(100) NOT NULL,
-    completed_at TIMESTAMP(9) DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT FK_PLAYER_ACHIEVEMENTS_PLAYER_ID__ID FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE RESTRICT ON UPDATE RESTRICT,
-    CONSTRAINT chk_player_achievements_unsigned_integer_id CHECK (id BETWEEN 0 AND 4294967295),
-    CONSTRAINT chk_player_achievements_unsigned_integer_player_id CHECK (player_id BETWEEN 0 AND 4294967295)
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_player_achievements_player_id__id FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );

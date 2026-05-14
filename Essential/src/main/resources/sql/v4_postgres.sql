@@ -1,6 +1,26 @@
 /* 예약된 table 이름과 linux 문제 해결 */
 ALTER TABLE IF EXISTS player RENAME TO players;
-ALTER TABLE IF EXISTS banned RENAME TO player_banned;
+
+CREATE TABLE IF NOT EXISTS player_banned (
+    id SERIAL PRIMARY KEY,
+    names JSONB,
+    ips JSONB,
+    uuid VARCHAR(25),
+    reason VARCHAR(256) DEFAULT 'Legacy ban',
+    "date" BIGINT DEFAULT 0
+);
+
+INSERT INTO player_banned (names, uuid, reason)
+SELECT jsonb_build_array(data), data, 'Legacy ban (name/UUID)'
+FROM banned WHERE type = 0
+GROUP BY data;
+
+INSERT INTO player_banned (ips, reason)
+SELECT jsonb_build_array(data), 'Legacy ban (IP)'
+FROM banned WHERE type = 1
+GROUP BY data;
+
+DROP TABLE IF EXISTS banned;
 
 /* 더이상 사용하지 않는 column 삭제 */
 ALTER TABLE IF EXISTS players DROP COLUMN IF EXISTS "freeze";
@@ -14,6 +34,8 @@ ALTER TABLE IF EXISTS players DROP COLUMN IF EXISTS tracking;
 ALTER TABLE IF EXISTS players DROP COLUMN IF EXISTS "lastPlayedWorldId";
 ALTER TABLE IF EXISTS players DROP COLUMN IF EXISTS "totalJoinCount";
 ALTER TABLE IF EXISTS players DROP COLUMN IF EXISTS "totalKickCount";
+ALTER TABLE IF EXISTS players DROP COLUMN IF EXISTS "animatedName";
+ALTER TABLE IF EXISTS players DROP COLUMN IF EXISTS "currentPlayTime";
 
 /* RDBMS Linux 기본 설정으로 인한 이름 변경 */
 ALTER TABLE IF EXISTS players RENAME COLUMN "blockPlaceCount" to block_place_count;
@@ -51,6 +73,10 @@ ALTER TABLE IF EXISTS players ALTER COLUMN last_login_date TYPE TIMESTAMP WITHOU
 ALTER TABLE IF EXISTS players ALTER COLUMN last_logout_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN last_logout_date ~ '^\d{4}-\d{2}-\d{2}' THEN last_logout_date::timestamp END);
 ALTER TABLE IF EXISTS players ALTER COLUMN ban_expire_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN ban_expire_date ~ '^\d{4}-\d{2}-\d{2}' THEN ban_expire_date::timestamp END);
 
+ALTER TABLE IF EXISTS players ALTER COLUMN first_played SET DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE IF EXISTS players ALTER COLUMN last_played SET DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE IF EXISTS players ALTER COLUMN last_login_date SET DEFAULT CURRENT_TIMESTAMP;
+
 /* Column 길이 증가 */
 ALTER TABLE IF EXISTS players ALTER COLUMN name TYPE VARCHAR(256);
 ALTER TABLE IF EXISTS players ALTER COLUMN permission TYPE VARCHAR(100);
@@ -63,8 +89,8 @@ CREATE TABLE IF NOT EXISTS plugin_data (
     data text
 );
 
-INSERT INTO plugin_data (hub_map_name, data) 
-SELECT 
+INSERT INTO plugin_data (hub_map_name, data)
+SELECT
     (status::jsonb ->> 'hubMode'),
     jsonb_build_object(
         'warpZone', COALESCE(data::jsonb -> 'warpZones', '[]'::jsonb),
@@ -75,12 +101,12 @@ SELECT
         'mapRatings', COALESCE(data::jsonb -> 'mapRatings', '{}'::jsonb)
     )::text
 FROM (
-    SELECT 
+    SELECT
         data,
         (data::json ->> 'status')::jsonb as status
     FROM public.data
 ) sub
-WHERE EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'data' AND schemaname = 'public') 
+WHERE EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'data' AND schemaname = 'public')
 AND NOT EXISTS (SELECT 1 FROM plugin_data)
 LIMIT 1;
 
@@ -109,6 +135,6 @@ CREATE TABLE IF NOT EXISTS PLAYER_ACHIEVEMENTS (
     id BIGSERIAL PRIMARY KEY,
     player_id BIGINT NOT NULL,
     achievement_name VARCHAR(100) NOT NULL,
-    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT FK_PLAYER_ACHIEVEMENTS_PLAYER_ID__ID FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE RESTRICT ON UPDATE RESTRICT
 );
