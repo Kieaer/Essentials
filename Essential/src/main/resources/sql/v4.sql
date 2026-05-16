@@ -116,6 +116,7 @@ ALTER TABLE players MODIFY effect_visibility BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE players MODIFY hide_ranking BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE players MODIFY strict_mode BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE players MODIFY is_connected BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE players MODIFY status TEXT NULL DEFAULT '{}';
 
 ALTER TABLE players MODIFY permission VARCHAR(50) NOT NULL DEFAULT 'default';
 UPDATE players SET permission = 'default' WHERE permission IS NULL OR permission = '';
@@ -129,12 +130,34 @@ ALTER TABLE plugin_data ADD COLUMN hub_map_name TEXT;
 UPDATE plugin_data SET id = 1 WHERE id IS NULL;
 UPDATE plugin_data SET database_version = 4 WHERE database_version IS NULL;
 
+/* Add new columns */
 ALTER TABLE players ADD COLUMN wave_clear INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE players ADD COLUMN is_banned BOOLEAN NOT NULL DEFAULT FALSE;
-ALTER TABLE players ADD COLUMN id BIGINT AUTO_INCREMENT PRIMARY KEY FIRST;
 
+/* Add id column with auto-increment - handle existing duplicate removal */
+ALTER TABLE players ADD COLUMN id BIGINT AUTO_INCREMENT;
+ALTER TABLE players ADD PRIMARY KEY (id);
+
+/* Initialize NULL values for existing rows */
 UPDATE players SET wave_clear = 0 WHERE wave_clear IS NULL;
 UPDATE players SET is_banned = FALSE WHERE is_banned IS NULL;
+UPDATE players SET block_place_count = 0 WHERE block_place_count IS NULL;
+UPDATE players SET block_break_count = 0 WHERE block_break_count IS NULL;
+UPDATE players SET total_played = 0 WHERE total_played IS NULL;
+UPDATE players SET attack_clear = 0 WHERE attack_clear IS NULL;
+UPDATE players SET pvp_win_count = 0 WHERE pvp_win_count IS NULL;
+UPDATE players SET pvp_lose_count = 0 WHERE pvp_lose_count IS NULL;
+UPDATE players SET pvp_eliminated_count = 0 WHERE pvp_eliminated_count IS NULL;
+UPDATE players SET pvp_mvp_count = 0 WHERE pvp_mvp_count IS NULL;
+UPDATE players SET level = 0 WHERE level IS NULL;
+UPDATE players SET exp = 0 WHERE exp IS NULL;
+UPDATE players SET chat_muted = FALSE WHERE chat_muted IS NULL;
+UPDATE players SET effect_visibility = FALSE WHERE effect_visibility IS NULL;
+UPDATE players SET hide_ranking = FALSE WHERE hide_ranking IS NULL;
+UPDATE players SET strict_mode = FALSE WHERE strict_mode IS NULL;
+UPDATE players SET is_connected = FALSE WHERE is_connected IS NULL;
+UPDATE players SET attendance_days = 0 WHERE attendance_days IS NULL;
+UPDATE players SET status = '{}' WHERE status IS NULL OR status = '';
 
 DROP TABLE IF EXISTS db;
 

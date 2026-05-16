@@ -114,9 +114,72 @@ ALTER TABLE players ALTER COLUMN first_played SET DEFAULT CURRENT_TIMESTAMP(9);
 ALTER TABLE players ALTER COLUMN last_played SET DEFAULT CURRENT_TIMESTAMP(9);
 ALTER TABLE players ALTER COLUMN last_login_date SET DEFAULT CURRENT_TIMESTAMP(9);
 
+/* Set DEFAULT values for all columns */
+ALTER TABLE players ALTER COLUMN language_tag SET DEFAULT 'en';
+ALTER TABLE players ALTER COLUMN block_place_count SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN block_break_count SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN total_played SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN attack_clear SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN pvp_win_count SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN pvp_lose_count SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN pvp_eliminated_count SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN pvp_mvp_count SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN account_id SET DEFAULT NULL;
+ALTER TABLE players ALTER COLUMN account_pw SET DEFAULT NULL;
+ALTER TABLE players ALTER COLUMN discord_id SET DEFAULT NULL;
+ALTER TABLE players ALTER COLUMN chat_muted SET DEFAULT FALSE;
+ALTER TABLE players ALTER COLUMN effect_visibility SET DEFAULT FALSE;
+ALTER TABLE players ALTER COLUMN effect_level SET DEFAULT NULL;
+ALTER TABLE players ALTER COLUMN effect_color SET DEFAULT NULL;
+ALTER TABLE players ALTER COLUMN hide_ranking SET DEFAULT FALSE;
+ALTER TABLE players ALTER COLUMN strict_mode SET DEFAULT FALSE;
+ALTER TABLE players ALTER COLUMN last_logout_date SET DEFAULT NULL;
+ALTER TABLE players ALTER COLUMN last_played_world_name SET DEFAULT NULL;
+ALTER TABLE players ALTER COLUMN last_played_world_mode SET DEFAULT NULL;
+ALTER TABLE players ALTER COLUMN is_connected SET DEFAULT FALSE;
+ALTER TABLE players ALTER COLUMN ban_expire_date SET DEFAULT NULL;
+ALTER TABLE players ALTER COLUMN attendance_days SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN permission SET DEFAULT 'default';
+ALTER TABLE players ALTER COLUMN level SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN exp SET DEFAULT 0;
+ALTER TABLE players ALTER COLUMN status SET DEFAULT '{}';
+
+/* Drop NOT NULL constraint for nullable columns */
+ALTER TABLE players ALTER COLUMN account_id SET NULL;
+ALTER TABLE players ALTER COLUMN account_pw SET NULL;
+ALTER TABLE players ALTER COLUMN discord_id SET NULL;
+ALTER TABLE players ALTER COLUMN effect_level SET NULL;
+ALTER TABLE players ALTER COLUMN effect_color SET NULL;
+ALTER TABLE players ALTER COLUMN last_logout_date SET NULL;
+ALTER TABLE players ALTER COLUMN last_played_world_name SET NULL;
+ALTER TABLE players ALTER COLUMN last_played_world_mode SET NULL;
+ALTER TABLE players ALTER COLUMN ban_expire_date SET NULL;
+ALTER TABLE players ALTER COLUMN status SET NULL;
+
+/* Initialize NULL values for existing rows */
+UPDATE players SET language_tag = 'en' WHERE language_tag IS NULL OR language_tag = '';
+UPDATE players SET permission = 'default' WHERE permission IS NULL OR permission = '';
+UPDATE players SET block_place_count = 0 WHERE block_place_count IS NULL;
+UPDATE players SET block_break_count = 0 WHERE block_break_count IS NULL;
+UPDATE players SET total_played = 0 WHERE total_played IS NULL;
+UPDATE players SET attack_clear = 0 WHERE attack_clear IS NULL;
+UPDATE players SET pvp_win_count = 0 WHERE pvp_win_count IS NULL;
+UPDATE players SET pvp_lose_count = 0 WHERE pvp_lose_count IS NULL;
+UPDATE players SET pvp_eliminated_count = 0 WHERE pvp_eliminated_count IS NULL;
+UPDATE players SET pvp_mvp_count = 0 WHERE pvp_mvp_count IS NULL;
+UPDATE players SET level = 0 WHERE level IS NULL;
+UPDATE players SET exp = 0 WHERE exp IS NULL;
+UPDATE players SET chat_muted = FALSE WHERE chat_muted IS NULL;
+UPDATE players SET effect_visibility = FALSE WHERE effect_visibility IS NULL;
+UPDATE players SET hide_ranking = FALSE WHERE hide_ranking IS NULL;
+UPDATE players SET strict_mode = FALSE WHERE strict_mode IS NULL;
+UPDATE players SET is_connected = FALSE WHERE is_connected IS NULL;
+UPDATE players SET attendance_days = 0 WHERE attendance_days IS NULL;
+UPDATE players SET status = '{}' WHERE status IS NULL OR status = '';
+
 /* 새 데이터 추가 */
-ALTER TABLE players ADD COLUMN wave_clear integer AFTER attack_clear;
-ALTER TABLE players ADD COLUMN is_banned boolean AFTER is_connected;
+ALTER TABLE players ADD COLUMN wave_clear integer DEFAULT 0 NOT NULL AFTER attack_clear;
+ALTER TABLE players ADD COLUMN is_banned boolean DEFAULT false NOT NULL AFTER is_connected;
 ALTER TABLE plugin_data ADD COLUMN id integer;
 ALTER TABLE plugin_data ADD COLUMN database_version integer;
 ALTER TABLE plugin_data ADD COLUMN hub_map_name text;
