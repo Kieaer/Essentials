@@ -1002,7 +1002,9 @@ fun configFileModified(event: CustomEvents.ConfigFileModified) {
 @Event
 fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     val playerData = event.playerData
-    playerData.player = Groups.player.find { p -> p.uuid() == playerData.uuid }
+    val entity = Groups.player.find { p -> p.uuid() == playerData.uuid }
+    if (entity == null) return // if player is leaved when player data loading
+    playerData.player = entity
     val player = playerData.player
     val message = StringBuilder()
 
