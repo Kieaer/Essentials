@@ -24,6 +24,17 @@ class EventProcessor(
     }
 
     /**
+     * Checks if a KSType represents the EventType.Trigger enum.
+     * @param type The KSType to check
+     * @return true if the type is EventType.Trigger, false otherwise
+     */
+    private fun isTriggerEnum(type: KSType?): Boolean {
+        if (type == null) return false
+        val qualifiedName = type.declaration.qualifiedName?.asString() ?: return false
+        return qualifiedName == "mindustry.game.EventType.Trigger"
+    }
+
+    /**
      * Determines the package name for generated code based on the package of the annotated functions.
      * Extracts the base package from the function's package and appends ".generated" to it.
      * For example, if the function is in "essential.core", the generated package will be "essential.core.generated".
@@ -89,6 +100,14 @@ class EventProcessor(
         fileSpec.writeTo(codeGenerator, Dependencies(true, *functions.mapNotNull { it.containingFile }.toTypedArray()))
     }
 
+    private data class EventTypeInfo(
+        val eventTypeName: String,
+        val packageName: String,
+        val functionName: String,
+        val isEnumType: Boolean,
+        val isTrigger: Boolean
+    )
+
     private fun generateRegisterEventHandlersFunction(functions: List<KSFunctionDeclaration>): FunSpec {
         // Extract event types from function parameters
         val eventTypes = functions.map { function ->
@@ -97,43 +116,51 @@ class EventProcessor(
             val parameterType = parameter?.type?.resolve()
             val eventTypeName = parameterType?.declaration?.qualifiedName?.asString() ?: "Unknown"
             val isEnumType = isEnum(parameterType)
+            val isTrigger = isTriggerEnum(parameterType)
 
             // Get the simple name of the function
             val functionName = function.simpleName.asString()
+            val packageName = function.packageName.asString()
 
-            Pair(Triple(eventTypeName, function.packageName.asString(), functionName), isEnumType)
+            EventTypeInfo(eventTypeName, packageName, functionName, isEnumType, isTrigger)
         }
 
         return FunSpec.builder("registerGeneratedEventHandlers")
             .addCode(
                 """
-                ${eventTypes.joinToString("\n\n") { (typeInfo, isEnum) ->
-                    val (eventType, packageName, functionName) = typeInfo
-                    if (eventType == "Unknown" || eventType == "null") {
+                ${eventTypes.joinToString("\n\n") { info ->
+                    if (info.eventTypeName == "Unknown" || info.eventTypeName == "null") {
                         // If function doesn't have parameters, use the function name to determine which Trigger enum to use
                         try {
-                            EventType.Trigger.valueOf(functionName)
+                            EventType.Trigger.valueOf(info.functionName)
                             """
-                            Events.on(Trigger.$functionName::class.java) {
-                                $packageName.$functionName()
+                            Events.run(Trigger.${info.functionName}) {
+                                ${info.packageName}.${info.functionName}()
                             }
                             """.trimIndent()
                         } catch (e: IllegalArgumentException) {
                             """
-                            $packageName.$functionName()
+                            ${info.packageName}.${info.functionName}()
                             """.trimIndent()
                         }
-                    } else if (isEnum) {
+                    } else if (info.isTrigger) {
+                        // For Trigger enum parameters, use Events.run instead of Events.on
                         """
-                        Events.on($eventType::class.java) {
-                            $packageName.$functionName(it)
-                        }.also { listener -> eventListeners[$eventType::class.java] = listener }
+                        Events.run(Trigger.${info.functionName}) {
+                            ${info.packageName}.${info.functionName}(it)
+                        }
+                        """.trimIndent()
+                    } else if (info.isEnumType) {
+                        """
+                        Events.on(${info.eventTypeName}::class.java) {
+                            ${info.packageName}.${info.functionName}(it)
+                        }.also { listener -> eventListeners[${info.eventTypeName}::class.java] = listener }
                         """.trimIndent()
                     } else {
                         """
-                        Events.on($eventType::class.java, Cons<$eventType> {
-                            $packageName.$functionName(it)
-                        }.also { listener -> eventListeners[$eventType::class.java] = listener })
+                        Events.on(${info.eventTypeName}::class.java, Cons<${info.eventTypeName}> {
+                            ${info.packageName}.${info.functionName}(it)
+                        }.also { listener -> eventListeners[${info.eventTypeName}::class.java] = listener })
                         """.trimIndent()
                     }
                 }}
