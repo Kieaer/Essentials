@@ -2371,13 +2371,16 @@ class Commands {
                 if (arg.size == 1) {
                     playerData.send("command.vote.skip.wrong")
                 } else if (arg[1].toIntOrNull() != null) {
-                    if (arg[1].toInt() > conf.command.skip.limit) {
+                    val count = arg[1].toInt()
+                    if (count <= 0) {
+                        playerData.send("command.vote.skip.tooLow")
+                    } else if (count > conf.command.skip.limit) {
                         playerData.send("command.vote.skip.tooMany")
                     } else {
                         if (nextVoteAvailable.hasPassedNow()) {
                             val voteData = VoteData(
                                 type = VoteType.Skip,
-                                wave = arg[1].toInt(),
+                                wave = count,
                                 starter = playerData
                             )
                             nextVoteAvailable = timeSource.markNow().plus(2.minutes)

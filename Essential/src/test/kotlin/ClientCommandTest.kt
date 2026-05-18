@@ -1089,6 +1089,18 @@ class ClientCommandTest {
         // Test vote command with skip parameter
         clientCommand.handleMessage("/vote skip", player)
 
+        // Test vote skip with negative number
+        clientCommand.handleMessage("/vote skip -1", player)
+
+        // Test vote skip with zero
+        clientCommand.handleMessage("/vote skip 0", player)
+
+        // Test vote skip with valid number
+        clientCommand.handleMessage("/vote skip 1", player)
+
+        // Test vote skip with invalid input
+        clientCommand.handleMessage("/vote skip abc", player)
+
         // Test vote command with back parameter
         clientCommand.handleMessage("/vote back", player)
 
