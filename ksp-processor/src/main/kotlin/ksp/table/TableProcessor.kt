@@ -53,7 +53,15 @@ class TableProcessor(
             .filter { property -> constructorParamNames.contains(property.simpleName.asString()) }
             .toList()
 
-        val fileSpec = createFileSpec(packageName, className, tableClassName, properties)
+        val db = classDeclaration.annotations.find { it.shortName.asString() == "GenerateCode" }
+            ?.arguments
+            ?.find { it.name?.asString() == "db" }
+            ?.value
+            ?.toString()
+            ?.removeSurrounding("\"", "'")
+            ?: ""
+
+        val fileSpec = createFileSpec(packageName, className, tableClassName, properties, db)
 
         val fileName = "${className}Extensions"
         val dependencies = Dependencies(false, classDeclaration.containingFile!!)
@@ -71,7 +79,8 @@ class TableProcessor(
         packageName: String,
         className: String,
         tableClassName: String,
-        properties: List<KSPropertyDeclaration>
+        properties: List<KSPropertyDeclaration>,
+        db: String
     ): String {
         val sb = StringBuilder()
 
@@ -83,6 +92,9 @@ class TableProcessor(
         sb.append("import org.jetbrains.exposed.v1.r2dbc.update\n")
         sb.append("import essential.common.database.table.$tableClassName\n")
         sb.append("import $packageName.$className\n")
+        if (db.isNotEmpty()) {
+            sb.append("import essential.common.database.$db\n")
+        }
         sb.append("import kotlinx.serialization.json.Json\n")
         sb.append("import kotlinx.serialization.encodeToString\n")
         sb.append("import kotlinx.serialization.decodeFromString\n")
@@ -171,7 +183,11 @@ class TableProcessor(
         sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
         sb.append(" */\n")
         sb.append("suspend fun <T> $tableClassName.fromInsertReturning(id: T): $className {\n")
-        sb.append("    return suspendTransaction {\n")
+        if (db.isNotEmpty()) {
+            sb.append("    return suspendTransaction(db = $db) {\n")
+        } else {
+            sb.append("    return suspendTransaction {\n")
+        }
         sb.append("        val query = $tableClassName.selectAll()\n")
         sb.append("        when (id) {\n")
         sb.append("            is Int -> query.where { $tableClassName.id eq id.toUInt() }\n")
@@ -190,7 +206,11 @@ class TableProcessor(
         sb.append("@OptIn(ExperimentalTime::class)")
         sb.append("suspend fun $className.update(): Boolean {\n")
         sb.append("    val data = this\n")
-        sb.append("    return suspendTransaction {\n")
+        if (db.isNotEmpty()) {
+            sb.append("    return suspendTransaction(db = $db) {\n")
+        } else {
+            sb.append("    return suspendTransaction {\n")
+        }
         sb.append("        $tableClassName.update({ $tableClassName.id eq data.id }) {\n")
 
         properties.filter { it.simpleName.asString() != "id" }.forEach { property ->

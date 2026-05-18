@@ -100,4 +100,4 @@ package ksp.table
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-annotation class GenerateCode()
+annotation class GenerateCode(val db: String = "")

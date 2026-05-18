@@ -12,7 +12,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-@GenerateCode
+@GenerateCode(db = "worldHistoryDatabase")
 data class WorldHistoryData @OptIn(ExperimentalTime::class) constructor(
     val id: UInt,
     val time: Long,

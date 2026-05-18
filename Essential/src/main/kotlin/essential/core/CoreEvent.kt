@@ -21,6 +21,7 @@ import essential.common.util.currentTime
 import essential.common.util.findPlayerData
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.daysUntil
@@ -582,55 +583,31 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
                     Bundle()["log.block.place", target.name, checkValidBlock(event.tile), event.tile.x, event.tile.y]
                 )
 
-                val buf = ArrayList<TileLog>()
-
                 scope.launch {
-                    try {
-                        val all = getAllWorldHistory()
-                        all.forEach { entry ->
-                            if (entry.x == event.tile.x && entry.y == event.tile.y) {
-                                buf.add(
-                                    TileLog(
-                                        time = entry.time,
-                                        player = entry.player,
-                                        action = entry.action,
-                                        x = entry.x,
-                                        y = entry.y,
-                                        tile = entry.tile,
-                                        rotate = entry.rotate,
-                                        team = Team.all.find { it.name == entry.team } ?: Team.derelict,
-                                        value = entry.value
-                                    )
-                                )
-                            }
-                        }
+                    val buf = ArrayList<TileLog>()
 
-                        // Get entries from the database
+                    try {
                         val dbEntries = getWorldHistoryByCoordinates(event.tile.x, event.tile.y)
 
-                        // Convert database entries to TileLog objects
-                        val dbTileLogs = dbEntries.map { entry ->
-                            TileLog(
-                                time = entry.time,
-                                player = entry.player,
-                                action = entry.action,
-                                x = entry.x,
-                                y = entry.y,
-                                tile = entry.tile,
-                                rotate = entry.rotate,
-                                team = Team.all.find { it.name == entry.team } ?: Team.derelict,
-                                value = entry.value
+                        dbEntries.forEach { entry ->
+                            buf.add(
+                                TileLog(
+                                    time = entry.time,
+                                    player = entry.player,
+                                    action = entry.action,
+                                    x = entry.x,
+                                    y = entry.y,
+                                    tile = entry.tile,
+                                    rotate = entry.rotate,
+                                    team = Team.all.find { it.name == entry.team } ?: Team.derelict,
+                                    value = entry.value
+                                )
                             )
-                        }
-
-                        dbTileLogs.forEach { dbLog ->
-                            if (!buf.any { it.time == dbLog.time && it.player == dbLog.player && it.action == dbLog.action }) {
-                                buf.add(dbLog)
-                            }
                         }
 
                         buf.sortBy { it.time }
                     } catch (e: Exception) {
+                        if (e is CancellationException) throw e
                         Log.err("Error retrieving world history from database", e)
                     }
 

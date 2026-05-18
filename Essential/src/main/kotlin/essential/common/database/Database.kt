@@ -55,9 +55,20 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
         else -> "h2" // Default to H2
     }
 
-    val h2History = h2("worldHistory")
+    val h2HistoryFactory = h2("worldHistory")
 
-    worldHistoryDatabase = connectDatabase(h2History.first, h2History.second)
+    val h2PoolConfig = ConnectionPoolConfiguration.builder(h2HistoryFactory.first)
+        .maxSize(10)
+        .initialSize(2)
+        .maxIdleTime(Duration.ofMinutes(10))
+        .maxAcquireTime(Duration.ofSeconds(30))
+        .maxCreateConnectionTime(Duration.ofSeconds(5))
+        .maxLifeTime(Duration.ofMinutes(30))
+        .validationQuery("SELECT 1")
+        .validationDepth(ValidationDepth.REMOTE)
+        .build()
+
+    worldHistoryDatabase = connectDatabase(ConnectionPool(h2PoolConfig), h2HistoryFactory.second)
 
     rootPath.child("data").mkdirs()
 
@@ -75,12 +86,12 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
     }
 
     val poolConfig = ConnectionPoolConfiguration.builder(connectionFactory)
-        .maxSize(2)
-        .initialSize(1)
+        .maxSize(5)
+        .initialSize(2)
         .maxIdleTime(Duration.ofMinutes(10))
         .maxAcquireTime(Duration.ofSeconds(10))
-        .maxCreateConnectionTime(Duration.ofSeconds(1))
-        .maxLifeTime(Duration.ofMinutes(5))
+        .maxCreateConnectionTime(Duration.ofSeconds(5))
+        .maxLifeTime(Duration.ofMinutes(10))
         .validationQuery("SELECT 1")
         .validationDepth(ValidationDepth.REMOTE)
         .build()
