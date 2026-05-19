@@ -165,10 +165,9 @@ fun playerJoin(e: EventType.PlayerJoin) {
                         Log.err("Failed to create player data", e)
                     }
                 } else {
-                    e.player.con.kick(
-                        Bundle(e.player.locale)["event.player.name.duplicate"],
-                        0L
-                    )
+                    val reason = Bundle(e.player.locale)["event.player.name.duplicate"]
+                    e.player.con.kick(reason, 0L)
+                    Log.info(reason)
                 }
             } else {
                 Events.fire(CustomEvents.PlayerDataLoad(data))
@@ -186,10 +185,9 @@ fun playerJoin(e: EventType.PlayerJoin) {
                     //data.send("event.discord.not.registered")
                     // TODO discord 로그인 추가
                 } else {
-                    e.player.con.kick(
-                        Bundle(e.player.locale)["event.player.name.duplicate"],
-                        0L
-                    )
+                    val reason = Bundle(e.player.locale)["event.player.name.duplicate"]
+                    e.player.con.kick(reason, 0L)
+                    Log.info(reason)
                 }
             } else {
                 Events.fire(CustomEvents.PlayerDataLoad(data))
@@ -258,10 +256,12 @@ fun connectPacket(event: EventType.ConnectPacketEvent) {
 
     if (!kickReason.isEmpty()) {
         val bundle = Bundle()
+        val reason = bundle["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, bundle["event.player.kick.reason.$kickReason"]]
         writeLog(
             LogType.Player,
-            bundle["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, bundle["event.player.kick.reason.$kickReason"]]
+            reason
         )
+        Log.info(reason)
         Events.fire(
             CustomEvents.PlayerConnectKicked(
                 event.packet.name,

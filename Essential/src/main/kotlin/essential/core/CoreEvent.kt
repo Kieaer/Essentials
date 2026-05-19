@@ -863,9 +863,10 @@ fun connectPacket(event: ConnectPacketEvent) {
                 !conf.feature.blacklist.regex && event.packet.name.contains(text)
             ) {
                 event.connection.kick(Bundle(event.packet.locale)["event.player.name.blacklisted"], 0L)
+                val reason = Bundle()["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, Bundle()["event.player.kick.reason.blacklisted"]]
                 writeLog(
                     LogType.Player,
-                    Bundle()["event.player.kick", event.packet.name, event.packet.uuid, event.connection.address, Bundle()["event.player.kick.reason.blacklisted"]]
+                    reason
                 )
                 Events.fire(
                     CustomEvents.PlayerConnectKicked(
@@ -873,6 +874,7 @@ fun connectPacket(event: ConnectPacketEvent) {
                         Bundle()["event.player.kick.reason.blacklisted"]
                     )
                 )
+                Log.info(reason)
                 return@forEach
             }
         }
