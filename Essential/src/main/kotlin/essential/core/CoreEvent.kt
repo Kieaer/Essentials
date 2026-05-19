@@ -611,7 +611,7 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
                         Log.err("Error retrieving world history from database", e)
                     }
 
-                    if (!Vars.state.rules.infiniteResources && event.tile != null && event.tile.build != null && event.tile.build.maxHealth() == event.tile.block().health.toFloat() && (!buf.isEmpty() && buf.last().tile != event.tile.block().name)) {
+                    if (!Vars.state.rules.infiniteResources && event.tile != null && event.tile.build != null && event.tile.build.maxHealth() == event.tile.block().health.toFloat() && (buf.isEmpty() || buf.last().tile != event.tile.block().name)) {
                         target.blockPlaceCount++
                         target.exp += blockExp[block.name]!!
                         target.currentExp += blockExp[block.name]!!
