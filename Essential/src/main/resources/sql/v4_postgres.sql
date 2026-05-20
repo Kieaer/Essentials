@@ -67,9 +67,9 @@ ALTER TABLE IF EXISTS players RENAME COLUMN "banTime" to ban_expire_date;
 ALTER TABLE IF EXISTS players RENAME COLUMN "joinStacks" to attendance_days;
 
 /* Date-Time 변환 */
-ALTER TABLE IF EXISTS players ALTER COLUMN first_played TYPE TIMESTAMP WITHOUT TIME ZONE USING to_timestamp(first_played / 1000.0);
-ALTER TABLE IF EXISTS players ALTER COLUMN last_played TYPE TIMESTAMP WITHOUT TIME ZONE USING to_timestamp(last_played / 1000.0);
-ALTER TABLE IF EXISTS players ALTER COLUMN last_login_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN last_login_date ~ '^\d{4}-\d{2}-\d{2}' THEN last_login_date::timestamp END);
+ALTER TABLE IF EXISTS players ALTER COLUMN first_played TYPE TIMESTAMP WITHOUT TIME ZONE USING CASE WHEN first_played IS NOT NULL AND first_played != 0 THEN to_timestamp(first_played / 1000.0) ELSE CURRENT_TIMESTAMP END;
+ALTER TABLE IF EXISTS players ALTER COLUMN last_played TYPE TIMESTAMP WITHOUT TIME ZONE USING CASE WHEN last_played IS NOT NULL AND last_played != 0 THEN to_timestamp(last_played / 1000.0) ELSE CURRENT_TIMESTAMP END;
+ALTER TABLE IF EXISTS players ALTER COLUMN last_login_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN last_login_date ~ '^\d{4}-\d{2}-\d{2}' THEN last_login_date::timestamp ELSE CURRENT_TIMESTAMP END);
 ALTER TABLE IF EXISTS players ALTER COLUMN last_logout_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN last_logout_date ~ '^\d{4}-\d{2}-\d{2}' THEN last_logout_date::timestamp END);
 ALTER TABLE IF EXISTS players ALTER COLUMN ban_expire_date TYPE TIMESTAMP WITHOUT TIME ZONE USING (CASE WHEN ban_expire_date ~ '^\d{4}-\d{2}-\d{2}' THEN ban_expire_date::timestamp END);
 
@@ -120,6 +120,8 @@ ALTER TABLE IF EXISTS players ALTER COLUMN ban_expire_date DROP NOT NULL;
 ALTER TABLE IF EXISTS players ALTER COLUMN status DROP NOT NULL;
 
 /* Initialize NULL values for existing rows */
+UPDATE players SET first_played = CURRENT_TIMESTAMP WHERE first_played IS NULL;
+UPDATE players SET last_played = CURRENT_TIMESTAMP WHERE last_played IS NULL;
 UPDATE players SET language_tag = 'en' WHERE language_tag IS NULL OR language_tag = '';
 UPDATE players SET permission = 'default' WHERE permission IS NULL OR permission = '';
 UPDATE players SET block_place_count = 0 WHERE block_place_count IS NULL;
@@ -141,6 +143,9 @@ UPDATE players SET attendance_days = 0 WHERE attendance_days IS NULL;
 UPDATE players SET status = '{}' WHERE status IS NULL OR status = '';
 
 /* Set NOT NULL constraints */
+ALTER TABLE IF EXISTS players ALTER COLUMN first_played SET NOT NULL;
+ALTER TABLE IF EXISTS players ALTER COLUMN last_played SET NOT NULL;
+ALTER TABLE IF EXISTS players ALTER COLUMN last_login_date SET NOT NULL;
 ALTER TABLE IF EXISTS players ALTER COLUMN language_tag SET NOT NULL;
 ALTER TABLE IF EXISTS players ALTER COLUMN block_place_count SET NOT NULL;
 ALTER TABLE IF EXISTS players ALTER COLUMN block_break_count SET NOT NULL;

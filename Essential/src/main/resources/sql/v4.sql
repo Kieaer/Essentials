@@ -77,14 +77,16 @@ ALTER TABLE players ADD COLUMN exp INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE players ADD COLUMN first_played_tmp TIMESTAMP NULL;
 ALTER TABLE players ADD COLUMN last_played_tmp TIMESTAMP NULL;
 UPDATE players SET first_played_tmp = FROM_UNIXTIME(first_played / 1000) WHERE first_played IS NOT NULL AND first_played != 0;
+UPDATE players SET first_played_tmp = CURRENT_TIMESTAMP WHERE first_played_tmp IS NULL;
 UPDATE players SET last_played_tmp = FROM_UNIXTIME(last_played / 1000) WHERE last_played IS NOT NULL AND last_played != 0;
+UPDATE players SET last_played_tmp = CURRENT_TIMESTAMP WHERE last_played_tmp IS NULL;
 ALTER TABLE players DROP COLUMN first_played;
 ALTER TABLE players DROP COLUMN last_played;
-ALTER TABLE players CHANGE first_played_tmp first_played TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE players CHANGE last_played_tmp last_played TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE players CHANGE first_played_tmp first_played TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE players CHANGE last_played_tmp last_played TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
-UPDATE players SET last_login_date = last_login_date WHERE last_login_date IS NOT NULL AND last_login_date != '';
-ALTER TABLE players MODIFY last_login_date TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP;
+UPDATE players SET last_login_date = CURRENT_TIMESTAMP WHERE last_login_date IS NULL OR last_login_date = '';
+ALTER TABLE players MODIFY last_login_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
 
 UPDATE players SET last_logout_date = last_logout_date WHERE last_logout_date IS NOT NULL AND last_logout_date != '';
 ALTER TABLE players MODIFY last_logout_date TIMESTAMP NULL;
