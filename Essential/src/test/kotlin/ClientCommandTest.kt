@@ -17,9 +17,12 @@ import essential.common.pluginData
 import essential.common.util.findPlayerData
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
+import mindustry.Vars.world
+import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.content.UnitTypes
 import mindustry.core.NetServer
+import mindustry.game.EventType
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Gamemode
 import mindustry.game.Team
@@ -1183,5 +1186,44 @@ class ClientCommandTest {
 
         // Clean up
         leavePlayer(dummy.first)
+    }
+
+    @Test
+    fun client_worldedit() {
+        setPermission("owner", true)
+        // enable/disable select mode
+        clientCommand.handleMessage("/ws", player)
+        // First position
+        Events.fire(EventType.TapEvent(player.self(), world.tile(10, 10)))
+        // second position
+        Events.fire(EventType.TapEvent(player.self(), world.tile(20, 20)))
+        // Fill selection with copper-wall
+        clientCommand.handleMessage("/ws f copperWall", player)
+        sleep(200)
+
+        // Verify fill was successful
+        assertEquals(Blocks.copperWall, world.tile(15, 15).block())
+        assertNotEquals(Blocks.copperWall, world.tile(30, 30).block())
+
+        // First position
+        Events.fire(EventType.TapEvent(player.self(), world.tile(10, 10)))
+        // second position
+        Events.fire(EventType.TapEvent(player.self(), world.tile(20, 20)))
+        // Replace copper-wall with conveyor
+        clientCommand.handleMessage("/ws r copperWall conveyor", player)
+        sleep(200)
+        // Verify replace was successful
+        assertEquals(Blocks.conveyor, world.tile(15, 15).block())
+        assertNotEquals(Blocks.copperWall, world.tile(30, 30).block())
+
+        // First position
+        Events.fire(EventType.TapEvent(player.self(), world.tile(10, 10)))
+        // second position
+        Events.fire(EventType.TapEvent(player.self(), world.tile(20, 20)))
+        // Delete selection
+        clientCommand.handleMessage("/ws d", player)
+        sleep(200)
+        // Verify delete was successful - tile should be air
+        assertEquals(Blocks.air, world.tile(15, 15).block())
     }
 }

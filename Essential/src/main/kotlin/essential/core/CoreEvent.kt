@@ -19,6 +19,7 @@ import essential.common.log.writeLog
 import essential.common.permission.Permission
 import essential.common.util.currentTime
 import essential.common.util.findPlayerData
+import essential.core.Commands.WorldEditSelection
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
 import kotlinx.coroutines.CancellationException
@@ -92,6 +93,7 @@ val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
 lateinit var actionFilter: Administration.ActionFilter
 
 private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}$")
+val worldEditSelection = mutableMapOf<String, WorldEditSelection>()
 
 @Event
 fun withdraw(event: WithdrawEvent) {
@@ -368,6 +370,24 @@ fun tap(event: TapEvent) {
             if (two.mouseTracking) {
                 Call.effect(two.player.con(), Fx.bigShockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
             }
+        }
+
+        val weSelection = worldEditSelection[data.uuid]
+        if (weSelection != null && weSelection.selecting) {
+            if (weSelection.startX == -1) {
+                weSelection.startX = event.tile.x.toInt()
+                weSelection.startY = event.tile.y.toInt()
+                Call.effect(event.player.con(), Fx.shockwave, event.tile.getX(), event.tile.getY(), 0f, Color.yellow)
+                data.send("command.ws.point.start", event.tile.x, event.tile.y)
+            } else {
+                weSelection.endX = event.tile.x.toInt()
+                weSelection.endY = event.tile.y.toInt()
+                weSelection.selecting = false
+                weSelection.selectionComplete = true
+                drawSelectionBorder(event.player, weSelection)
+                data.send("command.ws.point.end", event.tile.x, event.tile.y)
+            }
+            worldEditSelection[data.uuid] = weSelection
         }
     }
 }
@@ -1264,5 +1284,32 @@ private fun checkValidBlock(tile: Tile): String {
         (tile.build as ConstructBlock.ConstructBuild).current.name
     } else {
         tile.block().name
+    }
+}
+
+/**
+ * Draw border effect around a worldedit selection
+ */
+private fun drawSelectionBorder(player: mindustry.gen.Player, selection: WorldEditSelection) {
+    val minX = minOf(selection.startX, selection.endX)
+    val maxX = maxOf(selection.startX, selection.endX)
+    val minY = minOf(selection.startY, selection.endY)
+    val maxY = maxOf(selection.startY, selection.endY)
+
+    // Top edge
+    for (x in minX..maxX) {
+        Call.effect(player.con(), Fx.shockwaveSmaller, x * 16f, minY * 16f, 0f, Color.green)
+    }
+    // Bottom edge
+    for (x in minX..maxX) {
+        Call.effect(player.con(), Fx.shockwaveSmaller, x * 16f, maxY * 16f, 0f, Color.green)
+    }
+    // Left edge
+    for (y in minY..maxY) {
+        Call.effect(player.con(), Fx.shockwaveSmaller, minX * 16f, y * 16f, 0f, Color.green)
+    }
+    // Right edge
+    for (y in minY..maxY) {
+        Call.effect(player.con(), Fx.shockwaveSmaller, maxX * 16f, y * 16f, 0f, Color.green)
     }
 }

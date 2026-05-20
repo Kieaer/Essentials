@@ -2575,6 +2575,180 @@ class Commands {
         }
     }
 
+    @ClientCommand("ws", "[args...]", "WorldEdit selection and block manipulation")
+    fun ws(playerData: PlayerData, arg: Array<out String>) {
+        val uuid = playerData.uuid
+
+        // Parse arguments - always split by whitespace for all args
+        val allArgs = arg.joinToString(" ").trim()
+        val parsedArgs = if (allArgs.isEmpty()) {
+            emptyList()
+        } else {
+            allArgs.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        }
+
+        // If no args, toggle selection mode
+        if (parsedArgs.isEmpty()) {
+            val selection = worldEditSelection[uuid] ?: WorldEditSelection()
+            if (selection.selecting) {
+                // Cancel selection
+                selection.selecting = false
+                selection.selectionComplete = false
+                selection.startX = -1
+                selection.startY = -1
+                selection.endX = -1
+                selection.endY = -1
+                worldEditSelection[uuid] = selection
+                playerData.send("command.ws.cancel")
+            } else {
+                // Start selection mode
+                selection.selecting = true
+                selection.selectionComplete = false
+                selection.startX = -1
+                selection.startY = -1
+                selection.endX = -1
+                selection.endY = -1
+                worldEditSelection[uuid] = selection
+                playerData.send("command.ws.selecting")
+            }
+            return
+        }
+
+        // Get selection for operations
+        val selection = worldEditSelection[uuid]
+
+        when (parsedArgs[0]) {
+            "f" -> {
+                // Fill: /ws f <block>
+                if (parsedArgs.size < 2) {
+                    playerData.err("command.ws.invalid.fill")
+                    return
+                }
+                if (selection == null || !selection.selectionComplete) {
+                    playerData.err("command.ws.no.selection")
+                    return
+                }
+                val blockName = parsedArgs[1]
+                val block = findBlockByName(blockName)
+                if (block == null) {
+                    playerData.err("command.ws.block.not.found", blockName)
+                    return
+                }
+                fillRegion(playerData, selection, block)
+                playerData.send("command.ws.fill.success", blockName, getRegionSize(selection))
+            }
+            "r" -> {
+                // Replace: /ws r <fromBlock> <toBlock>
+                if (parsedArgs.size < 3) {
+                    playerData.err("command.ws.invalid.replace")
+                    return
+                }
+                if (selection == null || !selection.selectionComplete) {
+                    playerData.err("command.ws.no.selection")
+                    return
+                }
+                val fromName = parsedArgs[1]
+                val toName = parsedArgs[2]
+                val fromBlock = findBlockByName(fromName)
+                val toBlock = findBlockByName(toName)
+                if (fromBlock == null) {
+                    playerData.err("command.ws.block.not.found", fromName)
+                    return
+                }
+                if (toBlock == null) {
+                    playerData.err("command.ws.block.not.found", toName)
+                    return
+                }
+                replaceRegion(playerData, selection, fromBlock, toBlock)
+                playerData.send("command.ws.replace.success", fromName, toName)
+            }
+            "d" -> {
+                // Delete: /ws d
+                if (selection == null || !selection.selectionComplete) {
+                    playerData.err("command.ws.no.selection")
+                    return
+                }
+                deleteRegion(playerData, selection)
+                playerData.send("command.ws.delete.success", getRegionSize(selection))
+            }
+            else -> {
+                playerData.err("command.ws.invalid")
+            }
+        }
+    }
+
+    private fun getRegionSize(selection: WorldEditSelection): Int {
+        val minX = minOf(selection.startX, selection.endX)
+        val maxX = maxOf(selection.startX, selection.endX)
+        val minY = minOf(selection.startY, selection.endY)
+        val maxY = maxOf(selection.startY, selection.endY)
+        return (maxX - minX + 1) * (maxY - minY + 1)
+    }
+
+    private fun findBlockByName(name: String): mindustry.world.Block? {
+        // Try content blocks by name first (e.g., "copper-wall")
+        Vars.content.blocks().find { it.name == name }?.let { return it }
+        // Try Blocks class field directly (e.g., "copperWall")
+        val blockClass = mindustry.content.Blocks::class.java
+        for (f in blockClass.fields) {
+            if (f.name.equals(name, ignoreCase = true)) {
+                try { return f.get(null) as? mindustry.world.Block } catch (_: Exception) {}
+            }
+        }
+        // Try hyphenated form (e.g., "copper-wall" -> "copperWall")
+        val parts = name.split('-', '_')
+        val camelCase = parts.joinToString("") { if (it == parts[0]) it.lowercase() else it.replaceFirstChar { c -> c.uppercaseChar() } }
+        for (f in blockClass.fields) {
+            if (f.name.equals(camelCase, ignoreCase = true)) {
+                try { return f.get(null) as? mindustry.world.Block } catch (_: Exception) {}
+            }
+        }
+        // Fallback: case-insensitive content blocks
+        return Vars.content.blocks().find { it.name.equals(name, ignoreCase = true) }
+    }
+
+    private fun fillRegion(playerData: PlayerData, selection: WorldEditSelection, block: mindustry.world.Block) {
+        val minX = minOf(selection.startX, selection.endX)
+        val maxX = maxOf(selection.startX, selection.endX)
+        val minY = minOf(selection.startY, selection.endY)
+        val maxY = maxOf(selection.startY, selection.endY)
+
+        for (x in minX..maxX) {
+            for (y in minY..maxY) {
+                Call.setTile(Vars.world.tile(x, y), block, playerData.player.team(), 0)
+            }
+        }
+    }
+
+    private fun replaceRegion(playerData: PlayerData, selection: WorldEditSelection, fromBlock: mindustry.world.Block, toBlock: mindustry.world.Block) {
+        val minX = minOf(selection.startX, selection.endX)
+        val maxX = maxOf(selection.startX, selection.endX)
+        val minY = minOf(selection.startY, selection.endY)
+        val maxY = maxOf(selection.startY, selection.endY)
+
+        val fromId = fromBlock.id
+        for (x in minX..maxX) {
+            for (y in minY..maxY) {
+                val tile = Vars.world.tile(x, y)
+                if (tile.block().id == fromId) {
+                    Call.setTile(tile, toBlock, playerData.player.team(), 0)
+                }
+            }
+        }
+    }
+
+    private fun deleteRegion(playerData: PlayerData, selection: WorldEditSelection) {
+        val minX = minOf(selection.startX, selection.endX)
+        val maxX = maxOf(selection.startX, selection.endX)
+        val minY = minOf(selection.startY, selection.endY)
+        val maxY = maxOf(selection.startY, selection.endY)
+        for (x in minX..maxX) {
+            for (y in minY..maxY) {
+                Tile.setTile(Vars.world.tile(x, y), mindustry.content.Blocks.air, playerData.player.team(), 0)
+            }
+        }
+    }
+
     @OptIn(ExperimentalTime::class)
     @ServerCommand("gen", description = "Generate wiki docs")
     fun genDocs() {
@@ -2744,4 +2918,13 @@ class Commands {
             return "$xp (${floor(levelXp.toDouble()).toInt()}) / ${floor(max.toDouble()).toInt()}"
         }
     }
+
+    data class WorldEditSelection(
+        var startX: Int = -1,
+        var startY: Int = -1,
+        var endX: Int = -1,
+        var endY: Int = -1,
+        var selecting: Boolean = false,
+        var selectionComplete: Boolean = false
+    )
 }
