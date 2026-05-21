@@ -8,6 +8,7 @@ import essential.common.database.data.getPlayerDataByName
 import essential.common.playTime
 import essential.core.service.web.WebService.Companion.bundle
 import essential.core.service.web.WebService.Companion.conf
+import essential.core.service.web.rest.gameStateRoutes
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
@@ -127,18 +128,52 @@ class WebServer {
 
             // Configure routing
             routing {
-                staticResources("/", "/web")
+                if (conf.enableRestApi) {
+                    // REST API mode: return JSON instead of serving web pages
+                    get("/") {
+                        call.respond(mapOf(
+                            "service" to "Essentials REST API",
+                            "version" to "1.0",
+                            "endpoints" to listOf(
+                                "/api/auth/login",
+                                "/api/auth/logout",
+                                "/api/auth/status",
+                                "/api/maps",
+                                "/api/maps/upload",
+                                "/api/maps/download/{name}",
+                                "/api/server/status",
+                                "/api/server/chat",
+                                "/api/server/live",
+                                "/api/game/overview",
+                                "/api/game/state",
+                                "/api/game/rules",
+                                "/api/game/map",
+                                "/api/game/players",
+                                "/api/game/teams",
+                                "/api/game/plugin",
+                                "/api/game/vote"
+                            )
+                        ))
+                    }
+                } else {
+                    // Web mode: serve static web resources
+                    staticResources("/", "/web")
+                }
 
                 // Authentication routes
                 route("/api/auth") {
                     post("/login") {
                         val loginRequest = call.receive<LoginRequest>()
-                        handleLogin(call, loginRequest)
+                        handleLogin(call, loginRequest, conf.enableRestApi)
                     }
 
                     get("/logout") {
                         call.sessions.clear<UserSession>()
-                        call.respond(HttpStatusCode.OK)
+                        if (conf.enableRestApi) {
+                            call.respond(mapOf("status" to "logged_out"))
+                        } else {
+                            call.respond(HttpStatusCode.OK)
+                        }
                     }
 
                     get("/status") {
@@ -190,7 +225,7 @@ class WebServer {
 
                             // Validate chat message
                             if (message.isBlank() || message.length > 100) {
-                                return@post call.respond(HttpStatusCode.BadRequest, "Invalid message")
+                                return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid message"))
                             }
 
                             // Sanitize message to prevent code injection
@@ -206,50 +241,57 @@ class WebServer {
                                 chatHistory.removeAt(0)
                             }
 
-                            call.respond(HttpStatusCode.OK)
+                            call.respond(HttpStatusCode.OK, mapOf("status" to "sent"))
                         }
                     }
                 }
 
-                // WebSocket for live monitoring
-                authenticate("auth-session") {
-                    webSocket("/api/server/live") {
-                        val session = call.sessions.get<UserSession>()
-                            ?: return@webSocket close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Unauthorized"))
+                // WebSocket for live monitoring (only in web mode)
+                if (conf.enableWebSocket && !conf.enableRestApi) {
+                    authenticate("auth-session") {
+                        webSocket("/api/server/live") {
+                            val session = call.sessions.get<UserSession>()
+                                ?: return@webSocket close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Unauthorized"))
 
-                        try {
-                            // Send initial status
-                            val initialStatus = getServerStatus()
-                            val initialJson = Json.encodeToString(ServerStatus.serializer(), initialStatus)
-                            outgoing.send(Frame.Text(initialJson))
+                            try {
+                                // Send initial status
+                                val initialStatus = getServerStatus()
+                                val initialJson = Json.encodeToString(ServerStatus.serializer(), initialStatus)
+                                outgoing.send(Frame.Text(initialJson))
 
-                            // Start periodic updates
-                            launch {
-                                while (true) {
-                                    delay(1000) // Update every second
-                                    val status = getServerStatus()
-                                    val json = Json.encodeToString(ServerStatus.serializer(), status)
-                                    outgoing.send(Frame.Text(json))
-                                }
-                            }
-
-                            // Handle incoming messages
-                            for (frame in incoming) {
-                                when (frame) {
-                                    is Frame.Text -> {
-                                        val text = frame.readText()
-                                        // Process commands if needed
+                                // Start periodic updates
+                                launch {
+                                    while (true) {
+                                        delay(1000) // Update every second
+                                        val status = getServerStatus()
+                                        val json = Json.encodeToString(ServerStatus.serializer(), status)
+                                        outgoing.send(Frame.Text(json))
                                     }
-
-                                    else -> {}
                                 }
+
+                                // Handle incoming messages
+                                for (frame in incoming) {
+                                    when (frame) {
+                                        is Frame.Text -> {
+                                            val text = frame.readText()
+                                            // Process commands if needed
+                                        }
+
+                                        else -> {}
+                                    }
+                                }
+                            } catch (e: ClosedReceiveChannelException) {
+                                Log.debug("WebSocket closed: ${e.message}")
+                            } catch (e: Throwable) {
+                                Log.err("WebSocket error", e)
                             }
-                        } catch (e: ClosedReceiveChannelException) {
-                            Log.debug("WebSocket closed: ${e.message}")
-                        } catch (e: Throwable) {
-                            Log.err("WebSocket error", e)
                         }
                     }
+                }
+
+                // Game state routes (REST API mode only)
+                if (conf.enableRestApi) {
+                    gameStateRoutes()
                 }
             }
         }
@@ -295,18 +337,26 @@ class WebServer {
         }
     }
 
-    private suspend fun handleLogin(call: ApplicationCall, request: LoginRequest) {
+    private suspend fun handleLogin(call: ApplicationCall, request: LoginRequest, enableRestApi: Boolean) {
         try {
             val playerData = getPlayerDataByName(request.username)
 
             if (playerData == null) {
-                call.respond(HttpStatusCode.Unauthorized, "Invalid username or password")
+                if (enableRestApi) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid username or password"))
+                } else {
+                    call.respond(HttpStatusCode.Unauthorized, "Invalid username or password")
+                }
                 return
             }
 
             // Check if account ID and password are set
             if (playerData.accountID == null || playerData.accountPW == null) {
-                call.respond(HttpStatusCode.Unauthorized, "Account not set up")
+                if (enableRestApi) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Account not set up"))
+                } else {
+                    call.respond(HttpStatusCode.Unauthorized, "Account not set up")
+                }
                 return
             }
 
@@ -314,7 +364,11 @@ class WebServer {
             if (playerData.accountID == request.password) {
                 call.respond(
                     HttpStatusCode.Forbidden,
-                    "Your username and password are the same. Please change your password."
+                    if (enableRestApi) {
+                        mapOf("error" to "Your username and password are the same. Please change your password.")
+                    } else {
+                        "Your username and password are the same. Please change your password."
+                    }
                 )
                 return
             }
@@ -323,7 +377,11 @@ class WebServer {
             if (playerData.discordID == null) {
                 call.respond(
                     HttpStatusCode.Forbidden,
-                    mapOf("message" to "Please link your Discord account first", "discordUrl" to conf.discordUrl)
+                    if (enableRestApi) {
+                        mapOf("message" to "Please link your Discord account first", "discordUrl" to conf.discordUrl)
+                    } else {
+                        mapOf("message" to "Please link your Discord account first", "discordUrl" to conf.discordUrl)
+                    }
                 )
                 return
             }
@@ -339,7 +397,11 @@ class WebServer {
             }
 
             if (!passwordMatches) {
-                call.respond(HttpStatusCode.Unauthorized, "Invalid username or password")
+                if (enableRestApi) {
+                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Invalid username or password"))
+                } else {
+                    call.respond(HttpStatusCode.Unauthorized, "Invalid username or password")
+                }
                 return
             }
 
@@ -347,10 +409,18 @@ class WebServer {
             val session = UserSession(playerData.id.toString(), playerData.name)
             call.sessions.set(session)
 
-            call.respond(HttpStatusCode.OK, mapOf("username" to playerData.name))
+            if (enableRestApi) {
+                call.respond(HttpStatusCode.OK, mapOf("status" to "success", "username" to playerData.name))
+            } else {
+                call.respond(HttpStatusCode.OK, mapOf("username" to playerData.name))
+            }
         } catch (e: Exception) {
             Log.err("Login error", e)
-            call.respond(HttpStatusCode.InternalServerError, "An error occurred during login")
+            if (enableRestApi) {
+                call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "An error occurred during login"))
+            } else {
+                call.respond(HttpStatusCode.InternalServerError, "An error occurred during login")
+            }
         }
     }
 
@@ -372,19 +442,19 @@ class WebServer {
         }
 
         if (fileBytes == null) {
-            call.respond(HttpStatusCode.BadRequest, "No file uploaded")
+            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "No file uploaded"))
             return
         }
 
         // Check file size
         if (fileBytes.size > conf.maxFileSize) {
-            call.respond(HttpStatusCode.BadRequest, "File too large")
+            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "File too large"))
             return
         }
 
         // Validate file extension
         if (!fileName.endsWith(".msav")) {
-            call.respond(HttpStatusCode.BadRequest, "Invalid file type. Only .msav files are allowed")
+            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid file type. Only .msav files are allowed"))
             return
         }
 
@@ -408,24 +478,24 @@ class WebServer {
                 Log.info("Maps reloaded after upload: $fileName")
             }
 
-            call.respond(HttpStatusCode.OK, "Map uploaded successfully")
+            call.respond(HttpStatusCode.OK, mapOf("status" to "success", "message" to "Map uploaded successfully", "fileName" to fileName))
         } catch (e: Exception) {
             tempFile.delete()
             Log.err("Map validation error", e)
-            call.respond(HttpStatusCode.BadRequest, "Invalid map file: ${e.message}")
+            call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid map file: ${e.message}"))
         }
     }
 
     private suspend fun handleMapDownload(call: ApplicationCall, mapName: String) {
         val map = Vars.maps.all().find { it.name() == mapName }
         if (map == null) {
-            call.respond(HttpStatusCode.NotFound, "Map not found")
+            call.respond(HttpStatusCode.NotFound, mapOf("error" to "Map not found"))
             return
         }
 
         val file = File(map.file.absolutePath())
         if (!file.exists()) {
-            call.respond(HttpStatusCode.NotFound, "Map file not found")
+            call.respond(HttpStatusCode.NotFound, mapOf("error" to "Map file not found"))
             return
         }
 

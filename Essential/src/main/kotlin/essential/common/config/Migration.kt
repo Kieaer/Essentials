@@ -209,7 +209,8 @@ object Migration {
             sessionDuration = 3600,
             maxFileSize = 10485760,
             discordUrl = "https://discord.gg/yourserver",
-            enableWebSocket = true
+            enableWebSocket = true,
+            enableRestApi = false
         )
         
         val newConfigPath = newDir.child("config_web.yaml")
