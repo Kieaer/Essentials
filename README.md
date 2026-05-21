@@ -73,25 +73,25 @@ Put this plugin in the ``<server folder location>/config/mods`` folder.
 
 
 ## Server commands
-| Command          | Parameter                            | Description                                                         |
-|:-----------------|:-------------------------------------|:--------------------------------------------------------------------|
-| chat             | &lt;on/off&gt;                       | Mute all players without admins                                     |
-| debug            | [parameter...]                       | Debug any commands                                                  |
-| gen              |                                      | Generate wiki docs                                                  |
-| kickall          |                                      | Kick all players.                                                   |
-| kill             | &lt;player&gt;                       | Kill player's unit                                                  |
-| killall          | [team]                               | Kill all units                                                      |
-| killunit         | &lt;name&gt; [amount] [team]         | Destroy specific units                                              |
-| mergeplayer      | &lt;from_uuid&gt; &lt;to_uuid&gt;    | Merge two player accounts (from &rarr; to).                         |
-| mute             | &lt;player&gt;                       | Mute player                                                         |
-| reload           |                                      | Reload essential plugin configs.                                    |
-| setfeedbackprovider | &lt;player&gt;                   | Set the FeedbackProvider achievement for a player                   |
-| setmapprovider   | &lt;player&gt;                       | Set the MapProvider achievement for a player                        |
-| setperm          | &lt;player&gt; &lt;group&gt;         | Set the player's permission group.                                  |
-| strict           | &lt;player&gt;                       | Set whether the target player can build or not.                     |
-| team             | &lt;team&gt; &lt;name&gt;            | Set player team                                                     |
-| tempban          | &lt;player&gt; &lt;time&gt; [reason] | Ban the player for a certain period of time                         |
-| unmute           | &lt;player&gt;                       | Unmute player                                                       |
+| Command             | Parameter                            | Description                                       |
+|:--------------------|:-------------------------------------|:--------------------------------------------------|
+| chat                | &lt;on/off&gt;                       | Mute all players without admins                   |
+| debug               | [parameter...]                       | Debug any commands                                |
+| gen                 |                                      | Generate wiki docs                                |
+| kickall             |                                      | Kick all players.                                 |
+| kill                | &lt;player&gt;                       | Kill player's unit                                |
+| killall             | [team]                               | Kill all units                                    |
+| killunit            | &lt;name&gt; [amount] [team]         | Destroy specific units                            |
+| mergeplayer         | &lt;from_uuid&gt; &lt;to_uuid&gt;    | Merge two player accounts (from &rarr; to).       |
+| mute                | &lt;player&gt;                       | Mute player                                       |
+| reload              |                                      | Reload essential plugin configs.                  |
+| setfeedbackprovider | &lt;player&gt;                       | Set the FeedbackProvider achievement for a player |
+| setmapprovider      | &lt;player&gt;                       | Set the MapProvider achievement for a player      |
+| setperm             | &lt;player&gt; &lt;group&gt;         | Set the player's permission group.                |
+| strict              | &lt;player&gt;                       | Set whether the target player can build or not.   |
+| team                | &lt;team&gt; &lt;name&gt;            | Set player team                                   |
+| tempban             | &lt;player&gt; &lt;time&gt; [reason] | Ban the player for a certain period of time       |
+| unmute              | &lt;player&gt;                       | Unmute player                                     |
 
 README.md Generated time: 2026-05-20 20:44
 
