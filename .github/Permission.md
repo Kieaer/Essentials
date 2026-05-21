@@ -13,7 +13,7 @@ In the permission_user.txt file, you can modify it as below.
   Group name:
   {
     admin: true or false. It will add admin mark in players list.
-    chatFormat: %1 is player name, %2 is message. It must be written inside " ". Example "%1[orange] > [white]%2"
+    chatFormat: Chat format string. It must be written inside " ". Available variables: %player.name, %player.level, %player.permission, %player.exp, %player.playtime, %player.blockPlace, %player.blockBreak, %player.attackClear, %player.waveClear, %player.pvpWin, %player.pvpLose, %player.pvpEliminated, %player.pvpMvp, %player.attendance, %player.language, %player.world, %player.worldMode, %player.uuid, %chat (message). Example: "%player.name[orange] > [white]%chat"
     inheritance: write inheritance group if you want.
     default: true or false. You can set only one default group.
     permission:

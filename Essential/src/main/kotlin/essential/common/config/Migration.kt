@@ -250,7 +250,7 @@ data class SharingConfigOld(
 @Suppress("Unused")
 @Serializable
 data class ChatConfigOld(
-    val chatFormat: String = "%1[orange] >[white] %2",
+    val chatFormat: String = "%player.name[orange] >[white] %chat",
     val strict: StrictConfigOld = StrictConfigOld(),
     val blacklist: BlacklistConfigOld = BlacklistConfigOld()
 )

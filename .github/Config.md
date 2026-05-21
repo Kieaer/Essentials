@@ -175,20 +175,23 @@ border: false
 
 ## 💬 chatFormat
 
-Default: ``%1[orange] >[white] %2``<br>
+Default: ``%player.name[orange] >[white] %chat``<br>
 Change chat default format.<br>
-%1 is player name, %2 is message.
+Available variables: %player.name, %player.level, %player.permission, %player.exp, %player.playtime, %player.blockPlace, %player.blockBreak, %player.attackClear, %player.waveClear, %player.pvpWin, %player.pvpLose, %player.pvpEliminated, %player.pvpMvp, %player.attendance, %player.language, %player.world, %player.worldMode, %player.uuid, %chat (message).
 
 Example
 ```yaml
 # Result is "Gureumi > hello!"
-chatFormat: "%1[orange] >[white] %2"
+chatFormat: "%player.name[orange] >[white] %chat"
 
 # Result is "[Owner]Gureumi > hello!"
-chatFormat: "[sky][Owner]%1[orange] >[white] %2"
+chatFormat: "[sky][Owner]%player.name[orange] >[white] %chat"
 
 # Result is "prefix Gureumi -> hello! suffix"
-chatFormat: "prefix %1 -> %2 suffix"
+chatFormat: "prefix %player.name -> %chat suffix"
+
+# Result includes player level
+chatFormat: "[%player.level]%player.name[orange] >[white] %chat"
 ```
 
 ## 🤖 spawnLimit

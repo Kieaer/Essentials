@@ -2,5 +2,5 @@
 ABCDEFGHIJKAAAAAbzCq5A==:
   name: Gureumi
   group: owner
-  chatFormat: "[sky][Server][] %1[#6d4ee9] || [#fff68f]%2"
+  chatFormat: "[sky][Server][] %player.name[#6d4ee9] || [#fff68f]%chat"
   admin: true
