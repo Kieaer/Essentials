@@ -44,12 +44,12 @@ object Permission {
         # uuid123:
         #     name: my fun name
         # uuids:
-        #     name: asdfg
-        #     group: admin
+        #     name: "asdfg"
+        #     group: "admin"
         #     admin: true
         #     isAlert: true
-        #     alertMessage: Player asdfg has entered the server!
-        #     chatFormat: [admin] %1 > %2
+        #     alertMessage: "Player asdfg has entered the server!"
+        #     chatFormat: "[admin] %1 > %2"
         ---
         """.trimIndent()
 
@@ -66,7 +66,7 @@ object Permission {
     fun load() {
         val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
         
-        user = try {
+        try {
             if (userFile.exists()) {
                 val raw = userFile.readString()
                 // Remove YAML comments and whitespace to check if there's any real content
@@ -74,39 +74,27 @@ object Permission {
                     .filter { line -> !line.trimStart().startsWith("#") }
                     .joinToString("\n")
                     .trim()
-                if (stripped.isEmpty() || stripped == "---") {
+                user = if (stripped.isEmpty() || stripped == "---") {
                     // Treat comment-only or effectively empty files as empty map
                     mapOf()
                 } else {
                     yaml.decodeFromString(MapSerializer(String.serializer(), PermissionData.serializer()), raw)
                 }
             } else {
-                mapOf()
+                user = mapOf()
             }
         } catch (e: Exception) {
             Log.warn("Failed to parse permission_user.yaml: ${e.message}")
-            // Create a new empty file with the comment template
-            userFile.writeString(comment)
-            mapOf()
         }
         
-        main = try {
-            if (mainFile.exists()) {
+        try {
+            main = if (mainFile.exists()) {
                 yaml.decodeFromString(MapSerializer(String.serializer(), RoleConfig.serializer()), mainFile.readString())
             } else {
                 mapOf()
             }
         } catch (e: Exception) {
             Log.warn("Failed to parse permission.yaml: ${e.message}")
-            // Reset to default permissions file
-            if (mainFile.exists()) mainFile.delete()
-            mainFile.write(this::class.java.getResourceAsStream("/permission_default.yaml")!!, false)
-            try {
-                yaml.decodeFromString(MapSerializer(String.serializer(), RoleConfig.serializer()), mainFile.readString())
-            } catch (e2: Exception) {
-                Log.err("Failed to parse default permission.yaml: ${e2.message}")
-                mapOf()
-            }
         }
 
         for ((name, roleConfig) in main) {
