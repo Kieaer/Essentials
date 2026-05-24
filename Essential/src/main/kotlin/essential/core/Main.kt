@@ -44,7 +44,7 @@ import java.util.concurrent.Executors
 
 class Main : Plugin() {
     companion object {
-        const val CONFIG_PATH = "config.yaml"
+        const val CONFIG_PATH = "config/config.yaml"
         var conf: CoreConfig = runBlocking {
             // 플러그인 설정 불러오기
             val config = Config.load("config", CoreConfig.serializer(), CoreConfig())
