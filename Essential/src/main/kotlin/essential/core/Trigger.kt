@@ -447,6 +447,7 @@ class Trigger {
         var rollbackCount = conf.command.rollback.time
         var messageCount = conf.feature.motd.time
         var messageOrder = 0
+        var dpsBlockCalculateTick = 0
 
         Events.run(EventType.Trigger.update) {
             for (data in players) {
@@ -514,6 +515,40 @@ class Trigger {
                         break
                     }
                 }
+            }
+
+            if (dpsTile != null) {
+                if (dpsTile!!.build != null && dpsTile!!.block() != null) {
+                    dpsBlocks += (100000000f - dpsTile!!.build.health)
+                    dpsTile!!.build.maxHealth(100000000f)
+                    dpsTile!!.build.health(100000000f)
+                } else {
+                    dpsTile = null
+                }
+            }
+
+            if (dpsBlockCalculateTick == 60) {
+                if (dpsTile != null) {
+                    if (maxDps == null) {
+                        maxDps = 0f
+                    } else if (dpsBlocks > maxDps!!) {
+                        maxDps = dpsBlocks
+                    }
+                    for (data in players) {
+                        Call.label(
+                            data.player.con(),
+                            data.bundle["command.dps", maxDps!!, dpsBlocks],
+                            1f,
+                            dpsTile!!.worldx(),
+                            dpsTile!!.worldy()
+                        )
+                    }
+                } else {
+                    maxDps = null
+                }
+                dpsBlocks = 0f
+            } else {
+                dpsBlockCalculateTick += 1
             }
         }
 

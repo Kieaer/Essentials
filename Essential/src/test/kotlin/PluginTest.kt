@@ -229,9 +229,21 @@ class PluginTest {
         fun loadPlugin() {
             if (pluginLoaded) return
 
+            Main.conf = Main.conf.copy(
+                module = Main.conf.module.copy(
+                    achievement = true,
+                    bridge = true,
+                    chat = true,
+                    discord = true,
+                    protect = true,
+                    web = true
+                )
+            )
+
             main = Main()
 
             main.init()
+
             main.registerClientCommands(clientCommand)
             main.registerServerCommands(serverCommand)
 
@@ -245,17 +257,10 @@ class PluginTest {
             pluginLoaded = false
         }
 
-        fun updateTick(times: Int) {
-            for (tile in world.tiles) {
-                if (tile.build != null && tile.isCenter) {
-                    tile.build.updateProximity()
-                }
-            }
-
+        fun updateTick(times: Int, codes: () -> Unit) {
             repeat(times) {
-                // Update global time delta
-                Time.update()
-                Groups.update()
+                logic.update()
+                codes()
             }
         }
 
@@ -512,5 +517,20 @@ class PluginTest {
                 Main.conf = originalConf
             }
         }
+    }
+
+    @Test
+    fun verifyAllModulesTrueTest() {
+        if (Core.app != null) stopPlugin()
+        loadGame(loadPlugin = true)
+
+        assertTrue(Main.conf.module.achievement, "achievement module should be true")
+        assertTrue(Main.conf.module.bridge, "bridge module should be true")
+        assertTrue(Main.conf.module.chat, "chat module should be true")
+        assertTrue(Main.conf.module.discord, "discord module should be true")
+        assertTrue(Main.conf.module.protect, "protect module should be true")
+        assertTrue(Main.conf.module.web, "web module should be true")
+
+        stopPlugin()
     }
 }

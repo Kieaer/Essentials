@@ -8,6 +8,7 @@ import PluginTest.Companion.log
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
+import PluginTest.Companion.updateTick
 import arc.Events
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
@@ -15,6 +16,7 @@ import essential.common.database.data.getPlayerData
 import essential.common.players
 import essential.common.pluginData
 import essential.common.util.findPlayerData
+import essential.core.dpsBlocks
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.Vars.world
@@ -189,6 +191,22 @@ class ClientCommandTest {
         assertFalse(playerData.animatedName)
     }
 
+    @Test
+    fun client_dps() {
+        // Require admin or above permission
+        setPermission("admin", true)
+
+        // Enable Damage/s calculate block
+        clientCommand.handleMessage("/dps", player)
+        assertEquals(Blocks.thoriumWallLarge, player.tileOn().block())
+
+        // Verify block should be keep health
+        player.tileOn().build.health(1f)
+        assertEquals(1f, player.tileOn().build.health)
+        updateTick(5) {}
+        assertEquals(100000000f, player.tileOn().build.health)
+        assertTrue(0f < dpsBlocks)
+    }
 
     @Test
     fun client_effect() {

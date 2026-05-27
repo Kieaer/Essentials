@@ -265,6 +265,29 @@ class Commands {
         playerData.animatedName = !playerData.animatedName
     }
 
+    @ClientCommand("dps", description = "Create damage per seconds meter block")
+    fun dps(playerData: PlayerData) {
+        val currentTile = playerData.player.tileOn()
+        val currentUnit = playerData.player.unit()
+
+        if (dpsTile == null) {
+            Call.constructFinish(
+                currentTile,
+                Blocks.thoriumWallLarge,
+                currentUnit,
+                0,
+                Vars.state.rules.waveTeam,
+                null
+            )
+            dpsTile = currentTile
+            playerData.send("command.dps.created")
+        } else {
+            Call.deconstructFinish(dpsTile, Blocks.air, currentUnit)
+            dpsTile = null
+            playerData.send("command.dps.deleted")
+        }
+    }
+
     @ClientCommand(
         "effect",
         "<on/off/level> [color]",

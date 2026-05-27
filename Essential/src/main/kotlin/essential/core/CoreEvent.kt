@@ -95,6 +95,10 @@ lateinit var actionFilter: Administration.ActionFilter
 private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}$")
 val worldEditSelection = mutableMapOf<String, WorldEditSelection>()
 
+var dpsBlocks = 0f
+var dpsTile: Tile? = null
+var maxDps: Float? = null
+
 @Event
 fun withdraw(event: WithdrawEvent) {
     if (event.tile != null && event.player.unit().item() != null && event.player.name != null) {
