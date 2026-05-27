@@ -203,7 +203,7 @@ class ClientCommandTest {
         // Verify block should be keep health
         player.tileOn().build.health(1f)
         assertEquals(1f, player.tileOn().build.health)
-        updateTick(5) {}
+        updateTick(5)
         assertEquals(100000000f, player.tileOn().build.health)
         assertTrue(0f < dpsBlocks)
     }
@@ -1217,7 +1217,7 @@ class ClientCommandTest {
         Events.fire(EventType.TapEvent(player.self(), world.tile(20, 20)))
         // Fill selection with copper-wall
         clientCommand.handleMessage("/ws f copperWall", player)
-        sleep(200)
+        updateTick(5)
 
         // Verify fill was successful
         assertEquals(Blocks.copperWall, world.tile(15, 15).block())
@@ -1229,7 +1229,7 @@ class ClientCommandTest {
         Events.fire(EventType.TapEvent(player.self(), world.tile(20, 20)))
         // Replace copper-wall with conveyor
         clientCommand.handleMessage("/ws r copperWall conveyor", player)
-        sleep(200)
+        updateTick(5)
         // Verify replace was successful
         assertEquals(Blocks.conveyor, world.tile(15, 15).block())
         assertNotEquals(Blocks.copperWall, world.tile(30, 30).block())
@@ -1240,7 +1240,7 @@ class ClientCommandTest {
         Events.fire(EventType.TapEvent(player.self(), world.tile(20, 20)))
         // Delete selection
         clientCommand.handleMessage("/ws d", player)
-        sleep(200)
+        updateTick(5)
         // Verify delete was successful - tile should be air
         assertEquals(Blocks.air, world.tile(15, 15).block())
     }

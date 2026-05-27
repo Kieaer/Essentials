@@ -257,6 +257,12 @@ class PluginTest {
             pluginLoaded = false
         }
 
+        fun updateTick(times: Int) {
+            repeat(times) {
+                logic.update()
+            }
+        }
+
         fun updateTick(times: Int, codes: () -> Unit) {
             repeat(times) {
                 logic.update()
