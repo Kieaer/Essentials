@@ -583,7 +583,8 @@ class Commands {
         val cancel = "info.button.cancel"
 
         if (arg.isEmpty()) {
-            Call.menu(playerData.player.con(), 0, bundle["info.title"], show(playerData), arrayOf(arrayOf(bundle[close])))
+            val infoMenu = Menus.registerMenu { _, _ -> }
+            Call.menu(playerData.player.con(), infoMenu, bundle["info.title"], show(playerData), arrayOf(arrayOf(bundle[close])))
         } else if (Permission.check(playerData, "info.other")) {
             val target = findPlayers(arg[0])
             var targetData: PlayerData? = null
