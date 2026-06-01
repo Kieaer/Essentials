@@ -13,11 +13,13 @@ import arc.util.Time
 import essential.common.DATABASE_VERSION
 import essential.common.bundle
 import essential.common.bundle.Bundle
+import essential.common.config.Migration
 import essential.common.database.data.PlayerData
 import essential.common.database.data.checkPlayerBanned
 import essential.common.database.data.createPlayerData
 import essential.common.database.data.getPlayerData
 import essential.common.database.defaultDatabase
+import essential.common.database.worldHistoryDatabase
 import essential.common.players
 import essential.common.rootPath
 import essential.core.Main
@@ -41,6 +43,7 @@ import mindustry.world.Block
 import mindustry.world.Tile
 import net.datafaker.Faker
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
+import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.testcontainers.postgresql.PostgreSQLContainer
 import java.io.File
 import java.lang.Thread.sleep
@@ -69,8 +72,8 @@ class PluginTest {
         var testMap: Map? = null
 
         @OptIn(ExperimentalPathApi::class)
-        fun loadGame(loadPlugin: Boolean = false, deleteConfig: Boolean = true, logHandler: (String) -> Unit = {}) {
-            if (gameLoaded) return
+        fun loadGame(loadPlugin: Boolean = false, deleteConfig: Boolean = true, logHandler: (String) -> Unit = {}, force: Boolean = false) {
+            if (gameLoaded && !force) return
             if (System.getProperty("os.name").contains("Windows")) {
                 val pathToBeDeleted: Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
                 if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
@@ -226,8 +229,8 @@ class PluginTest {
             }
         }
 
-        fun loadPlugin() {
-            if (pluginLoaded) return
+        fun loadPlugin(force: Boolean = false) {
+            if (pluginLoaded && !force) return
 
             Main.conf = Main.conf.copy(
                 module = Main.conf.module.copy(
@@ -252,6 +255,26 @@ class PluginTest {
         }
 
         fun stopPlugin() {
+            val dataDir = Paths.get("config", "mods", "Essentials", "data")
+            if (Files.exists(dataDir)) {
+                try {
+                    Files.walk(dataDir).use { stream ->
+                        stream.filter { path ->
+                            val name = path.fileName.toString()
+                            (name.startsWith("database") || name.startsWith("worldHistory")) &&
+                            path != dataDir
+                        }.sorted(Comparator.reverseOrder()).forEach { path ->
+                            path.toFile().delete()
+                        }
+                    }
+                } catch (_: Throwable) {
+                }
+            }
+
+            defaultDatabase = null
+            worldHistoryDatabase = null
+            TransactionManager.defaultDatabase = null
+            Migration.reset()
             Core.app.exit()
             gameLoaded = false
             pluginLoaded = false
@@ -441,6 +464,16 @@ class PluginTest {
 
         val dataDir = Paths.get("config", "mods", "Essentials", "data")
         dataDir.toFile().mkdirs()
+
+        Files.walk(dataDir).use { stream ->
+            stream.filter { path ->
+                path.fileName.toString().startsWith("database") ||
+                path.fileName.toString().startsWith("worldHistory")
+            }.sorted(Comparator.reverseOrder()).forEach { path ->
+                path.toFile().delete()
+            }
+        }
+
         val file = Paths.get("src", "test", "resources", "database-v3.mv.db").toFile()
         val target = dataDir.resolve("database.mv.db").toFile()
         file.copyTo(target, true)
