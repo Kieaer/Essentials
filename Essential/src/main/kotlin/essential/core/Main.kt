@@ -8,6 +8,7 @@ import arc.util.Http
 import arc.util.Log
 import essential.common.*
 import essential.common.config.Config
+import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.createPluginData
 import essential.common.database.data.getPluginData
 import essential.common.database.data.migrateMapRatingsFromPluginData
@@ -88,6 +89,9 @@ class Main : Plugin() {
             conf.plugin.database.password
         )
 
+        // 블록 기록
+        WorldHistoryBuffer.start(scope)
+
         // 플러그인 데이터 설정
             var data = getPluginData()
             if (data == null) {
@@ -164,6 +168,9 @@ class Main : Plugin() {
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
+                runBlocking {
+                    WorldHistoryBuffer.stop()
+                }
                 scope.cancel()
                 threadPool.shutdownNow()
             }

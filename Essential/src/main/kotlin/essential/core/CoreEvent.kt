@@ -10,6 +10,7 @@ import arc.util.Strings
 import com.charleskorn.kaml.Yaml
 import essential.common.*
 import essential.common.bundle.Bundle
+import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.*
 import essential.common.database.data.plugin.WarpZone
 import essential.common.database.table.PlayerTable
@@ -262,6 +263,7 @@ fun tap(event: TapEvent) {
                 val buf = ArrayList<TileLog>()
 
                 try {
+                    WorldHistoryBuffer.flush()
                     val dbEntries = getWorldHistoryByCoordinates(event.tile.x, event.tile.y)
                     dbEntries.forEach { entry ->
                         buf.add(
@@ -611,6 +613,7 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
                     val buf = ArrayList<TileLog>()
 
                     try {
+                        WorldHistoryBuffer.flush()
                         val dbEntries = getWorldHistoryByCoordinates(event.tile.x, event.tile.y)
 
                         dbEntries.forEach { entry ->
@@ -1228,19 +1231,17 @@ fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) 
 }
 
 private fun addLog(log: TileLog) {
-    scope.launch {
-        createWorldHistory(
-            time = log.time,
-            player = log.player,
-            action = log.action,
-            x = log.x,
-            y = log.y,
-            tile = log.tile,
-            rotate = log.rotate,
-            team = log.team.name,
-            value = log.value?.toString()
-        )
-    }
+    WorldHistoryBuffer.enqueue(
+        time = log.time,
+        player = log.player,
+        action = log.action,
+        x = log.x,
+        y = log.y,
+        tile = log.tile,
+        rotate = log.rotate,
+        team = log.team.name,
+        value = log.value?.toString()
+    )
 }
 
 class TileLog(

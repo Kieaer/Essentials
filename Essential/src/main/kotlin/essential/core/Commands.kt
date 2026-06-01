@@ -12,6 +12,7 @@ import com.github.lalyos.jfiglet.FigletFont
 import essential.*
 import essential.common.*
 import essential.common.bundle.Bundle
+import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.*
 import essential.common.database.data.plugin.WarpBlock
 import essential.common.database.data.plugin.WarpCount
@@ -1538,33 +1539,26 @@ class Commands {
     @ClientCommand("rollback", "<player>", "Undo all actions taken by the player.")
     fun rollback(playerData: PlayerData, arg: Array<out String>) {
         runBlocking {
+            WorldHistoryBuffer.flush()
             val history = getAllWorldHistory()
 
-            // Group entries by tile coordinates for efficient processing
             val grouped = history.groupBy { Pair(it.x.toInt(), it.y.toInt()) }
 
             grouped.forEach { (pos, entriesUnsorted) ->
-                // Consider only tiles that the target player has interacted with
                 val hasPlayerAction = entriesUnsorted.any { it.player.contains(arg[0], ignoreCase = true) }
                 if (!hasPlayerAction) return@forEach
 
-                // Sort entries chronologically for this tile
                 val entries = entriesUnsorted.sortedBy { it.time }
 
-                // Find the first action by the target player on this tile
                 val firstIdx = entries.indexOfFirst { it.player.contains(arg[0], ignoreCase = true) }
                 if (firstIdx == -1) return@forEach
 
-                val targetTile = Vars.world.tile(pos.first, pos.second)
-                if (targetTile == null) return@forEach
+                val targetTile = Vars.world.tile(pos.first, pos.second) ?: return@forEach
 
-                // Determine desired state just BEFORE the player's first action
-                // 1) Determine block occupancy (air vs a specific block)
                 var desiredBlockName: String? = null // null -> air
                 var desiredTeam: Team = Team.derelict
                 var desiredRot: Int = 0
 
-                // Helper: scan backwards to find the last occupancy-changing action before firstIdx
                 fun applyPrevOccupancyFrom(indexExclusive: Int) {
                     for (i in indexExclusive downTo 0) {
                         val e = entries[i]
@@ -1587,27 +1581,21 @@ class Commands {
                 }
 
                 if (firstIdx > 0) {
-                    // There were actions before the player's first action; infer state from them
                     applyPrevOccupancyFrom(firstIdx - 1)
                 } else {
-                    // Player's first action is the earliest; infer from the type of the first action
                     val first = entries[firstIdx]
                     when (first.action) {
                         "place" -> {
-                            // Before placing, it must have been air (or unknown -> assume air)
                             desiredBlockName = null
                         }
 
                         "break" -> {
-                            // Before breaking, the block existed and is recorded in 'tile'
                             desiredBlockName = first.tile
                             desiredTeam = Team.all.find { t -> t.name == first.team } ?: Team.derelict
                             desiredRot = first.rotate
                         }
 
                         else -> {
-                            // For non-occupancy actions, assume no change (keep current)
-                            // But for safety, try to infer any previous occupancy (none exists), default to current state
                             desiredBlockName = targetTile.block().name.takeIf { it != Blocks.air.name }
                             desiredTeam = targetTile.team()
                             desiredRot = targetTile.build?.rotation ?: 0
@@ -1615,7 +1603,6 @@ class Commands {
                     }
                 }
 
-                // 2) Find the last configuration value before the player's first action, if any
                 var desiredConfig: String? = null
                 for (i in (firstIdx - 1) downTo 0) {
                     val e = entries[i]
@@ -1625,7 +1612,6 @@ class Commands {
                     }
                 }
 
-                // Apply the desired state to the world
                 if (desiredBlockName == null || desiredBlockName == Blocks.air.name) {
                     targetTile.remove()
                 } else {
@@ -1636,14 +1622,12 @@ class Commands {
                             targetTile.build.configure(desiredConfig)
                         }
                     } else {
-                        // If block not found, safest is to remove
                         targetTile.remove()
                     }
                 }
             }
         }
 
-        // Refresh world data for all players to reflect changes
         for (p in Groups.player) {
             Call.worldDataBegin(p.con)
             Vars.netServer.sendWorldData(p)

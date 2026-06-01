@@ -58,14 +58,14 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
     val h2HistoryFactory = h2("worldHistory")
 
     val h2PoolConfig = ConnectionPoolConfiguration.builder(h2HistoryFactory.first)
-        .maxSize(10)
-        .initialSize(2)
+        .maxSize(20)
+        .initialSize(4)
         .maxIdleTime(Duration.ofMinutes(10))
-        .maxAcquireTime(Duration.ofSeconds(30))
+        .maxAcquireTime(Duration.ofSeconds(10))
         .maxCreateConnectionTime(Duration.ofSeconds(5))
         .maxLifeTime(Duration.ofMinutes(30))
         .validationQuery("SELECT 1")
-        .validationDepth(ValidationDepth.REMOTE)
+        .validationDepth(ValidationDepth.LOCAL)
         .build()
 
     worldHistoryDatabase = connectDatabase(ConnectionPool(h2PoolConfig), h2HistoryFactory.second)

@@ -20,4 +20,8 @@ object WorldHistoryTable : Table("world_history") {
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
 
     override val primaryKey = PrimaryKey(id)
+
+    init {
+        index(customIndexName = "ix_world_history_xy", isUnique = false, x, y)
+    }
 }

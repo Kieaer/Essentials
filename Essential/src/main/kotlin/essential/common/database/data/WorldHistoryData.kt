@@ -5,7 +5,6 @@ import essential.common.database.worldHistoryDatabase
 import ksp.table.GenerateCode
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.r2dbc.deleteAll
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
@@ -100,10 +99,10 @@ suspend fun getWorldHistoryByCoordinates(x: Short, y: Short): List<WorldHistoryD
 }
 
 /**
- * Delete all world history entries
+ * Clear all world history entries
  */
 suspend fun clearWorldHistory() {
     suspendTransaction(db = worldHistoryDatabase) {
-        WorldHistoryTable.deleteAll()
+        exec("TRUNCATE TABLE world_history")
     }
 }

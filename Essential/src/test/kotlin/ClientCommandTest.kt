@@ -862,11 +862,29 @@ class ClientCommandTest {
         // Test rollback command requires owner permission
         setPermission("owner", true)
 
+        // Assert current block is empty
+        assertNotEquals(Blocks.thoriumWall, world.tile(10, 10).block())
+
         // Create a dummy player to rollback
         val dummy = newPlayer()
 
+        val unit = UnitTypes.nova.spawn(dummy.first.team(), dummy.first.x(), dummy.first.y()).also { u ->
+            u.controller(dummy.first)
+            dummy.first.unit(u)
+        }
+
+        unit.addBuild(mindustry.entities.units.BuildPlan(10, 10, 0, Blocks.thoriumWall))
+
+        assertNotNull(unit.buildPlan())
+
+        world.tile(10, 10).setBlock(Blocks.thoriumWall, dummy.first.team(), 0)
+        Events.fire(EventType.BlockBuildEndEvent(world.tile(10, 10), unit, dummy.first.team(), false, null))
+        assertEquals(Blocks.thoriumWall, world.tile(10, 10).block(), "Block should be placed after firing event")
+
         // Test rollback command with valid player
         clientCommand.handleMessage("/rollback ${dummy.first.name}", player)
+        updateTick(16)
+        assertNotEquals(Blocks.thoriumWall, world.tile(10, 10).block())
 
         // Test rollback command with non-existent player
         clientCommand.handleMessage("/rollback nonexistentplayer", player)
