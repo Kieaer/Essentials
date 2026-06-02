@@ -26,7 +26,6 @@ import kotlin.time.ExperimentalTime
  * - ban_expire_date: latest of the two; isBanned adjusted to whether ban not expired
  */
 @OptIn(ExperimentalTime::class)
-@Suppress("RedundantSuspendModifier")
 suspend fun mergePlayerAccounts(fromUuid: String, toUuid: String): String = suspendTransaction {
     if (fromUuid.equals(toUuid, ignoreCase = true)) {
         return@suspendTransaction "Source and target UUID must be different."

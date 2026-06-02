@@ -3,7 +3,6 @@ import PluginTest.Companion.createPlayer
 import PluginTest.Companion.err
 import PluginTest.Companion.leavePlayer
 import PluginTest.Companion.loadGame
-import PluginTest.Companion.loadPlugin
 import PluginTest.Companion.log
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
@@ -47,10 +46,7 @@ class ClientCommandTest {
     @BeforeTest
     fun setup() {
         if (!done) {
-            System.setProperty("test", "yes")
-
-            loadGame()
-            loadPlugin()
+            loadGame(true)
 
             val p = newPlayer()
             Vars.player = p.first.self()
