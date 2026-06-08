@@ -12,6 +12,7 @@ import essential.common.*
 import essential.common.bundle.Bundle
 import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.*
+import essential.common.database.data.plugin.WarpBlock
 import essential.common.database.data.plugin.WarpZone
 import essential.common.database.table.PlayerTable
 import essential.common.event.CustomEvents
@@ -319,6 +320,38 @@ fun tap(event: TapEvent) {
                 Call.effect(event.player.con(), Fx.shockwave, event.tile.getX(), event.tile.getY(), 0f, Color.cyan)
                 event.player.sendMessage(str.toString().trim())
             }
+        }
+
+        if (data.status.containsKey("hub_block_selecting")) {
+            val build = event.tile.build
+            if (build == null) {
+                data.err("command.hub.block.invalid")
+            } else {
+                val ip = data.status["hub_block_ip"]!!
+                val port = data.status["hub_block_port"]!!.toInt()
+                val desc = data.status["hub_block_desc"]!!
+                pluginData.data.warpBlock.add(
+                    WarpBlock(
+                        Vars.state.map.name(),
+                        build.tileX(),
+                        build.tileY(),
+                        event.tile.block().name,
+                        event.tile.block().size,
+                        ip,
+                        port,
+                        desc
+                    )
+                )
+                scope.launch {
+                    pluginData.update()
+                }
+                data.send("command.hub.block.added", "${build.tileX()}:${build.tileY()}", ip)
+                data.status.remove("hub_block_selecting")
+                data.status.remove("hub_block_ip")
+                data.status.remove("hub_block_port")
+                data.status.remove("hub_block_desc")
+            }
+            return
         }
 
         if (data.status.containsKey("hub_first") && !data.status.containsKey("hub_second")) {

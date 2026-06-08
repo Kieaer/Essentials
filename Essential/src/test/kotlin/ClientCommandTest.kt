@@ -523,6 +523,33 @@ class ClientCommandTest {
         sleep(100)
         assertEquals(err("command.hub.block.parameter"), playerData.lastReceivedMessage)
 
+        // Test block command with valid parameters (triggers block selection mode)
+        clientCommand.handleMessage("/hub block 127.0.0.1 description", player)
+        sleep(100)
+        assertEquals(Bundle()["command.hub.block.select"], playerData.lastReceivedMessage)
+        assertEquals("true", playerData.status["hub_block_selecting"])
+
+        // Test tap on ground (build is null) -> warns player, keeps selection active
+        val groundTile = world.tile(11, 11)
+        groundTile.setBlock(Blocks.air)
+        Events.fire(EventType.TapEvent(player.self(), groundTile))
+        sleep(100)
+        assertEquals(err("command.hub.block.invalid"), playerData.lastReceivedMessage)
+        assertEquals("true", playerData.status["hub_block_selecting"])
+
+        // Test tap on a valid block -> succeeds, clears selection, adds WarpBlock
+        val blockTile = world.tile(10, 10)
+        blockTile.setBlock(Blocks.thoriumWall, player.team(), 0)
+        assertNotNull(blockTile.build)
+        Events.fire(EventType.TapEvent(player.self(), blockTile))
+        sleep(100)
+        assertEquals(Bundle()["command.hub.block.added", "10:10", "127.0.0.1"], playerData.lastReceivedMessage)
+        assertNull(playerData.status["hub_block_selecting"])
+        val addedWarpBlock = pluginData.data.warpBlock.find { it.x == 10 && it.y == 10 }
+        assertNotNull(addedWarpBlock)
+        assertEquals("127.0.0.1", addedWarpBlock.ip)
+        assertEquals("description", addedWarpBlock.description)
+
         // Test count command with missing parameters
         clientCommand.handleMessage("/hub count", player)
         sleep(100)

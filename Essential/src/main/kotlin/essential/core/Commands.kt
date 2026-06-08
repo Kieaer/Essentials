@@ -14,7 +14,6 @@ import essential.common.*
 import essential.common.bundle.Bundle
 import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.*
-import essential.common.database.data.plugin.WarpBlock
 import essential.common.database.data.plugin.WarpCount
 import essential.common.database.data.plugin.WarpTotal
 import essential.common.database.table.PlayerTable
@@ -1692,20 +1691,11 @@ class Commands {
                     if (ip.isEmpty()) {
                         playerData.err("command.hub.address.invalid")
                     } else {
-                        val t: Tile = playerData.player.tileOn()
-                        pluginData.data.warpBlock.add(
-                            WarpBlock(
-                                name,
-                                t.build.tileX(),
-                                t.build.tileY(),
-                                t.block().name,
-                                t.block().size,
-                                ip,
-                                port,
-                                arg[2]
-                            )
-                        )
-                        playerData.send("command.hub.block.added", "$x:$y", arg[1])
+                        playerData.status["hub_block_ip"] = ip
+                        playerData.status["hub_block_port"] = port.toString()
+                        playerData.status["hub_block_desc"] = arg[2]
+                        playerData.status["hub_block_selecting"] = "true"
+                        playerData.send("command.hub.block.select")
                     }
                 }
 
