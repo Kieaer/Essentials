@@ -16,6 +16,7 @@ import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.*
 import essential.common.database.data.plugin.WarpCount
 import essential.common.database.data.plugin.WarpTotal
+import essential.common.database.table.AchievementTable
 import essential.common.database.table.PlayerTable
 import essential.common.event.CustomEvents
 import essential.common.log.LogType
@@ -58,7 +59,11 @@ import mindustry.type.UnitType
 import mindustry.ui.Menus
 import mindustry.world.Tile
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.lowerCase
+import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.util.MissingResourceException
@@ -2863,6 +2868,55 @@ class Commands {
                 Log.info(result)
             } catch (e: Exception) {
                 Log.err("Merge failed: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    @ServerCommand("delete", "<uuid/name/id>", "Delete player data and achievements from database")
+    fun delete(arg: Array<out String>) {
+        val bundle = Bundle()
+        if (arg.isEmpty()) {
+            Log.warn(bundle["command.delete.usage"])
+            return
+        }
+        val target = arg[0]
+        val idVal = target.toUIntOrNull()
+
+        runBlocking {
+            try {
+                val matches = suspendTransaction {
+                    PlayerTable.selectAll().where {
+                        val nameCond = PlayerTable.name.lowerCase() eq target.lowercase()
+                        if (idVal != null) {
+                            (PlayerTable.id eq idVal) or (PlayerTable.uuid eq target) or nameCond
+                        } else {
+                            (PlayerTable.uuid eq target) or nameCond
+                        }
+                    }.mapToPlayerDataList()
+                }
+
+                if (matches.isEmpty()) {
+                    Log.warn(bundle["command.delete.not.found", target])
+                    return@runBlocking
+                }
+
+                if (matches.size > 1) {
+                    Log.info(bundle["command.delete.multiple"])
+                    matches.forEach { player ->
+                        Log.info(bundle["command.delete.multiple.format", player.id, player.name, player.uuid, player.exp, player.level, player.discordID ?: "null"])
+                    }
+                    return@runBlocking
+                }
+
+                val playerToDelete = matches.first()
+                suspendTransaction {
+                    AchievementTable.deleteWhere { AchievementTable.playerId eq playerToDelete.id }
+                    PlayerTable.deleteWhere { PlayerTable.id eq playerToDelete.id }
+                }
+                Log.info(bundle["command.delete.success", playerToDelete.name, playerToDelete.id, playerToDelete.uuid])
+            } catch (e: Exception) {
+                Log.err(bundle["command.delete.failed", e.message ?: "Unknown error"])
                 e.printStackTrace()
             }
         }
