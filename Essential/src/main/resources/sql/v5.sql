@@ -8,6 +8,9 @@ WHERE player_id IN (
     ) tmp
 );
 
-DELETE p1 FROM players p1
+DELETE FROM players p1
 INNER JOIN players p2
 WHERE p1.uuid = p2.uuid AND p1.id > p2.id;
+
+/* Fix NULL last_login_date left by v4 migration */
+UPDATE players SET last_login_date = CURRENT_TIMESTAMP WHERE last_login_date IS NULL OR last_login_date = '';

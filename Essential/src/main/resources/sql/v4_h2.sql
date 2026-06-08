@@ -67,48 +67,51 @@ ALTER TABLE players ALTER COLUMN "banTime" RENAME TO ban_expire_date;
 ALTER TABLE players ALTER COLUMN "joinStacks" RENAME TO attendance_days;
 
 /* Date-Time 변환 */
-ALTER TABLE PLAYERS ADD COLUMN first_played_tmp TIMESTAMP(9);
-ALTER TABLE PLAYERS ADD COLUMN last_played_tmp TIMESTAMP(9);
+ALTER TABLE PLAYERS ADD COLUMN "first_played_tmp" TIMESTAMP(9);
+ALTER TABLE PLAYERS ADD COLUMN "last_played_tmp" TIMESTAMP(9);
 UPDATE PLAYERS SET
-                   first_played_tmp = CASE WHEN first_played IS NOT NULL AND first_played != 0 THEN DATEADD('MS', first_played, DATE '1970-01-01') ELSE CURRENT_TIMESTAMP(9) END,
-                   last_played_tmp = CASE WHEN last_played IS NOT NULL AND last_played != 0 THEN DATEADD('MS', last_played, DATE '1970-01-01') ELSE CURRENT_TIMESTAMP(9) END;
+                   "first_played_tmp" = CASE WHEN first_played IS NOT NULL AND first_played != 0 THEN DATEADD('MS', first_played, DATE '1970-01-01') ELSE CURRENT_TIMESTAMP(9) END,
+                   "last_played_tmp" = CASE WHEN last_played IS NOT NULL AND last_played != 0 THEN DATEADD('MS', last_played, DATE '1970-01-01') ELSE CURRENT_TIMESTAMP(9) END;
 ALTER TABLE PLAYERS DROP COLUMN first_played;
 ALTER TABLE PLAYERS DROP COLUMN last_played;
-ALTER TABLE PLAYERS ALTER COLUMN first_played_tmp RENAME TO first_played;
-ALTER TABLE PLAYERS ALTER COLUMN last_played_tmp RENAME TO last_played;
+ALTER TABLE PLAYERS ALTER COLUMN "first_played_tmp" RENAME TO first_played;
+ALTER TABLE PLAYERS ALTER COLUMN "last_played_tmp" RENAME TO last_played;
+UPDATE PLAYERS SET first_played = CURRENT_TIMESTAMP(9) WHERE first_played IS NULL;
+UPDATE PLAYERS SET last_played = CURRENT_TIMESTAMP(9) WHERE last_played IS NULL;
 
-ALTER TABLE PLAYERS ADD COLUMN last_login_date_tmp TIMESTAMP(9);
-UPDATE PLAYERS SET last_login_date_tmp = (
+ALTER TABLE PLAYERS ADD COLUMN "last_login_date_tmp" TIMESTAMP(9);
+UPDATE PLAYERS SET "last_login_date_tmp" = (
     CASE
-        WHEN last_login_date REGEXP '^\d{4}-\d{2}-\d{2}.*'
+        WHEN last_login_date IS NOT NULL AND last_login_date != '' AND last_login_date LIKE '%-%-%'
             THEN CAST(last_login_date AS TIMESTAMP(9))
         ELSE CURRENT_TIMESTAMP(9)
         END
     );
 ALTER TABLE PLAYERS DROP COLUMN last_login_date;
-ALTER TABLE PLAYERS ALTER COLUMN last_login_date_TMP RENAME TO last_login_date;
+ALTER TABLE PLAYERS ALTER COLUMN "last_login_date_tmp" RENAME TO last_login_date;
+UPDATE PLAYERS SET last_login_date = CURRENT_TIMESTAMP(9) WHERE last_login_date IS NULL;
 
-ALTER TABLE PLAYERS ADD COLUMN last_logout_date_tmp TIMESTAMP(9);
-UPDATE PLAYERS SET last_logout_date_tmp = (
+ALTER TABLE PLAYERS ADD COLUMN "last_logout_date_tmp" TIMESTAMP(9);
+UPDATE PLAYERS SET "last_logout_date_tmp" = (
     CASE
-        WHEN last_logout_date REGEXP '^\d{4}-\d{2}-\d{2}.*'
+        WHEN last_logout_date IS NOT NULL AND last_logout_date != '' AND last_logout_date LIKE '%-%-%'
             THEN CAST(last_logout_date AS TIMESTAMP(9))
         ELSE NULL
         END
     );
 ALTER TABLE PLAYERS DROP COLUMN last_logout_date;
-ALTER TABLE PLAYERS ALTER COLUMN last_logout_date_tmp RENAME TO last_logout_date;
+ALTER TABLE PLAYERS ALTER COLUMN "last_logout_date_tmp" RENAME TO last_logout_date;
 
-ALTER TABLE PLAYERS ADD COLUMN ban_expire_date_tmp TIMESTAMP(9);
-UPDATE PLAYERS SET ban_expire_date_tmp = (
+ALTER TABLE PLAYERS ADD COLUMN "ban_expire_date_tmp" TIMESTAMP(9);
+UPDATE PLAYERS SET "ban_expire_date_tmp" = (
     CASE
-        WHEN ban_expire_date REGEXP '^\d{4}-\d{2}-\d{2}.*'
+        WHEN ban_expire_date IS NOT NULL AND ban_expire_date != '' AND ban_expire_date LIKE '%-%-%'
             THEN CAST(ban_expire_date AS TIMESTAMP(9))
         ELSE NULL
         END
     );
 ALTER TABLE PLAYERS DROP COLUMN ban_expire_date;
-ALTER TABLE PLAYERS ALTER COLUMN ban_expire_date_tmp RENAME TO ban_expire_date;
+ALTER TABLE PLAYERS ALTER COLUMN "ban_expire_date_tmp" RENAME TO ban_expire_date;
 
 ALTER TABLE players ALTER COLUMN first_played SET DEFAULT CURRENT_TIMESTAMP(9);
 ALTER TABLE players ALTER COLUMN last_played SET DEFAULT CURRENT_TIMESTAMP(9);
@@ -164,6 +167,7 @@ ALTER TABLE players ALTER COLUMN status SET NULL;
 /* Initialize NULL values for existing rows */
 UPDATE players SET first_played = CURRENT_TIMESTAMP(9) WHERE first_played IS NULL;
 UPDATE players SET last_played = CURRENT_TIMESTAMP(9) WHERE last_played IS NULL;
+UPDATE players SET last_login_date = CURRENT_TIMESTAMP(9) WHERE last_login_date IS NULL;
 UPDATE players SET language_tag = 'en' WHERE language_tag IS NULL OR language_tag = '';
 UPDATE players SET permission = 'default' WHERE permission IS NULL OR permission = '';
 UPDATE players SET block_place_count = 0 WHERE block_place_count IS NULL;
