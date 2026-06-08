@@ -1057,6 +1057,8 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     val permission = Permission[playerData]
     if (permission.name.isNotEmpty()) {
         playerData.player.name(Permission[playerData].name)
+    } else {
+        playerData.player.name(playerData.name)
     }
     playerData.player.admin(Permission[playerData].admin)
 
