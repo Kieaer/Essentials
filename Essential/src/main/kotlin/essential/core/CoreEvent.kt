@@ -618,13 +618,6 @@ fun gameOver(event: GameOverEvent) {
 }
 
 @Event
-fun blockBuildBegin(event: BlockBuildBeginEvent) {
-    Events.on(BlockBuildBeginEvent::class.java, Cons<BlockBuildBeginEvent> {
-
-    }.also { listener -> eventListeners[BlockBuildEndEvent::class.java] = listener })
-}
-
-@Event
 fun blockBuildEnd(event: BlockBuildEndEvent) {
     val isDebug = Core.settings.getBool("debugMode")
 
@@ -632,92 +625,93 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
         val player = event.unit.player
         val target = findPlayerData(player.uuid())
 
-        if (player.unit() != null && target != null && event.tile.block() != null && player.unit()
-                .buildPlan() != null
-        ) {
-            val block = event.tile.block()
-            if (!event.breaking) {
-                writeLog(
-                    LogType.Block,
-                    Bundle()["log.block.place", target.name, checkValidBlock(event.tile), event.tile.x, event.tile.y]
-                )
+        if (player.unit() != null && target != null) {
+            val tile = event.tile ?: player.unit().buildPlan()?.tile()
+            if (tile != null) {
+                val block = tile.block()
+                if (!event.breaking) {
+                    writeLog(
+                        LogType.Block,
+                        Bundle()["log.block.place", target.name, checkValidBlock(tile), tile.x, tile.y]
+                    )
 
-                scope.launch {
-                    val buf = ArrayList<TileLog>()
+                    scope.launch {
+                        val buf = ArrayList<TileLog>()
 
-                    try {
-                        WorldHistoryBuffer.flush()
-                        val dbEntries = getWorldHistoryByCoordinates(event.tile.x, event.tile.y)
+                        try {
+                            WorldHistoryBuffer.flush()
+                            val dbEntries = getWorldHistoryByCoordinates(tile.x, tile.y)
 
-                        dbEntries.forEach { entry ->
-                            buf.add(
-                                TileLog(
-                                    time = entry.time,
-                                    player = entry.player,
-                                    action = entry.action,
-                                    x = entry.x,
-                                    y = entry.y,
-                                    tile = entry.tile,
-                                    rotate = entry.rotate,
-                                    team = Team.all.find { it.name == entry.team } ?: Team.derelict,
-                                    value = entry.value
+                            dbEntries.forEach { entry ->
+                                buf.add(
+                                    TileLog(
+                                        time = entry.time,
+                                        player = entry.player,
+                                        action = entry.action,
+                                        x = entry.x,
+                                        y = entry.y,
+                                        tile = entry.tile,
+                                        rotate = entry.rotate,
+                                        team = Team.all.find { it.name == entry.team } ?: Team.derelict,
+                                        value = entry.value
+                                    )
                                 )
-                            )
+                            }
+
+                            buf.sortBy { it.time }
+                        } catch (e: Exception) {
+                            if (e is CancellationException) throw e
+                            Log.err("Error retrieving world history from database", e)
                         }
 
-                        buf.sortBy { it.time }
-                    } catch (e: Exception) {
-                        if (e is CancellationException) throw e
-                        Log.err("Error retrieving world history from database", e)
+                        if (!Vars.state.rules.infiniteResources && tile.build != null && tile.build.maxHealth() == tile.block().health.toFloat() && (buf.isEmpty() || buf.last().tile != tile.block().name)) {
+                            target.blockPlaceCount++
+                            target.exp += blockExp[block.name] ?: 0
+                            target.currentExp += blockExp[block.name] ?: 0
+                        }
                     }
 
-                    if (!Vars.state.rules.infiniteResources && event.tile != null && event.tile.build != null && event.tile.build.maxHealth() == event.tile.block().health.toFloat() && (buf.isEmpty() || buf.last().tile != event.tile.block().name)) {
-                        target.blockPlaceCount++
-                        target.exp += blockExp[block.name]!!
-                        target.currentExp += blockExp[block.name]!!
+                    addLog(
+                        TileLog(
+                            System.currentTimeMillis(),
+                            target.name,
+                            "place",
+                            tile.x,
+                            tile.y,
+                            checkValidBlock(tile),
+                            if (tile.build != null) tile.build.rotation else 0,
+                            if (tile.build != null) tile.build.team else Vars.state.rules.defaultTeam,
+                            event.config
+                        )
+                    )
+
+                    if (isDebug) {
+                        Log.info("${player.name} placed ${tile.block().name} to ${tile.x},${tile.y}")
                     }
-                }
-
-                addLog(
-                    TileLog(
-                        System.currentTimeMillis(),
-                        target.name,
-                        "place",
-                        event.tile.x,
-                        event.tile.y,
-                        checkValidBlock(event.tile),
-                        if (event.tile.build != null) event.tile.build.rotation else 0,
-                        if (event.tile.build != null) event.tile.build.team else Vars.state.rules.defaultTeam,
-                        event.config
+                } else {
+                    writeLog(
+                        LogType.Block,
+                        Bundle()["log.block.break", target.name, checkValidBlock(tile), tile.x, tile.y]
                     )
-                )
-
-                if (isDebug) {
-                    Log.info("${player.name} placed ${event.tile.block().name} to ${event.tile.x},${event.tile.y}")
-                }
-            } else {
-                writeLog(
-                    LogType.Block,
-                    Bundle()["log.block.break", target.name, checkValidBlock(event.tile), event.tile.x, event.tile.y]
-                )
-                addLog(
-                    TileLog(
-                        System.currentTimeMillis(),
-                        target.name,
-                        "break",
-                        event.tile.x,
-                        event.tile.y,
-                        checkValidBlock(player.unit().buildPlan().tile()),
-                        if (event.tile.build != null) event.tile.build.rotation else 0,
-                        if (event.tile.build != null) event.tile.build.team else Vars.state.rules.defaultTeam,
-                        event.config
+                    addLog(
+                        TileLog(
+                            System.currentTimeMillis(),
+                            target.name,
+                            "break",
+                            tile.x,
+                            tile.y,
+                            checkValidBlock(tile),
+                            if (tile.build != null) tile.build.rotation else 0,
+                            if (tile.build != null) tile.build.team else Vars.state.rules.defaultTeam,
+                            event.config
+                        )
                     )
-                )
 
-                if (!Vars.state.rules.infiniteResources) {
-                    target.blockBreakCount++
-                    target.exp -= blockExp[player.unit().buildPlan().block.name]!!
-                    target.currentExp -= blockExp[player.unit().buildPlan().block.name]!!
+                    if (!Vars.state.rules.infiniteResources) {
+                        target.blockBreakCount++
+                        target.exp -= blockExp[tile.block().name] ?: 0
+                        target.currentExp -= blockExp[tile.block().name] ?: 0
+                    }
                 }
             }
         }
@@ -726,7 +720,7 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
 
 @Event
 fun buildSelect(event: BuildSelectEvent) {
-    if (event.builder is Playerc && event.builder.buildPlan() != null && event.tile.block() !== Blocks.air && event.breaking) {
+    if (event.builder is Playerc && event.builder.buildPlan() != null && event.tile != null && event.tile.block() !== Blocks.air && event.breaking) {
         writeLog(
             LogType.Block,
             Bundle()["log.block.remove", (event.builder as Playerc).plainName(), checkValidBlock(event.tile), event.tile.x, event.tile.y]
@@ -738,7 +732,7 @@ fun buildSelect(event: BuildSelectEvent) {
                 "select",
                 event.tile.x,
                 event.tile.y,
-                checkValidBlock(Vars.player.unit().buildPlan().tile()),
+                checkValidBlock(event.tile),
                 if (event.tile.build != null) event.tile.build.rotation else 0,
                 if (event.tile.build != null) event.tile.build.team else Vars.state.rules.defaultTeam,
                 event.tile.build.config()
