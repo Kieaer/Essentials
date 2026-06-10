@@ -696,7 +696,9 @@ class Commands {
                                                     Clock.System.now().plus(time.minutes).toString()
                                                 )
                                             )
-                                            banPlayer(targetData)
+                                            if (targetData!!.player.con() != null) {
+                                                targetData!!.player.kick(bundle["command.tempBan.banned", targetData!!.name, p.plainName(), targetData!!.banExpireDate.toString()])
+                                            }
                                         }
                                     }
                                     Call.menu(
@@ -2078,16 +2080,15 @@ class Commands {
             val d = findPlayerData(other.uuid())
             if (d == null) {
                 Log.info(bundle["command.tempBan.not.registered"])
-                Vars.netServer.admins.banPlayer(other.uuid())
                 other.kick(Packets.KickReason.banned)
             } else {
                 val minute = arg[1].toIntOrNull()
-                val reason = arg[2]
+                val reason = if (arg.size > 2) arg[2] else null
 
                 if (minute != null) {
                     d.banExpireDate = Clock.System.now().plus(minute.minutes).toLocalDateTime(systemTimezone)
-                    Vars.netServer.admins.banPlayer(other.uuid())
-                    other.kick(reason)
+                    scope.launch { d.update() }
+                    other.kick(reason ?: bundle["command.tempBan.banned", d.name, "Server", d.banExpireDate.toString()])
                 } else {
                     Log.err(bundle["command.tempBan.not.number"])
                 }

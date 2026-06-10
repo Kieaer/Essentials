@@ -968,6 +968,18 @@ fun connectPacket(event: ConnectPacketEvent) {
 
 @Event
 fun playerConnect(event: PlayerConnect) {
+    val playerData = runBlocking { getPlayerDataSync(event.player.uuid()) }
+    if (playerData != null && playerData.banExpireDate != null) {
+        val now = Clock.System.now().toLocalDateTime(systemTimezone)
+        if (playerData.banExpireDate!! > now) {
+            event.player.con.kick(Bundle(event.player.locale())["command.tempBan.banned", playerData.name, "Admin", playerData.banExpireDate.toString()])
+            return
+        } else {
+            playerData.banExpireDate = null
+            scope.launch { playerData.update() }
+        }
+    }
+
     writeLog(
         LogType.Player,
         Bundle()["event.player.connected", event.player.plainName(), event.player.uuid(), event.player.con.address]
