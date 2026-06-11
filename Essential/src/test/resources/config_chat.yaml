@@ -1,4 +1,4 @@
-chatFormat: "%1[orange] >[white] %2"
+chatFormat: "%player.name[orange] >[white] %chat"
 strict:
   # Enabling this feature will only allow specific languages.
   enabled: false

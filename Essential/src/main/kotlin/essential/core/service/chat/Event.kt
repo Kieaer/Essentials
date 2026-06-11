@@ -5,6 +5,7 @@ import essential.common.database.data.PlayerData
 import essential.common.permission.Permission
 import essential.common.rootPath
 import essential.common.util.findPlayerData
+import essential.core.service.chat.ChatFormatResolver.resolve
 import essential.core.service.chat.ChatService.Companion.conf
 import ksp.event.Event
 import mindustry.Vars
@@ -52,9 +53,7 @@ fun serverLoaded(event: EventType.ServerLoadEvent) {
                     if (chatFormat.isEmpty()) {
                         return@ChatFormatter defaultFormat
                     } else {
-                        return@ChatFormatter chatFormat
-                            .replace("%1", player.coloredName())
-                            .replace("%2", message)
+                        return@ChatFormatter resolve(chatFormat, data, message)
                     }
                 } else {
                     return@ChatFormatter defaultFormat

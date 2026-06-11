@@ -1,13 +1,13 @@
 ---
 owner:
   admin: true
-  chatFormat: "[sky][Owner] %1[orange] > [white]%2"
+  chatFormat: "[sky][Owner] %player.name[orange] > [white]%chat"
   permission:
   - all
 admin:
   inheritance: user
   admin: true
-  chatFormat: "[yellow][Admin] %1[orange] > [white]%2"
+  chatFormat: "[yellow][Admin] %player.name[orange] > [white]%chat"
   permission:
   - afk.admin
   - chars
@@ -51,7 +51,7 @@ admin:
   - unban
 user:
   inheritance: visitor
-  chatFormat: "%1[orange] > [white]%2"
+  chatFormat: "%player.name[orange] > [white]%chat"
   permission:
   - achievements
   - '*reg'
@@ -74,7 +74,7 @@ user:
   - ranking
   - changepw
 visitor:
-  chatFormat: "%1[scarlet] > [white]%2"
+  chatFormat: "%player.name[scarlet] > [white]%chat"
   default: true
   permission:
   - help

@@ -49,7 +49,7 @@ object Permission {
         #     admin: true
         #     isAlert: true
         #     alertMessage: "Player asdfg has entered the server!"
-        #     chatFormat: "[admin] %1 > %2"
+        #     chatFormat: "[admin] %player.name[orange] >[white] %chat"
         ---
         """.trimIndent()
 
