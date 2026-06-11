@@ -15,6 +15,7 @@ import essential.common.database.data.getPlayerData
 import essential.common.players
 import essential.common.pluginData
 import essential.common.util.findPlayerData
+import essential.core.Commands
 import essential.core.dpsBlocks
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
@@ -166,11 +167,25 @@ class ClientCommandTest {
         leavePlayer(dummy.first)
     }
 
+    @Test
     fun client_chars() {
         // Require admin or above permission
         setPermission("admin", true)
 
-        // todo chars 명령어
+        clientCommand.handleMessage("/chars hello", player)
+        assertEquals("hello", playerData.status["chars_text"])
+        val layout = Commands.charsPlacing[playerData.uuid]
+        assertNotNull(layout)
+
+        // Find a clear area of tiles
+        val tile = world.tile(20, 20)
+        tile.setBlock(Blocks.air)
+
+        // Tap on the tile to place chars
+        Events.fire(EventType.TapEvent(player.self(), tile))
+
+        assertNull(playerData.status["chars_text"])
+        assertNull(Commands.charsPlacing[playerData.uuid])
     }
 
     @Test

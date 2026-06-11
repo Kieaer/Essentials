@@ -479,6 +479,26 @@ class Trigger {
                     }
                 }
 
+                if (data.status.containsKey("chars_text") && Time.globalTime.toInt() % 5 == 0) {
+                    val text = Commands.charsPlacing[data.uuid]
+                    if (text != null) {
+                        val startX = (data.player.mouseX() / 8f).toInt()
+                        val startY = (data.player.mouseY() / 8f).toInt()
+                        var x = startX
+                        var y = startY
+                        for (line in text) {
+                            for (char in line) {
+                                if (char == '#' && Vars.world.tile(x, y) != null) {
+                                    Call.effect(data.player.con(), mindustry.content.Fx.placeBlock, x * 8f + 4f, y * 8f + 4f, 1f, arc.graphics.Color.green)
+                                }
+                                x++
+                            }
+                            y--
+                            x = startX
+                        }
+                    }
+                }
+
                 if (data.mouseTracking) {
                     Groups.player.forEach { player ->
                         Call.label(

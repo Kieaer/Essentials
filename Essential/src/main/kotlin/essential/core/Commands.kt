@@ -85,6 +85,7 @@ class Commands {
     companion object {
         const val PLAYER_NOT_FOUND = "player.not.found"
         const val PLAYER_NOT_REGISTERED = "player.not.registered"
+        val charsPlacing = ConcurrentHashMap<String, Array<String>>()
 
         /**
          * Calculate the Levenshtein distance between two strings
@@ -247,22 +248,11 @@ class Commands {
                 }
             }
 
-            var x = playerData.player.tileX()
-            var y = playerData.player.tileY()
             val text = convert(arg[0])
             if (text != null) {
-                for (line in text) {
-                    for (char in line) {
-                        if (char == '#' && Vars.world.tile(x, y).block() != null && Vars.world.tile(x, y)
-                                .block() == Blocks.air
-                        ) {
-                            Call.setTile(Vars.world.tile(x, y), Blocks.scrapWall, playerData.player.team(), 0)
-                        }
-                        x++
-                    }
-                    y--
-                    x = playerData.player.tileX()
-                }
+                charsPlacing[playerData.uuid] = text
+                playerData.status["chars_text"] = arg[0]
+                playerData.send("command.char.select.position")
             } else {
                 playerData.err("command.char.unsupported")
             }

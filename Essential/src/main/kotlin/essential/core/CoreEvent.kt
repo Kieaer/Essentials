@@ -201,6 +201,30 @@ fun tap(event: TapEvent) {
     )
     val data = findPlayerData(event.player.uuid())
     if (data != null) {
+        if (data.status.containsKey("chars_text")) {
+            val text = Commands.charsPlacing[data.uuid]
+            if (text != null) {
+                val startX = event.tile.x.toInt()
+                val startY = event.tile.y.toInt()
+                var x = startX
+                var y = startY
+                for (line in text) {
+                    for (char in line) {
+                        val tile = Vars.world.tile(x, y)
+                        if (char == '#' && tile != null && tile.block() != null && tile.block() == Blocks.air) {
+                            Call.setTile(tile, Blocks.scrapWall, data.player.team(), 0)
+                        }
+                        x++
+                    }
+                    y--
+                    x = startX
+                }
+            }
+            data.status.remove("chars_text")
+            Commands.charsPlacing.remove(data.uuid)
+            return
+        }
+
         pluginData.data.warpBlock.forEach { two ->
             if (two.mapName == Vars.state.map.name() && event.tile.block().name == two.tileName && event.tile.build.tileX() == two.x && event.tile.build.tileY() == two.y) {
                 if (two.online) {
@@ -803,6 +827,7 @@ fun playerLeave(event: PlayerLeave) {
         data.lastPlayedWorldMode = Vars.state.rules.modeName
         data.lastLogoutDate = Clock.System.now().toLocalDateTime(systemTimezone)
         data.isConnected = false
+        Commands.charsPlacing.remove(data.uuid)
         scope.launch { data.update() }
 
         offlinePlayers.add(data)
