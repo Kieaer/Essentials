@@ -923,6 +923,7 @@ class ClientCommandTest {
         clientCommand.handleMessage("/rollback ${dummy.first.name}", player)
         updateTick(16)
         assertNotEquals(Blocks.thoriumWall, world.tile(10, 10).block())
+        assertEquals(Bundle()["command.rollback.success", dummy.first.name, 1], playerData.lastReceivedMessage)
 
         // Test rollback command with non-existent player
         clientCommand.handleMessage("/rollback nonexistentplayer", player)
