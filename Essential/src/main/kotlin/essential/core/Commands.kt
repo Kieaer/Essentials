@@ -1539,6 +1539,7 @@ class Commands {
 
     @ClientCommand("rollback", "<player>", "Undo all actions taken by the player.")
     fun rollback(playerData: PlayerData, arg: Array<out String>) {
+        var affectedCount = 0
         runBlocking {
             WorldHistoryBuffer.flush()
             val history = getAllWorldHistory()
@@ -1558,7 +1559,7 @@ class Commands {
 
                 var desiredBlockName: String? = null // null -> air
                 var desiredTeam: Team = Team.derelict
-                var desiredRot: Int = 0
+                var desiredRot = 0
 
                 fun applyPrevOccupancyFrom(indexExclusive: Int) {
                     for (i in indexExclusive downTo 0) {
@@ -1626,6 +1627,7 @@ class Commands {
                         targetTile.remove()
                     }
                 }
+                affectedCount++
             }
         }
 
@@ -1633,6 +1635,8 @@ class Commands {
             Call.worldDataBegin(p.con)
             Vars.netServer.sendWorldData(p)
         }
+
+        playerData.send("command.rollback.success", arg[0], affectedCount)
     }
 
     @ClientCommand("hub", "<parameter> [ip] [parameters...]", "Create a server to server point.")
