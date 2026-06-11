@@ -174,12 +174,12 @@ class WebServer {
 
                 // Server status routes
                 route("/api/server") {
-                    authenticate("auth-session") {
-                        get("/status") {
-                            val status = getServerStatus()
-                            call.respond(status)
-                        }
+                    get("/status") {
+                        val status = getServerStatus()
+                        call.respond(status)
+                    }
 
+                    authenticate("auth-session") {
                         get("/chat") {
                             val messages = chatHistory.filter { !it.message.startsWith("/") }.sortedByDescending { it.time }
                             call.respond(messages)
@@ -479,7 +479,7 @@ class WebServer {
         return ServerStatus(
             map = Vars.state.map.name(),
             players = playerNames,
-            tps = Core.graphics.framesPerSecond.toFloat(), // Use FPS as TPS
+            tps = Core.graphics.framesPerSecond.toFloat(),
             wave = Vars.state.wave,
             gameTime = playTime
         )
