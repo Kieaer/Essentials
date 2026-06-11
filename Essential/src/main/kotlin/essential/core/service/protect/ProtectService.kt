@@ -75,5 +75,8 @@ class ProtectService : Plugin() {
 
     override fun registerClientCommands(handler: CommandHandler) {
         registerGeneratedClientCommands(handler)
+        if (conf.account.getAuthType() != ProtectConfig.AuthType.Password || !conf.account.enabled) {
+            handler.removeCommand("reg")
+        }
     }
 }

@@ -28,6 +28,8 @@ import essential.common.util.findPlayers
 import essential.common.util.findPlayersByName
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
+import essential.core.service.protect.ProtectConfig
+import essential.core.service.protect.ProtectService
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
@@ -202,7 +204,9 @@ class Commands {
             }
 
             val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
-            playerData.accountID = playerData.name
+            if (ProtectService.conf.account.getAuthType() != ProtectConfig.AuthType.Password || !ProtectService.conf.account.enabled) {
+                playerData.accountID = playerData.name
+            }
             playerData.accountPW = password
             playerData.update()
             playerData.send("command.changePw.apply")
