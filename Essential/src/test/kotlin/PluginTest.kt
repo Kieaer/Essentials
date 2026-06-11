@@ -116,11 +116,11 @@ class PluginTest {
 
             if (!path.child("scripts").exists()) {
                 path.child("scripts").mkdirs()
-                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/v152/core/assets/scripts/global.js")
+                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/v157.2/core/assets/scripts/global.js")
                     .submit { res ->
                         path.child("scripts/global.js").writeString(res.resultAsString)
                     }
-                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/v152/core/assets/scripts/base.js")
+                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/v157.2/core/assets/scripts/base.js")
                     .submit { res ->
                         path.child("scripts/base.js").writeString(res.resultAsString)
                     }

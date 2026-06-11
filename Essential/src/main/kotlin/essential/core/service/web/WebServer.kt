@@ -38,6 +38,7 @@ import mindustry.io.SaveIO
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.io.File
+import java.net.ServerSocket
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.util.*
@@ -46,6 +47,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class WebServer {
     lateinit var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
+    var boundPort: Int = 0
     private val chatHistory = Collections.synchronizedList(mutableListOf<ChatMessage>())
 
     @Serializable
@@ -262,10 +264,27 @@ class WebServer {
             uploadDir.mkdirs()
         }
 
+        val isTest = try {
+            Class.forName("org.junit.Test")
+            true
+        } catch (e: ClassNotFoundException) {
+            false
+        }
+
+        boundPort = if (isTest) {
+            try {
+                ServerSocket(0).use { it.localPort }
+            } catch (e: Exception) {
+                (45000..60000).random()
+            }
+        } else {
+            conf.port
+        }
+
         // Create the server with a regular function
         server = embeddedServer(
             factory = Netty, 
-            port = conf.port
+            port = boundPort
         ) { 
             configureModule(this)
         }
@@ -285,7 +304,7 @@ class WebServer {
         }
 
         server.start(false)
-        Log.info(bundle["web.server.started", conf.port.toString()])
+        Log.info(bundle["web.server.started", boundPort.toString()])
     }
 
     fun stop() {
