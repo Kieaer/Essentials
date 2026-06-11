@@ -2341,8 +2341,12 @@ class Commands {
                                 start(voteData)
                             } else {
                                 isSurrender = true
-                                Vars.maps.setNextMapOverride(target)
-                                Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
+                                val reloader = WorldReloader()
+                                reloader.begin()
+                                Vars.world.loadMap(target, target.applyRules(Vars.state.rules.mode()))
+                                Vars.state.rules = Vars.state.map.applyRules(Vars.state.rules.mode())
+                                Vars.logic.play()
+                                reloader.end()
                             }
                         } else {
                             playerData.err(mapNotFound)
