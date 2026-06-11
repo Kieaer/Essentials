@@ -915,6 +915,7 @@ fun worldLoad(event: WorldLoadEvent) {
         }
     }
 
+    Vars.saveDirectory.findAll { f -> f.name().startsWith("rollback_") && f.name().endsWith(".msav") }.forEach { it.delete() }
     if (Vars.saveDirectory.child("rollback.msav").exists()) Vars.saveDirectory.child("rollback.msav").delete()
 
     if (Vars.state.rules.pvp) {

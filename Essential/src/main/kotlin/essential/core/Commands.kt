@@ -2402,7 +2402,8 @@ class Commands {
             // vote back <reason>
             "back" -> {
                 if (!Permission.check(playerData, "vote.back")) return
-                if (!Vars.saveDirectory.child("rollback.msav").exists()) {
+                val rollbackFiles = Vars.saveDirectory.findAll { f -> f.name().startsWith("rollback_") && f.name().endsWith(".msav") }
+                if (rollbackFiles.isEmpty) {
                     playerData.err("command.vote.back.no.file")
                     return
                 }

@@ -139,4 +139,5 @@ data class Blacklist(
 data class Rollback(
     val enabled: Boolean = true,
     val time: Int = 300,
+    val limit: Int = 10,
 )

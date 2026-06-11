@@ -654,7 +654,18 @@ class Trigger {
             }
 
             if (rollbackCount == 0) {
-                SaveIO.save(Vars.saveDirectory.child("rollback.msav"))
+                val timestamp = System.currentTimeMillis()
+                val backupFile = Vars.saveDirectory.child("rollback_$timestamp.msav")
+                SaveIO.save(backupFile)
+
+                val files = Vars.saveDirectory.findAll { f -> f.name().startsWith("rollback_") && f.name().endsWith(".msav") }
+                val sortedFiles = files.sortedBy { it.lastModified() }
+                if (sortedFiles.size > conf.command.rollback.limit) {
+                    for (i in 0 until (sortedFiles.size - conf.command.rollback.limit)) {
+                        sortedFiles[i].delete()
+                    }
+                }
+
                 rollbackCount = conf.command.rollback.time
             } else {
                 rollbackCount--

@@ -262,30 +262,36 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
 
                         VoteType.Back -> {
                             isSurrender = true
-                            val savePath: Fi = if (Core.settings.getBool("autosave")) {
+                            val savePath: Fi? = if (Core.settings.getBool("autosave")) {
                                 Vars.saveDirectory.findAll { f: Fi ->
                                     f.name().startsWith("auto_")
                                 }.min { obj: Fi -> obj.lastModified().toFloat() }
                             } else {
-                                Vars.saveDirectory.child("rollback.msav")
+                                Vars.saveDirectory.findAll { f ->
+                                    f.name().startsWith("rollback_") && f.name().endsWith(".msav")
+                                }.maxByOrNull { it.lastModified() }
                             }
 
-                            try {
-                                val mode = Vars.state.rules.mode()
-                                val reloader = WorldReloader()
+                            if (savePath != null && savePath.exists()) {
+                                try {
+                                    val mode = Vars.state.rules.mode()
+                                    val reloader = WorldReloader()
 
-                                reloader.begin()
-                                SaveIO.load(savePath)
+                                    reloader.begin()
+                                    SaveIO.load(savePath)
 
-                                Vars.state.rules = Vars.state.map.applyRules(mode)
-                                Vars.logic.play()
-                                reloader.end()
+                                    Vars.state.rules = Vars.state.map.applyRules(mode)
+                                    Vars.logic.play()
+                                    reloader.end()
 
-                                savePath.delete()
-                            } catch (t: Exception) {
-                                t.printStackTrace()
+                                    savePath.delete()
+                                } catch (t: Exception) {
+                                    t.printStackTrace()
+                                }
+                                send("command.vote.back.done")
+                            } else {
+                                send("command.vote.back.no.file")
                             }
-                            send("command.vote.back.done")
                         }
 
                         VoteType.Random -> {
