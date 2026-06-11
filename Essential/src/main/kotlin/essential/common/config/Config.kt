@@ -17,6 +17,22 @@ import java.nio.file.Paths
 object Config {
     val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
 
+    init {
+        renameConfigsDirectory()
+    }
+
+    fun renameConfigsDirectory() {
+        val oldDir = rootPath.child("configs")
+        val newDir = rootPath.child("config")
+        if (oldDir.exists() && !newDir.exists()) {
+            try {
+                oldDir.file().renameTo(newDir.file())
+            } catch (e: Exception) {
+                Log.err(e)
+            }
+        }
+    }
+
     fun hasMissingKeys(userNode: YamlNode, canonicalNode: YamlNode): Boolean {
         if (userNode is YamlMap && canonicalNode is YamlMap) {
             val userKeys = userNode.entries.keys.map { it.content }.toSet()

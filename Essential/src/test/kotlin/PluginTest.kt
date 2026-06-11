@@ -622,4 +622,49 @@ class PluginTest {
         
         stopPlugin()
     }
+
+    @Test
+    fun configsFolderRenameTest() {
+        if (Core.app != null) stopPlugin()
+        loadGame(loadPlugin = false)
+
+        val configsDir = rootPath.child("configs")
+        val configDir = rootPath.child("config")
+
+        // 1. Clean directories
+        configsDir.deleteDirectory()
+        configDir.deleteDirectory()
+
+        // 2. Create configs and add web config
+        configsDir.mkdirs()
+        val resourceStream = Companion::class.java.getResourceAsStream("/config_web.yaml")
+        assertNotNull(resourceStream)
+        configsDir.child("config_web.yaml").write(resourceStream, false)
+        resourceStream.close()
+
+        assertTrue(configsDir.exists())
+        assertFalse(configDir.exists())
+
+        // 3. Trigger renaming
+        Config.renameConfigsDirectory()
+
+        // 4. Verify rename happened
+        assertFalse(configsDir.exists(), "configs folder should be renamed")
+        assertTrue(configDir.exists(), "config folder should now exist")
+        assertTrue(configDir.child("config_web.yaml").exists(), "config_web.yaml should be inside renamed config folder")
+
+        // 5. If config already exists, configs should not be renamed
+        val secondaryConfigs = rootPath.child("configs")
+        secondaryConfigs.deleteDirectory()
+        secondaryConfigs.mkdirs()
+        secondaryConfigs.child("config_chat.yaml").writeString("test: true")
+
+        Config.renameConfigsDirectory()
+        assertTrue(secondaryConfigs.exists(), "configs should not be renamed if config already exists")
+        assertTrue(secondaryConfigs.child("config_chat.yaml").exists())
+
+        // Cleanup
+        secondaryConfigs.deleteDirectory()
+        stopPlugin()
+    }
 }
