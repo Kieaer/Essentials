@@ -7,9 +7,9 @@ import arc.func.Cons
 import arc.graphics.Color
 import arc.util.Log
 import arc.util.Strings
-import com.charleskorn.kaml.Yaml
 import essential.common.*
 import essential.common.bundle.Bundle
+import essential.common.config.Config
 import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.*
 import essential.common.database.data.plugin.WarpBlock
@@ -1055,10 +1055,10 @@ fun configFileModified(event: CustomEvents.ConfigFileModified) {
 
             "config.yaml" -> {
                 try {
-                    conf = Yaml.default.decodeFromString(
-                        CoreConfig.serializer(),
-                        rootPath.child(Main.CONFIG_PATH).readString()
-                    )
+                    val newConf = Config.load("config", CoreConfig.serializer(), CoreConfig())
+                    if (newConf != null) {
+                        conf = newConf
+                    }
                     Log.info(Bundle()["config.reloaded"])
                 } catch (_: FileNotFoundException) {
                     Log.debug(Bundle()["config.file.missing"])

@@ -7,11 +7,11 @@ import arc.graphics.Colors
 import arc.math.Mathf
 import arc.util.*
 import arc.util.Timer
-import com.charleskorn.kaml.Yaml
 import com.github.lalyos.jfiglet.FigletFont
 import essential.*
 import essential.common.*
 import essential.common.bundle.Bundle
+import essential.common.config.Config
 import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.*
 import essential.common.database.data.plugin.WarpCount
@@ -2839,7 +2839,10 @@ class Commands {
                 Permission.load()
             }
             Log.info(Bundle()["config.permission.updated"])
-            conf = Yaml.default.decodeFromString(CoreConfig.serializer(), rootPath.child(Main.CONFIG_PATH).readString())
+            val newConf = Config.load("config", CoreConfig.serializer(), CoreConfig())
+            if (newConf != null) {
+                conf = newConf
+            }
             Log.info(Bundle()["config.reloaded"])
         } catch (e: Exception) {
             e.printStackTrace()

@@ -3,6 +3,8 @@ package essential.common.config
 import arc.util.Log
 import com.charleskorn.kaml.Yaml
 import com.charleskorn.kaml.YamlConfiguration
+import com.charleskorn.kaml.YamlMap
+import com.charleskorn.kaml.YamlNode
 import essential.common.bundle
 import essential.common.rootPath
 import kotlinx.serialization.KSerializer
@@ -14,6 +16,28 @@ import java.nio.file.Paths
 
 object Config {
     val yaml = Yaml(configuration = YamlConfiguration(strictMode = false))
+
+    fun hasMissingKeys(userNode: YamlNode, canonicalNode: YamlNode): Boolean {
+        if (userNode is YamlMap && canonicalNode is YamlMap) {
+            val userKeys = userNode.entries.keys.map { it.content }.toSet()
+            for ((keyNode, canonicalValue) in canonicalNode.entries) {
+                val key = keyNode.content
+                if (key !in userKeys) {
+                    return true
+                }
+                val userValue = userNode.entries.entries.find { it.key.content == key }?.value
+                if (userValue == null) {
+                    return true
+                }
+                if (hasMissingKeys(userValue, canonicalValue)) {
+                    return true
+                }
+            }
+        } else if (canonicalNode is YamlMap) {
+            return true
+        }
+        return false
+    }
 
     /**
      * Load configuration from a YAML file.
@@ -52,6 +76,16 @@ object Config {
         return try {
             val content = Files.readString(Paths.get(rootPath.child("config/$name").absolutePath()))
             val config = yaml.decodeFromString(serializer, content)
+            try {
+                val userNode = yaml.parseToYamlNode(content)
+                val canonicalContent = yaml.encodeToString(serializer, config)
+                val canonicalNode = yaml.parseToYamlNode(canonicalContent)
+                if (hasMissingKeys(userNode, canonicalNode)) {
+                    save(name, serializer, config)
+                }
+            } catch (e: Exception) {
+                Log.err("Error migrating config $name: ${e.message}")
+            }
             config
         } catch (e: IOException) {
             null
@@ -61,6 +95,16 @@ object Config {
                 
                 val content = Files.readString(Paths.get(rootPath.child("config/$name").absolutePath()))
                 val config = yaml.decodeFromString(serializer, content)
+                try {
+                    val userNode = yaml.parseToYamlNode(content)
+                    val canonicalContent = yaml.encodeToString(serializer, config)
+                    val canonicalNode = yaml.parseToYamlNode(canonicalContent)
+                    if (hasMissingKeys(userNode, canonicalNode)) {
+                        save(name, serializer, config)
+                    }
+                } catch (e: Exception) {
+                    Log.err("Error migrating config $name: ${e.message}")
+                }
                 config
             } catch (e2: Exception) {
                 null
