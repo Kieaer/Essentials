@@ -5,6 +5,8 @@ import arc.Events
 import arc.files.Fi
 import arc.util.Log
 import essential.common.database.data.getPlayerDataByName
+import essential.common.log.LogType
+import essential.common.log.writeLog
 import essential.common.playTime
 import essential.core.service.web.WebService.Companion.bundle
 import essential.core.service.web.WebService.Companion.conf
@@ -34,6 +36,7 @@ import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Groups
+import mindustry.io.MapIO
 import mindustry.io.SaveIO
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
@@ -420,6 +423,19 @@ class WebServer {
             val targetFile = File(conf.uploadPath, fileName)
             Files.copy(tempFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
             tempFile.delete()
+
+            // Log the upload details
+            try {
+                val session = call.sessions.get<UserSession>()
+                val username = session?.username ?: "unknown"
+                val map = MapIO.createMap(Fi(targetFile.absolutePath), true)
+                writeLog(
+                    LogType.Web,
+                    "User '$username' uploaded file '$fileName' (Map name: '${map.plainName()}', Author: '${map.plainAuthor()}', Version: ${map.version}, Build: ${map.build}, Size: ${map.width}x${map.height})"
+                )
+            } catch (le: Exception) {
+                Log.err("Error writing upload log", le)
+            }
 
             // Reload maps
             Core.app.post {
