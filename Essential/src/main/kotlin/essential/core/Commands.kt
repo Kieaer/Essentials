@@ -2336,10 +2336,11 @@ class Commands {
                                 start(voteData)
                             } else {
                                 isSurrender = true
+                                val currentRule = Vars.state.rules.mode()
                                 val reloader = WorldReloader()
                                 reloader.begin()
-                                Vars.world.loadMap(target, target.applyRules(Vars.state.rules.mode()))
-                                Vars.state.rules = Vars.state.map.applyRules(Vars.state.rules.mode())
+                                Vars.world.loadMap(target, target.applyRules(currentRule))
+                                Vars.state.rules = Vars.state.map.applyRules(currentRule)
                                 Vars.logic.play()
                                 reloader.end()
                             }
@@ -2683,6 +2684,9 @@ class Commands {
                 playerData.err("command.ws.invalid")
             }
         }
+
+        // Reset selected zone
+        worldEditSelection.remove(uuid)
     }
 
     private fun getRegionSize(selection: WorldEditSelection): Int {
