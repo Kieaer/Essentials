@@ -30,7 +30,7 @@ import essential.common.database.data.PlayerData
 object ChatFormatResolver {
 
     private val placeholders = mapOf(
-        "%player.name" to { data: PlayerData -> data.player.name() },
+        "%player.name" to { data: PlayerData -> data.player.coloredName() },
         "%player.uuid" to { data: PlayerData -> data.uuid },
         "%player.level" to { data: PlayerData -> data.level.toString() },
         "%player.exp" to { data: PlayerData -> data.exp.toString() },
