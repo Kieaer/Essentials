@@ -167,7 +167,6 @@ fun playerJoin(e: EventType.PlayerJoin) {
                 } else {
                     val reason = Bundle(e.player.locale)["event.player.name.duplicate"]
                     e.player.con.kick(reason, 0L)
-                    Log.info(reason)
                 }
             } else {
                 Events.fire(CustomEvents.PlayerDataLoad(data))
@@ -187,7 +186,6 @@ fun playerJoin(e: EventType.PlayerJoin) {
                 } else {
                     val reason = Bundle(e.player.locale)["event.player.name.duplicate"]
                     e.player.con.kick(reason, 0L)
-                    Log.info(reason)
                 }
             } else {
                 Events.fire(CustomEvents.PlayerDataLoad(data))
