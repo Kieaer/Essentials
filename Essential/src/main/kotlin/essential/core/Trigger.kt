@@ -479,7 +479,7 @@ class Trigger {
                     }
                 }
 
-                if (data.status.containsKey("chars_text") && Time.globalTime.toInt() % 5 == 0) {
+                if (data.status.containsKey("chars_text") && Time.globalTime.toInt() % 30 == 0) {
                     val text = Commands.charsPlacing[data.uuid]
                     if (text != null) {
                         val startX = (data.player.mouseX() / 8f).toInt()
