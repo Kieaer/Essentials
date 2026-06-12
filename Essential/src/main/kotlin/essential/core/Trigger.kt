@@ -3,6 +3,7 @@ package essential.core
 import arc.Core
 import arc.Events
 import arc.func.Prov
+import arc.graphics.Color
 import arc.util.Align
 import arc.util.Log
 import arc.util.Time
@@ -26,6 +27,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.content.Blocks
+import mindustry.content.Fx
 import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -495,6 +497,32 @@ class Trigger {
                             }
                             y--
                             x = startX
+                        }
+                    }
+                }
+
+                val weSelection = worldEditSelection[data.uuid]
+                if (weSelection != null && Time.globalTime.toInt() % 15 == 0) {
+                    if ((weSelection.selecting && weSelection.startX != -1 && weSelection.startY != -1) || weSelection.selectionComplete) {
+                        val startX = weSelection.startX
+                        val startY = weSelection.startY
+                        val endX = if (weSelection.selecting) (data.player.mouseX() / 8f).toInt() else weSelection.endX
+                        val endY = if (weSelection.selecting) (data.player.mouseY() / 8f).toInt() else weSelection.endY
+
+                        val minX = minOf(startX, endX)
+                        val maxX = maxOf(startX, endX)
+                        val minY = minOf(startY, endY)
+                        val maxY = maxOf(startY, endY)
+
+                        // Top & Bottom edges
+                        for (x in minX..maxX) {
+                            Call.effect(data.player.con(), Fx.fire, x * 8f + 4f, minY * 8f + 4f, 0f, Color.orange)
+                            Call.effect(data.player.con(), Fx.fire, x * 8f + 4f, maxY * 8f + 4f, 0f, Color.orange)
+                        }
+                        // Left & Right edges
+                        for (y in minY..maxY) {
+                            Call.effect(data.player.con(), Fx.fire, minX * 8f + 4f, y * 8f + 4f, 0f, Color.orange)
+                            Call.effect(data.player.con(), Fx.fire, maxX * 8f + 4f, y * 8f + 4f, 0f, Color.orange)
                         }
                     }
                 }

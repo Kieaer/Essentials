@@ -1370,18 +1370,18 @@ private fun drawSelectionBorder(player: mindustry.gen.Player, selection: WorldEd
 
     // Top edge
     for (x in minX..maxX) {
-        Call.effect(player.con(), Fx.shockwaveSmaller, x * 16f, minY * 16f, 0f, Color.green)
+        Call.effect(player.con(), Fx.fire, x * 8f + 4f, minY * 8f + 4f, 0f, Color.orange)
     }
     // Bottom edge
     for (x in minX..maxX) {
-        Call.effect(player.con(), Fx.shockwaveSmaller, x * 16f, maxY * 16f, 0f, Color.green)
+        Call.effect(player.con(), Fx.fire, x * 8f + 4f, maxY * 8f + 4f, 0f, Color.orange)
     }
     // Left edge
     for (y in minY..maxY) {
-        Call.effect(player.con(), Fx.shockwaveSmaller, minX * 16f, y * 16f, 0f, Color.green)
+        Call.effect(player.con(), Fx.fire, minX * 8f + 4f, y * 8f + 4f, 0f, Color.orange)
     }
     // Right edge
     for (y in minY..maxY) {
-        Call.effect(player.con(), Fx.shockwaveSmaller, maxX * 16f, y * 16f, 0f, Color.green)
+        Call.effect(player.con(), Fx.fire, maxX * 8f + 4f, y * 8f + 4f, 0f, Color.orange)
     }
 }
