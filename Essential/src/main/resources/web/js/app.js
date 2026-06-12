@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Check if the user is already logged in
 function checkLoginStatus() {
-    fetch('/api/auth/status')
+    fetch('api/auth/status')
         .then(response => {
             if (response.ok) {
                 return response.json();
@@ -152,7 +152,7 @@ function setupLoginForm() {
 
         loginError.style.display = 'none';
 
-        fetch('/api/auth/login', {
+        fetch('api/auth/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -185,7 +185,7 @@ function setupLoginForm() {
 
 // Logout function
 function logout() {
-    fetch('/api/auth/logout')
+    fetch('api/auth/logout')
         .then(() => {
             isLoggedIn = false;
             updateLoginState();
@@ -203,7 +203,7 @@ function logout() {
 function loadFeaturedMaps() {
     const featuredMapsContainer = document.getElementById('featured-maps');
 
-    fetch('/api/maps')
+    fetch('api/maps')
         .then(response => {
             if (response.ok) {
                 return response.json();
@@ -257,7 +257,7 @@ function loadFeaturedMaps() {
 function loadMaps() {
     const mapListContainer = document.getElementById('map-list');
 
-    fetch('/api/maps')
+    fetch('api/maps')
         .then(response => {
             if (response.ok) {
                 return response.json();
@@ -309,7 +309,7 @@ function createMapCard(map, showDownload) {
         </div>
         ${showDownload ? `
         <div class="mdl-card__actions mdl-card--border">
-            <a href="/api/maps/download/${map.name}" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">
+            <a href="api/maps/download/${map.name}" class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect">
                 <i class="material-icons">file_download</i> ${downloadText}
             </a>
         </div>
@@ -372,7 +372,7 @@ function setupMapUpload() {
         const formData = new FormData();
         formData.append('file', file);
 
-        fetch('/api/maps/upload', {
+        fetch('api/maps/upload', {
             method: 'POST',
             body: formData
         })
@@ -396,7 +396,7 @@ function setupMapUpload() {
 
 // Load server status
 function loadServerStatus() {
-    fetch('/api/server/status')
+    fetch('api/server/status')
         .then(response => {
             if (response.ok) {
                 return response.json();
@@ -433,7 +433,7 @@ function loadServerStatus() {
 
 // Load chat history
 function loadChatHistory() {
-    fetch('/api/server/chat')
+    fetch('api/server/chat')
         .then(response => {
             if (response.ok) {
                 return response.json();
@@ -476,7 +476,7 @@ function setupChatForm() {
         const message = chatInput.value.trim();
         if (!message) return;
 
-        fetch('/api/server/chat', {
+        fetch('api/server/chat', {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain'
@@ -514,7 +514,7 @@ function setupWebSocket() {
     }
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/server/live`;
+    const wsUrl = `${protocol}//${window.location.host}${window.location.pathname.replace(/\/[^\/]*$/, "")}/api/server/live`.replace(/\/+$/, "") + "/api/server/live";
 
     websocket = new WebSocket(wsUrl);
 
