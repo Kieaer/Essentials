@@ -26,7 +26,7 @@ class Commands {
                 val name: String = ach.toString().lowercase(Locale.getDefault())
                 val cleared = if (ach.success(playerData)) "[sky][" + bundle.getString("cleared") + "][] " else ""
                 temp.add(cleared + bundle.getString("achievement.$name") + "[orange] (" + ach.current(playerData) + " / " + ach.value() + ")[][]\n")
-                temp.add("[yellow]" + bundle.getString("description.$name") + "\n")
+                temp.add("[yellow]" + bundle.getString("description.$name") + "[]\n")
                 temp.add("\n")
             }
         }
