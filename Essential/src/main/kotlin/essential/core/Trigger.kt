@@ -595,6 +595,7 @@ class Trigger {
                     maxDps = null
                 }
                 dpsBlocks = 0f
+                dpsBlockCalculateTick = 0
             } else {
                 dpsBlockCalculateTick += 1
             }
