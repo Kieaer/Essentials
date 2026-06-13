@@ -24,7 +24,6 @@ import essential.common.util.findPlayerData
 import essential.core.Commands.WorldEditSelection
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.daysUntil
@@ -659,40 +658,14 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
                         Bundle()["log.block.place", target.name, checkValidBlock(tile), tile.x, tile.y]
                     )
 
-                    scope.launch {
-                        val buf = ArrayList<TileLog>()
-
-                        try {
-                            WorldHistoryBuffer.flush()
-                            val dbEntries = getWorldHistoryByCoordinates(tile.x, tile.y)
-
-                            dbEntries.forEach { entry ->
-                                buf.add(
-                                    TileLog(
-                                        time = entry.time,
-                                        player = entry.player,
-                                        action = entry.action,
-                                        x = entry.x,
-                                        y = entry.y,
-                                        tile = entry.tile,
-                                        rotate = entry.rotate,
-                                        team = Team.all.find { it.name == entry.team } ?: Team.derelict,
-                                        value = entry.value
-                                    )
-                                )
-                            }
-
-                            buf.sortBy { it.time }
-                        } catch (e: Exception) {
-                            if (e is CancellationException) throw e
-                            Log.err("Error retrieving world history from database", e)
-                        }
-
-                        if (!Vars.state.rules.infiniteResources && tile.build != null && tile.build.maxHealth() == tile.block().health.toFloat() && (buf.isEmpty() && buf.last().tile != tile.block().name)) {
-                            target.blockPlaceCount++
-                            target.exp += blockExp[block.name] ?: 0
-                            target.currentExp += blockExp[block.name] ?: 0
-                        }
+                    val lastBlock = WorldHistoryBuffer.getLastBlock(tile.x, tile.y)
+                    if (!Vars.state.rules.infiniteResources &&
+                        tile.build != null &&
+                        tile.build.maxHealth() == tile.block().health.toFloat() &&
+                        (lastBlock == null || lastBlock != tile.block().name)) {
+                        target.blockPlaceCount++
+                        target.exp += blockExp[block.name] ?: 0
+                        target.currentExp += blockExp[block.name] ?: 0
                     }
 
                     addLog(

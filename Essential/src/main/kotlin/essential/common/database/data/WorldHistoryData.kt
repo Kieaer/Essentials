@@ -1,5 +1,6 @@
 package essential.common.database.data
 
+import essential.common.database.WorldHistoryBuffer
 import essential.common.database.table.WorldHistoryTable
 import essential.common.database.worldHistoryDatabase
 import ksp.table.GenerateCode
@@ -105,4 +106,5 @@ suspend fun clearWorldHistory() {
     suspendTransaction(db = worldHistoryDatabase) {
         exec("TRUNCATE TABLE world_history")
     }
+    WorldHistoryBuffer.clear()
 }

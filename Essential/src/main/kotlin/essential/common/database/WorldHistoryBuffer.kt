@@ -1,12 +1,14 @@
 package essential.common.database
 
 import arc.util.Log
+import essential.common.database.data.getAllWorldHistory
 import essential.common.database.table.WorldHistoryTable
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.milliseconds
@@ -38,10 +40,39 @@ object WorldHistoryBuffer {
 
     private var flushJob: Job? = null
 
+    private val lastBlockCache = ConcurrentHashMap<Int, String>()
+
+    fun clear() {
+        lastBlockCache.clear()
+    }
+
+    suspend fun reload() {
+        runCatching {
+            val existing = getAllWorldHistory()
+            val newCache = ConcurrentHashMap<Int, String>()
+            existing.sortedBy { it.time }.forEach { entry ->
+                val packed = (entry.x.toInt() shl 16) or (entry.y.toInt() and 0xFFFF)
+                newCache[packed] = entry.tile
+            }
+            lastBlockCache.clear()
+            lastBlockCache.putAll(newCache)
+        }.onFailure {
+            Log.err("[WorldHistoryBuffer] Failed to reload history into cache", it)
+        }
+    }
+
+    fun getLastBlock(x: Short, y: Short): String? {
+        val packed = (x.toInt() shl 16) or (y.toInt() and 0xFFFF)
+        return lastBlockCache[packed]
+    }
+
     fun start(scope: CoroutineScope) {
         if (flushJob != null && !flushJob!!.isCancelled) return
         stopped.set(false)
-        flushJob = scope.launch(Dispatchers.IO) { flushLoop() }
+        flushJob = scope.launch(Dispatchers.IO) {
+            reload()
+            flushLoop()
+        }
     }
 
     fun enqueue(
@@ -56,6 +87,8 @@ object WorldHistoryBuffer {
         value: String?,
     ) {
         if (stopped.get()) return
+        val packed = (x.toInt() shl 16) or (y.toInt() and 0xFFFF)
+        lastBlockCache[packed] = tile
         queue.add(
             PendingInsert(
                 time = time,
