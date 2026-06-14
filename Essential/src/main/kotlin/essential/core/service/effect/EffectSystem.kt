@@ -14,7 +14,7 @@ import mindustry.gen.Playerc
 import kotlin.random.Random
 
 class EffectSystem : Timer.Task() {
-    inner class EffectPos(
+    class EffectPos(
         val player: Playerc,
         val effect: Effect,
         val rotate: Float,
@@ -222,7 +222,7 @@ class EffectSystem : Timer.Task() {
                 runEffect(Fx.vapor)
             }
 
-            else -> {
+            in 300..399 -> {
                 var rot = data.player.unit().rotation
                 val customColor = Color.HSVtoRGB(252f, 164f, 0f, 0.22f)
                 rot += 180f
@@ -240,6 +240,70 @@ class EffectSystem : Timer.Task() {
                 rot -= 25f
                 runEffectAtRotateAndColor(Fx.colorSpark, rot, customColor)
                 runEffect(Fx.mineHuge)
+            }
+
+            in 400..499 -> {
+                val rot = data.player.unit().rotation
+                val rad1 = (rot + 90f) * 0.017453292f
+                val rad2 = (rot - 90f) * 0.017453292f
+                val rPixels = 1.3f * Vars.tilesize
+
+                val x1 = rPixels * kotlin.math.cos(rad1)
+                val y1 = rPixels * kotlin.math.sin(rad1)
+                val x2 = rPixels * kotlin.math.cos(rad2)
+                val y2 = rPixels * kotlin.math.sin(rad2)
+
+                val customColor = Color.valueOf("ffaaff")
+
+                players.forEach {
+                    if (it.effectVisibility) {
+                        val p = it.player
+                        if (p.unit() != null && p.unit().health > 0f) {
+                            if (!conf.feature.level.effect.moving || p.unit().moving()) {
+                                Call.effect(p.con(), Fx.shootSmall, data.player.x + x1, data.player.y + y1, rot, customColor)
+                                Call.effect(p.con(), Fx.shootSmall, data.player.x + x2, data.player.y + y2, rot, customColor)
+                                Call.effect(p.con(), Fx.shootBig, data.player.x, data.player.y, rot + 180f, customColor)
+                                Call.effect(p.con(), Fx.mineHuge, data.player.x, data.player.y, 2f, customColor)
+                            }
+                        }
+                    }
+                }
+            }
+
+            else -> {
+                val rot = data.player.unit().rotation
+                val rPixels = 1.3f * Vars.tilesize
+
+                val rad1 = (rot + 60f) * 0.017453292f
+                val rad2 = (rot - 60f) * 0.017453292f
+                val rad3 = (rot + 110f) * 0.017453292f
+                val rad4 = (rot - 110f) * 0.017453292f
+
+                val x1 = rPixels * kotlin.math.cos(rad1)
+                val y1 = rPixels * kotlin.math.sin(rad1)
+                val x2 = rPixels * kotlin.math.cos(rad2)
+                val y2 = rPixels * kotlin.math.sin(rad2)
+                val x3 = rPixels * kotlin.math.cos(rad3)
+                val y3 = rPixels * kotlin.math.sin(rad3)
+                val x4 = rPixels * kotlin.math.cos(rad4)
+                val y4 = rPixels * kotlin.math.sin(rad4)
+
+                val customColor = Color.valueOf("ffaaff")
+
+                players.forEach {
+                    if (it.effectVisibility) {
+                        val p = it.player
+                        if (p.unit() != null && p.unit().health > 0f) {
+                            if (!conf.feature.level.effect.moving || p.unit().moving()) {
+                                Call.effect(p.con(), Fx.shootSmall, data.player.x + x1, data.player.y + y1, rot, customColor)
+                                Call.effect(p.con(), Fx.shootSmall, data.player.x + x2, data.player.y + y2, rot, customColor)
+                                Call.effect(p.con(), Fx.shootBig, data.player.x + x3, data.player.y + y3, rot + 190f, customColor)
+                                Call.effect(p.con(), Fx.shootBig, data.player.x + x4, data.player.y + y4, rot - 190f, customColor)
+                                Call.effect(p.con(), Fx.mineHuge, data.player.x, data.player.y, rot - 190f, customColor)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
