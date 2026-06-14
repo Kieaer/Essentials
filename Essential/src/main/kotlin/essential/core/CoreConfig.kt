@@ -8,6 +8,7 @@ data class CoreConfig(
     val feature: Feature = Feature(),
     val module: Module = Module(),
     val command: Command = Command(),
+    val ban: Ban = Ban()
 )
 
 /** Plugin configuration */
@@ -140,4 +141,9 @@ data class Rollback(
     val enabled: Boolean = true,
     val time: Int = 300,
     val limit: Int = 10,
+)
+
+@Serializable
+data class Ban(
+    val useDatabase: Boolean = false,
 )

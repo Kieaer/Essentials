@@ -85,3 +85,8 @@ command:
     enabled: true
     # Maximum rollback time in seconds
     time: 300
+ban:
+  # If true, the database value is used in the banned list.
+  # If false, use mindustry server built-in banned list.
+  # If true and multiple servers are connected to the same DB, the banned list is shared.
+  useDatabase: false

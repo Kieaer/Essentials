@@ -5,11 +5,7 @@ import essential.common.database.table.PlayerBannedTable
 import ksp.table.GenerateCode
 import mindustry.gen.Playerc
 import mindustry.net.Administration
-import org.jetbrains.exposed.v1.core.TextColumnType
-import org.jetbrains.exposed.v1.core.castTo
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.like
-import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.json.contains
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.insert
@@ -80,6 +76,27 @@ suspend fun checkPlayerBanned(uuid: String, ip: String, name: String): Boolean {
         }
     } catch (e: Exception) {
         Log.err("Failed to check if player is banned", e)
+        return false
+    }
+}
+
+/** Check whether the player is banned by IP or UUID. */
+suspend fun checkPlayerBannedByIpOrUuid(uuid: String, ip: String): Boolean {
+    try {
+        return suspendTransaction {
+            val ipCond =
+                PlayerBannedTable.ips
+                    .castTo(TextColumnType())
+                    .like("%\"$ip\"%")
+
+            PlayerBannedTable
+                .selectAll()
+                .where { (PlayerBannedTable.uuid eq uuid) or ipCond }
+                .limit(1)
+                .count() > 0
+        }
+    } catch (e: Exception) {
+        Log.err("Failed to check if player is banned by IP or UUID", e)
         return false
     }
 }

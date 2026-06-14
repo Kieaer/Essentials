@@ -43,6 +43,7 @@ import mindustry.gen.Player
 import mindustry.gen.Playerc
 import mindustry.maps.Map
 import mindustry.net.Administration
+import mindustry.net.Packets
 import mindustry.ui.Menus
 import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
@@ -967,6 +968,14 @@ fun connectPacket(event: ConnectPacketEvent) {
 
 @Event
 fun playerConnect(event: PlayerConnect) {
+    if (conf.ban.useDatabase) {
+        val isBanned = runBlocking { checkPlayerBannedByIpOrUuid(event.player.uuid(), event.player.ip()) }
+        if (isBanned) {
+            event.player.kick(Packets.KickReason.banned)
+            return
+        }
+    }
+
     val playerData = runBlocking { getPlayerDataSync(event.player.uuid()) }
     if (playerData != null && playerData.banExpireDate != null) {
         val now = Clock.System.now().toLocalDateTime(systemTimezone)
