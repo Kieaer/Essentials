@@ -34,3 +34,5 @@ WHERE id IN (
 
 /* Fix NULL last_login_date left by v4 migration */
 UPDATE players SET last_login_date = CURRENT_TIMESTAMP WHERE last_login_date IS NULL;
+
+ALTER TABLE map_ratings DROP CONSTRAINT IF EXISTS map_ratings_map_hash_unique;

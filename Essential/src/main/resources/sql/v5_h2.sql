@@ -27,3 +27,5 @@ WHERE id IN (SELECT id
 
 /* Fix NULL last_login_date left by v4 H2 migration REGEXP bug */
 UPDATE PLAYERS SET last_login_date = CURRENT_TIMESTAMP(9) WHERE last_login_date IS NULL;
+
+ALTER TABLE map_ratings DROP CONSTRAINT IF EXISTS map_ratings_map_hash_unique;

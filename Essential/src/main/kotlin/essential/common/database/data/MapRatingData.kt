@@ -84,39 +84,20 @@ suspend fun updateOrCreateMapRating(
     playerUuid: String,
     isUpvote: Boolean
 ): MapRatingData {
-    return try {
-        val existing = getMapRating(playerUuid, mapName)
-
-        if (existing != null) {
-            if (existing.isUpvote != isUpvote) {
-                suspendTransaction {
-                    MapRatingTable.update({ (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }) {
-                        it[MapRatingTable.isUpvote] = isUpvote
-                    }
+    val existing = getMapRating(playerUuid, mapName)
+    return if (existing != null) {
+        if (existing.isUpvote != isUpvote) {
+            suspendTransaction {
+                MapRatingTable.update({ (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }) {
+                    it[MapRatingTable.isUpvote] = isUpvote
                 }
-                getMapRating(playerUuid, mapName)!!
-            } else {
-                existing
             }
+            getMapRating(playerUuid, mapName)!!
         } else {
-            createMapRating(mapName, mapHash, playerUuid, isUpvote)
+            existing
         }
-    } catch (e: Exception) {
-        val existingAfterError = getMapRating(playerUuid, mapName)
-        if (existingAfterError != null) {
-            if (existingAfterError.isUpvote != isUpvote) {
-                suspendTransaction {
-                    MapRatingTable.update({ (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }) {
-                        it[MapRatingTable.isUpvote] = isUpvote
-                    }
-                }
-                getMapRating(playerUuid, mapName)!!
-            } else {
-                existingAfterError
-            }
-        } else {
-            throw e
-        }
+    } else {
+        createMapRating(mapName, mapHash, playerUuid, isUpvote)
     }
 }
 
