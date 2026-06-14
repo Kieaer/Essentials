@@ -567,13 +567,14 @@ class Commands {
                 )
             }
                 ${bundle["command.info.attackClear"]}: ${target.attackClear}
+                ${bundle["command.info.waveClear"]}: ${target.waveClear}
                 ${bundle["command.info.pvpWinRate"]}: [green]${target.pvpWinCount}[white]/[scarlet]${target.pvpLoseCount}[white]([sky]${
                 if (target.pvpWinCount + target.pvpLoseCount != 0) round(
                     target.pvpWinCount.toDouble() / (target.pvpWinCount + target.pvpLoseCount) * 100
                 ) else 0
             }%[white])
                 ${bundle["command.info.joinStacks"]}: ${target.attendanceDays}
-                Discord: ${if (target.discordID != null) target.discordID else "none"}
+                ${bundle["command.info.discord"]}: ${if (target.discordID != null) bundle["command.info.discord.verified"] else bundle["command.info.discord.none"]}
                 """.trimIndent()
         }
 
@@ -2701,7 +2702,7 @@ class Commands {
         // Try content blocks by name first (e.g., "copper-wall")
         Vars.content.blocks().find { it.name == name }?.let { return it }
         // Try Blocks class field directly (e.g., "copperWall")
-        val blockClass = mindustry.content.Blocks::class.java
+        val blockClass = Blocks::class.java
         for (f in blockClass.fields) {
             if (f.name.equals(name, ignoreCase = true)) {
                 try { return f.get(null) as? mindustry.world.Block } catch (_: Exception) {}
@@ -2756,7 +2757,7 @@ class Commands {
         val maxY = maxOf(selection.startY, selection.endY)
         for (x in minX..maxX) {
             for (y in minY..maxY) {
-                Tile.setTile(Vars.world.tile(x, y), mindustry.content.Blocks.air, playerData.player.team(), 0)
+                Tile.setTile(Vars.world.tile(x, y), Blocks.air, playerData.player.team(), 0)
             }
         }
     }
