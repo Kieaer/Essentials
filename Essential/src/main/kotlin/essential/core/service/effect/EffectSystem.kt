@@ -270,7 +270,7 @@ class EffectSystem : Timer.Task() {
                 }
             }
 
-            else -> {
+            in 500..1000 -> {
                 val rot = data.player.unit().rotation
                 val rPixels = 1.3f * Vars.tilesize
 
