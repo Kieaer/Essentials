@@ -824,6 +824,7 @@ fun playerLeave(event: PlayerLeave) {
             }
         }
         players.removeIf { it.uuid == data.uuid }
+        worldEditSelection[data.uuid]
     }
 }
 
