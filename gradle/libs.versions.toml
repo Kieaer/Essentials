@@ -76,6 +76,7 @@ ktor-sessions = { module = "io.ktor:ktor-server-sessions", version.ref = "ktor" 
 ktor-html = { module = "io.ktor:ktor-server-html-builder", version.ref = "ktor" }
 ktor-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor" }
 ktor-host-test = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+ktor-rate-limit = { module = "io.ktor:ktor-server-rate-limit", version.ref = "ktor" }
 thymeleaf = { module = "org.thymeleaf:thymeleaf", version.ref = "thymeleaf" }
 
 hjson = { module = "com.github.PersonTheCat:hjson-java", version.ref = "hjson" }
@@ -110,7 +111,7 @@ local-game = ["arc-local", "core-local", "server-local"]
 game-test = ["arc", "core", "server", "headless", "datafaker", "mockito", "jts"]
 local-game-test = ["arc-local", "core-local", "server-local", "headless-local", "datafaker", "mockito", "jts"]
 r2dbc-drivers = ["r2dbc-h2", "r2dbc-mariadb", "r2dbc-mysql", "r2dbc-pool", "r2dbc-postgresql"]
-ktor = ["ktor", "ktor-netty", "ktor-content", "ktor-serialize-json", "ktor-auth", "ktor-auth-jwt", "ktor-sessions", "ktor-html", "ktor-websockets"]
+ktor = ["ktor", "ktor-netty", "ktor-content", "ktor-serialize-json", "ktor-auth", "ktor-auth-jwt", "ktor-sessions", "ktor-html", "ktor-websockets", "ktor-rate-limit"]
 testcontainers = ["testcontainers", "testcontainers-postgresql", "postgresql"]
 
 [plugins]

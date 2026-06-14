@@ -4,10 +4,15 @@ import arc.Core
 import arc.Events
 import arc.files.Fi
 import arc.util.Log
+import essential.common.database.data.getMapRatings
 import essential.common.database.data.getPlayerDataByName
 import essential.common.log.LogType
 import essential.common.log.writeLog
 import essential.common.playTime
+import essential.common.players
+import essential.common.systemTimezone
+import essential.common.util.size
+import essential.common.util.toHString
 import essential.core.service.web.WebService.Companion.bundle
 import essential.core.service.web.WebService.Companion.conf
 import io.ktor.http.*
@@ -19,16 +24,15 @@ import io.ktor.server.engine.*
 import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.ratelimit.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
-import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
-import io.ktor.websocket.*
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.toInstant
 import kotlinx.io.readByteArray
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -37,7 +41,6 @@ import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.io.MapIO
-import mindustry.io.SaveIO
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.io.File
@@ -46,12 +49,14 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.util.*
 import javax.crypto.spec.SecretKeySpec
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 
 class WebServer {
     lateinit var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
     var boundPort: Int = 0
     private val chatHistory = Collections.synchronizedList(mutableListOf<ChatMessage>())
+    private val statusHistory = Collections.synchronizedList(mutableListOf<StatusDataPoint>())
 
     @Serializable
     data class UserSession(val id: String, val username: String)
@@ -65,28 +70,62 @@ class WebServer {
         val author: String,
         val description: String,
         val planet: String,
-        val preview: String? = null
+        val preview: String? = null,
+        val votes: Int = 0
+    )
+
+    @Serializable
+    data class WebPlayerInfo(
+        val name: String,
+        val playTime: String
     )
 
     @Serializable
     data class ServerStatus(
         val map: String,
-        val players: List<String>,
+        val players: List<WebPlayerInfo>,
         val tps: Float,
         val wave: Int,
-        val gameTime: String
+        val gameTime: String,
+        val mode: String,
+        val activeTeams: Int
     )
 
     @Serializable
     data class ChatMessage(
         val player: String,
         val message: String,
-        val time: Long = System.currentTimeMillis()
+        val time: Long = System.currentTimeMillis(),
+        val isWeb: Boolean = false
+    )
+
+    @Serializable
+    data class StatusDataPoint(
+        val time: Long,
+        val tps: Float,
+        val players: Int,
+        val units: Int,
+        val buildings: Int,
+        val resources: Map<String, Int>? = null,
+        val teamResources: Map<String, Int>? = null,
+        val teamUnits: Map<String, Int>? = null,
+        val teamBuildings: Map<String, Int>? = null
     )
 
     // Configure the application module
     private fun configureModule(application: Application) {
         with(application) {
+            launch {
+                while (true) {
+                    delay(60000)
+                    try {
+                        recordStatusPoint()
+                    } catch (e: Exception) {
+                        Log.err("Error recording status point", e)
+                    }
+                }
+            }
+
             // Install necessary plugins
             install(ContentNegotiation) {
                 json(Json {
@@ -123,139 +162,109 @@ class WebServer {
                 }
             }
 
-            install(WebSockets) {
-                pingPeriod = 15.seconds
-                timeout = 30.seconds
-                maxFrameSize = Long.MAX_VALUE
-                masking = false
+            install(RateLimit) {
+                register {
+                    rateLimiter(limit = 60, refillPeriod = 60.seconds)
+                    requestKey { call ->
+                        call.request.local.remoteAddress
+                    }
+                }
             }
 
             // Configure routing
             routing {
                 staticResources("/", "/web")
 
-                // Authentication routes
-                route("/api/auth") {
-                    post("/login") {
-                        val loginRequest = call.receive<LoginRequest>()
-                        handleLogin(call, loginRequest)
-                    }
-
-                    get("/logout") {
-                        call.sessions.clear<UserSession>()
-                        call.respond(HttpStatusCode.OK)
-                    }
-
-                    get("/status") {
-                        val session = call.sessions.get<UserSession>()
-                        if (session != null) {
-                            call.respond(mapOf("username" to session.username))
-                        } else {
-                            call.respond(HttpStatusCode.Unauthorized)
-                        }
-                    }
-                }
-
-                // Map management routes
-                route("/api/maps") {
-                    authenticate("auth-session") {
-                        get {
-                            val maps = getMaps()
-                            call.respond(maps)
+                rateLimit {
+                    // Authentication routes
+                    route("/api/auth") {
+                        post("/login") {
+                            val loginRequest = call.receive<LoginRequest>()
+                            handleLogin(call, loginRequest)
                         }
 
-                        post("/upload") {
-                            handleMapUpload(call)
-                        }
-
-                        get("/download/{name}") {
-                            val mapName = call.parameters["name"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-                            handleMapDownload(call, mapName)
-                        }
-                    }
-                }
-
-                // Server status routes
-                route("/api/server") {
-                    get("/status") {
-                        val status = getServerStatus()
-                        call.respond(status)
-                    }
-
-                    authenticate("auth-session") {
-                        get("/chat") {
-                            val messages = chatHistory.filter { !it.message.startsWith("/") }.sortedByDescending { it.time }
-                            call.respond(messages)
-                        }
-
-                        post("/chat") {
-                            val session = call.sessions.get<UserSession>()
-                                ?: return@post call.respond(HttpStatusCode.Unauthorized)
-                            val message = call.receiveText()
-
-                            // Validate chat message
-                            if (message.isBlank() || message.length > 100) {
-                                return@post call.respond(HttpStatusCode.BadRequest, "Invalid message")
-                            }
-
-                            // Sanitize message to prevent code injection
-                            val sanitizedMessage = sanitizeMessage(message)
-
-                            // Send message to server
-                            Call.sendMessage("[cyan]<WEB>[white] ${session.username}: $sanitizedMessage")
-
-                            // Add to chat history
-                            val chatMessage = ChatMessage(session.username, sanitizedMessage)
-                            chatHistory.add(chatMessage)
-                            if (chatHistory.size > 100) {
-                                chatHistory.removeAt(0)
-                            }
-
+                        get("/logout") {
+                            call.sessions.clear<UserSession>()
                             call.respond(HttpStatusCode.OK)
                         }
+
+                        get("/status") {
+                            val session = call.sessions.get<UserSession>()
+                            if (session != null) {
+                                call.respond(mapOf("username" to session.username))
+                            } else {
+                                call.respond(HttpStatusCode.Unauthorized)
+                            }
+                        }
                     }
-                }
 
-                // WebSocket for live monitoring
-                authenticate("auth-session") {
-                    webSocket("/api/server/live") {
-                        val session = call.sessions.get<UserSession>()
-                            ?: return@webSocket close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Unauthorized"))
-
-                        try {
-                            // Send initial status
-                            val initialStatus = getServerStatus()
-                            val initialJson = Json.encodeToString(ServerStatus.serializer(), initialStatus)
-                            outgoing.send(Frame.Text(initialJson))
-
-                            // Start periodic updates
-                            launch {
-                                while (true) {
-                                    delay(1000) // Update every second
-                                    val status = getServerStatus()
-                                    val json = Json.encodeToString(ServerStatus.serializer(), status)
-                                    outgoing.send(Frame.Text(json))
-                                }
+                    // Map management routes
+                    route("/api/maps") {
+                        authenticate("auth-session") {
+                            get {
+                                val maps = getMaps()
+                                call.respond(maps)
                             }
 
-                            // Handle incoming messages
-                            for (frame in incoming) {
-                                when (frame) {
-                                    is Frame.Text -> {
-                                        val text = frame.readText()
-                                        // Process commands if needed
-                                    }
-
-                                    else -> {}
-                                }
+                            post("/upload") {
+                                handleMapUpload(call)
                             }
-                        } catch (e: ClosedReceiveChannelException) {
-                            Log.debug("WebSocket closed: ${e.message}")
-                        } catch (e: Throwable) {
-                            Log.err("WebSocket error", e)
+
+                            get("/download/{name}") {
+                                val mapName = call.parameters["name"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+                                handleMapDownload(call, mapName)
+                            }
+                        }
+                    }
+
+                    // Server status routes
+                    route("/api/server") {
+                        get("/status") {
+                            val status = getServerStatus()
+                            call.respond(status)
+                        }
+
+                        authenticate("auth-session") {
+                            get("/chat") {
+                                val messages = chatHistory.filter { !it.message.startsWith("/") }.sortedBy { it.time }
+                                call.respond(messages)
+                            }
+
+                            post("/chat") {
+                                val session = call.sessions.get<UserSession>()
+                                    ?: return@post call.respond(HttpStatusCode.Unauthorized)
+                                val message = call.receiveText()
+
+                                // Validate chat message
+                                if (message.isBlank() || message.length > 100) {
+                                    return@post call.respond(HttpStatusCode.BadRequest, "Invalid message")
+                                }
+
+                                // Sanitize message to prevent code injection
+                                val sanitizedMessage = sanitizeMessage(message)
+
+                                // Send message to server
+                                Call.sendMessage("[cyan]<WEB>[white] ${session.username}: $sanitizedMessage")
+
+                                // Add to chat history
+                                val chatMessage = ChatMessage(session.username, sanitizedMessage, isWeb = true)
+                                chatHistory.add(chatMessage)
+                                if (chatHistory.size > 100) {
+                                    chatHistory.removeAt(0)
+                                }
+
+                                call.respond(HttpStatusCode.OK)
+                            }
+
+                            get("/history") {
+                                val history = synchronized(statusHistory) { statusHistory.toList() }
+                                call.respond(history)
+                            }
                         }
                     }
                 }
+
+
             }
         }
     }
@@ -297,7 +306,7 @@ class WebServer {
             val message = event.message
 
             // Add the chat message to the chat history
-            val chatMessage = ChatMessage(player.name(), message)
+            val chatMessage = ChatMessage(player.name(), message, isWeb = false)
             chatHistory.add(chatMessage)
             if (chatHistory.size > 100) {
                 chatHistory.removeAt(0)
@@ -416,8 +425,11 @@ class WebServer {
 
         // Validate map file without affecting the current game state
         try {
-            // Try to load the map to validate it
-            SaveIO.load(Fi(tempFile.absolutePath))
+            // Validate that the map parses correctly without actually loading it into the server
+            val parsedMap = MapIO.createMap(Fi(tempFile.absolutePath), true)
+            if (parsedMap.width <= 0 || parsedMap.height <= 0) {
+                throw IllegalArgumentException("Invalid map dimensions: ${parsedMap.width}x${parsedMap.height}")
+            }
 
             // Save the file
             val targetFile = File(conf.uploadPath, fileName)
@@ -472,16 +484,23 @@ class WebServer {
         call.respondFile(file)
     }
 
-    private fun getMaps(): List<MapInfo> {
+    private suspend fun getMaps(): List<MapInfo> {
         val mapsList = mutableListOf<MapInfo>()
         Vars.maps.all().filter { it.custom }.forEach { map ->
+            val mapName = map.name()
+            val ratings = getMapRatings(mapName)
+            val upvotes = ratings.count { it.isUpvote }
+            val downvotes = ratings.count { !it.isUpvote }
+            val netVotes = upvotes - downvotes
+
             mapsList.add(
                 MapInfo(
-                    name = map.name(),
+                    name = mapName,
                     author = map.author(),
                     description = map.description(),
                     planet = map.tags.get("planet", "serpulo"),
-                    preview = null // We'll implement preview image generation later
+                    preview = null, // We'll implement preview image generation later
+                    votes = netVotes
                 )
             )
         }
@@ -489,16 +508,139 @@ class WebServer {
     }
 
     private fun getServerStatus(): ServerStatus {
-        val playerNames = mutableListOf<String>()
-        Groups.player.each { playerNames.add(it.name()) }
+        val playersList = mutableListOf<WebPlayerInfo>()
+        Groups.player.each { player ->
+            val playerData = players.find { it.uuid == player.uuid() }
+            val playtimeStr = if (playerData != null) {
+                val joinInstant = playerData.lastLoginDate.toInstant(systemTimezone)
+                val elapsedSeconds = (Clock.System.now().toEpochMilliseconds() - joinInstant.toEpochMilliseconds()) / 1000
+                elapsedSeconds.seconds.toHString()
+            } else {
+                "00:00"
+            }
+            playersList.add(WebPlayerInfo(player.name(), playtimeStr))
+        }
+
+        val mode = when {
+            Vars.state == null || Vars.state.isMenu -> "none"
+            Vars.state.rules.pvp -> "pvp"
+            Vars.state.rules.mode() == mindustry.game.Gamemode.survival || Vars.state.rules.mode() == mindustry.game.Gamemode.attack -> "wave"
+            else -> "none"
+        }
+
+        val activeTeams = if (Vars.state != null && !Vars.state.isMenu && Vars.state.teams != null && Vars.state.teams.active != null) {
+            Vars.state.teams.active.size
+        } else {
+            0
+        }
 
         return ServerStatus(
-            map = Vars.state.map.name(),
-            players = playerNames,
+            map = if (Vars.state != null && Vars.state.map != null) Vars.state.map.name() else "Menu",
+            players = playersList,
             tps = Core.graphics.framesPerSecond.toFloat(),
-            wave = Vars.state.wave,
-            gameTime = playTime
+            wave = if (Vars.state != null) Vars.state.wave else 0,
+            gameTime = playTime,
+            mode = mode,
+            activeTeams = activeTeams
         )
+    }
+
+    private fun recordStatusPoint() {
+        if (Vars.state == null || Vars.state.isMenu) return
+
+        val mode = when {
+            Vars.state == null || Vars.state.isMenu -> "none"
+            Vars.state.rules.pvp -> "pvp"
+            Vars.state.rules.mode() == mindustry.game.Gamemode.survival || Vars.state.rules.mode() == mindustry.game.Gamemode.attack -> "wave"
+            else -> "none"
+        }
+
+        var resources: Map<String, Int>? = null
+        var teamResources: Map<String, Int>? = null
+        var teamUnits: Map<String, Int>? = null
+        var teamBuildings: Map<String, Int>? = null
+
+        if (mode == "wave") {
+            val resMap = mutableMapOf<String, Int>()
+            val cores = Vars.state.teams.cores(Vars.state.rules.defaultTeam)
+            if (cores != null && !cores.isEmpty) {
+                Vars.content.items().forEach { item ->
+                    if (!item.isHidden) {
+                        var sum = 0
+                        cores.forEach { core ->
+                            sum += core.items.get(item)
+                        }
+                        resMap[item.name] = sum
+                    }
+                }
+            }
+            resources = resMap
+        } else if (mode == "pvp") {
+            val teamResMap = mutableMapOf<String, Int>()
+            val teamUnitsMap = mutableMapOf<String, Int>()
+            val teamBuildingsMap = mutableMapOf<String, Int>()
+
+            if (Vars.state.teams != null && Vars.state.teams.active != null) {
+                Vars.state.teams.active.forEach { teamData ->
+                    val team = teamData.team
+                    val teamName = team.name
+
+                    // Compute team resources (sum of all items across all cores of this team)
+                    val cores = teamData.cores
+                    var totalRes = 0
+                    if (cores != null && !cores.isEmpty) {
+                        Vars.content.items().forEach { item ->
+                            if (!item.isHidden) {
+                                cores.forEach { core ->
+                                    totalRes += core.items.get(item)
+                                }
+                            }
+                        }
+                    }
+                    teamResMap[teamName] = totalRes
+
+                    // Compute team units
+                    var unitCount = 0
+                    for (unit in Groups.unit) {
+                        if (unit.team == team) {
+                            unitCount++
+                        }
+                    }
+                    teamUnitsMap[teamName] = unitCount
+
+                    // Compute team buildings
+                    var buildingCount = 0
+                    for (build in Groups.build) {
+                        if (build.team == team) {
+                            buildingCount++
+                        }
+                    }
+                    teamBuildingsMap[teamName] = buildingCount
+                }
+            }
+            teamResources = teamResMap
+            teamUnits = teamUnitsMap
+            teamBuildings = teamBuildingsMap
+        }
+
+        val point = StatusDataPoint(
+            time = System.currentTimeMillis(),
+            tps = Core.graphics.framesPerSecond.toFloat(),
+            players = Groups.player.size(),
+            units = Groups.unit.size,
+            buildings = Groups.build.size,
+            resources = resources,
+            teamResources = teamResources,
+            teamUnits = teamUnits,
+            teamBuildings = teamBuildings
+        )
+
+        synchronized(statusHistory) {
+            statusHistory.add(point)
+            if (statusHistory.size > 720) {
+                statusHistory.removeAt(0)
+            }
+        }
     }
 
     private fun sanitizeMessage(message: String): String {

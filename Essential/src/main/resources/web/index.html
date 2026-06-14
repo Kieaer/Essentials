@@ -1,137 +1,203 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mindustry Server Web Interface</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    <!--/* Modern Typography: Outfit & Noto Sans KR */-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
-    <link rel="stylesheet" href="css/material.indigo-pink.min.css">
     <link rel="stylesheet" href="css/styles.css">
-    <script defer src="js/material.min.js"></script>
     <script defer src="js/translations.js"></script>
     <script defer src="js/app.js"></script>
 </head>
 <body>
-    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
-        <header class="mdl-layout__header">
-            <div class="mdl-layout__header-row">
-                <span class="mdl-layout-title" data-i18n="nav.title">Mindustry Server</span>
-                <div class="mdl-layout-spacer"></div>
-                <nav class="mdl-navigation mdl-layout--large-screen-only">
-                    <a class="mdl-navigation__link" href="#" id="nav-home" data-i18n="nav.home">Home</a>
-                    <a class="mdl-navigation__link" href="#" id="nav-maps" data-i18n="nav.maps">Maps</a>
-                    <a class="mdl-navigation__link" href="#" id="nav-server" data-i18n="nav.server">Server Status</a>
-                    <a class="mdl-navigation__link" href="#" id="nav-login" data-i18n="nav.login">Login</a>
-                    <a class="mdl-navigation__link" href="#" id="nav-logout" style="display: none;" data-i18n="nav.logout">Logout</a>
-                </nav>
+    <div class="app-layout">
+        <!--/* Modern Header */-->
+        <header class="app-header">
+            <div class="header-left">
+                <button class="hamburger-menu" id="hamburger-btn">
+                    <i class="material-icons">menu</i>
+                </button>
+            </div>
+            
+            <nav class="header-nav">
+                <a class="nav-link" href="#" id="nav-home">
+                    <i class="material-icons">home</i>
+                    <span data-i18n="nav.home">Home</span>
+                </a>
+                <a class="nav-link" href="#" id="nav-maps">
+                    <i class="material-icons">map</i>
+                    <span data-i18n="nav.maps">Maps</span>
+                </a>
+                <a class="nav-link" href="#" id="nav-server">
+                    <i class="material-icons">insights</i>
+                    <span data-i18n="nav.server">Server Status</span>
+                </a>
+            </nav>
+            
+            <div class="header-right">
+                <!--/* Logged Out State */-->
+                <a class="login-btn-nav" href="#" id="nav-login">
+                    <i class="material-icons">login</i>
+                    <span data-i18n="nav.login">Login</span>
+                </a>
+                
+                <!--/* Logged In State */-->
+                <div id="user-profile-container" style="display: none;" class="user-profile">
+                    <span class="user-name" id="user-name-display">Gureumi (Gureumi)</span>
+                    <a class="logout-link" href="#" id="nav-logout">
+                        <i class="material-icons">logout</i>
+                        <span data-i18n="nav.logout">Log Out</span>
+                    </a>
+                </div>
             </div>
         </header>
-        <div class="mdl-layout__drawer">
-            <span class="mdl-layout-title" data-i18n="nav.title">Mindustry Server</span>
-            <nav class="mdl-navigation">
-                <a class="mdl-navigation__link" href="#" id="drawer-home" data-i18n="nav.home">Home</a>
-                <a class="mdl-navigation__link" href="#" id="drawer-maps" data-i18n="nav.maps">Maps</a>
-                <a class="mdl-navigation__link" href="#" id="drawer-server" data-i18n="nav.server">Server Status</a>
-                <a class="mdl-navigation__link" href="#" id="drawer-login" data-i18n="nav.login">Login</a>
-                <a class="mdl-navigation__link" href="#" id="drawer-logout" style="display: none;" data-i18n="nav.logout">Logout</a>
+
+        <!--/* Sliding Mobile Drawer */-->
+        <div class="app-drawer" id="app-drawer">
+            <div class="drawer-header">
+                <div class="logo-box">민</div>
+                <span class="logo-text" data-i18n="nav.title">민더스트리 서버</span>
+                <button class="drawer-close-btn" id="drawer-close">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <nav class="drawer-nav">
+                <a class="drawer-link" href="#" id="drawer-home">
+                    <i class="material-icons">home</i>
+                    <span data-i18n="nav.home">Home</span>
+                </a>
+                <a class="drawer-link" href="#" id="drawer-maps">
+                    <i class="material-icons">map</i>
+                    <span data-i18n="nav.maps">Maps</span>
+                </a>
+                <a class="drawer-link" href="#" id="drawer-server">
+                    <i class="material-icons">insights</i>
+                    <span data-i18n="nav.server">Server Status</span>
+                </a>
+                <a class="drawer-link" href="#" id="drawer-login">
+                    <i class="material-icons">login</i>
+                    <span data-i18n="nav.login">Login</span>
+                </a>
+                <a class="drawer-link" href="#" id="drawer-logout" style="display: none;">
+                    <i class="material-icons">logout</i>
+                    <span data-i18n="nav.logout">Logout</span>
+                </a>
             </nav>
         </div>
-        <main class="mdl-layout__content">
+        <!--/* Drawer Overlay */-->
+        <div class="drawer-overlay" id="drawer-overlay"></div>
+
+        <!--/* Main Content Area */-->
+        <main class="app-content">
             <div class="page-content">
-                <!-- Home Page -->
+                <!--/* Home Page / Combined Dashboard */-->
                 <section id="home-page" class="page">
-                    <div class="mdl-grid">
-                        <div class="mdl-cell mdl-cell--12-col">
-                            <h2 data-i18n="home.title">Welcome to Mindustry Server Web Interface</h2>
-                            <p data-i18n="home.description">This web interface allows you to manage maps and monitor server status.</p>
-                        </div>
-                        <div class="mdl-cell mdl-cell--12-col">
-                            <h3 data-i18n="home.featured">Featured Maps</h3>
-                            <div id="featured-maps" class="map-grid">
-                                <!-- Maps will be loaded here -->
-                                <div class="mdl-spinner mdl-js-spinner is-active"></div>
-                            </div>
-                        </div>
+                    <div class="page-header-centered">
+                        <h1 data-i18n="home.title">민더스트리 서버 웹 인터페이스</h1>
+                        <p class="subtitle" data-i18n="home.subtitle">미리보기 및 관리 허브</p>
+                        <div class="title-underline"></div>
                     </div>
-                </section>
-
-                <!-- Maps Page -->
-                <section id="maps-page" class="page" style="display: none;">
-                    <div class="mdl-grid">
-                        <div class="mdl-cell mdl-cell--12-col">
-                            <h2 data-i18n="maps.title">Map Management</h2>
-                            <p data-i18n="maps.description">Upload, download, and manage maps for your server.</p>
-                        </div>
-                        <div class="mdl-cell mdl-cell--12-col">
-                            <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="upload-map-btn">
-                                <i class="material-icons">file_upload</i> <span data-i18n="maps.upload">Upload Map</span>
-                            </button>
-                        </div>
-                        <div class="mdl-cell mdl-cell--12-col">
-                            <div id="map-list" class="map-grid">
-                                <!-- Maps will be loaded here -->
-                                <div class="mdl-spinner mdl-js-spinner is-active"></div>
+                    
+                    <div class="dashboard-grid">
+                        <!--/* Left Column: Latest Map & Upload */-->
+                        <div class="col-left">
+                            <h2 class="section-title" data-i18n="home.current_map">현재 진행중인 맵</h2>
+                            <div id="latest-map-container" class="map-card-vertical-wrapper">
+                                <!--/* Loaded dynamically */-->
+                                <div class="loading-spinner"></div>
                             </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Server Status Page -->
-                <section id="server-page" class="page" style="display: none;">
-                    <div class="mdl-grid">
-                        <div class="mdl-cell mdl-cell--12-col">
-                            <h2 data-i18n="server.title">Server Status</h2>
-                            <p data-i18n="server.description">Monitor server status, players, and chat.</p>
-                        </div>
-                        <div class="mdl-cell mdl-cell--6-col">
-                            <div class="mdl-card mdl-shadow--2dp server-info-card">
-                                <div class="mdl-card__title">
-                                    <h2 class="mdl-card__title-text" data-i18n="server.info">Server Information</h2>
-                                </div>
-                                <div class="mdl-card__supporting-text">
-                                    <p><strong data-i18n="server.map">Current Map</strong>: <span id="current-map" data-i18n="server.loading">Loading...</span></p>
-                                    <p><strong>TPS:</strong> <span id="server-tps" data-i18n="server.loading">Loading...</span></p>
-                                    <p><strong data-i18n="server.wave">Wave</strong>: <span id="server-wave" data-i18n="server.loading">Loading...</span></p>
-                                    <p><strong data-i18n="server.time">Game Time</strong>: <span id="server-time" data-i18n="server.loading">Loading...</span></p>
+                            
+                            <div id="upload-card-shortcut" class="upload-shortcut-card">
+                                <div class="upload-shortcut-inner">
+                                    <i class="material-icons upload-cloud-icon">cloud_upload</i>
+                                    <span class="upload-text" data-i18n="maps.upload">맵 업로드</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="mdl-cell mdl-cell--6-col">
-                            <div class="mdl-card mdl-shadow--2dp player-list-card">
-                                <div class="mdl-card__title">
-                                    <h2 class="mdl-card__title-text" data-i18n="server.players">Players</h2>
-                                </div>
-                                <div class="mdl-card__supporting-text">
-                                    <ul id="player-list" class="mdl-list">
-                                        <!-- Players will be loaded here -->
-                                        <li class="mdl-list__item">
-                                            <span class="mdl-list__item-primary-content" data-i18n="server.loading">Loading...</span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mdl-cell mdl-cell--12-col">
-                            <div class="mdl-card mdl-shadow--2dp chat-card">
-                                <div class="mdl-card__title">
-                                    <h2 class="mdl-card__title-text" data-i18n="server.chat">Chat</h2>
-                                </div>
-                                <div class="mdl-card__supporting-text">
-                                    <div id="chat-messages" class="chat-messages">
-                                        <!-- Chat messages will be loaded here -->
-                                        <p class="chat-message" data-i18n="server.chat.loading">Loading chat history...</p>
+                        
+                        <!--/* Right Column: Stats & Chat */-->
+                        <div class="col-right">
+                            <h2 class="section-title" data-i18n="home.dashboard">실시간 대시보드</h2>
+                            
+                            <!--/* Server Stats Card */-->
+                            <div class="card stats-card">
+                                <h3 class="card-title" data-i18n="server.info">서버 통계</h3>
+                                <div class="stats-content">
+                                    <!--/* Gauge Widget on the Left */-->
+                                    <div class="tps-gauge-widget">
+                                        <div class="gauge-container">
+                                            <svg class="gauge-svg" viewBox="0 0 100 50">
+                                                <!--/* Arc Track */-->
+                                                <path class="gauge-track" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round"/>
+                                                <!--/* Color Arc (Red to Yellow to Green) */-->
+                                                <path class="gauge-fill" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="url(#gauge-gradient)" stroke-width="6" stroke-linecap="round"/>
+                                                <defs>
+                                                    <linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                        <stop offset="0%" stop-color="#ef4444" />
+                                                        <stop offset="50%" stop-color="#eab308" />
+                                                        <stop offset="100%" stop-color="#22c55e" />
+                                                    </linearGradient>
+                                                </defs>
+                                            </svg>
+                                            <div class="gauge-needle-wrapper">
+                                                <!--/* Needle element starts at -90deg (0 TPS) and rotates to +90deg (60 TPS) */-->
+                                                <div class="gauge-needle" id="tps-needle"></div>
+                                            </div>
+                                        </div>
+                                        <div class="gauge-label">
+                                            <span class="gauge-value" id="server-tps">0.0</span>
+                                            <span class="gauge-title">TPS</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!--/* Stats Text Details */-->
+                                    <div class="stats-details">
+                                        <div class="stat-item" id="server-mode-stat">
+                                            <span class="stat-label" id="server-mode-label" data-i18n="server.wave">Waves</span>
+                                            <span class="stat-value highlight" id="server-mode-value">Wave <span id="server-wave">0</span></span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label" data-i18n="server.time">Game Time</span>
+                                            <div class="stat-value-with-icon">
+                                                <i class="material-icons time-icon">schedule</i>
+                                                <span class="stat-value" id="server-time">00:00</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label" data-i18n="server.players">Online Players</span>
+                                            <span class="stat-value" id="server-players-count">0 players</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="mdl-card__actions mdl-card--border">
-                                    <form id="chat-form">
-                                        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label" style="width: 80%;">
-                                            <input class="mdl-textfield__input" type="text" id="chat-input">
-                                            <label class="mdl-textfield__label" for="chat-input" data-i18n="server.chat.input">Type a message...</label>
-                                        </div>
-                                        <button type="submit" class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" data-i18n="server.chat.send">
-                                            Send
-                                        </button>
+                            </div>
+                            
+                            <!--/* Bottom Row: Player List & Chat side-by-side */-->
+                            <div class="dashboard-bottom-row">
+                                <!--/* Online Player Card */-->
+                                <div class="card players-card">
+                                    <h3 class="card-title" data-i18n="server.players">온라인 플레이어</h3>
+                                    <div class="card-scrollable-content">
+                                        <ul id="player-list" class="players-list-styled">
+                                            <!--/* Dynamically populated */-->
+                                            <li class="player-item loading" data-i18n="server.loading">로딩 중...</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <!--/* Live Chat Card */-->
+                                <div class="card chat-card-redesign">
+                                    <h3 class="card-title" data-i18n="server.chat">라이브 채팅</h3>
+                                    <div id="chat-messages" class="chat-messages-redesign">
+                                        <!--/* Dynamically populated */-->
+                                        <p class="chat-placeholder" data-i18n="server.chat.loading">채팅 기록 로딩 중...</p>
+                                    </div>
+                                    <form id="chat-form" class="chat-form-redesign">
+                                        <input type="text" id="chat-input" placeholder="메시지 입력..." data-i18n="server.chat.input">
+                                        <button type="submit" class="chat-send-btn" data-i18n="server.chat.send">보내기</button>
                                     </form>
                                 </div>
                             </div>
@@ -139,59 +205,179 @@
                     </div>
                 </section>
 
-                <!-- Login Page -->
+                <!--/* Maps Management Page */-->
+                <section id="maps-page" class="page" style="display: none;">
+                    <div class="page-header-centered">
+                        <h1 data-i18n="maps.title">맵 목록 및 관리</h1>
+                        <div class="title-underline"></div>
+                    </div>
+                    
+                    <div class="card maps-list-card">
+                        <!--/* Filter Bar */-->
+                        <div class="maps-filter-bar">
+                            <div class="filter-left">
+                                <span class="filter-title" data-i18n="maps.title">전체 맵</span>
+                                <div class="search-input-wrapper">
+                                    <i class="material-icons search-icon">search</i>
+                                    <input type="text" id="map-search-input" placeholder="맵 이름 검색..." data-i18n="maps.search">
+                                </div>
+                                <div class="select-wrapper">
+                                    <select id="map-planet-select">
+                                        <option value="all" data-i18n="maps.all_planets" selected>모든 행성</option>
+                                        <option value="serpulo">Serpulo</option>
+                                        <option value="erekir">Erekir</option>
+                                    </select>
+                                    <i class="material-icons select-arrow">expand_more</i>
+                                </div>
+                                <div class="sort-btn-group">
+                                    <button class="sort-btn active" id="sort-latest-btn" data-i18n="maps.sort_latest">최신순</button>
+                                    <button class="sort-btn" id="sort-popular-btn" data-i18n="maps.sort_popular">인기순</button>
+                                </div>
+                            </div>
+                            <div class="filter-right">
+                                <button class="upload-btn-orange" id="upload-map-btn-top">
+                                    <i class="material-icons">cloud_upload</i>
+                                    <span data-i18n="maps.upload">업로드</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!--/* Horizontal Maps Grid */-->
+                        <div id="map-list" class="map-grid-horizontal">
+                            <!--/* Dynamically populated */-->
+                            <div class="loading-spinner"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!--/* Server Status View */-->
+                <section id="server-page" class="page" style="display: none;">
+                    <div class="page-header-centered">
+                        <h1 data-i18n="server.title">서버 상태</h1>
+                        <p class="subtitle" data-i18n="server.description">실시간 시스템 성능 메트릭 (12시간 기록)</p>
+                        <div class="title-underline"></div>
+                    </div>
+                    
+                    <div class="status-charts-grid">
+                        <!--/* TPS Chart Card */-->
+                        <div class="card chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title" data-i18n="server.chart.tps">서버 TPS</h3>
+                                <span class="chart-current-val" id="chart-current-tps">--</span>
+                            </div>
+                            <div class="chart-container" id="tps-chart-container">
+                                <!--/* Inline SVG will be rendered here dynamically */-->
+                            </div>
+                        </div>
+
+                        <!--/* Player Count Chart Card */-->
+                        <div class="card chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title" data-i18n="server.chart.players">플레이어 인원</h3>
+                                <span class="chart-current-val" id="chart-current-players">--</span>
+                            </div>
+                            <div class="chart-container" id="players-chart-container">
+                                <!--/* Inline SVG will be rendered here dynamically */-->
+                            </div>
+                        </div>
+
+                        <!--/* Resource Chart Card */-->
+                        <div class="card chart-card full-width" id="resource-chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title" id="chart-title-resources" data-i18n="server.chart.resources">자원량</h3>
+                                <span class="chart-current-val" id="chart-current-resources">--</span>
+                            </div>
+                            <div class="chart-container" id="resources-chart-container">
+                                <!--/* Inline SVG will be rendered here dynamically */-->
+                            </div>
+                        </div>
+
+                        <!--/* Total Units Chart Card */-->
+                        <div class="card chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title" id="chart-title-units" data-i18n="server.chart.units">맵 유닛 수</h3>
+                                <span class="chart-current-val" id="chart-current-units">--</span>
+                            </div>
+                            <div class="chart-container" id="units-chart-container">
+                                <!--/* Inline SVG will be rendered here dynamically */-->
+                            </div>
+                        </div>
+
+                        <!--/* Total Buildings Chart Card */-->
+                        <div class="card chart-card">
+                            <div class="chart-header">
+                                <h3 class="chart-title" id="chart-title-buildings" data-i18n="server.chart.buildings">맵 건물 수</h3>
+                                <span class="chart-current-val" id="chart-current-buildings">--</span>
+                            </div>
+                            <div class="chart-container" id="buildings-chart-container">
+                                <!--/* Inline SVG will be rendered here dynamically */-->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!--/* Modern Login Page */-->
                 <section id="login-page" class="page" style="display: none;">
-                    <div class="mdl-grid">
-                        <div class="mdl-cell mdl-cell--4-col mdl-cell--4-offset">
-                            <div class="mdl-card mdl-shadow--2dp login-card">
-                                <div class="mdl-card__title">
-                                    <h2 class="mdl-card__title-text" data-i18n="login.title">Login</h2>
-                                </div>
-                                <div class="mdl-card__supporting-text">
-                                    <form id="login-form">
-                                        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                                            <input class="mdl-textfield__input" type="text" id="username">
-                                            <label class="mdl-textfield__label" for="username" data-i18n="login.username">Username</label>
+                    <div class="login-wrapper">
+                        <div class="card login-card-redesign">
+                            <div class="login-header">
+                                <div class="logo-box">민</div>
+                                <h2 data-i18n="login.title">로그인</h2>
+                            </div>
+                            <div class="login-body">
+                                <form id="login-form" onsubmit="return false;">
+                                    <div class="input-group">
+                                        <label for="username" data-i18n="login.username">사용자 이름</label>
+                                        <div class="input-wrapper">
+                                            <i class="material-icons input-icon">person</i>
+                                            <input type="text" id="username" required>
                                         </div>
-                                        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                                            <input class="mdl-textfield__input" type="password" id="password">
-                                            <label class="mdl-textfield__label" for="password" data-i18n="login.password">Password</label>
+                                    </div>
+                                    <div class="input-group">
+                                        <label for="password" data-i18n="login.password">비밀번호</label>
+                                        <div class="input-wrapper">
+                                            <i class="material-icons input-icon">lock</i>
+                                            <input type="password" id="password" required>
                                         </div>
-                                        <div id="login-error" class="error-message" style="display: none;"></div>
-                                    </form>
-                                </div>
-                                <div class="mdl-card__actions mdl-card--border">
-                                    <button class="mdl-button mdl-js-button mdl-button--raised mdl-button--colored" id="login-btn" data-i18n="login.button">
-                                        Login
-                                    </button>
-                                </div>
+                                    </div>
+                                    <div id="login-error" class="login-error-msg" style="display: none;"></div>
+                                    <button type="submit" class="login-submit-btn" id="login-btn" data-i18n="login.button">로그인</button>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </section>
-
-                <!-- Upload Map Dialog -->
-                <dialog class="mdl-dialog" id="upload-dialog">
-                    <h4 class="mdl-dialog__title" data-i18n="upload.title">Upload Map</h4>
-                    <div class="mdl-dialog__content">
-                        <form id="upload-form">
-                            <div class="mdl-textfield mdl-js-textfield mdl-textfield--file">
-                                <input class="mdl-textfield__input" type="text" id="file-name" readonly>
-                                <div class="mdl-button mdl-button--primary mdl-button--icon mdl-button--file">
-                                    <i class="material-icons">attach_file</i>
-                                    <input type="file" id="map-file" accept=".msav">
-                                </div>
-                            </div>
-                            <div id="upload-error" class="error-message" style="display: none;"></div>
-                        </form>
-                    </div>
-                    <div class="mdl-dialog__actions">
-                        <button type="button" class="mdl-button" id="upload-cancel" data-i18n="upload.cancel">Cancel</button>
-                        <button type="button" class="mdl-button mdl-button--colored" id="upload-confirm" data-i18n="upload.button">Upload</button>
-                    </div>
-                </dialog>
             </div>
         </main>
+
+        <!--/* Redesigned Upload Dialog */-->
+        <dialog class="custom-dialog" id="upload-dialog">
+            <div class="dialog-header">
+                <h3 data-i18n="upload.title">맵 업로드</h3>
+                <button class="dialog-close-btn" id="upload-close-icon">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <div class="dialog-body">
+                <form id="upload-form">
+                    <div class="file-drop-area" id="file-drop-area">
+                        <i class="material-icons drop-icon">cloud_upload</i>
+                        <span class="drop-text" data-i18n="upload.select">파일을 선택해주세요</span>
+                        <input type="file" id="map-file" accept=".msav" style="display: none;">
+                        <button type="button" class="file-browse-btn" id="browse-btn" data-i18n="upload.browse">Browse File</button>
+                    </div>
+                    <div class="selected-file-info" id="file-info" style="display: none;">
+                        <i class="material-icons file-icon">insert_drive_file</i>
+                        <span class="file-name-text" id="file-name">filename.msav</span>
+                    </div>
+                    <div id="upload-error" class="upload-error-msg" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="dialog-footer">
+                <button type="button" class="dialog-btn cancel-btn" id="upload-cancel" data-i18n="upload.cancel">취소</button>
+                <button type="button" class="dialog-btn confirm-btn" id="upload-confirm" data-i18n="upload.button">업로드</button>
+            </div>
+        </dialog>
     </div>
 </body>
 </html>

@@ -15,10 +15,12 @@ const translations = {
         'nav.login': 'Login',
         'nav.logout': 'Logout',
 
-        // Home page
-        'home.title': 'Welcome to Mindustry Server Web Interface',
-        'home.description': 'This web interface allows you to manage maps and monitor server status.',
-        'home.featured': 'Featured Maps',
+        'home.title': 'Mindustry Server Web Interface',
+        'home.subtitle': 'Preview and Management Hub',
+        'home.latest_map': 'Latest Map',
+        'home.current_map': 'Current Map',
+        'home.current_map.desc': 'Currently running server map.',
+        'home.dashboard': 'Real-time Dashboard',
 
         // Maps page
         'maps.title': 'Map Management',
@@ -31,6 +33,12 @@ const translations = {
         'maps.unknown': 'Unknown',
         'maps.no.description': 'No description available',
         'maps.download': 'Download',
+        'maps.search': 'Search maps...',
+        'maps.all_planets': 'All Planets',
+        'maps.sort_latest': 'Latest',
+        'maps.sort_downloads': 'Downloads',
+        'maps.sort_popular': 'Popularity',
+        'maps.votes': 'Rating: {0} votes',
 
         // Server status page
         'server.title': 'Server Status',
@@ -49,6 +57,12 @@ const translations = {
         'server.chat.send': 'Send',
         'server.chat.you': 'You',
         'server.loading': 'Loading...',
+        'server.active_teams': 'Active Teams',
+        'server.chart.tps': 'Server TPS',
+        'server.chart.players': 'Players Online',
+        'server.chart.units': 'Units on Map',
+        'server.chart.buildings': 'Buildings on Map',
+        'server.chart.no_data': 'No data recorded yet',
 
         // Login page
         'login.title': 'Login',
@@ -65,6 +79,7 @@ const translations = {
         'upload.title': 'Upload Map',
         'upload.button': 'Upload',
         'upload.cancel': 'Cancel',
+        'upload.browse': 'Browse File',
         'upload.select': 'Please select a file',
         'upload.only.msav': 'Only .msav files are allowed',
         'upload.size.limit': 'File size exceeds 10MB limit',
@@ -93,13 +108,15 @@ const translations = {
         'nav.login': '로그인',
         'nav.logout': '로그아웃',
 
-        // Home page
-        'home.title': '민더스트리 서버 웹 인터페이스에 오신 것을 환영합니다',
-        'home.description': '이 웹 인터페이스를 통해 맵을 관리하고 서버 상태를 모니터링할 수 있습니다.',
-        'home.featured': '추천 맵',
+        'home.title': '민더스트리 서버 웹 인터페이스',
+        'home.subtitle': '미리보기 및 관리 허브',
+        'home.latest_map': '최신 맵',
+        'home.current_map': '현재 진행중인 맵',
+        'home.current_map.desc': '현재 서버에서 진행 중인 맵입니다.',
+        'home.dashboard': '실시간 대시보드',
 
         // Maps page
-        'maps.title': '맵 관리',
+        'maps.title': '맵 목록 및 관리',
         'maps.description': '서버용 맵을 업로드, 다운로드 및 관리합니다.',
         'maps.upload': '맵 업로드',
         'maps.none': '사용 가능한 맵이 없습니다',
@@ -109,6 +126,12 @@ const translations = {
         'maps.unknown': '알 수 없음',
         'maps.no.description': '설명 없음',
         'maps.download': '다운로드',
+        'maps.search': '맵 이름 검색...',
+        'maps.all_planets': '모든 행성',
+        'maps.sort_latest': '최신순',
+        'maps.sort_downloads': '다운로드순',
+        'maps.sort_popular': '인기순',
+        'maps.votes': '평가: {0}표',
 
         // Server status page
         'server.title': '서버 상태',
@@ -127,6 +150,12 @@ const translations = {
         'server.chat.send': '보내기',
         'server.chat.you': '나',
         'server.loading': '로딩 중...',
+        'server.active_teams': '남은 팀 수',
+        'server.chart.tps': '서버 TPS',
+        'server.chart.players': '플레이어 인원',
+        'server.chart.units': '맵 유닛 수',
+        'server.chart.buildings': '맵 건물 수',
+        'server.chart.no_data': '기록된 데이터 없음',
 
         // Login page
         'login.title': '로그인',
@@ -143,6 +172,7 @@ const translations = {
         'upload.title': '맵 업로드',
         'upload.button': '업로드',
         'upload.cancel': '취소',
+        'upload.browse': '파일 찾기',
         'upload.select': '파일을 선택해주세요',
         'upload.only.msav': '.msav 파일만 허용됩니다',
         'upload.size.limit': '파일 크기가 10MB 제한을 초과합니다',
@@ -172,9 +202,14 @@ const translations = {
         'nav.logout': 'Вийти',
 
         // Home page
-        'home.title': 'Ласкаво просимо до веб-інтерфейсу сервера Mindustry',
+        'home.title': 'Веб-інтерфейс сервера Mindustry',
+        'home.subtitle': 'Панель попереднього перегляду та керування',
         'home.description': 'Цей веб-інтерфейс дозволяє керувати картами та відстежувати стан сервера.',
         'home.featured': 'Рекомендовані карти',
+        'home.latest_map': 'Остання карта',
+        'home.current_map': 'Поточна карта',
+        'home.current_map.desc': 'Поточна запущена карта на сервері.',
+        'home.dashboard': 'Панель в реальному часі',
 
         // Maps page
         'maps.title': 'Управління картами',
@@ -187,6 +222,12 @@ const translations = {
         'maps.unknown': 'Невідомо',
         'maps.no.description': 'Опис відсутній',
         'maps.download': 'Скачати',
+        'maps.search': 'Пошук карт...',
+        'maps.all_planets': 'Всі планети',
+        'maps.sort_latest': 'Найновіші',
+        'maps.sort_downloads': 'Популярні',
+        'maps.sort_popular': 'Популярність',
+        'maps.votes': 'Рейтинг: {0} голосів',
 
         // Server status page
         'server.title': 'Стан сервера',
@@ -205,6 +246,12 @@ const translations = {
         'server.chat.send': 'Надіслати',
         'server.chat.you': 'Ви',
         'server.loading': 'Завантаження...',
+        'server.active_teams': 'Активні команди',
+        'server.chart.tps': 'TPS Сервера',
+        'server.chart.players': 'Гравці онлайн',
+        'server.chart.units': 'Юнітів на карті',
+        'server.chart.buildings': 'Будівель на карті',
+        'server.chart.no_data': 'Немає записаних даних',
 
         // Login page
         'login.title': 'Вхід',
@@ -221,6 +268,7 @@ const translations = {
         'upload.title': 'Завантажити карту',
         'upload.button': 'Завантажити',
         'upload.cancel': 'Скасувати',
+        'upload.browse': 'Вибрати файл',
         'upload.select': 'Будь ласка, виберіть файл',
         'upload.only.msav': 'Дозволені лише файли .msav',
         'upload.size.limit': 'Розмір файлу перевищує ліміт 10MB',

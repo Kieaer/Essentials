@@ -2860,7 +2860,19 @@ class Commands {
     }
 
     @ServerCommand("debug", "[parameter...]", "Debug any commands")
-    fun debug() {
+    fun debug(arg: Array<out String>) {
+        if (arg.isNotEmpty()) {
+            if (arg[0] == "discord") {
+                for (a in players) {
+                    runBlocking {
+                        a.discordID = "1"
+                        a.update()
+
+                        
+                    }
+                }
+            }
+        }
         println(pluginData.toString())
         for (a in players) {
             println(a.toString())

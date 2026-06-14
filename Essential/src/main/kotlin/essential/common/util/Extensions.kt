@@ -25,14 +25,17 @@ fun LocalDateTime.toHString(): String {
 
 /** Convert to human-readable string */
 fun Duration.toHString(): String {
-    val hours = this.toLong(DurationUnit.SECONDS) / 3600
-    val minutes = (this.toLong(DurationUnit.SECONDS) % 3600) / 60
+    val totalSeconds = this.toLong(DurationUnit.SECONDS)
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
 
-    return when {
-        hours >= 1L -> "$hours:"
-        else -> ""
-    } + when {
-        minutes >= 1L -> " $minutes:"
-        else -> ""
-    }
+    val hp = if (hours > 0) "${hours.toString().padStart(2, '0')}:" else ""
+    val mp = minutes.toString().padStart(2, '0')
+    val sp = seconds.toString().padStart(2, '0')
+    return "$hp$mp:$sp"
 }
+
+/** Extension property to allow Groups.build.size and Groups.unit.size */
+val <T : mindustry.gen.Entityc> mindustry.entities.EntityGroup<T>.size: Int
+    get() = this.size()
