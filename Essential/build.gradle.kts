@@ -81,3 +81,227 @@ tasks.test {
         exceptionFormat = TestExceptionFormat.SHORT
     }
 }
+
+tasks.processResources {
+    doLast {
+        val destDir = destinationDir
+        
+        fun minifyCss(content: String): String {
+            var css = content.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
+            css = css.lines().map { it.trim() }.joinToString("")
+            css = css.replace(Regex("\\s*([{};:,])\\s*"), "$1")
+            css = css.replace(Regex("\\s+"), " ")
+            return css.trim()
+        }
+
+        fun minifyJsWhitespace(content: String): String {
+            val sb = StringBuilder()
+            var i = 0
+            val len = content.length
+            var state = "NORMAL"
+            
+            fun isWordChar(c: Char): Boolean = c.isLetterOrDigit() || c == '_' || c == '$'
+            fun isSafeToJoin(c: Char): Boolean = c in ";{},[]()+-*/=><&|?:"
+            
+            while (i < len) {
+                val c = content[i]
+                val next = if (i + 1 < len) content[i + 1] else null
+                
+                when (state) {
+                    "NORMAL" -> {
+                        if (c == '\'') {
+                            state = "SINGLE_QUOTE"
+                            sb.append(c)
+                        } else if (c == '"') {
+                            state = "DOUBLE_QUOTE"
+                            sb.append(c)
+                        } else if (c == '`') {
+                            state = "TEMPLATE_LITERAL"
+                            sb.append(c)
+                        } else if (c.isWhitespace()) {
+                            if (c == '\n' || c == '\r') {
+                                var lastNonWs: Char? = null
+                                for (idx in sb.length - 1 downTo 0) {
+                                    if (!sb[idx].isWhitespace()) {
+                                        lastNonWs = sb[idx]
+                                        break
+                                    }
+                                }
+                                var nextNonWs: Char? = null
+                                for (idx in i + 1 until len) {
+                                    if (!content[idx].isWhitespace()) {
+                                        nextNonWs = content[idx]
+                                        break
+                                    }
+                                }
+                                val lastSafe = lastNonWs != null && isSafeToJoin(lastNonWs)
+                                val nextSafe = nextNonWs != null && isSafeToJoin(nextNonWs)
+                                if (!lastSafe && !nextSafe) {
+                                    sb.append('\n')
+                                }
+                            } else {
+                                var lastNonWs: Char? = null
+                                for (idx in sb.length - 1 downTo 0) {
+                                    if (!sb[idx].isWhitespace()) {
+                                        lastNonWs = sb[idx]
+                                        break
+                                    }
+                                }
+                                if (lastNonWs != null && isWordChar(lastNonWs) && next != null && isWordChar(next)) {
+                                    sb.append(' ')
+                                }
+                            }
+                        } else {
+                            sb.append(c)
+                        }
+                    }
+                    "SINGLE_QUOTE" -> {
+                        sb.append(c)
+                        if (c == '\\') {
+                            if (next != null) {
+                                sb.append(next)
+                                i++
+                            }
+                        } else if (c == '\'') {
+                            state = "NORMAL"
+                        }
+                    }
+                    "DOUBLE_QUOTE" -> {
+                        sb.append(c)
+                        if (c == '\\') {
+                            if (next != null) {
+                                sb.append(next)
+                                i++
+                            }
+                        } else if (c == '"') {
+                            state = "NORMAL"
+                        }
+                    }
+                    "TEMPLATE_LITERAL" -> {
+                        sb.append(c)
+                        if (c == '\\') {
+                            if (next != null) {
+                                sb.append(next)
+                                i++
+                            }
+                        } else if (c == '`') {
+                            state = "NORMAL"
+                        }
+                    }
+                }
+                i++
+            }
+            return sb.toString().trim()
+        }
+
+        fun minifyJs(content: String): String {
+            val sb = StringBuilder()
+            var i = 0
+            val len = content.length
+            var state = "NORMAL"
+            
+            while (i < len) {
+                val c = content[i]
+                val next = if (i + 1 < len) content[i + 1] else null
+                
+                when (state) {
+                    "NORMAL" -> {
+                        if (c == '/' && next == '/') {
+                            state = "LINE_COMMENT"
+                            i++
+                        } else if (c == '/' && next == '*') {
+                            state = "BLOCK_COMMENT"
+                            i++
+                        } else if (c == '\'') {
+                            state = "SINGLE_QUOTE"
+                            sb.append(c)
+                        } else if (c == '"') {
+                            state = "DOUBLE_QUOTE"
+                            sb.append(c)
+                        } else if (c == '`') {
+                            state = "TEMPLATE_LITERAL"
+                            sb.append(c)
+                        } else {
+                            sb.append(c)
+                        }
+                    }
+                    "SINGLE_QUOTE" -> {
+                        sb.append(c)
+                        if (c == '\\') {
+                            if (next != null) {
+                                sb.append(next)
+                                i++
+                            }
+                        } else if (c == '\'') {
+                            state = "NORMAL"
+                        }
+                    }
+                    "DOUBLE_QUOTE" -> {
+                        sb.append(c)
+                        if (c == '\\') {
+                            if (next != null) {
+                                sb.append(next)
+                                i++
+                            }
+                        } else if (c == '"') {
+                            state = "NORMAL"
+                        }
+                    }
+                    "TEMPLATE_LITERAL" -> {
+                        sb.append(c)
+                        if (c == '\\') {
+                            if (next != null) {
+                                sb.append(next)
+                                i++
+                            }
+                        } else if (c == '`') {
+                            state = "NORMAL"
+                        }
+                    }
+                    "LINE_COMMENT" -> {
+                        if (c == '\n' || c == '\r') {
+                            sb.append(c)
+                            state = "NORMAL"
+                        }
+                    }
+                    "BLOCK_COMMENT" -> {
+                        if (c == '*' && next == '/') {
+                            state = "NORMAL"
+                            i++
+                        }
+                    }
+                }
+                i++
+            }
+            
+            val codeWithoutComments = sb.toString()
+            return minifyJsWhitespace(codeWithoutComments)
+        }
+
+        val webDir = File(destDir, "web")
+        if (webDir.exists()) {
+            val cssDir = File(webDir, "css")
+            if (cssDir.exists()) {
+                cssDir.listFiles()?.forEach { file ->
+                    if (file.extension == "css" && !file.name.endsWith(".min.css")) {
+                        val originalContent = file.readText()
+                        val minifiedContent = minifyCss(originalContent)
+                        file.writeText(minifiedContent)
+                        logger.lifecycle("Minified CSS: ${file.name} (${originalContent.length} -> ${minifiedContent.length} bytes)")
+                    }
+                }
+            }
+            val jsDir = File(webDir, "js")
+            if (jsDir.exists()) {
+                jsDir.listFiles()?.forEach { file ->
+                    if (file.extension == "js" && !file.name.endsWith(".min.js")) {
+                        val originalContent = file.readText()
+                        val minifiedContent = minifyJs(originalContent)
+                        file.writeText(minifiedContent)
+                        logger.lifecycle("Minified JS: ${file.name} (${originalContent.length} -> ${minifiedContent.length} bytes)")
+                    }
+                }
+            }
+        }
+    }
+}
