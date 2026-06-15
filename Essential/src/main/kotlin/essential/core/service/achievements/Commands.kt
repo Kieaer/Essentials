@@ -12,7 +12,7 @@ import kotlin.math.ceil
 import kotlin.math.min
 
 class Commands {
-    @ClientCommand(name = "achievements", parameter = "[page]", description = "Show your achievements")
+    @ClientCommand(name = "ach", parameter = "[page]", description = "Show your achievements")
     fun achievements(playerData: PlayerData, args: Array<String>) {
         val temp: MutableList<String?> = arrayListOf()
         val bundle = try {
