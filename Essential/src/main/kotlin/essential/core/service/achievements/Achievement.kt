@@ -1,6 +1,7 @@
 package essential.core.service.achievements
 
 import arc.Events
+import arc.util.Log
 import essential.common.database.data.PlayerData
 import essential.common.database.data.setAchievement
 import essential.core.Main.Companion.scope
@@ -637,31 +638,29 @@ enum class Achievement {
 
     abstract fun current(data: PlayerData): Int
     open fun success(data: PlayerData): Boolean {
-        // Prevent achievements from being cleared in sandbox mode
         if (Vars.state.rules.infiniteResources) {
             return false
         }
 
-        // First check if the achievement is already completed in database
         val achievementName = this.toString().lowercase(Locale.getDefault())
-
-        // If it's already marked as completed in database, return true
         if (data.achievementStatus.contains(achievementName)) {
             return true
         }
 
-        // Otherwise, check if the current value meets the target
         return current(data) >= value()
     }
 
     fun set(data: PlayerData) {
         val achievementName = this.toString().lowercase(Locale.getDefault())
 
-        // Only store in database for permanent storage
-        // We no longer store in playerData.status
         if (!data.achievementStatus.contains(achievementName)) {
+            data.achievementStatus.add(achievementName)
             scope.launch {
-                setAchievement(data, achievementName)
+                try {
+                    setAchievement(data, achievementName)
+                } catch (e: Exception) {
+                    Log.err("Failed to save achievement $achievementName for player ${data.name}", e)
+                }
             }
 
             Events.fire(CustomEvents.AchievementClear(this, data))
