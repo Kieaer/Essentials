@@ -260,10 +260,10 @@ class EffectSystem : Timer.Task() {
                         val p = it.player
                         if (p.unit() != null && p.unit().health > 0f) {
                             if (!conf.feature.level.effect.moving || p.unit().moving()) {
-                                Call.effect(p.con(), Fx.shootSmall, data.player.x + x1, data.player.y + y1, rot, customColor)
-                                Call.effect(p.con(), Fx.shootSmall, data.player.x + x2, data.player.y + y2, rot, customColor)
-                                Call.effect(p.con(), Fx.shootBig, data.player.x, data.player.y, rot + 180f, customColor)
-                                Call.effect(p.con(), Fx.mineHuge, data.player.x, data.player.y, 2f, customColor)
+                                Call.effect(p.con(), Fx.shootSmall, data.player.unit().x + x1, data.player.unit().y + y1, rot, customColor)
+                                Call.effect(p.con(), Fx.shootSmall, data.player.unit().x + x2, data.player.unit().y + y2, rot, customColor)
+                                Call.effect(p.con(), Fx.shootBig, data.player.unit().x, data.player.unit().y, rot + 180f, customColor)
+                                Call.effect(p.con(), Fx.mineHuge, data.player.unit().x, data.player.unit().y, 2f, customColor)
                             }
                         }
                     }
@@ -295,11 +295,11 @@ class EffectSystem : Timer.Task() {
                         val p = it.player
                         if (p.unit() != null && p.unit().health > 0f) {
                             if (!conf.feature.level.effect.moving || p.unit().moving()) {
-                                Call.effect(p.con(), Fx.shootSmall, data.player.x + x1, data.player.y + y1, rot, customColor)
-                                Call.effect(p.con(), Fx.shootSmall, data.player.x + x2, data.player.y + y2, rot, customColor)
-                                Call.effect(p.con(), Fx.shootBig, data.player.x + x3, data.player.y + y3, rot + 190f, customColor)
-                                Call.effect(p.con(), Fx.shootBig, data.player.x + x4, data.player.y + y4, rot - 190f, customColor)
-                                Call.effect(p.con(), Fx.mineHuge, data.player.x, data.player.y, rot - 190f, customColor)
+                                Call.effect(p.con(), Fx.shootSmall, data.player.unit().x + x1, data.player.unit().y + y1, rot, customColor)
+                                Call.effect(p.con(), Fx.shootSmall, data.player.unit().x + x2, data.player.unit().y + y2, rot, customColor)
+                                Call.effect(p.con(), Fx.shootBig, data.player.unit().x + x3, data.player.unit().y + y3, rot + 190f, customColor)
+                                Call.effect(p.con(), Fx.shootBig, data.player.unit().x + x4, data.player.unit().y + y4, rot - 190f, customColor)
+                                Call.effect(p.con(), Fx.mineHuge, data.player.unit().x, data.player.unit().y, rot - 190f, customColor)
                             }
                         }
                     }
@@ -327,8 +327,8 @@ class EffectSystem : Timer.Task() {
 
                 buffer.forEach {
                     target.forEach { p ->
-                        val x = if (it.random.isNotEmpty()) it.player.x + it.random[0].random() else it.player.x
-                        val y = if (it.random.isNotEmpty()) it.player.y + it.random[0].random() else it.player.y
+                        val x = if (it.random.isNotEmpty()) it.player.unit().x + it.random[0].random() else it.player.unit().x
+                        val y = if (it.random.isNotEmpty()) it.player.unit().y + it.random[0].random() else it.player.unit().y
                         Call.effect(p.con(), it.effect, x, y, it.rotate, it.color)
                     }
                 }
