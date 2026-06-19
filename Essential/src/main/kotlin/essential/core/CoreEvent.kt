@@ -388,11 +388,7 @@ fun tap(event: TapEvent) {
             val ip = data.status["hub_ip"]!!
             val port = data.status["hub_port"]!!.toInt()
 
-            val bundle = if (data.status.containsKey("language")) {
-                Bundle(data.status["language"]!!)
-            } else {
-                Bundle(event.player.locale())
-            }
+            val bundle = Bundle(event.player.locale())
             val options = arrayOf(arrayOf(bundle["command.hub.zone.yes"], bundle["command.hub.zone.no"]))
             val menu = Menus.registerMenu { player, option ->
                 val touch = when (option) {

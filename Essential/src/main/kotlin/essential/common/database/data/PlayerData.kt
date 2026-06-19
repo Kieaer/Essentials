@@ -11,15 +11,15 @@ import kotlinx.datetime.LocalDateTime
 import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
-import java.util.Locale
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
+import java.util.*
 
-private fun parseLocaleOrDefault(rawLocale: String): String? {
+internal fun parseLocaleOrDefault(rawLocale: String): String? {
     val normalized = rawLocale.replace('_', '-')
     val locale = Locale.forLanguageTag(normalized)
     if (locale.language.isBlank()) return null
@@ -102,7 +102,9 @@ data class PlayerData(
 
     var player: Playerc = Player.create()
     val status = mutableMapOf<String, String>()
-    val bundle: Bundle get() = Bundle(player.locale())
+    val bundle: Bundle get() = Bundle(
+        if (player.con() != null && !player.locale().isNullOrBlank()) player.locale() else languageTag
+    )
 
     fun send(bundle: Bundle, key: String, vararg args: Any) = send(
         bundle.get(key, *args)
