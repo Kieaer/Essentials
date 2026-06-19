@@ -22,6 +22,7 @@ import io.r2dbc.spi.ValidationDepth
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -41,6 +42,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import java.time.Duration
 
+var worldHistoryConnectionPool: ConnectionPool? = null
+var defaultConnectionPool: ConnectionPool? = null
 var worldHistoryDatabase: R2dbcDatabase? = null
 var defaultDatabase: R2dbcDatabase? = null
 
@@ -68,7 +71,9 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
         .validationDepth(ValidationDepth.LOCAL)
         .build()
 
-    worldHistoryDatabase = connectDatabase(ConnectionPool(h2PoolConfig), h2HistoryFactory.second)
+    val h2Pool = ConnectionPool(h2PoolConfig)
+    worldHistoryConnectionPool = h2Pool
+    worldHistoryDatabase = connectDatabase(h2Pool, h2HistoryFactory.second)
 
     rootPath.child("data").mkdirs()
 
@@ -96,7 +101,9 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
         .validationDepth(ValidationDepth.REMOTE)
         .build()
 
-    defaultDatabase = connectDatabase(ConnectionPool(poolConfig), dialect)
+    val pool = ConnectionPool(poolConfig)
+    defaultConnectionPool = pool
+    defaultDatabase = connectDatabase(pool, dialect)
 
     TransactionManager.defaultDatabase = defaultDatabase!!
 
@@ -368,4 +375,20 @@ fun mariadb(r2dbcUrl: String, user: String, pass: String): Pair<ConnectionFactor
         ),
         MariaDBDialect()
     )
+}
+
+fun databaseClose() {
+    runBlocking {
+        try {
+            defaultConnectionPool?.dispose()
+        } catch (_: Throwable) {}
+        defaultConnectionPool = null
+        defaultDatabase = null
+
+        try {
+            worldHistoryConnectionPool?.dispose()
+        } catch (_: Throwable) {}
+        worldHistoryConnectionPool = null
+        worldHistoryDatabase = null
+    }
 }
