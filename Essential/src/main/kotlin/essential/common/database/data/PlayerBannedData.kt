@@ -6,7 +6,6 @@ import ksp.table.GenerateCode
 import mindustry.gen.Playerc
 import mindustry.net.Administration
 import org.jetbrains.exposed.v1.core.*
-import org.jetbrains.exposed.v1.json.contains
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -45,7 +44,11 @@ suspend fun removeBanInfoByUUID(uuid: String) {
 /** Unban a player by IP. */
 suspend fun removeBanInfoByIP(ip: String) {
     return suspendTransaction {
-        PlayerBannedTable.deleteWhere { PlayerBannedTable.ips.contains(ip) }
+        PlayerBannedTable.deleteWhere {
+            PlayerBannedTable.ips
+                .castTo(TextColumnType())
+                .like("%\"$ip\"%")
+        }
     }
 }
 
