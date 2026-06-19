@@ -12,6 +12,7 @@ import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.createPluginData
 import essential.common.database.data.getPluginData
 import essential.common.database.data.migrateMapRatingsFromPluginData
+import essential.common.database.data.update
 import essential.common.database.databaseInit
 import essential.common.permission.Permission
 import essential.common.service.fileWatchService
@@ -28,6 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -42,6 +44,7 @@ import org.apache.maven.artifact.versioning.DefaultArtifactVersion
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.time.Clock
 
 class Main : Plugin() {
     companion object {
@@ -170,6 +173,15 @@ class Main : Plugin() {
             override fun dispose() {
                 runBlocking {
                     WorldHistoryBuffer.stop()
+                    players.forEach { data ->
+                        try {
+                            data.isConnected = false
+                            data.lastLogoutDate = Clock.System.now().toLocalDateTime(systemTimezone)
+                            data.update()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
                 }
                 scope.cancel()
                 threadPool.shutdownNow()
