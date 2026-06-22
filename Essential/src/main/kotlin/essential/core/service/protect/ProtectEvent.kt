@@ -191,7 +191,11 @@ fun playerJoin(e: EventType.PlayerJoin) {
                 Events.fire(CustomEvents.PlayerDataLoad(data))
             }
         } else {
-            e.player.sendMessage(Bundle(e.player.locale)["event.player.first.register"])
+            if (data != null) {
+                Events.fire(CustomEvents.PlayerDataLoad(data))
+            } else {
+                e.player.sendMessage(Bundle(e.player.locale)["event.player.first.register"])
+            }
         }
     }
 }

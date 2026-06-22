@@ -2,22 +2,26 @@ package essential.common.database.data
 
 import arc.util.Log
 import essential.common.bundle.Bundle
+import essential.common.database.table.AchievementTable
 import essential.common.database.table.PlayerTable
 import essential.common.playerNumber
+import essential.common.systemTimezone
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.toLocalDateTime
 import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.r2dbc.insert
-import org.jetbrains.exposed.v1.r2dbc.select
-import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.*
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 internal fun parseLocaleOrDefault(rawLocale: String): String? {
     val normalized = rawLocale.replace('_', '-')
@@ -231,4 +235,37 @@ suspend fun getPlayerDataByDiscord(discordID: String): PlayerData? {
             .where { PlayerTable.discordID eq discordID }
             .mapToPlayerDataList()
     }.firstOrNull()
+}
+
+@OptIn(ExperimentalTime::class)
+fun createTemporaryPlayerData(player: Playerc): PlayerData {
+    val now = Clock.System.now().toLocalDateTime(systemTimezone)
+    val data = PlayerData(
+        id = 0u,
+        name = player.name(),
+        uuid = player.uuid(),
+        languageTag = parseLocaleOrDefault(player.locale()) ?: "en",
+        firstPlayed = now,
+        lastPlayed = now,
+        lastLoginDate = now
+    )
+    data.player = player
+    return data
+}
+
+suspend fun deletePlayerData(uuid: String): Boolean = suspendTransaction {
+    val id = PlayerTable.select(PlayerTable.id)
+        .where { PlayerTable.uuid eq uuid }
+        .map { it[PlayerTable.id] }
+        .firstOrNull()
+    if (id != null) {
+        AchievementTable.deleteWhere { AchievementTable.playerId eq id }
+    }
+    PlayerTable.deleteWhere { PlayerTable.uuid eq uuid } > 0
+}
+
+suspend fun rebindAccountUuid(id: UInt, newUuid: String): Boolean = suspendTransaction {
+    PlayerTable.update({ PlayerTable.id eq id }) {
+        it[PlayerTable.uuid] = newUuid
+    } > 0
 }
