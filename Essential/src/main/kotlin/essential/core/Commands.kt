@@ -35,7 +35,6 @@ import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
@@ -1420,7 +1419,7 @@ class Commands {
                             PlayerTable.pvpWinCount,
                             PlayerTable.pvpLoseCount,
                             PlayerTable.pvpEliminatedCount
-                        ).map {
+                        ).collect {
                             if (!it[PlayerTable.hideRanking]) {
                                 pvp[Pair(it[PlayerTable.name], it[PlayerTable.uuid])] = Triple(
                                     it[PlayerTable.pvpWinCount],
@@ -1438,7 +1437,7 @@ class Commands {
                             "break" -> PlayerTable.blockBreakCount
                             else -> PlayerTable.uuid // dummy
                         }
-                        PlayerTable.select(PlayerTable.name, PlayerTable.uuid, PlayerTable.hideRanking, type).map {
+                        PlayerTable.select(PlayerTable.name, PlayerTable.uuid, PlayerTable.hideRanking, type).collect {
                             if (!it[PlayerTable.hideRanking]) {
                                 when (arg[0].lowercase()) {
                                     "time" -> time[Pair(it[PlayerTable.name], it[PlayerTable.uuid])] =
@@ -1477,7 +1476,7 @@ class Commands {
                 val pages = Mathf.ceil(d.size.toFloat() / per)
                 page--
 
-                if (page >= pages || page < 0) {
+                if (page !in 0..<pages) {
                     Core.app.post { playerData.err("command.page.range", pages) }
                     return@launch
                 }
