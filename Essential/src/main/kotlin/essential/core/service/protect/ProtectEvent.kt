@@ -214,7 +214,7 @@ fun blockDestroy(e: EventType.BlockDestroyEvent) {
 @Event
 fun playerDataLoaded(e: CustomEvents.PlayerDataLoadEnd) {
     if (conf.rules.strict) {
-        Groups.player.find { p -> p.uuid() == e.playerData.uuid }.name(e.playerData.name)
+        Groups.player.find { p -> p.uuid() == e.playerData.uuid }?.name(e.playerData.name)
     }
 }
 
