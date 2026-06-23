@@ -1367,6 +1367,19 @@ function drawMultiLineChart(containerId, dataPoints, dataKey) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    // Save dataPoints and dataKey for redraws
+    container._dataPoints = dataPoints;
+    container._dataKey = dataKey;
+
+    // Initialize selection states if they don't exist
+    if (!container._selectedKeys) {
+        container._selectedKeys = {};
+    }
+
+    const isSelected = (key) => {
+        return container._selectedKeys[key] !== false;
+    };
+
     container.innerHTML = '';
 
     // Remove existing legend from the card if it exists
@@ -1489,6 +1502,8 @@ function drawMultiLineChart(containerId, dataPoints, dataKey) {
     activeKeys.forEach(k => {
         const color = getColor(k);
         const coords = [];
+        const selected = isSelected(k);
+        const opacity = selected ? '1' : '0.15';
 
         dataPoints.forEach((p, idx) => {
             const map = p[dataKey];
@@ -1512,6 +1527,7 @@ function drawMultiLineChart(containerId, dataPoints, dataKey) {
             linePath.setAttribute('stroke-width', '2');
             linePath.setAttribute('stroke-linecap', 'round');
             linePath.setAttribute('stroke-linejoin', 'round');
+            linePath.setAttribute('opacity', opacity);
             svg.appendChild(linePath);
 
             // Last point marker
@@ -1523,6 +1539,7 @@ function drawMultiLineChart(containerId, dataPoints, dataKey) {
             pulseInner.setAttribute('fill', 'white');
             pulseInner.setAttribute('stroke', color);
             pulseInner.setAttribute('stroke-width', '2');
+            pulseInner.setAttribute('opacity', opacity);
             svg.appendChild(pulseInner);
         }
     });
@@ -1580,10 +1597,15 @@ function drawMultiLineChart(containerId, dataPoints, dataKey) {
 
     activeKeys.forEach(k => {
         const color = getColor(k);
+        const selected = isSelected(k);
         const item = document.createElement('div');
         item.style.display = 'flex';
         item.style.alignItems = 'center';
         item.style.gap = '6px';
+        item.style.cursor = 'pointer';
+        item.style.userSelect = 'none';
+        item.style.opacity = selected ? '1' : '0.4';
+        item.style.transition = 'opacity 0.2s';
 
         const dot = document.createElement('span');
         dot.style.display = 'inline-block';
@@ -1597,6 +1619,12 @@ function drawMultiLineChart(containerId, dataPoints, dataKey) {
 
         item.appendChild(dot);
         item.appendChild(label);
+
+        item.addEventListener('click', () => {
+            container._selectedKeys[k] = !selected;
+            drawMultiLineChart(containerId, container._dataPoints, container._dataKey);
+        });
+
         legendContainer.appendChild(item);
     });
 
