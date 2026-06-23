@@ -1485,9 +1485,9 @@ class Commands {
                 for (a in per * page until (per * (page + 1)).coerceAtMost(d.size)) {
                     if (arg[0].lowercase() == "pvp") {
                         val rank = d[a].second as Triple<*, *, *>
-                        val win = rank.first as Int
-                        val defeat = rank.second as Int
-                        val elimination = rank.third as Int
+                        val win = (rank.first as Short).toInt()
+                        val defeat = (rank.second as Short).toInt()
+                        val elimination = (rank.third as Short).toInt()
                         val rate = round((win.toFloat() / (defeat.toFloat() + elimination.toFloat())) * 100)
                         string.append("[white]$a[] ${d[a].first.first}[white] [yellow]-[] [green]$win${bundle["command.ranking.pvp.win"]}[] / [scarlet]$defeat${bundle["command.ranking.pvp.lose"]}[] ($rate%)\n")
                     } else {
@@ -1532,7 +1532,7 @@ class Commands {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Core.app.exit()
+                Core.app.post { playerData.err("command.ranking.wrong") }
             }
         }
     }
