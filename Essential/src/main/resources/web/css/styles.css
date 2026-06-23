@@ -1489,6 +1489,312 @@ body {
     }
 }
 
+/* ===== My Info / Profile Page ===== */
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.profile-card {
+    padding: 24px;
+}
+
+.profile-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 12px;
+}
+
+.profile-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-family: var(--font-primary);
+}
+
+.profile-info-row:last-child {
+    border-bottom: none;
+}
+
+.profile-info-label {
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.profile-info-value {
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+    word-break: break-all;
+}
+
+.profile-info-value.copyable {
+    cursor: pointer;
+    color: var(--accent-orange);
+}
+
+.profile-info-value.copyable:hover {
+    text-decoration: underline;
+}
+
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+}
+
+@media (max-width: 480px) {
+    .profile-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.profile-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 16px 8px;
+    background-color: var(--bg-primary);
+    border-radius: var(--border-radius-sm);
+    text-align: center;
+}
+
+.profile-stat-card .material-icons {
+    color: var(--accent-orange);
+    font-size: 22px;
+    margin-bottom: 2px;
+}
+
+.profile-stat-value {
+    font-size: 18px;
+    font-weight: 800;
+    font-family: 'Outfit', sans-serif;
+    color: var(--bg-header);
+}
+
+.profile-stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-family: var(--font-primary);
+}
+
+.profile-achievements-card {
+    padding: 24px;
+}
+
+.achievement-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+    .achievement-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+.achievement-item {
+    padding: 14px 16px;
+    background-color: var(--bg-primary);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid #e2e8f0;
+}
+
+.achievement-item.completed {
+    background-color: var(--accent-orange-bg);
+    border-color: var(--accent-orange);
+}
+
+.achievement-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.achievement-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: var(--font-primary);
+}
+
+.achievement-name .material-icons {
+    font-size: 18px;
+    color: var(--text-muted);
+}
+
+.achievement-item.completed .achievement-name .material-icons {
+    color: var(--accent-orange);
+}
+
+.achievement-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    flex-shrink: 0;
+}
+
+.achievement-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.achievement-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-orange-hover), var(--accent-orange));
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.achievement-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0 0 10px 0;
+    line-height: 1.4;
+    font-family: var(--font-primary);
+}
+
+.achievement-footer {
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: right;
+    font-family: 'Outfit', sans-serif;
+}
+
+.achievement-footer.completed {
+    color: var(--accent-orange);
+}
+
+/* Hidden (secret) achievement that has been cleared — twinkling starlight background */
+.achievement-item.hidden-cleared {
+    position: relative;
+    overflow: hidden;
+    border-color: #7c3aed;
+    background:
+        radial-gradient(2px 2px at 20% 30%, #ffffff, transparent),
+        radial-gradient(1.5px 1.5px at 60% 20%, #ffffff, transparent),
+        radial-gradient(2px 2px at 80% 60%, #fde68a, transparent),
+        radial-gradient(1.5px 1.5px at 35% 75%, #c4b5fd, transparent),
+        radial-gradient(1.5px 1.5px at 90% 85%, #ffffff, transparent),
+        radial-gradient(2px 2px at 50% 50%, #fde68a, transparent),
+        linear-gradient(135deg, #1e1b4b, #312e81 55%, #4c1d95);
+}
+
+.achievement-item.hidden-cleared::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(1.5px 1.5px at 15% 60%, #ffffff, transparent),
+        radial-gradient(2px 2px at 45% 15%, #fef9c3, transparent),
+        radial-gradient(1.5px 1.5px at 70% 40%, #ffffff, transparent),
+        radial-gradient(2px 2px at 85% 25%, #ddd6fe, transparent),
+        radial-gradient(1.5px 1.5px at 30% 90%, #ffffff, transparent);
+    animation: starTwinkle 2.4s ease-in-out infinite;
+}
+
+@keyframes starTwinkle {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
+}
+
+.achievement-item.hidden-cleared .achievement-name,
+.achievement-item.hidden-cleared .achievement-desc,
+.achievement-item.hidden-cleared .achievement-footer.completed {
+    position: relative;
+    z-index: 1;
+    color: #f5f3ff;
+}
+
+.achievement-item.hidden-cleared .achievement-name .material-icons {
+    color: #fde68a;
+}
+
+.achievement-item.hidden-cleared .achievement-bar {
+    position: relative;
+    z-index: 1;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* EXP bar */
+.profile-exp-card {
+    padding: 20px 24px;
+    margin-bottom: 24px;
+}
+
+.profile-exp-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+}
+
+.profile-exp-label {
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-primary);
+    color: var(--bg-header);
+}
+
+.profile-exp-level {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent-orange);
+    margin-left: 6px;
+}
+
+.profile-exp-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: 'Outfit', sans-serif;
+}
+
+.exp-bar {
+    width: 100%;
+    height: 14px;
+    background-color: #e2e8f0;
+    border-radius: 7px;
+    overflow: hidden;
+}
+
+.exp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f59e0b, var(--accent-orange));
+    border-radius: 7px;
+    transition: width 0.5s ease;
+}
+
 .chart-no-data {
     display: flex;
     align-items: center;

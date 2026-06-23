@@ -15,6 +15,7 @@ const pages = {
     home: document.getElementById('home-page'),
     maps: document.getElementById('maps-page'),
     server: document.getElementById('server-page'),
+    profile: document.getElementById('profile-page'),
     login: document.getElementById('login-page')
 };
 
@@ -120,7 +121,7 @@ function updateLoginState(username) {
         stopHistoryPolling();
 
         // Show login page if trying to access protected pages
-        if (currentPage === 'maps' || currentPage === 'server') {
+        if (currentPage === 'maps' || currentPage === 'server' || currentPage === 'profile') {
             showPage('login');
         }
     }
@@ -166,6 +167,7 @@ function setupNavigation() {
     document.getElementById('nav-home').addEventListener('click', () => showPage('home'));
     document.getElementById('nav-maps').addEventListener('click', () => showPage('maps'));
     document.getElementById('nav-server').addEventListener('click', () => showPage('server'));
+    document.getElementById('nav-profile').addEventListener('click', () => showPage('profile'));
     document.getElementById('nav-login').addEventListener('click', () => showPage('login'));
     document.getElementById('nav-logout').addEventListener('click', logout);
 
@@ -173,6 +175,7 @@ function setupNavigation() {
     document.getElementById('drawer-home').addEventListener('click', () => showPage('home'));
     document.getElementById('drawer-maps').addEventListener('click', () => showPage('maps'));
     document.getElementById('drawer-server').addEventListener('click', () => showPage('server'));
+    document.getElementById('drawer-profile').addEventListener('click', () => showPage('profile'));
     document.getElementById('drawer-login').addEventListener('click', () => showPage('login'));
     document.getElementById('drawer-logout').addEventListener('click', logout);
 }
@@ -180,7 +183,7 @@ function setupNavigation() {
 // Show the specified page
 function showPage(pageName) {
     // Check if user is logged in for protected pages
-    if ((pageName === 'maps' || pageName === 'server') && !isLoggedIn) {
+    if ((pageName === 'maps' || pageName === 'server' || pageName === 'profile') && !isLoggedIn) {
         pageName = 'login';
     }
 
@@ -229,6 +232,8 @@ function showPage(pageName) {
     // Load data for the page if needed
     if (pageName === 'maps' && isLoggedIn) {
         loadMaps();
+    } else if (pageName === 'profile' && isLoggedIn) {
+        loadMyInfo();
     } else if (pageName === 'home') {
         loadFeaturedMaps();
         if (isLoggedIn) {
@@ -835,6 +840,177 @@ function loadServerStatus() {
         .catch(error => {
             console.error('Error loading server status:', error);
         });
+}
+
+// Split CamelCase achievement enum names into readable words
+function prettifyAchievementName(name) {
+    if (!name) return '';
+    return name
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2');
+}
+
+// Format an ISO LocalDateTime string (e.g. 2024-01-05T12:34:56) to "YYYY-MM-DD HH:MM"
+function formatDateTime(isoStr) {
+    if (!isoStr) return '-';
+    const m = isoStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    if (!m) return isoStr;
+    return `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}`;
+}
+
+// Load personal player data for the My Info page
+function loadMyInfo() {
+    if (!isLoggedIn) return;
+
+    const container = document.getElementById('profile-content');
+    if (!container) return;
+
+    container.innerHTML = '<div class="loading-spinner"></div>';
+
+    fetch('api/me')
+        .then(response => {
+            if (response.status === 401) {
+                isLoggedIn = false;
+                updateLoginState();
+                throw new Error(window.i18n.translate('error.not.logged.in'));
+            }
+            if (response.ok) {
+                return response.json();
+            } else {
+                throw new Error(window.i18n.translate('profile.error'));
+            }
+        })
+        .then(info => renderMyInfo(info))
+        .catch(error => {
+            container.innerHTML = `<p style="text-align: center; color: var(--text-muted); padding: 40px 0;">${error.message}</p>`;
+        });
+}
+
+// Render the personal data and achievement progress
+function renderMyInfo(info) {
+    const container = document.getElementById('profile-content');
+    if (!container) return;
+
+    const t = (k, ...p) => window.i18n.translate(k, ...p);
+
+    // Account info rows
+    const accountRows = [
+        { label: t('profile.uuid'), value: info.uuid, copy: true },
+        { label: t('profile.permission'), value: info.permission },
+        { label: t('profile.joined'), value: formatDateTime(info.firstPlayed) },
+        { label: t('profile.lastlogin'), value: formatDateTime(info.lastLogin) },
+        { label: t('profile.playtime'), value: info.totalPlayed }
+    ];
+
+    // Stat cards
+    const stats = [
+        { label: t('profile.blocks_placed'), value: info.blockPlaceCount.toLocaleString(), icon: 'add_box' },
+        { label: t('profile.blocks_broken'), value: info.blockBreakCount.toLocaleString(), icon: 'delete' },
+        { label: t('profile.level'), value: info.level.toLocaleString(), icon: 'military_tech' },
+        { label: t('profile.attendance'), value: info.attendanceDays.toLocaleString(), icon: 'event_available' },
+        { label: t('profile.pvp_win'), value: info.pvpWinCount.toLocaleString(), icon: 'emoji_events' },
+        { label: t('profile.pvp_lose'), value: info.pvpLoseCount.toLocaleString(), icon: 'sentiment_dissatisfied' },
+        { label: t('profile.pvp_winrate'), value: `${info.pvpWinRate}%`, icon: 'percent' },
+        { label: t('profile.wave_clear'), value: info.waveClear.toLocaleString(), icon: 'waves' },
+        { label: t('profile.attack_clear'), value: info.attackClear.toLocaleString(), icon: 'swords' }
+    ];
+
+    // EXP bar (placed at the very top)
+    const expMax = info.expMax > 0 ? info.expMax : Math.max(info.exp, 1);
+    const expPct = Math.min(100, Math.round((info.exp / expMax) * 100));
+    const expHtml = `
+        <div class="card profile-exp-card">
+            <div class="profile-exp-head">
+                <span class="profile-exp-label">${t('profile.exp')} <span class="profile-exp-level">Lv. ${info.level}</span></span>
+                <span class="profile-exp-count">${info.exp.toLocaleString()} / ${expMax.toLocaleString()}</span>
+            </div>
+            <div class="exp-bar">
+                <div class="exp-bar-fill" style="width: ${expPct}%;"></div>
+            </div>
+        </div>
+    `;
+
+    const accountHtml = accountRows.map(r => `
+        <div class="profile-info-row">
+            <span class="profile-info-label">${r.label}</span>
+            <span class="profile-info-value${r.copy ? ' copyable' : ''}"${r.copy ? ` title="${r.value}" data-copy="${r.value}"` : ''}>${r.value}</span>
+        </div>
+    `).join('');
+
+    const statsHtml = stats.map(s => `
+        <div class="profile-stat-card">
+            <i class="material-icons">${s.icon}</i>
+            <span class="profile-stat-value">${s.value}</span>
+            <span class="profile-stat-label">${s.label}</span>
+        </div>
+    `).join('');
+
+    // Achievements (completed first, then by progress percentage)
+    const achievements = (info.achievements || []).slice().sort((a, b) => {
+        if (a.completed !== b.completed) return a.completed ? -1 : 1;
+        const pa = a.target > 0 ? a.current / a.target : 0;
+        const pb = b.target > 0 ? b.current / b.target : 0;
+        return pb - pa;
+    });
+
+    const achievementsHtml = achievements.map(a => {
+        const pct = a.completed ? 100 : (a.target > 0 ? Math.min(100, Math.round((a.current / a.target) * 100)) : 0);
+        const title = a.title || prettifyAchievementName(a.name);
+        const description = a.description && a.description !== a.name ? a.description : '';
+        // Cleared achievements show the localized goal at the bottom; otherwise show current/target progress
+        const goalText = a.goal ? a.goal : `${t('profile.target')}: ${a.target.toLocaleString()}`;
+        const footer = a.completed
+            ? `<div class="achievement-footer completed">${goalText}</div>`
+            : `<div class="achievement-footer">${a.current.toLocaleString()} / ${a.target.toLocaleString()}</div>`;
+        const sparkle = (a.hidden && a.completed) ? ' hidden-cleared' : '';
+        return `
+        <div class="achievement-item${a.completed ? ' completed' : ''}${sparkle}">
+            <div class="achievement-head">
+                <span class="achievement-name">
+                    <i class="material-icons">${a.completed ? 'check_circle' : 'lock_open'}</i>
+                    ${title}
+                </span>
+            </div>
+            ${description ? `<p class="achievement-desc">${description}</p>` : ''}
+            <div class="achievement-bar">
+                <div class="achievement-bar-fill" style="width: ${pct}%;"></div>
+            </div>
+            ${footer}
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+        ${expHtml}
+        <div class="profile-grid">
+            <div class="card profile-card">
+                <h3 class="card-title">${t('profile.account')}</h3>
+                <div class="profile-info-list">${accountHtml}</div>
+            </div>
+            <div class="card profile-card">
+                <h3 class="card-title">${t('profile.stats')}</h3>
+                <div class="profile-stats-grid">${statsHtml}</div>
+            </div>
+        </div>
+        <div class="card profile-card profile-achievements-card">
+            <div class="chart-header">
+                <h3 class="card-title">${t('profile.achievements')}</h3>
+                <span class="chart-current-val">${t('profile.achievements_progress', info.achievementsCompleted, info.achievementsTotal)}</span>
+            </div>
+            <div class="achievement-list">${achievementsHtml}</div>
+        </div>
+    `;
+
+    // Click-to-copy UUID
+    container.querySelectorAll('[data-copy]').forEach(el => {
+        el.addEventListener('click', () => {
+            const text = el.getAttribute('data-copy');
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showSnackbar(window.i18n.translate('profile.copied'));
+                });
+            }
+        });
+    });
 }
 
 // Render dynamic chat bubble row

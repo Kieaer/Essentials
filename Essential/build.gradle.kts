@@ -85,7 +85,20 @@ tasks.test {
 tasks.processResources {
     doLast {
         val destDir = destinationDir
-        
+
+        // Last non-whitespace char already emitted (used to disambiguate regex vs division)
+        fun lastNonWs(sb: StringBuilder): Char? {
+            for (idx in sb.length - 1 downTo 0) {
+                if (!sb[idx].isWhitespace()) return sb[idx]
+            }
+            return null
+        }
+
+        // A '/' starts a regex literal (not division) when the preceding significant token
+        // is an operator, opener, separator, or the start of input.
+        val regexAllowedChars = "([{,;:=+-*%&|^~!?<>"
+        fun regexAllowed(prev: Char?): Boolean = prev == null || prev in regexAllowedChars
+
         fun minifyCss(content: String): String {
             var css = content.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
             css = css.lines().map { it.trim() }.joinToString("")
@@ -99,7 +112,8 @@ tasks.processResources {
             var i = 0
             val len = content.length
             var state = "NORMAL"
-            
+            var inClass = false
+
             fun isWordChar(c: Char): Boolean = c.isLetterOrDigit() || c == '_' || c == '$'
             fun isSafeToJoin(c: Char): Boolean = c in ";{},[]()+-*/=><&|?:"
             
@@ -118,6 +132,13 @@ tasks.processResources {
                         } else if (c == '`') {
                             state = "TEMPLATE_LITERAL"
                             sb.append(c)
+                        } else if (c == '/') {
+                            val prev = lastNonWs(sb)
+                            sb.append(c)
+                            if (regexAllowed(prev)) {
+                                state = "REGEX"
+                                inClass = false
+                            }
                         } else if (c.isWhitespace()) {
                             if (c == '\n' || c == '\r') {
                                 var lastNonWs: Char? = null
@@ -188,6 +209,21 @@ tasks.processResources {
                             state = "NORMAL"
                         }
                     }
+                    "REGEX" -> {
+                        sb.append(c)
+                        if (c == '\\') {
+                            if (next != null) {
+                                sb.append(next)
+                                i++
+                            }
+                        } else if (c == '[') {
+                            inClass = true
+                        } else if (c == ']') {
+                            inClass = false
+                        } else if (c == '/' && !inClass) {
+                            state = "NORMAL"
+                        }
+                    }
                 }
                 i++
             }
@@ -199,7 +235,8 @@ tasks.processResources {
             var i = 0
             val len = content.length
             var state = "NORMAL"
-            
+            var inClass = false
+
             while (i < len) {
                 val c = content[i]
                 val next = if (i + 1 < len) content[i + 1] else null
@@ -212,6 +249,13 @@ tasks.processResources {
                         } else if (c == '/' && next == '*') {
                             state = "BLOCK_COMMENT"
                             i++
+                        } else if (c == '/') {
+                            val prev = lastNonWs(sb)
+                            sb.append(c)
+                            if (regexAllowed(prev)) {
+                                state = "REGEX"
+                                inClass = false
+                            }
                         } else if (c == '\'') {
                             state = "SINGLE_QUOTE"
                             sb.append(c)
@@ -255,6 +299,21 @@ tasks.processResources {
                                 i++
                             }
                         } else if (c == '`') {
+                            state = "NORMAL"
+                        }
+                    }
+                    "REGEX" -> {
+                        sb.append(c)
+                        if (c == '\\') {
+                            if (next != null) {
+                                sb.append(next)
+                                i++
+                            }
+                        } else if (c == '[') {
+                            inClass = true
+                        } else if (c == ']') {
+                            inClass = false
+                        } else if (c == '/' && !inClass) {
                             state = "NORMAL"
                         }
                     }

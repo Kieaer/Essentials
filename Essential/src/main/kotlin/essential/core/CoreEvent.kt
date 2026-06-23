@@ -24,6 +24,7 @@ import essential.common.util.findPlayerData
 import essential.core.Commands.WorldEditSelection
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
+import essential.core.service.achievements.Achievement
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.daysUntil
@@ -1175,6 +1176,17 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
         val data = getPlayerAchievements(playerData)
         data.forEach {
             playerData.achievementStatus.add(it.achievementName)
+        }
+    }
+
+    for (achievement in Achievement.entries) {
+        if (achievement.isHidden) continue
+        try {
+            if (achievement.success(playerData)) {
+                achievement.set(playerData)
+            }
+        } catch (e: Exception) {
+            Log.err("Failed to evaluate achievement ${achievement.name} for ${playerData.name}", e)
         }
     }
 

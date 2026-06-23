@@ -36,6 +36,10 @@
                     <i class="material-icons">insights</i>
                     <span data-i18n="nav.server">Server Status</span>
                 </a>
+                <a class="nav-link" href="#" id="nav-profile">
+                    <i class="material-icons">account_circle</i>
+                    <span data-i18n="nav.profile">My Info</span>
+                </a>
             </nav>
             
             <div class="header-right">
@@ -77,6 +81,10 @@
                 <a class="drawer-link" href="#" id="drawer-server">
                     <i class="material-icons">insights</i>
                     <span data-i18n="nav.server">Server Status</span>
+                </a>
+                <a class="drawer-link" href="#" id="drawer-profile">
+                    <i class="material-icons">account_circle</i>
+                    <span data-i18n="nav.profile">My Info</span>
                 </a>
                 <a class="drawer-link" href="#" id="drawer-login">
                     <i class="material-icons">login</i>
@@ -313,6 +321,19 @@
                                 <!--/* Inline SVG will be rendered here dynamically */-->
                             </div>
                         </div>
+                    </div>
+                </section>
+
+                <!--/* My Info / Profile Page */-->
+                <section id="profile-page" class="page" style="display: none;">
+                    <div class="page-header-centered">
+                        <h1 data-i18n="profile.title">내 정보</h1>
+                        <p class="subtitle" data-i18n="profile.subtitle">내 계정 데이터 및 도전과제 진행도</p>
+                        <div class="title-underline"></div>
+                    </div>
+
+                    <div id="profile-content">
+                        <div class="loading-spinner"></div>
                     </div>
                 </section>
 
