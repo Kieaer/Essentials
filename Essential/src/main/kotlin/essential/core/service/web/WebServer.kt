@@ -637,7 +637,7 @@ class WebServer {
 
         synchronized(statusHistory) {
             statusHistory.add(point)
-            if (statusHistory.size > 720) {
+            if (statusHistory.size > 1440) {
                 statusHistory.removeAt(0)
             }
         }
