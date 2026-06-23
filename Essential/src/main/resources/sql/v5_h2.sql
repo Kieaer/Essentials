@@ -29,3 +29,7 @@ WHERE id IN (SELECT id
 UPDATE PLAYERS SET last_login_date = CURRENT_TIMESTAMP(9) WHERE last_login_date IS NULL;
 
 ALTER TABLE map_ratings DROP CONSTRAINT IF EXISTS map_ratings_map_hash_unique;
+ALTER TABLE map_ratings ADD COLUMN IF NOT EXISTS difficulty INT DEFAULT 3;
+ALTER TABLE map_ratings ADD COLUMN IF NOT EXISTS rating INT DEFAULT 3;
+UPDATE map_ratings SET difficulty = 3, rating = CASE WHEN is_upvote = TRUE THEN 5 ELSE 1 END;
+ALTER TABLE map_ratings DROP COLUMN IF EXISTS is_upvote;

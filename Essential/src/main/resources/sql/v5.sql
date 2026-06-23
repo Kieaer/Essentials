@@ -34,3 +34,7 @@ WHERE id IN (
 UPDATE players SET last_login_date = CURRENT_TIMESTAMP WHERE last_login_date IS NULL OR last_login_date = '';
 
 ALTER TABLE map_ratings DROP INDEX map_ratings_map_hash_unique;
+ALTER TABLE map_ratings ADD COLUMN difficulty INT DEFAULT 3;
+ALTER TABLE map_ratings ADD COLUMN rating INT DEFAULT 3;
+UPDATE map_ratings SET difficulty = 3, rating = CASE WHEN is_upvote = TRUE OR is_upvote = 1 THEN 5 ELSE 1 END;
+ALTER TABLE map_ratings DROP COLUMN is_upvote;
