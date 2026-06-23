@@ -7,7 +7,8 @@ object MapRatingTable : Table("map_ratings") {
     val mapName = varchar("map_name", 100)
     val mapHash = varchar("map_hash", 100)
     val playerUuid = varchar("player_uuid", 25).uniqueIndex()
-    val isUpvote = bool("is_upvote")
+    val difficulty = integer("difficulty").default(3)
+    val rating = integer("rating").default(3)
 
     override val primaryKey = PrimaryKey(id)
 }

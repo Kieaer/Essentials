@@ -39,6 +39,7 @@ data class Feature(
     val game: Game = Game(),
     val blacklist: Blacklist = Blacklist(),
     val count: Boolean = false,
+    val mapVote: Boolean = false,
 )
 
 /** Feature - AFK settings */

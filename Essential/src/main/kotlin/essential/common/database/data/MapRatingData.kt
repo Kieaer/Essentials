@@ -15,7 +15,8 @@ data class MapRatingData(
     val mapName: String,
     val mapHash: String,
     val playerUuid: String,
-    val isUpvote: Boolean,
+    val difficulty: Int,
+    val rating: Int,
 )
 
 /**
@@ -25,14 +26,16 @@ suspend fun createMapRating(
     mapName: String,
     mapHash: String,
     playerUuid: String,
-    isUpvote: Boolean
+    difficulty: Int,
+    rating: Int
 ): MapRatingData {
     return suspendTransaction {
         MapRatingTable.insert {
             it[MapRatingTable.mapName] = mapName
             it[MapRatingTable.mapHash] = mapHash
             it[MapRatingTable.playerUuid] = playerUuid
-            it[MapRatingTable.isUpvote] = isUpvote
+            it[MapRatingTable.difficulty] = difficulty
+            it[MapRatingTable.rating] = rating
         }
         MapRatingTable.selectAll()
             .where { (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }
@@ -82,14 +85,16 @@ suspend fun updateOrCreateMapRating(
     mapName: String,
     mapHash: String,
     playerUuid: String,
-    isUpvote: Boolean
+    difficulty: Int,
+    rating: Int
 ): MapRatingData {
     val existing = getMapRating(playerUuid, mapName)
     return if (existing != null) {
-        if (existing.isUpvote != isUpvote) {
+        if (existing.difficulty != difficulty || existing.rating != rating) {
             suspendTransaction {
                 MapRatingTable.update({ (MapRatingTable.playerUuid eq playerUuid) and (MapRatingTable.mapName eq mapName) }) {
-                    it[MapRatingTable.isUpvote] = isUpvote
+                    it[MapRatingTable.difficulty] = difficulty
+                    it[MapRatingTable.rating] = rating
                 }
             }
             getMapRating(playerUuid, mapName)!!
@@ -97,7 +102,7 @@ suspend fun updateOrCreateMapRating(
             existing
         }
     } else {
-        createMapRating(mapName, mapHash, playerUuid, isUpvote)
+        createMapRating(mapName, mapHash, playerUuid, difficulty, rating)
     }
 }
 
@@ -113,7 +118,8 @@ suspend fun migrateMapRatingsFromPluginData(pluginData: PluginData) {
                         it[MapRatingTable.mapName] = mapName
                         it[MapRatingTable.mapHash] = ""
                         it[MapRatingTable.playerUuid] = playerUuid
-                        it[MapRatingTable.isUpvote] = isUpvote
+                        it[MapRatingTable.difficulty] = 3
+                        it[MapRatingTable.rating] = if (isUpvote) 5 else 1
                     }
                 } catch (e: Exception) {
                     println("Error migrating map rating for map $mapName and player $playerUuid: ${e.message}")

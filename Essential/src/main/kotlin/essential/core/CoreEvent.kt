@@ -550,7 +550,7 @@ fun gameOver(event: GameOverEvent) {
     }
 
     val fiveMinutesPassed = (timeSource.markNow() - mapStartTime).inWholeMinutes >= 5
-    if (fiveMinutesPassed) {
+    if (fiveMinutesPassed && conf.feature.mapVote) {
         val currentMap = Vars.state.map
         val mapName = currentMap.plainName()
         val currentCount = gameOverCount
@@ -559,7 +559,7 @@ fun gameOver(event: GameOverEvent) {
             val hasVoted = mapRatings.containsKey(data.uuid) || runBlocking { getMapRating(data.uuid, mapName) != null }
             if (gameOverCount != currentCount) break
             if (!hasVoted) {
-                val rateMapMenu = Menus.registerMenu { player, select ->
+                val difficultyMenu = Menus.registerMenu { player, select ->
                     if (gameOverCount != currentCount) {
                         player.sendMessage(Bundle(player.locale())["command.map.rate.timeout"])
                         return@registerMenu
@@ -567,38 +567,48 @@ fun gameOver(event: GameOverEvent) {
 
                     if (mapRatings.containsKey(data.uuid)) return@registerMenu
 
-                    if (select == 0) {
-                        // Upvote
-                        runBlocking {
-                            val mapHash = calculateMapMD5Hash(currentMap)
-                            updateOrCreateMapRating(mapName, mapHash, data.uuid, true)
-                            mapRatings[data.uuid] = true
+                    if (select in 0..4) {
+                        val difficulty = select + 1
+                        val ratingMenu = Menus.registerMenu { player2, select2 ->
+                            if (gameOverCount != currentCount) {
+                                player2.sendMessage(Bundle(player2.locale())["command.map.rate.timeout"])
+                                return@registerMenu
+                            }
+
+                            if (mapRatings.containsKey(data.uuid)) return@registerMenu
+
+                            if (select2 in 0..4) {
+                                val rating = select2 + 1
+                                runBlocking {
+                                    val mapHash = calculateMapMD5Hash(currentMap)
+                                    updateOrCreateMapRating(mapName, mapHash, data.uuid, difficulty, rating)
+                                    mapRatings[data.uuid] = true
+                                }
+                                data.send("command.map.rate.success", mapName, difficulty, rating)
+                            }
                         }
 
-                        data.send("command.map.rate.upvote", mapName)
-                    } else if (select == 1) {
-                        // Downvote
-                        runBlocking {
-                            val mapHash = calculateMapMD5Hash(currentMap)
-                            updateOrCreateMapRating(mapName, mapHash, data.uuid, false)
-                            mapRatings[data.uuid] = false
-                        }
-
-                        data.send("command.map.rate.downvote", mapName)
+                        Call.menu(
+                            data.player.con(),
+                            ratingMenu,
+                            Bundle(data.player.locale())["command.map.rate.rating.title"],
+                            Bundle(data.player.locale())["command.map.rate.rating.text", mapName],
+                            arrayOf(
+                                arrayOf("1", "2", "3", "4", "5"),
+                                arrayOf(Bundle(data.player.locale())["command.map.rate.cancel"])
+                            )
+                        )
                     }
                 }
 
                 Call.menu(
                     data.player.con(),
-                    rateMapMenu,
-                    Bundle(data.player.locale())["command.map.rate.title"],
-                    Bundle(data.player.locale())["command.map.rate.text", mapName],
+                    difficultyMenu,
+                    Bundle(data.player.locale())["command.map.rate.difficulty.title"],
+                    Bundle(data.player.locale())["command.map.rate.difficulty.text", mapName],
                     arrayOf(
-                        arrayOf(
-                            Bundle(data.player.locale())["command.map.rate.upvote.button"],
-                            Bundle(data.player.locale())["command.map.rate.downvote.button"],
-                            Bundle(data.player.locale())["command.map.rate.cancel"]
-                        )
+                        arrayOf("1", "2", "3", "4", "5"),
+                        arrayOf(Bundle(data.player.locale())["command.map.rate.cancel"])
                     )
                 )
             }
@@ -868,7 +878,7 @@ fun worldLoad(event: WorldLoadEvent) {
     runBlocking {
         val ratings = getMapRatings(currentMapName)
         for (rating in ratings) {
-            mapRatings[rating.playerUuid] = rating.isUpvote
+            mapRatings[rating.playerUuid] = true
         }
     }
 
@@ -880,7 +890,7 @@ fun worldLoad(event: WorldLoadEvent) {
                 // Only migrate if not already in the database
                 if (getMapRating(uuid, currentMapName) == null) {
                     val mapHash = calculateMapMD5Hash(Vars.state.map)
-                    updateOrCreateMapRating(currentMapName, mapHash, uuid, isUpvote)
+                    updateOrCreateMapRating(currentMapName, mapHash, uuid, 3, if (isUpvote) 5 else 1)
                 }
             }
         }

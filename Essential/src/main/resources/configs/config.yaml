@@ -65,6 +65,8 @@ feature:
     regex: false
   # Show total player count on server list
   count: false
+  # Show map vote menu on GameOver
+  mapVote: false
 # Module enable/disable settings
 module:
   achievement: true

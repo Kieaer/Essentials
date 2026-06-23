@@ -489,8 +489,8 @@ class WebServer {
         Vars.maps.all().filter { it.custom }.forEach { map ->
             val mapName = map.name()
             val ratings = getMapRatings(mapName)
-            val upvotes = ratings.count { it.isUpvote }
-            val downvotes = ratings.count { !it.isUpvote }
+            val upvotes = ratings.count { it.rating >= 3 }
+            val downvotes = ratings.count { it.rating < 3 }
             val netVotes = upvotes - downvotes
 
             mapsList.add(
