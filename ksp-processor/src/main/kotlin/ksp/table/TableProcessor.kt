@@ -128,7 +128,7 @@ class TableProcessor(
         sb.append(" * Converts a ResultRow to a $className instance.\n")
         sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
         sb.append(" */\n")
-        sb.append("@OptIn(ExperimentalTime::class)")
+          sb.append("@OptIn(ExperimentalTime::class)\n")
         sb.append("fun $tableClassName.toData(row: ResultRow): $className {\n")
 
         properties.forEach { property ->
@@ -137,7 +137,7 @@ class TableProcessor(
             val needsJson = !isSimpleType(typeDecl) && isSerializableType(typeDecl)
             if (needsJson) {
                 val typeName = typeDecl!!.simpleName.asString()
-                sb.append("    val $propertyName = Json { ignoreUnknownKeys = true }.decodeFromString<$typeName>(row[$tableClassName.$propertyName])\n")
+                sb.append("    val $propertyName = Json.decodeFromString<$typeName>(row[$tableClassName.$propertyName])\n")
             } else {
                 sb.append("    val $propertyName = row[$tableClassName.$propertyName]\n")
             }
