@@ -42,10 +42,28 @@ class Commands {
             val existingDeviceAccount = getPlayerData(currentUuid)
 
             Core.app.post {
-                if (target?.accountPW == null || !BCrypt.checkpw(arg[1], target.accountPW)) {
+                if (target == null) {
                     playerData.err("command.login.not.found")
                     return@post
                 }
+                val isBcryptHash = target.accountPW != null && (target.accountPW!!.startsWith($$"$2a$") || target.accountPW!!.startsWith($$"$2b$") || target.accountPW!!.startsWith(
+                    $$"$2y$"
+                ))
+
+                if (!isBcryptHash) {
+                    player.sendMessage(bundle["command.login.plaintext"])
+                    return@post
+                }
+
+                try {
+                    if(BCrypt.checkpw(arg[1], target.accountPW!!)) {
+                        playerData.err("command.login.not.found")
+                        return@post
+                    }
+                } catch (e: Exception) {
+                    playerData.err("command.login.not.found")
+                }
+
                 if (target.isConnected) {
                     player.sendMessage(bundle["command.login.already"])
                     return@post
