@@ -613,7 +613,7 @@ class PluginTest {
         // 3. Load config_chat
         val chatConfig = Config.load("config_chat", essential.core.service.chat.ChatConfig.serializer(), essential.core.service.chat.ChatConfig())
         assertNotNull(chatConfig)
-        assertEquals("%1[orange] >[white] %2", chatConfig.chatFormat)
+        assertEquals("%player.name[orange] >[white] %chat", chatConfig.chatFormat)
 
         // 4. Verify that config_chat.yaml has been updated on disk
         val updatedChatContent = configDir.child("config_chat.yaml").readString()
