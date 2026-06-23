@@ -375,15 +375,15 @@ class Trigger {
                     ping = 0.000
                     sleep(3000)
                 }
+
+                runBlocking {
+                    cleanupExpiredRoutingPermissions()
+                }
             } catch (_: InterruptedException) {
                 currentThread().interrupt()
             } catch (e: Exception) {
                 Log.err(e)
                 Core.app.exit()
-            }
-
-            runBlocking {
-                cleanupExpiredRoutingPermissions()
             }
         }
 
