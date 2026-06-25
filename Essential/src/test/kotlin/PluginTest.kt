@@ -369,19 +369,18 @@ class PluginTest {
          */
         fun newPlayer(): Pair<Player, PlayerData> {
             val player = createPlayer()
-            Events.fire(EventType.PlayerJoin(player))
-
-            // Wait for database add time
-            var time = 0
-            while (players.find { data -> data.uuid == player.uuid() } == null) {
-                sleep(16)
-                ++time
-                if (time == 500) {
-                    fail()
+            var data: PlayerData? = null
+            val deadline = System.currentTimeMillis() + 15000
+            var nextFire = 0L
+            while (data == null && System.currentTimeMillis() < deadline) {
+                if (System.currentTimeMillis() >= nextFire) {
+                    Events.fire(EventType.PlayerJoin(player))
+                    nextFire = System.currentTimeMillis() + 3000
                 }
+                sleep(16)
+                data = players.find { it.uuid == player.uuid() }
             }
-            // todo 항상 데이터가 있는지 확인
-            return Pair(player, players.find { data -> data.uuid == player.uuid() }!!)
+            return Pair(player, data ?: fail("Player ${player.uuid()} was not registered within timeout"))
         }
 
         /**

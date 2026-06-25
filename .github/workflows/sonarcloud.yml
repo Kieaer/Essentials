@@ -1,4 +1,4 @@
-name: Java SonarCloud Analysis (No Gradle Plugin)
+name: SonarCloud Analysis
 
 on:
   push:
