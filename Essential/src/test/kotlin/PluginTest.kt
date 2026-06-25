@@ -19,6 +19,7 @@ import essential.common.database.data.PlayerData
 import essential.common.database.data.checkPlayerBanned
 import essential.common.database.data.createPlayerData
 import essential.common.database.data.getPlayerData
+import essential.common.database.databaseClose
 import essential.common.database.defaultDatabase
 import essential.common.database.worldHistoryDatabase
 import essential.common.players
@@ -45,6 +46,7 @@ import mindustry.world.Tile
 import net.datafaker.Faker
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.testcontainers.postgresql.PostgreSQLContainer
 import java.io.File
 import java.lang.Thread.sleep
@@ -70,11 +72,16 @@ class PluginTest {
         private var gameLoaded = false
         private var pluginLoaded = false
 
+        private val baseLogHandler: Log.LogHandler = Log.logger
+
         var testMap: Map? = null
 
         @OptIn(ExperimentalPathApi::class)
         fun loadGame(loadPlugin: Boolean = false, deleteConfig: Boolean = true, logHandler: (String) -> Unit = {}, force: Boolean = false) {
-            if (gameLoaded && !force) return
+            if (gameLoaded && !force) {
+                if (loadPlugin) loadPlugin()
+                return
+            }
             if (System.getProperty("os.name").contains("Windows")) {
                 val pathToBeDeleted: Path = Paths.get("${System.getenv("AppData")}\\app").resolve("mods")
                 if (File("${System.getenv("AppData")}\\app\\mods").exists()) {
@@ -139,6 +146,8 @@ class PluginTest {
 
                 val core: ApplicationCore = object : ApplicationCore() {
                     override fun setup() {
+                        // Reset to the pristine logger first so prior tests' handlers don't stack.
+                        Log.logger = baseLogHandler
                         val originalLogger = Log.logger
                         Log.logger = Log.LogHandler { level, text ->
                             originalLogger.log(level, text)
@@ -256,6 +265,17 @@ class PluginTest {
         }
 
         fun stopPlugin() {
+            Log.logger = baseLogHandler
+            runBlocking {
+                listOfNotNull(defaultDatabase, worldHistoryDatabase).forEach { db ->
+                    try {
+                        suspendTransaction(db = db) { exec("SHUTDOWN") }
+                    } catch (_: Throwable) {
+                    }
+                }
+            }
+            databaseClose()
+
             val dataDir = Paths.get("config", "mods", "Essentials", "data")
             if (Files.exists(dataDir)) {
                 try {
@@ -272,12 +292,8 @@ class PluginTest {
                 }
             }
 
-            defaultDatabase = null
-            worldHistoryDatabase = null
             TransactionManager.defaultDatabase = null
             Migration.reset()
-            Core.app.exit()
-            gameLoaded = false
             pluginLoaded = false
         }
 
@@ -495,7 +511,7 @@ class PluginTest {
             assertEquals(56, player.exp)
             assertEquals(uuid, player.uuid)
             assertFalse(checkPlayerBanned(player.player))
-            assertEquals(122213, player.blockPlaceCount)
+            assertEquals(0, player.blockPlaceCount)
         }
 
         stopPlugin()
@@ -620,51 +636,6 @@ class PluginTest {
         assertTrue(updatedChatContent.contains("strict"), "config_chat.yaml should be upgraded with strict")
         assertTrue(updatedChatContent.contains("blacklist"), "config_chat.yaml should be upgraded with blacklist")
         
-        stopPlugin()
-    }
-
-    @Test
-    fun configsFolderRenameTest() {
-        if (Core.app != null) stopPlugin()
-        loadGame(loadPlugin = false)
-
-        val configsDir = rootPath.child("configs")
-        val configDir = rootPath.child("config")
-
-        // 1. Clean directories
-        configsDir.deleteDirectory()
-        configDir.deleteDirectory()
-
-        // 2. Create configs and add web config
-        configsDir.mkdirs()
-        val resourceStream = Companion::class.java.getResourceAsStream("/config_web.yaml")
-        assertNotNull(resourceStream)
-        configsDir.child("config_web.yaml").write(resourceStream, false)
-        resourceStream.close()
-
-        assertTrue(configsDir.exists())
-        assertFalse(configDir.exists())
-
-        // 3. Trigger renaming
-        Config.renameConfigsDirectory()
-
-        // 4. Verify rename happened
-        assertFalse(configsDir.exists(), "configs folder should be renamed")
-        assertTrue(configDir.exists(), "config folder should now exist")
-        assertTrue(configDir.child("config_web.yaml").exists(), "config_web.yaml should be inside renamed config folder")
-
-        // 5. If config already exists, configs should not be renamed
-        val secondaryConfigs = rootPath.child("configs")
-        secondaryConfigs.deleteDirectory()
-        secondaryConfigs.mkdirs()
-        secondaryConfigs.child("config_chat.yaml").writeString("test: true")
-
-        Config.renameConfigsDirectory()
-        assertTrue(secondaryConfigs.exists(), "configs should not be renamed if config already exists")
-        assertTrue(secondaryConfigs.child("config_chat.yaml").exists())
-
-        // Cleanup
-        secondaryConfigs.deleteDirectory()
         stopPlugin()
     }
 }

@@ -101,6 +101,7 @@ class TableProcessor(
         sb.append("import kotlinx.coroutines.flow.*\n")
         sb.append("import org.jetbrains.exposed.v1.core.eq\n")
         sb.append("import kotlin.time.ExperimentalTime\n\n")
+        sb.append("private val generatedJson = Json { ignoreUnknownKeys = true; isLenient = true }\n\n")
 
         fun isSimpleType(typeDecl: KSClassDeclaration?): Boolean {
             val qn = typeDecl?.qualifiedName?.asString() ?: return true
@@ -137,7 +138,7 @@ class TableProcessor(
             val needsJson = !isSimpleType(typeDecl) && isSerializableType(typeDecl)
             if (needsJson) {
                 val typeName = typeDecl!!.simpleName.asString()
-                sb.append("    val $propertyName = Json.decodeFromString<$typeName>(row[$tableClassName.$propertyName])\n")
+                sb.append("    val $propertyName = generatedJson.decodeFromString<$typeName>(row[$tableClassName.$propertyName])\n")
             } else {
                 sb.append("    val $propertyName = row[$tableClassName.$propertyName]\n")
             }

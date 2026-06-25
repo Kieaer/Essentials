@@ -1280,6 +1280,7 @@ class ClientCommandTest {
         assertEquals(Blocks.copperWall, world.tile(15, 15).block())
         assertNotEquals(Blocks.copperWall, world.tile(30, 30).block())
 
+        clientCommand.handleMessage("/ws", player)
         // First position
         Events.fire(EventType.TapEvent(player.self(), world.tile(10, 10)))
         // second position
@@ -1291,6 +1292,7 @@ class ClientCommandTest {
         assertEquals(Blocks.conveyor, world.tile(15, 15).block())
         assertNotEquals(Blocks.copperWall, world.tile(30, 30).block())
 
+        clientCommand.handleMessage("/ws", player)
         // First position
         Events.fire(EventType.TapEvent(player.self(), world.tile(10, 10)))
         // second position
