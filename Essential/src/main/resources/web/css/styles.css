@@ -57,6 +57,7 @@ body {
     display: flex;
     align-items: center;
     gap: 16px;
+    flex: 1;
 }
 
 .hamburger-menu {
@@ -125,6 +126,9 @@ body {
 
 .nav-link i {
     font-size: 20px;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
 }
 
 .nav-link:hover {
@@ -152,6 +156,8 @@ body {
 .header-right {
     display: flex;
     align-items: center;
+    flex: 1;
+    justify-content: flex-end;
 }
 
 .login-btn-nav {
@@ -166,6 +172,13 @@ body {
     font-weight: 600;
     font-size: 14px;
     transition: var(--transition-default);
+}
+
+.login-btn-nav i {
+    font-size: 20px;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
 }
 
 .login-btn-nav:hover {
@@ -281,6 +294,9 @@ body {
 
 .drawer-link i {
     font-size: 22px;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
 }
 
 .drawer-link:hover {
@@ -1803,4 +1819,94 @@ body {
     color: var(--text-muted);
     font-size: 14px;
     font-family: var(--font-primary);
+}
+
+@media (max-width: 768px) {
+    .app-header {
+        padding: 0 16px;
+    }
+
+    .page-header-centered {
+        margin-bottom: 28px;
+    }
+    .page-header-centered h1 {
+        font-size: 24px;
+    }
+    .page-header-centered .subtitle {
+        font-size: 14px;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    .stats-card .stats-content {
+        flex-direction: column;
+    }
+    .tps-gauge-widget {
+        width: 100%;
+        padding-right: 0;
+        padding-bottom: 16px;
+        margin-bottom: 16px;
+        border-right: none;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .stats-details {
+        width: 100%;
+        padding-left: 0;
+    }
+
+    .maps-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-left {
+        width: 100%;
+    }
+    .search-input-wrapper {
+        flex: 1;
+        min-width: 140px;
+    }
+    .search-input-wrapper input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .filter-right {
+        width: 100%;
+    }
+    .upload-btn-orange {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .login-wrapper {
+        padding: 32px 0;
+    }
+    .login-card-redesign {
+        width: 100%;
+        max-width: 360px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header-centered h1 {
+        font-size: 20px;
+    }
+
+    .stats-details {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .map-card-horizontal {
+        flex-direction: column;
+        height: auto;
+    }
+    .map-image-left {
+        width: 100%;
+        height: 120px;
+    }
+
+    .players-card, .chat-card-redesign {
+        height: 280px;
+    }
 }
