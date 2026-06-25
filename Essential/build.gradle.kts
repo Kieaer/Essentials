@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlinPluginSerialization)
     alias(libs.plugins.ksp)
     `java-library`
+    jacoco
 }
 
 dependencies {
@@ -79,6 +80,14 @@ tasks.test {
     testLogging {
         events("failed")
         exceptionFormat = TestExceptionFormat.SHORT
+    }
+    finalizedBy("jacocoTestReport")
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
     }
 }
 
