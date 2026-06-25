@@ -35,7 +35,6 @@ jobs:
     - name: Upload shadowJar artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: shadow-jars
-        path: |
-          **/build/libs/*-all.jar
+        name: Mindustry-Plugin-Essentials
+        path: Essential/build/libs/Essential-all.jar
         retention-days: 30
