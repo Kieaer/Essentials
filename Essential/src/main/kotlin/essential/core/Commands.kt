@@ -77,6 +77,7 @@ import kotlin.random.Random
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.findAnnotation
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
@@ -514,7 +515,7 @@ class Commands {
         val pages = Mathf.ceil(temp.size.toFloat() / per)
         page--
 
-        if (page >= pages || page < 0) {
+        if (page !in 0..<pages) {
             playerData.err("command.page.range", pages)
             return
         }
@@ -1215,7 +1216,7 @@ class Commands {
                                 change(it)
                             }
                             if (!playerData.status.containsKey("router")) break
-                            delay(5000)
+                            delay(5000.milliseconds)
                             loop.reversed().forEach {
                                 change(it)
                             }
@@ -2798,11 +2799,11 @@ class Commands {
                 }
 
                 init {
-                    htmlEncodeChars.put('\u0026', "&amp;")
-                    htmlEncodeChars.put('\u003C', "&lt;")
-                    htmlEncodeChars.put('\u003E', "&gt;")
-                    htmlEncodeChars.put('\u0022', "&quot;")
-                    htmlEncodeChars.put('\u00A0', "&nbsp;")
+                    htmlEncodeChars['\u0026'] = "&amp;"
+                    htmlEncodeChars['\u003C'] = "&lt;"
+                    htmlEncodeChars['\u003E'] = "&gt;"
+                    htmlEncodeChars['\u0022'] = "&quot;"
+                    htmlEncodeChars['\u00A0'] = "&nbsp;"
                 }
             }
 

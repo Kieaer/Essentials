@@ -171,7 +171,7 @@ class Commands {
             val reason = arg[1]
             val infos: PlayerInfo = Vars.netServer.admins.findByName(it.plainLastName()).first()
             val date = currentTime()
-            val text: String? = Bundle()["command.report.texts", it.plainLastName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
+            val text: String = Bundle()["command.report.texts", it.plainLastName(), player.plainName(), reason, infos.lastName, infos.names, infos.id, infos.lastIP, infos.ips]
             writeLog(LogType.Report, date + text, it.plainLastName())
             Log.info(Bundle()["command.report.received", player.plainName(), it.plainLastName(), reason])
             playerData.send("command.report.done", it.plainLastName())

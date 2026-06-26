@@ -1,6 +1,8 @@
 # Essentials
+ [![CI](https://github.com/Kieaer/Essentials/actions/workflows/ci.yml/badge.svg)](https://github.com/Kieaer/Essentials/actions/workflows/ci.yml)
 ![GitHub all releases](https://img.shields.io/github/downloads/kieaer/Essentials/total?style=flat-square)
 ![GitHub release (latest by date)](https://img.shields.io/github/downloads/kieaer/essentials/latest/total?style=flat-square)<br>
+
 Add more commands to the server.<br>
 **__Requires Java 17 or higher!__**
 

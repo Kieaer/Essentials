@@ -157,7 +157,7 @@ class Trigger {
                         }
 
                         if (Vars.state.isPlaying) {
-                            for (i in 0 until data.warpCount.size) {
+                            for (i in data.warpCount.indices) {
                                 if (Vars.state.map.name() == data.warpCount[i].mapName) {
                                     val value = data.warpCount[i]
                                     val info = serverInfo.find { a -> a.address == value.ip && a.port == value.port }
@@ -327,7 +327,7 @@ class Trigger {
                                 }
                             }
 
-                            for (i in 0 until data.warpTotal.size) {
+                            for (i in data.warpTotal.indices) {
                                 val value = data.warpTotal[i]
                                 if (Vars.state.map.name() == value.mapName) {
                                     if (value.totalPlayers != total) {
@@ -491,7 +491,7 @@ class Trigger {
                         for (line in text) {
                             for (char in line) {
                                 if (char == '#' && Vars.world.tile(x, y) != null) {
-                                    Call.effect(data.player.con(), mindustry.content.Fx.placeBlock, x * 8f + 4f, y * 8f + 4f, 1f, arc.graphics.Color.green)
+                                    Call.effect(data.player.con(), Fx.placeBlock, x * 8f + 4f, y * 8f + 4f, 1f, Color.green)
                                 }
                                 x++
                             }

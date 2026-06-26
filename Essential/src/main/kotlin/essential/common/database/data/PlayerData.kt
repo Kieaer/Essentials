@@ -6,10 +6,8 @@ import essential.common.database.table.AchievementTable
 import essential.common.database.table.PlayerTable
 import essential.common.playerNumber
 import essential.common.systemTimezone
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import ksp.table.GenerateCode
@@ -167,8 +165,7 @@ suspend fun createPlayerData(player: Playerc): PlayerData {
     val entity = suspendTransaction {
         PlayerTable.select(PlayerTable.columns)
             .where { PlayerTable.uuid eq player.uuid() }
-            .map { row -> row.toPlayerData() }
-            .first()
+            .mapToPlayerDataList().first()
     }
 
     entity.player = player
@@ -224,7 +221,7 @@ suspend fun getPlayerDataSync(uuid: String): PlayerData? {
 // Used by external plugins
 suspend fun getAllPlayerData(): List<PlayerData> {
     return suspendTransaction {
-        PlayerTable.selectAll().map { row -> row.toPlayerData() }.toList()
+        PlayerTable.selectAll().mapToPlayerDataList()
     }
 }
 

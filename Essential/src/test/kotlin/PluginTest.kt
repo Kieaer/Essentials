@@ -13,8 +13,6 @@ import arc.util.Time
 import essential.common.DATABASE_VERSION
 import essential.common.bundle
 import essential.common.bundle.Bundle
-import essential.common.config.Config
-import essential.common.config.Migration
 import essential.common.database.data.PlayerData
 import essential.common.database.data.checkPlayerBanned
 import essential.common.database.data.createPlayerData
@@ -47,6 +45,8 @@ import net.datafaker.Faker
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
+import org.junit.FixMethodOrder
+import org.junit.runners.MethodSorters
 import org.testcontainers.postgresql.PostgreSQLContainer
 import java.io.File
 import java.lang.Thread.sleep
@@ -60,6 +60,7 @@ import kotlin.test.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class PluginTest {
     companion object {
         private lateinit var main: Main
@@ -293,7 +294,6 @@ class PluginTest {
             }
 
             TransactionManager.defaultDatabase = null
-            Migration.reset()
             pluginLoaded = false
         }
 
@@ -588,14 +588,13 @@ class PluginTest {
     @Test
     fun configUpgradeTest() {
         if (Core.app != null) stopPlugin()
+
         loadGame(loadPlugin = false)
 
         val configDir = rootPath.child("config")
         configDir.mkdirs()
 
-        // Copy old configuration files from test resources to the config directory
         val oldConfigs = listOf(
-            "config.yaml",
             "config_bridge.yaml",
             "config_chat.yaml",
             "config_discord.yaml",
@@ -611,26 +610,20 @@ class PluginTest {
             resourceStream.close()
         }
 
-        // 1. Load config_web (original only has "port: 32148")
-        val webConfig = Config.load("config_web", essential.core.service.web.WebConfig.serializer(), essential.core.service.web.WebConfig())
-        assertNotNull(webConfig)
-        assertEquals(32148, webConfig.port)
+        loadPlugin()
 
-        // 2. Verify that config_web.yaml has been updated on disk and contains new fields (e.g. sessionSecret)
+        assertEquals(32148, essential.core.service.web.WebService.conf.port)
+
         val updatedWebContent = configDir.child("config_web.yaml").readString()
         assertTrue(updatedWebContent.contains("sessionSecret"), "config_web.yaml should be upgraded with sessionSecret")
         assertTrue(updatedWebContent.contains("enableWebSocket"), "config_web.yaml should be upgraded with enableWebSocket")
 
-        // 3. Load config_chat
-        val chatConfig = Config.load("config_chat", essential.core.service.chat.ChatConfig.serializer(), essential.core.service.chat.ChatConfig())
-        assertNotNull(chatConfig)
-        assertEquals("%player.name[orange] >[white] %chat", chatConfig.chatFormat)
+        assertEquals("%player.name[orange] >[white] %chat", essential.core.service.chat.ChatService.conf.chatFormat)
 
-        // 4. Verify that config_chat.yaml has been updated on disk
         val updatedChatContent = configDir.child("config_chat.yaml").readString()
         assertTrue(updatedChatContent.contains("strict"), "config_chat.yaml should be upgraded with strict")
         assertTrue(updatedChatContent.contains("blacklist"), "config_chat.yaml should be upgraded with blacklist")
-        
+
         stopPlugin()
     }
 }

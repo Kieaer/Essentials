@@ -32,7 +32,7 @@ class ProtectService : Plugin() {
     override fun init() {
         bundle.prefix = "[EssentialProtect]"
 
-        netServer.admins.addActionFilter({ action ->
+        netServer.admins.addActionFilter { action ->
             if (action.player == null) return@addActionFilter true
             val data: PlayerData? = findPlayerData(action.player.uuid())
             if (data != null) {
@@ -53,7 +53,7 @@ class ProtectService : Plugin() {
             } else {
                 return@addActionFilter false
             }
-        })
+        }
 
         // 계정 설정 유무에 따라 기본 권한 변경
         if (conf.account.getAuthType() != ProtectConfig.AuthType.None) {

@@ -31,8 +31,8 @@ object WorldHistoryBuffer {
         val createdAt: Long,
     )
 
-    private const val maxBatchSize = 100
-    private const val flushIntervalMs = 200L
+    private const val MAX_BATCH_SIZE = 100
+    private const val FLUSH_INTERVAL_MS = 200L
 
     private val queue = LinkedBlockingQueue<PendingInsert>()
     private val flushMutex = Mutex()
@@ -106,7 +106,7 @@ object WorldHistoryBuffer {
     }
 
     private fun drain(): List<PendingInsert> {
-        val batch = ArrayList<PendingInsert>(maxBatchSize)
+        val batch = ArrayList<PendingInsert>(MAX_BATCH_SIZE)
         queue.drainTo(batch)
         return batch
     }
@@ -129,7 +129,7 @@ object WorldHistoryBuffer {
 
     private suspend fun flushLoop() {
         while (true) {
-            delay(flushIntervalMs.milliseconds)
+            delay(FLUSH_INTERVAL_MS.milliseconds)
             if (stopped.get()) break
             if (queue.isEmpty()) continue
             flushMutex.withLock {

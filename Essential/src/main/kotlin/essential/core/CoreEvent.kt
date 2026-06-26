@@ -885,7 +885,7 @@ fun worldLoad(event: WorldLoadEvent) {
 
     // Migrate ratings from the old storage system if needed
     val savedRatings = pluginData.data.mapRatings[currentMapName]
-    if (savedRatings != null && savedRatings.isNotEmpty()) {
+    if (!savedRatings.isNullOrEmpty()) {
         runBlocking {
             for ((uuid, isUpvote) in savedRatings) {
                 // Only migrate if not already in the database
@@ -1363,7 +1363,7 @@ private fun checkValidBlock(tile: Tile): String {
 /**
  * Draw border effect around a worldedit selection
  */
-private fun drawSelectionBorder(player: mindustry.gen.Player, selection: WorldEditSelection) {
+private fun drawSelectionBorder(player: Player, selection: WorldEditSelection) {
     val minX = minOf(selection.startX, selection.endX)
     val maxX = maxOf(selection.startX, selection.endX)
     val minY = minOf(selection.startY, selection.endY)

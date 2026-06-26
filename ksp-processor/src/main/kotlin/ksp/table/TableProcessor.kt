@@ -20,10 +20,6 @@ class TableProcessor(
             .filter { it is KSClassDeclaration && it.validate() }
             .forEach {
                 val classDeclaration = it as KSClassDeclaration
-                val annotation = classDeclaration.annotations.find { it ->
-                    it.shortName.asString() == "GenerateTable"
-                }
-
                 processDataClass(classDeclaration)
             }
 
@@ -158,16 +154,6 @@ class TableProcessor(
         sb.append("    )\n")
         sb.append("}\n\n")
 
-        // ResultRow.toClassName()
-        sb.append("/**\n")
-        sb.append(" * Converts a ResultRow to a $className instance.\n")
-        sb.append(" * This is a convenience method that uses the table's toData method.\n")
-        sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
-        sb.append(" */\n")
-        sb.append("fun ResultRow.to$className(): $className {\n")
-        sb.append("    return $tableClassName.toData(this)\n")
-        sb.append("}\n\n")
-
         // mapToClassNameList
         sb.append("/**\n")
         sb.append(" * Maps query results to a list of $className instances.\n")
@@ -176,27 +162,6 @@ class TableProcessor(
         sb.append(" */\n")
         sb.append("suspend fun Query.mapTo${className}List(): List<$className> {\n")
         sb.append("    return this.map { $tableClassName.toData(it) }.toList()\n")
-        sb.append("}\n\n")
-
-        // fromInsertReturning
-        sb.append("/**\n")
-        sb.append(" * Creates a $className instance from the ID returned by insertReturning.\n")
-        sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
-        sb.append(" */\n")
-        sb.append("suspend fun <T> $tableClassName.fromInsertReturning(id: T): $className {\n")
-        if (db.isNotEmpty()) {
-            sb.append("    return suspendTransaction(db = $db) {\n")
-        } else {
-            sb.append("    return suspendTransaction {\n")
-        }
-        sb.append("        val query = $tableClassName.selectAll()\n")
-        sb.append("        when (id) {\n")
-        sb.append("            is Int -> query.where { $tableClassName.id eq id.toUInt() }\n")
-        sb.append("            is UInt -> query.where { $tableClassName.id eq id }\n")
-        sb.append("            else -> throw IllegalArgumentException(\"Unsupported ID type: \${id!!::class.java}\")\n")
-        sb.append("        }\n")
-        sb.append("        query.map { row -> row.to$className() }.first()\n")
-        sb.append("    }\n")
         sb.append("}\n\n")
 
         // update

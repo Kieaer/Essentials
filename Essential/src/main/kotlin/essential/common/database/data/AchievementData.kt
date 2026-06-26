@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.datetime.LocalDateTime
-import ksp.table.GenerateCode
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.insert
@@ -15,7 +14,6 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 /**
  * Data class for player achievements
  */
-@GenerateCode
 data class AchievementData(
     val id: UInt,
     val playerId: UInt,

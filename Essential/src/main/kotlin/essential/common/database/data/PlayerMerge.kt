@@ -3,7 +3,6 @@ package essential.common.database.data
 import essential.common.database.table.AchievementTable
 import essential.common.database.table.PlayerTable
 import essential.common.systemTimezone
-import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.v1.core.eq
@@ -31,14 +30,14 @@ suspend fun mergePlayerAccounts(fromUuid: String, toUuid: String): String = susp
         return@suspendTransaction "Source and target UUID must be different."
     }
 
-    val fromRow = PlayerTable.selectAll().where { PlayerTable.uuid eq fromUuid }.singleOrNull()
-    val toRow = PlayerTable.selectAll().where { PlayerTable.uuid eq toUuid }.singleOrNull()
+    val fromRow = PlayerTable.selectAll().where { PlayerTable.uuid eq fromUuid }.mapToPlayerDataList()
+    val toRow = PlayerTable.selectAll().where { PlayerTable.uuid eq toUuid }.mapToPlayerDataList()
 
-    if (fromRow == null) return@suspendTransaction "Source player not found: $fromUuid"
-    if (toRow == null) return@suspendTransaction "Target player not found: $toUuid"
+    if (fromRow.isEmpty()) return@suspendTransaction "Source player not found: $fromUuid"
+    if (toRow.isEmpty()) return@suspendTransaction "Target player not found: $toUuid"
 
-    val from = fromRow.toPlayerData()
-    val to = toRow.toPlayerData()
+    val from = fromRow.first()
+    val to = toRow.first()
 
     // Calculate merged values
     fun sumShort(a: Short, b: Short): Short = (a.toInt() + b.toInt()).coerceIn(0, Short.MAX_VALUE.toInt()).toShort()

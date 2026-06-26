@@ -112,7 +112,7 @@ tasks.processResources {
 
         fun minifyCss(content: String): String {
             var css = content.replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
-            css = css.lines().map { it.trim() }.joinToString("")
+            css = css.lines().joinToString("") { it.trim() }
             css = css.replace(Regex("\\s*([{};:,])\\s*"), "$1")
             css = css.replace(Regex("\\s+"), " ")
             return css.trim()

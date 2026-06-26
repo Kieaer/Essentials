@@ -6,7 +6,7 @@ plugin:
   # Database URL
   # Example) postgresql://127.0.0.1:5432/essentials
   database:
-    url: h2:mem:testdb
+    url: h2:file:testdb
     username: sa
     password: "123"
 

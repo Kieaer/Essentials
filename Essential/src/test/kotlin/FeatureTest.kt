@@ -166,7 +166,6 @@ class FeatureTest {
     @Test
     fun serverRoutingDenyWhenReachedDifferentServerFromHubWarpBlock() {
         val testPlayer: mindustry.gen.Player = player.self()
-        val currentMapName = Vars.state.map.name()
         val originalHubMapName = pluginData.hubMapName
         val originalWarpBlocks = pluginData.data.warpBlock.map { it.copy().apply { online = it.online } }
 
@@ -205,7 +204,7 @@ class FeatureTest {
                 awaitCondition { connection.kicked },
                 "허용되지 않은 대상 서버 포트(현재 서버 포트와 불일치)로 직접 접속 시도가 오면 연결이 거부되어야 합니다."
             )
-            assertTrue(connection.kickedMessage?.contains("Direct connection denied") == true)
+            assertEquals(connection.kickedMessage?.contains("Direct connection denied"), true)
             assertTrue(runBlocking { checkRoutingPermission(testPlayer.uuid(), targetPort) })
         } finally {
             pluginData.hubMapName = originalHubMapName

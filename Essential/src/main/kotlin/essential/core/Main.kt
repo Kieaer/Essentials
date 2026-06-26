@@ -209,7 +209,7 @@ class Main : Plugin() {
 
 
     override fun registerClientCommands(handler: CommandHandler) {
-        val commandClass = Class.forName("arc.util.CommandHandler\$Command")
+        val commandClass = Class.forName($$"arc.util.CommandHandler$Command")
         val runnerField = commandClass.getDeclaredField("runner")
         runnerField.isAccessible = true
 

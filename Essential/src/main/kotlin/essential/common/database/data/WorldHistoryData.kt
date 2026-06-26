@@ -6,7 +6,6 @@ import essential.common.database.worldHistoryDatabase
 import ksp.table.GenerateCode
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import kotlin.time.ExperimentalTime
@@ -28,62 +27,11 @@ data class WorldHistoryData @OptIn(ExperimentalTime::class) constructor(
 )
 
 /**
- * Create a new world history entry
- */
-suspend fun createWorldHistory(
-    time: Long,
-    player: String,
-    action: String,
-    x: Short,
-    y: Short,
-    tile: String,
-    rotate: Int,
-    team: String,
-    value: String?
-) {
-    suspendTransaction(db = worldHistoryDatabase) {
-        WorldHistoryTable.insert {
-            it[WorldHistoryTable.time] = time
-            it[WorldHistoryTable.player] = player
-            it[WorldHistoryTable.action] = action
-            it[WorldHistoryTable.x] = x
-            it[WorldHistoryTable.y] = y
-            it[WorldHistoryTable.tile] = tile
-            it[WorldHistoryTable.rotate] = rotate
-            it[WorldHistoryTable.team] = team
-            it[WorldHistoryTable.value] = value
-        }
-    }
-}
-
-/**
  * Get all world history entries
  */
 suspend fun getAllWorldHistory(): List<WorldHistoryData> {
     return suspendTransaction(db = worldHistoryDatabase) {
         WorldHistoryTable.selectAll()
-            .mapToWorldHistoryDataList()
-    }
-}
-
-/**
- * Get world history entries by player
- */
-suspend fun getWorldHistoryByPlayer(player: String): List<WorldHistoryData> {
-    return suspendTransaction(db = worldHistoryDatabase) {
-        WorldHistoryTable.selectAll()
-            .where { WorldHistoryTable.player eq player }
-            .mapToWorldHistoryDataList()
-    }
-}
-
-/**
- * Get world history entries by action
- */
-suspend fun getWorldHistoryByAction(action: String): List<WorldHistoryData> {
-    return suspendTransaction(db = worldHistoryDatabase) {
-        WorldHistoryTable.selectAll()
-            .where { WorldHistoryTable.action eq action }
             .mapToWorldHistoryDataList()
     }
 }

@@ -33,7 +33,7 @@ class CommandProcessor(
         logger.info("Package name: $packageName")
 
         // Always append .generated to the full original package to respect nested structures
-        val base = if (packageName.isNotBlank()) packageName else "essential.core"
+        val base = packageName.ifBlank { "essential.core" }
         return "$base.generated"
     }
 
@@ -114,7 +114,7 @@ class CommandProcessor(
                 }
 
                 // 각 패키지별로 파일 생성
-                clientFunctionsByPackage.forEach { (packageName, functions) ->
+                clientFunctionsByPackage.forEach { (_, functions) ->
                     generateClientCommandsFile(functions)
                 }
             }
@@ -185,10 +185,10 @@ class CommandProcessor(
         return FunSpec.builder("registerGeneratedServerCommands")
             .addParameter("handler", ClassName("arc.util", "CommandHandler"))
             .addCode(
-                """
+                $$"""
                 val commands = Commands()
                 val serverCommands = listOf(
-                ${
+                $${
                     functions.joinToString(",\n                    ") { function ->
                         if (function.parameters.isEmpty()) {
                             "{ args: Array<String> -> commands.${function.simpleName.asString()}() }"
@@ -200,8 +200,8 @@ class CommandProcessor(
                 )
 
                 val annotations = listOf(
-                ${
-                    functions.mapIndexed { index, _ ->
+                $${
+                    List(functions.size) { index ->
                         val (name, parameter, description) = annotationValues[index]
                         "ServerCommand(\"$name\", \"$parameter\", \"$description\")"
                     }.joinToString(",\n                    ")
@@ -220,7 +220,7 @@ class CommandProcessor(
                                 command(arrayOf<String>())
                             } catch (e: Exception) {
                                 arc.util.Log.err("arg size - 0")
-                                arc.util.Log.err("command - ${'$'}{annotation.name}")
+                                arc.util.Log.err("command - ${annotation.name}")
                             }
                         }
                     }
@@ -266,7 +266,7 @@ class CommandProcessor(
 
                 val annotations = listOf(
                 ${
-                    functions.mapIndexed { index, _ ->
+                    List(functions.size) { index ->
                         val (name, parameter, description) = annotationValues[index]
                         "ClientCommand(\"$name\", \"$parameter\", \"$description\")"
                     }.joinToString(",\n                    ")

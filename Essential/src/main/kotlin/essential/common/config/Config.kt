@@ -106,25 +106,7 @@ object Config {
         } catch (e: IOException) {
             null
         } catch (e: SerializationException) {
-            try {
-                Migration.migrateConfigs()
-                
-                val content = Files.readString(Paths.get(rootPath.child("config/$name").absolutePath()))
-                val config = yaml.decodeFromString(serializer, content)
-                try {
-                    val userNode = yaml.parseToYamlNode(content)
-                    val canonicalContent = yaml.encodeToString(serializer, config)
-                    val canonicalNode = yaml.parseToYamlNode(canonicalContent)
-                    if (hasMissingKeys(userNode, canonicalNode)) {
-                        save(name, serializer, config)
-                    }
-                } catch (e: Exception) {
-                    Log.err("Error migrating config $name: ${e.message}")
-                }
-                config
-            } catch (e2: Exception) {
-                null
-            }
+            null
         }
     }
 

@@ -125,8 +125,8 @@ fun config(e: EventType.ConfigEvent) {
         if (valid) {
             val oldGraph: PowerGraph = entity.power.graph
             val newGraph: PowerGraph = other.build.power.graph
-            val oldGraphCount: Int = 0
-            val newGraphCount: Int = 0
+            val oldGraphCount = 0
+            val newGraphCount = 0
 
             players.forEach { a ->
                 a.send(
@@ -337,10 +337,10 @@ class IpAddressMatcher(ipAddress: String) {
                 return false
             }
         }
-        if (finalByte.toInt() != 0) {
-            return (remAddr[nMaskFullBytes].toInt() and finalByte.toInt()) == (reqAddr[nMaskFullBytes].toInt() and finalByte.toInt())
+        return if (finalByte.toInt() != 0) {
+            (remAddr[nMaskFullBytes].toInt() and finalByte.toInt()) == (reqAddr[nMaskFullBytes].toInt() and finalByte.toInt())
         } else {
-            return true
+            true
         }
     }
 

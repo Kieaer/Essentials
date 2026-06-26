@@ -468,16 +468,15 @@ enum class Achievement {
         }
 
         override fun current(data: PlayerData): Int{
-            var result: Int
-            try {
+            var result: Int = try {
                 val total: Int = data.pvpWinCount + data.pvpLoseCount
                 if (total < 50) {
-                    result = 0
+                    0
                 } else {
-                    result = data.pvpWinCount * 100 / total
+                    data.pvpWinCount * 100 / total
                 }
             } catch (e: ArithmeticException) {
-                result = 0
+                0
             }
             return result
         }
@@ -520,8 +519,8 @@ enum class Achievement {
 
         override fun success(data: PlayerData): Boolean {
             val mapHash = "7b032cc7815022be644d00a877ae0388"
-            if (Achievement.Companion.mapHash == mapHash) {
-                data.status.put("record.map.clear.asteroids", "1")
+            if (Achievement.mapHash == mapHash) {
+                data.status["record.map.clear.asteroids"] = "1"
                 return true
             } else {
                 return false
@@ -542,8 +541,8 @@ enum class Achievement {
 
         override fun success(data: PlayerData): Boolean {
             val mapHash = "f355b3d91d5d8215e557ff045b3864ef"
-            if (Achievement.Companion.mapHash == mapHash) {
-                data.status.put("record.map.clear.transcendence", "1")
+            if (Achievement.mapHash == mapHash) {
+                data.status["record.map.clear.transcendence"] = "1"
                 return true
             } else {
                 return false

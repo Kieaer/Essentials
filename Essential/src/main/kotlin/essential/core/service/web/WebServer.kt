@@ -52,6 +52,7 @@ import java.nio.file.StandardCopyOption
 import java.util.*
 import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 class WebServer {
@@ -155,7 +156,7 @@ class WebServer {
         with(application) {
             launch {
                 while (true) {
-                    delay(60000)
+                    delay(60000.milliseconds)
                     try {
                         recordStatusPoint()
                     } catch (e: Exception) {
@@ -582,7 +583,7 @@ class WebServer {
             fallback
         }
 
-        val achievements = Achievement.values().mapNotNull { ach ->
+        val achievements = Achievement.entries.mapNotNull { ach ->
             val key = ach.name.lowercase()
             val isDone = completed.contains(key)
             // Hide secret achievements until unlocked

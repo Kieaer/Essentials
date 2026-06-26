@@ -2,7 +2,6 @@ package essential.common.database.data
 
 import arc.util.Log
 import essential.common.database.table.PlayerBannedTable
-import ksp.table.GenerateCode
 import mindustry.gen.Playerc
 import mindustry.net.Administration
 import org.jetbrains.exposed.v1.core.*
@@ -11,7 +10,6 @@ import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 
-@GenerateCode
 data class PlayerBannedData(
     val id: UInt,
     var names: List<String>,

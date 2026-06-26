@@ -51,7 +51,7 @@ class EventProcessor(
         logger.info("Package name: $packageName")
 
         // Always append .generated to the full original package to respect nested structures
-        val base = if (packageName.isNotBlank()) packageName else "essential.core"
+        val base = packageName.ifBlank { "essential.core" }
         return "$base.generated"
     }
 
@@ -73,7 +73,7 @@ class EventProcessor(
                 }
 
                 // 각 패키지별로 파일 생성
-                eventFunctionsByPackage.forEach { (packageName, functions) ->
+                eventFunctionsByPackage.forEach { (_, functions) ->
                     generateEventHandlersFile(functions)
                 }
             }
@@ -87,8 +87,6 @@ class EventProcessor(
         val packageName = determinePackageName(functions)
 
         // Extract the base package (e.g., essential.core, essential.achievements)
-        val basePackage = packageName.substringBeforeLast(".generated")
-
         val fileSpec = FileSpec.builder(packageName, "EventHandlersGenerated")
             .addImport("arc.Events", "")
             .addImport("arc.func", "Cons")
