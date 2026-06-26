@@ -25,10 +25,7 @@ import essential.core.service.chat.ChatService
 import essential.core.service.discord.DiscordService
 import essential.core.service.protect.ProtectService
 import essential.core.service.web.WebService
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -58,7 +55,7 @@ class Main : Plugin() {
             config
         }
 
-        val scope = CoroutineScope(Dispatchers.IO)
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val threadPool: ExecutorService = Executors.newFixedThreadPool(2)
     }
 

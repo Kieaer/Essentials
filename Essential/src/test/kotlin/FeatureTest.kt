@@ -253,7 +253,7 @@ class FeatureTest {
 
         // The teams should be sorted by win rate: D, C, B, A (lowest first)
         val sortedActiveTeams = activeTeams.sortedBy { teamData ->
-            val teamPlayers = players.filter { it.player != null && it.player.team() == teamData.team }
+            val teamPlayers = players.filter { it.player.team() == teamData.team }
             if (teamPlayers.isEmpty()) 0.5 else teamPlayers.map {
                 val total = it.pvpWinCount + it.pvpLoseCount
                 if (total == 0) 0.5 else it.pvpWinCount.toDouble() / total

@@ -27,7 +27,7 @@ class Client : Runnable {
     private var channel: AsynchronousSocketChannel? = null
 
     // Coroutine scope for async operations
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // Buffer for reading data
     private val readBuffer = ByteBuffer.allocate(8192)
