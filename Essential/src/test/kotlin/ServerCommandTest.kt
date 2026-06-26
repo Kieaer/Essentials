@@ -104,6 +104,22 @@ class ServerCommandTest {
         val target1 = newPlayer()
         val target2 = newPlayer()
 
+        target1.second.exp = 13571
+        target2.second.exp = 24682
+
+        Events.fire(EventType.PlayerLeave(target1.first))
+        Events.fire(EventType.PlayerLeave(target2.first))
+
+        assertTrue(
+            waitUntil(10000) {
+                runBlocking {
+                    getPlayerData(target1.first.uuid())?.exp == 13571 &&
+                        getPlayerData(target2.first.uuid())?.exp == 24682
+                }
+            },
+            "Player data should be persisted after leave before renaming"
+        )
+
         runBlocking {
             suspendTransaction {
                 PlayerTable.update({ PlayerTable.id eq target1.second.id }) {
@@ -114,9 +130,6 @@ class ServerCommandTest {
                 }
             }
         }
-
-        Events.fire(EventType.PlayerLeave(target1.first))
-        Events.fire(EventType.PlayerLeave(target2.first))
 
         serverCommand.handleMessage("delete multipleplayer")
 

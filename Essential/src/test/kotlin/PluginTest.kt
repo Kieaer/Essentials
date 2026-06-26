@@ -369,14 +369,10 @@ class PluginTest {
          */
         fun newPlayer(): Pair<Player, PlayerData> {
             val player = createPlayer()
+            Events.fire(EventType.PlayerJoin(player))
             var data: PlayerData? = null
             val deadline = System.currentTimeMillis() + 15000
-            var nextFire = 0L
             while (data == null && System.currentTimeMillis() < deadline) {
-                if (System.currentTimeMillis() >= nextFire) {
-                    Events.fire(EventType.PlayerJoin(player))
-                    nextFire = System.currentTimeMillis() + 3000
-                }
                 sleep(16)
                 data = players.find { it.uuid == player.uuid() }
             }
