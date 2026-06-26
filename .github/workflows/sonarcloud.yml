@@ -39,4 +39,4 @@ jobs:
             -Dsonar.sources=Essential/src/main/kotlin
             -Dsonar.tests=Essential/src/test/kotlin
             -Dsonar.java.binaries=Essential/build/classes/kotlin/main
-            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+            -Dsonar.coverage.jacoco.xmlReportPaths=Essential/build/reports/jacoco/test/jacocoTestReport.xml
