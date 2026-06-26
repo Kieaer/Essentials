@@ -1,18 +1,16 @@
 import PluginTest.Companion.loadGame
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.serverCommand
-import PluginTest.Companion.waitUntil
 import arc.Events
 import essential.common.database.data.getPlayerData
 import essential.common.database.data.setAchievement
+import essential.common.database.data.update
 import essential.common.database.table.AchievementTable
-import essential.common.database.table.PlayerTable
 import kotlinx.coroutines.runBlocking
 import mindustry.game.EventType
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import org.jetbrains.exposed.v1.r2dbc.update
 import kotlin.test.*
 
 class ServerCommandTest {
@@ -34,27 +32,22 @@ class ServerCommandTest {
         val target = newPlayer()
         val dest = newPlayer()
 
-        target.second.exp = 100000
-        dest.second.exp = 100000
+        runBlocking {
+            target.second.exp = 100000
+            dest.second.exp = 100000
+            target.second.update()
+            dest.second.update()
+        }
 
-        Events.fire(EventType.PlayerLeave(target.first))
-        Events.fire(EventType.PlayerLeave(dest.first))
-
-        assertTrue(
-            waitUntil(10000) {
-                runBlocking {
-                    getPlayerData(target.first.uuid())?.exp == 100000 &&
-                        getPlayerData(dest.first.uuid())?.exp == 100000
-                }
-            },
-            "Player exp should be persisted before merge"
-        )
+        assertEquals(100000, runBlocking { getPlayerData(target.first.uuid())?.exp }, "target exp should be persisted")
+        assertEquals(100000, runBlocking { getPlayerData(dest.first.uuid())?.exp }, "dest exp should be persisted")
 
         serverCommand.handleMessage("mergeplayer ${target.first.uuid()} ${dest.first.uuid()}")
 
-        assertTrue(
-            waitUntil(10000) { runBlocking { getPlayerData(dest.first.uuid())?.exp == 200000 } },
-            "Merged exp should be 200000 but was ${runBlocking { getPlayerData(dest.first.uuid())?.exp }}"
+        assertEquals(
+            200000,
+            runBlocking { getPlayerData(dest.first.uuid())?.exp },
+            "Merged exp should be 200000"
         )
     }
 
@@ -104,31 +97,11 @@ class ServerCommandTest {
         val target1 = newPlayer()
         val target2 = newPlayer()
 
-        target1.second.exp = 13571
-        target2.second.exp = 24682
-
-        Events.fire(EventType.PlayerLeave(target1.first))
-        Events.fire(EventType.PlayerLeave(target2.first))
-
-        assertTrue(
-            waitUntil(10000) {
-                runBlocking {
-                    getPlayerData(target1.first.uuid())?.exp == 13571 &&
-                        getPlayerData(target2.first.uuid())?.exp == 24682
-                }
-            },
-            "Player data should be persisted after leave before renaming"
-        )
-
         runBlocking {
-            suspendTransaction {
-                PlayerTable.update({ PlayerTable.id eq target1.second.id }) {
-                    it[name] = "multipleplayer"
-                }
-                PlayerTable.update({ PlayerTable.id eq target2.second.id }) {
-                    it[name] = "MULTIPLEPLAYER"
-                }
-            }
+            target1.second.name = "multipleplayer"
+            target2.second.name = "MULTIPLEPLAYER"
+            target1.second.update()
+            target2.second.update()
         }
 
         serverCommand.handleMessage("delete multipleplayer")
