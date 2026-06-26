@@ -1,6 +1,7 @@
 import PluginTest.Companion.loadGame
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.serverCommand
+import PluginTest.Companion.waitUntil
 import arc.Events
 import essential.common.database.data.getPlayerData
 import essential.common.database.data.setAchievement
@@ -39,15 +40,21 @@ class ServerCommandTest {
             dest.second.update()
         }
 
-        assertEquals(100000, runBlocking { getPlayerData(target.first.uuid())?.exp }, "target exp should be persisted")
-        assertEquals(100000, runBlocking { getPlayerData(dest.first.uuid())?.exp }, "dest exp should be persisted")
+        assertTrue(
+            waitUntil(10000) {
+                runBlocking {
+                    getPlayerData(target.first.uuid())?.exp == 100000 &&
+                        getPlayerData(dest.first.uuid())?.exp == 100000
+                }
+            },
+            "Player exp should be persisted before merge"
+        )
 
         serverCommand.handleMessage("mergeplayer ${target.first.uuid()} ${dest.first.uuid()}")
 
-        assertEquals(
-            200000,
-            runBlocking { getPlayerData(dest.first.uuid())?.exp },
-            "Merged exp should be 200000"
+        assertTrue(
+            waitUntil(10000) { runBlocking { getPlayerData(dest.first.uuid())?.exp == 200000 } },
+            "Merged exp should be 200000 but was ${runBlocking { getPlayerData(dest.first.uuid())?.exp }}"
         )
     }
 
