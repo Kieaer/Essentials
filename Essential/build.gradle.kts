@@ -79,7 +79,9 @@ tasks.register<JavaExec>("proguardJar") {
 tasks.test {
     testLogging {
         events("failed")
-        exceptionFormat = TestExceptionFormat.SHORT
+        exceptionFormat = TestExceptionFormat.FULL
+        showStackTraces = true
+        showCauses = true
     }
     finalizedBy("jacocoTestReport")
 }

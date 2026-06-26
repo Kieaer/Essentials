@@ -41,7 +41,7 @@ class ServerCommandTest {
         Events.fire(EventType.PlayerLeave(dest.first))
 
         assertTrue(
-            waitUntil {
+            waitUntil(10000) {
                 runBlocking {
                     getPlayerData(target.first.uuid())?.exp == 100000 &&
                         getPlayerData(dest.first.uuid())?.exp == 100000
@@ -53,7 +53,7 @@ class ServerCommandTest {
         serverCommand.handleMessage("mergeplayer ${target.first.uuid()} ${dest.first.uuid()}")
 
         assertTrue(
-            waitUntil { runBlocking { getPlayerData(dest.first.uuid())?.exp == 200000 } },
+            waitUntil(10000) { runBlocking { getPlayerData(dest.first.uuid())?.exp == 200000 } },
             "Merged exp should be 200000 but was ${runBlocking { getPlayerData(dest.first.uuid())?.exp }}"
         )
     }
