@@ -35,7 +35,7 @@ jobs:
         with:
           args: >
             -Dsonar.organization=kieaer
-            -Dsonar.projectKey=Essentials
+            -Dsonar.projectKey=Kieaer_Essentials
             -Dsonar.sources=Essential/src/main/kotlin
             -Dsonar.tests=Essential/src/test/kotlin
             -Dsonar.java.binaries=Essential/build/classes/kotlin/main
