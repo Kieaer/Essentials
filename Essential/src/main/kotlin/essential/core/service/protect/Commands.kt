@@ -128,7 +128,7 @@ class Commands {
                         }.empty()
                     }
                     if (nameTaken) {
-                        Core.app.post { player.sendMessage(bundle["event.player.name.duplicate"]) }
+                        Core.app.post { player.sendMessage(bundle["command.reg.name.exists"]) }
                         return@launch
                     }
 
