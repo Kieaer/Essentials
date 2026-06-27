@@ -2,15 +2,19 @@ package essential.core.service.protect
 
 import arc.util.CommandHandler
 import arc.util.Log
+import arc.util.Timer
 import essential.common.bundle.Bundle
 import essential.common.config.Config
 import essential.common.database.data.PlayerData
 import essential.common.permission.Permission
+import essential.common.players
 import essential.common.util.findPlayerData
+import essential.core.service.protect.ProtectConfig.AuthType
 import essential.core.service.protect.generated.registerGeneratedClientCommands
 import essential.core.service.protect.generated.registerGeneratedEventHandlers
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars.netServer
+import mindustry.gen.Groups
 import mindustry.mod.Plugin
 import java.net.URI
 import java.util.Objects.requireNonNull
@@ -66,6 +70,16 @@ class ProtectService : Plugin() {
         if (conf.rules.vpn) {
             val list = URI("https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt").toURL().readText()
             pluginData.vpnList = list.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+        }
+
+        if (conf.account.getAuthType() == AuthType.Password) {
+            Timer.schedule({
+                Groups.player.forEach {
+                    if (players.none { e -> e.uuid == it.uuid() }) {
+                        it.sendMessage(Bundle(it.locale)["event.player.first.register"])
+                    }
+                }
+            }, 0f, 20f)
         }
 
         // 이벤트 설정
