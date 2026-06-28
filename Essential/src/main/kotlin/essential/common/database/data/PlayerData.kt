@@ -3,6 +3,7 @@ package essential.common.database.data
 import arc.util.Log
 import essential.common.bundle.Bundle
 import essential.common.database.table.AchievementTable
+import essential.common.database.table.ContributionTable
 import essential.common.database.table.PlayerTable
 import essential.common.playerNumber
 import essential.common.systemTimezone
@@ -92,6 +93,8 @@ data class PlayerData(
     var currentUnitDestroyedCount = 0
     var currentBuildDestroyedCount = 0
     var currentBuildAttackCount = 0
+
+    var currentContribution: Double = 0.0
 
     // APM (Actions Per Minute)
     var apm = 0
@@ -257,6 +260,7 @@ suspend fun deletePlayerData(uuid: String): Boolean = suspendTransaction {
         .firstOrNull()
     if (id != null) {
         AchievementTable.deleteWhere { AchievementTable.playerId eq id }
+        ContributionTable.deleteWhere { ContributionTable.playerId eq id }
     }
     PlayerTable.deleteWhere { PlayerTable.uuid eq uuid } > 0
 }

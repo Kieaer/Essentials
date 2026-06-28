@@ -4,9 +4,7 @@ import arc.Core
 import arc.Events
 import arc.files.Fi
 import arc.util.Log
-import essential.common.database.data.getMapRatings
-import essential.common.database.data.getPlayerAchievements
-import essential.common.database.data.getPlayerDataByName
+import essential.common.database.data.*
 import essential.common.log.LogType
 import essential.common.log.writeLog
 import essential.common.playTime
@@ -136,6 +134,16 @@ class WebServer {
         val achievementsCompleted: Int,
         val achievementsTotal: Int,
         val achievements: List<AchievementInfo>
+    )
+
+    @Serializable
+    data class ContributionEntry(
+        val name: String,
+        val current: Double,
+        val average: Double,
+        val games: Int,
+        val team: String? = null,
+        val teamColor: String? = null
     )
 
     @Serializable
@@ -270,6 +278,25 @@ class WebServer {
                         get("/status") {
                             val status = getServerStatus()
                             call.respond(status)
+                        }
+
+                        get("/contribution") {
+                            // Live: current online players, each with this game's contribution and their overall average.
+                            // In PvP, include team so the client can group players by team.
+                            val isPvp = Vars.state != null && !Vars.state.isMenu && Vars.state.rules.pvp
+                            val snapshot = players.toList()
+                            val entries = snapshot.map { data ->
+                                val team = if (isPvp) data.player.team() else null
+                                ContributionEntry(
+                                    name = data.name,
+                                    current = data.currentContribution,
+                                    average = getAverageContribution(data),
+                                    games = getContributionCount(data),
+                                    team = team?.name,
+                                    teamColor = team?.color?.toString()?.let { "#$it" }
+                                )
+                            }.sortedByDescending { it.current }
+                            call.respond(entries)
                         }
 
                         authenticate("auth-session") {

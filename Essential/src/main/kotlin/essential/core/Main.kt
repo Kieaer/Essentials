@@ -22,6 +22,7 @@ import essential.core.generated.registerGeneratedServerCommands
 import essential.core.service.achievements.AchievementService
 import essential.core.service.bridge.BridgeService
 import essential.core.service.chat.ChatService
+import essential.core.service.contribution.ContributionService
 import essential.core.service.discord.DiscordService
 import essential.core.service.protect.ProtectService
 import essential.core.service.web.WebService
@@ -59,12 +60,13 @@ class Main : Plugin() {
         val threadPool: ExecutorService = Executors.newFixedThreadPool(2)
     }
 
-    private var bridgeService = BridgeService()
-    private var chatService = ChatService()
-    private var protectService = ProtectService()
-    private var achievementService = AchievementService()
-    private var discordService = DiscordService()
-    private var webService = WebService()
+    private val bridgeService = BridgeService()
+    private val chatService = ChatService()
+    private val protectService = ProtectService()
+    private val achievementService = AchievementService()
+    private val contributionService = ContributionService()
+    private val discordService = DiscordService()
+    private val webService = WebService()
 
     override fun init() = runBlocking {
         // 플러그인 언어 설정 및 태그 추가

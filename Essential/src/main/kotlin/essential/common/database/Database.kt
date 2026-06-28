@@ -115,6 +115,7 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
             PluginTable,
             PlayerBannedTable,
             AchievementTable,
+            ContributionTable,
             MapRatingTable,
             ServerRoutingTable
         )

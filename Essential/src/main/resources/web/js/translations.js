@@ -64,6 +64,13 @@ const translations = {
         'server.chart.units': 'Units on Map',
         'server.chart.buildings': 'Buildings on Map',
         'server.chart.no_data': 'No data recorded yet',
+        'server.contribution.title': 'Contribution',
+        'server.contribution.subtitle': 'Live contribution (online players)',
+        'server.contribution.player': 'Player',
+        'server.contribution.current': 'Current Game',
+        'server.contribution.average': 'Average',
+        'server.contribution.games': 'games',
+        'server.contribution.empty': 'No players online',
 
         // My Info / Profile page
         'profile.title': 'My Info',
@@ -184,6 +191,13 @@ const translations = {
         'server.chart.units': '맵 유닛 수',
         'server.chart.buildings': '맵 건물 수',
         'server.chart.no_data': '기록된 데이터 없음',
+        'server.contribution.title': '기여도',
+        'server.contribution.subtitle': '실시간 기여도 (접속 중인 플레이어)',
+        'server.contribution.player': '플레이어',
+        'server.contribution.current': '현재 게임',
+        'server.contribution.average': '평균',
+        'server.contribution.games': '판',
+        'server.contribution.empty': '접속 중인 플레이어 없음',
 
         // My Info / Profile page
         'profile.title': '내 정보',
@@ -307,6 +321,13 @@ const translations = {
         'server.chart.units': 'Юнітів на карті',
         'server.chart.buildings': 'Будівель на карті',
         'server.chart.no_data': 'Немає записаних даних',
+        'server.contribution.title': 'Внесок',
+        'server.contribution.subtitle': 'Внесок у реальному часі (гравці онлайн)',
+        'server.contribution.player': 'Гравець',
+        'server.contribution.current': 'Поточна гра',
+        'server.contribution.average': 'Середній',
+        'server.contribution.games': 'ігор',
+        'server.contribution.empty': 'Немає гравців онлайн',
 
         // My Info / Profile page
         'profile.title': 'Мої дані',

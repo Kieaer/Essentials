@@ -1821,6 +1821,91 @@ body {
     font-family: var(--font-primary);
 }
 
+#contribution-card {
+    margin-top: 24px;
+}
+
+.contribution-team {
+    margin-bottom: 16px;
+}
+
+.contribution-team:last-child {
+    margin-bottom: 0;
+}
+
+.contribution-team-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: capitalize;
+    padding: 4px 8px;
+    margin-bottom: 4px;
+}
+
+.contribution-team-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.contribution-row {
+    padding: 10px 8px;
+    font-family: var(--font-primary);
+}
+
+.contribution-info {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.contribution-name {
+    flex: 1 1 auto;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.contribution-values {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+.contribution-current {
+    font-weight: 700;
+    font-size: 15px;
+    color: #10b981;
+}
+
+.contribution-avg {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.contribution-bar-track {
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--border-color, rgba(255, 255, 255, 0.08));
+    overflow: hidden;
+}
+
+.contribution-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #10b981, #34d399);
+    transition: width 0.4s ease;
+}
+
 @media (max-width: 768px) {
     .app-header {
         padding: 0 16px;

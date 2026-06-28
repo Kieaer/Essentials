@@ -98,6 +98,7 @@ data class Module(
     val achievement: Boolean = false,
     val bridge: Boolean = false,
     val chat: Boolean = true,
+    val contribution: Boolean = true,
     val discord: Boolean = false,
     val protect: Boolean = false,
     val web: Boolean = false,

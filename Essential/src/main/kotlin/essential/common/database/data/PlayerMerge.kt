@@ -1,6 +1,7 @@
 package essential.common.database.data
 
 import essential.common.database.table.AchievementTable
+import essential.common.database.table.ContributionTable
 import essential.common.database.table.PlayerTable
 import essential.common.systemTimezone
 import kotlinx.datetime.LocalDateTime
@@ -94,6 +95,10 @@ suspend fun mergePlayerAccounts(fromUuid: String, toUuid: String): String = susp
     }
 
     AchievementTable.deleteWhere { AchievementTable.playerId eq from.id }
+    // Reassign the source player's contribution records to the target before deletion.
+    ContributionTable.update({ ContributionTable.playerId eq from.id }) {
+        it[ContributionTable.playerId] = to.id
+    }
     PlayerTable.deleteWhere { PlayerTable.id eq from.id }
 
     return@suspendTransaction "Merged ${from.name} ($fromUuid) into ${to.name} ($toUuid)."

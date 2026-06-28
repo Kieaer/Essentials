@@ -38,3 +38,14 @@ ALTER TABLE map_ratings ADD COLUMN difficulty INT DEFAULT 3;
 ALTER TABLE map_ratings ADD COLUMN rating INT DEFAULT 3;
 UPDATE map_ratings SET difficulty = 3, rating = CASE WHEN is_upvote = TRUE OR is_upvote = 1 THEN 5 ELSE 1 END;
 ALTER TABLE map_ratings DROP COLUMN is_upvote;
+
+/* 판당 기여도 점수 테이블 */
+CREATE TABLE IF NOT EXISTS player_contributions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    player_id BIGINT NOT NULL,
+    game_mode VARCHAR(20) NOT NULL,
+    map_name VARCHAR(64),
+    score DOUBLE NOT NULL,
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_player_contributions_player_id__id FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE RESTRICT ON UPDATE RESTRICT
+);

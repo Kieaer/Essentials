@@ -6,6 +6,7 @@ let allMaps = [];
 let chatPollInterval = null;
 let statusPollInterval = null;
 let historyPollInterval = null;
+let contributionPollInterval = null;
 let isFirstChatLoad = true;
 let lastChatHistoryJson = '';
 let currentServerMode = 'none';
@@ -223,10 +224,12 @@ function showPage(pageName) {
         stopChatPolling();
         stopStatusPolling();
         startHistoryPolling();
+        startContributionPolling();
     } else {
         stopChatPolling();
         stopStatusPolling();
         stopHistoryPolling();
+        stopContributionPolling();
     }
 
     // Load data for the page if needed
@@ -285,6 +288,21 @@ function stopHistoryPolling() {
     if (historyPollInterval) {
         clearInterval(historyPollInterval);
         historyPollInterval = null;
+    }
+}
+
+// Start polling live contribution ranking
+function startContributionPolling() {
+    stopContributionPolling();
+    loadContributionRanking();
+    contributionPollInterval = setInterval(loadContributionRanking, 2000);
+}
+
+// Stop polling contribution ranking
+function stopContributionPolling() {
+    if (contributionPollInterval) {
+        clearInterval(contributionPollInterval);
+        contributionPollInterval = null;
     }
 }
 
@@ -1267,6 +1285,96 @@ function loadServerHistory() {
         })
         .catch(error => {
             console.error('Error loading server history:', error);
+        });
+}
+
+// Load and render the live contribution list (current online players)
+function loadContributionRanking() {
+    const container = document.getElementById('contribution-ranking');
+    if (!container) return;
+
+    fetch('api/server/contribution')
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Failed to load contribution ranking');
+        })
+        .then(ranking => {
+            if (!ranking || ranking.length === 0) {
+                container.innerHTML = `<div class="chart-no-data">${window.i18n.translate('server.contribution.empty')}</div>`;
+                return;
+            }
+
+            const gamesLabel = window.i18n.translate('server.contribution.games');
+            const avgLabel = window.i18n.translate('server.contribution.average');
+
+            const escapeHtml = (s) => String(s)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            // Render one player's bar row. maxCurrent = baseline for 100%, barColor = fill color.
+            const renderRow = (entry, maxCurrent, barColor) => {
+                const pct = maxCurrent > 0 ? Math.max(0, entry.current) / maxCurrent * 100 : 0;
+                const fillStyle = barColor
+                    ? `width: ${pct.toFixed(1)}%; background: ${barColor};`
+                    : `width: ${pct.toFixed(1)}%;`;
+                return `
+                    <div class="contribution-row">
+                        <div class="contribution-info">
+                            <span class="contribution-name">${escapeHtml(entry.name)}</span>
+                            <span class="contribution-values">
+                                <span class="contribution-current">${entry.current.toFixed(1)}</span>
+                                <span class="contribution-avg">${avgLabel} ${entry.average.toFixed(1)} (${entry.games} ${gamesLabel})</span>
+                            </span>
+                        </div>
+                        <div class="contribution-bar-track">
+                            <div class="contribution-bar-fill" style="${fillStyle}"></div>
+                        </div>
+                    </div>`;
+            };
+
+            const isPvp = ranking.some(e => e.team);
+
+            if (isPvp) {
+                // Group by team; within each team sort by current; per-team top = 100% baseline.
+                const teams = {};
+                ranking.forEach(e => {
+                    const key = e.team || 'unknown';
+                    if (!teams[key]) teams[key] = { color: e.teamColor, players: [] };
+                    teams[key].players.push(e);
+                });
+
+                // Order teams by their top player's current contribution.
+                const orderedTeams = Object.entries(teams).sort((a, b) => {
+                    const aMax = Math.max(...a[1].players.map(p => p.current), 0);
+                    const bMax = Math.max(...b[1].players.map(p => p.current), 0);
+                    return bMax - aMax;
+                });
+
+                container.innerHTML = orderedTeams.map(([teamName, team]) => {
+                    const sorted = team.players.slice().sort((a, b) => b.current - a.current);
+                    const maxCurrent = Math.max(...sorted.map(p => p.current), 0);
+                    const color = team.color || '#10b981';
+                    const rows = sorted.map(p => renderRow(p, maxCurrent, color)).join('');
+                    return `
+                        <div class="contribution-team">
+                            <div class="contribution-team-header" style="color: ${color};">
+                                <span class="contribution-team-dot" style="background: ${color};"></span>
+                                ${escapeHtml(teamName)}
+                            </div>
+                            ${rows}
+                        </div>`;
+                }).join('');
+            } else {
+                // Non-PvP: single list; the top player's current = 100% baseline.
+                const sorted = ranking.slice().sort((a, b) => b.current - a.current);
+                const maxCurrent = Math.max(...sorted.map(e => e.current), 0);
+                container.innerHTML = sorted.map(e => renderRow(e, maxCurrent, null)).join('');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading contribution ranking:', error);
+            container.innerHTML = `<div class="chart-no-data">${window.i18n.translate('server.contribution.empty')}</div>`;
         });
 }
 
