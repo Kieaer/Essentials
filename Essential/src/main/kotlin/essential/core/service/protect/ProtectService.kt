@@ -23,13 +23,18 @@ import java.util.Objects.requireNonNull
 class ProtectService : Plugin() {
     companion object {
         var bundle: Bundle = Bundle()
-        val conf: ProtectConfig = runBlocking {
-            val config = Config.load("config_protect", ProtectConfig.serializer(), ProtectConfig())
-            require(config != null) {
-                Log.err(bundle["event.plugin.load.failed"])
+        var conf: ProtectConfig = reloadConf()
+
+        fun reloadConf() : ProtectConfig {
+            return runBlocking {
+                val config = Config.load("config_protect", ProtectConfig.serializer(), ProtectConfig())
+                require(config != null) {
+                    Log.err(bundle["event.plugin.load.failed"])
+                }
+                config
             }
-            config
         }
+
         var pluginData: PluginData = PluginData()
     }
 

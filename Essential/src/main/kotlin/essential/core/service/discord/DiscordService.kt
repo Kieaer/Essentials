@@ -11,12 +11,16 @@ import mindustry.mod.Plugin
 class DiscordService : Plugin() {
     companion object {
         var bundle: Bundle = Bundle()
-        val conf: DiscordConfig = runBlocking {
-            val config = Config.load("config_discord", DiscordConfig.serializer(), DiscordConfig())
-            require(config != null) {
-                Log.err(bundle["event.plugin.load.failed"])
+        var conf: DiscordConfig = reloadConf()
+
+        fun reloadConf() : DiscordConfig {
+            return runBlocking {
+                val config = Config.load("config_discord", DiscordConfig.serializer(), DiscordConfig())
+                require(config != null) {
+                    Log.err(bundle["event.plugin.load.failed"])
+                }
+                config
             }
-            config
         }
     }
 

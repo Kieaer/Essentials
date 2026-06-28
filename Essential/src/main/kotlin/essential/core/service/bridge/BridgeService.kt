@@ -20,13 +20,16 @@ class BridgeService : Plugin() {
         // Note: bridge 전용 번들이 없으므로 공통 번들을 사용합니다.
         var bundle: Bundle = Bundle(ResourceBundle.getBundle("bundles/common/bundle"))
         var isServerMode: Boolean = false
-        var conf: BridgeConfig = runBlocking {
-            // 플러그인 설정 불러오기
-            val config = Config.load("config_bridge", BridgeConfig.serializer(), BridgeConfig())
-            require(config != null) {
-                Log.err(bundle["event.plugin.load.failed"])
+        var conf: BridgeConfig = reloadConf()
+
+        fun reloadConf() : BridgeConfig {
+            return runBlocking {
+                val config = Config.load("config_bridge", BridgeConfig.serializer(), BridgeConfig())
+                require(config != null) {
+                    Log.err(bundle["event.plugin.load.failed"])
+                }
+                config
             }
-            config
         }
 
         lateinit var network: Runnable

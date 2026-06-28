@@ -13,12 +13,16 @@ import mindustry.mod.Plugin
 class ChatService : Plugin() {
     companion object {
         var bundle: Bundle = Bundle()
-        val conf: ChatConfig = runBlocking {
-            val config = Config.load("config_chat", ChatConfig.serializer(), ChatConfig())
-            require(config != null) {
-                Log.err(bundle["event.plugin.load.failed"])
+        var conf: ChatConfig = reloadConf()
+
+        fun reloadConf() : ChatConfig {
+            return runBlocking {
+                val config = Config.load("config_chat", ChatConfig.serializer(), ChatConfig())
+                require(config != null) {
+                    Log.err(bundle["event.plugin.load.failed"])
+                }
+                config
             }
-            config
         }
     }
 

@@ -23,6 +23,8 @@ import essential.common.database.worldHistoryDatabase
 import essential.common.players
 import essential.common.rootPath
 import essential.core.Main
+import essential.core.service.chat.ChatService
+import essential.core.service.web.WebService
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.Vars.*
@@ -587,14 +589,16 @@ class PluginTest {
 
     @Test
     fun configUpgradeTest() {
-        if (Core.app != null) stopPlugin()
-
         loadGame(loadPlugin = false)
 
         val configDir = rootPath.child("config")
         configDir.mkdirs()
 
+        val originalWebConf = WebService.conf
+        val originalChatConf = ChatService.conf
+
         val oldConfigs = listOf(
+            "config.yaml",
             "config_bridge.yaml",
             "config_chat.yaml",
             "config_discord.yaml",
@@ -610,20 +614,25 @@ class PluginTest {
             resourceStream.close()
         }
 
-        loadPlugin()
+        try {
+            WebService.conf = WebService.reloadConf()
+            ChatService.conf = ChatService.reloadConf()
 
-        assertEquals(32148, essential.core.service.web.WebService.conf.port)
+            assertEquals(32148, WebService.conf.port)
 
-        val updatedWebContent = configDir.child("config_web.yaml").readString()
-        assertTrue(updatedWebContent.contains("sessionSecret"), "config_web.yaml should be upgraded with sessionSecret")
-        assertTrue(updatedWebContent.contains("enableWebSocket"), "config_web.yaml should be upgraded with enableWebSocket")
+            val updatedWebContent = configDir.child("config_web.yaml").readString()
+            assertTrue(updatedWebContent.contains("sessionSecret"), "config_web.yaml should be upgraded with sessionSecret")
+            assertTrue(updatedWebContent.contains("enableWebSocket"), "config_web.yaml should be upgraded with enableWebSocket")
 
-        assertEquals("%player.name[orange] >[white] %chat", essential.core.service.chat.ChatService.conf.chatFormat)
+            assertEquals("%player.name[orange] >[white] %chat", ChatService.conf.chatFormat)
 
-        val updatedChatContent = configDir.child("config_chat.yaml").readString()
-        assertTrue(updatedChatContent.contains("strict"), "config_chat.yaml should be upgraded with strict")
-        assertTrue(updatedChatContent.contains("blacklist"), "config_chat.yaml should be upgraded with blacklist")
-
-        stopPlugin()
+            val updatedChatContent = configDir.child("config_chat.yaml").readString()
+            assertTrue(updatedChatContent.contains("strict"), "config_chat.yaml should be upgraded with strict")
+            assertTrue(updatedChatContent.contains("blacklist"), "config_chat.yaml should be upgraded with blacklist")
+        } finally {
+            for (configName in oldConfigs) configDir.child(configName).delete()
+            WebService.conf = originalWebConf
+            ChatService.conf = originalChatConf
+        }
     }
 }

@@ -11,12 +11,16 @@ import java.util.*
 class WebService : Plugin() {
     companion object {
         var bundle: Bundle = Bundle(ResourceBundle.getBundle("bundles/web/web"))
-        val conf: WebConfig = runBlocking {
-            val config = Config.load("config_web", WebConfig.serializer(), WebConfig())
-            require(config != null) {
-                Log.err(bundle["event.plugin.load.failed"])
+        var conf: WebConfig = reloadConf()
+
+        fun reloadConf() : WebConfig {
+            return runBlocking {
+                val config = Config.load("config_web", WebConfig.serializer(), WebConfig())
+                require(config != null) {
+                    Log.err(bundle["event.plugin.load.failed"])
+                }
+                config
             }
-            config
         }
     }
 

@@ -47,13 +47,16 @@ import kotlin.time.Clock
 class Main : Plugin() {
     companion object {
         const val CONFIG_PATH = "config/config.yaml"
-        var conf: CoreConfig = runBlocking {
-            // 플러그인 설정 불러오기
-            val config = Config.load("config", CoreConfig.serializer(), CoreConfig())
-            require(config != null) {
-                Log.err(bundle["event.plugin.load.failed"])
+        var conf: CoreConfig = reloadConf()
+
+        fun reloadConf() : CoreConfig {
+            return runBlocking {
+                val config = Config.load("config", CoreConfig.serializer(), CoreConfig())
+                require(config != null) {
+                    Log.err(bundle["event.plugin.load.failed"])
+                }
+                config
             }
-            config
         }
 
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -191,6 +194,7 @@ class Main : Plugin() {
         if (conf.module.chat) chatService.init()
         if (conf.module.protect) protectService.init()
         if (conf.module.achievement) achievementService.init()
+        if (conf.module.contribution) contributionService.init()
         if (conf.module.discord) discordService.init()
         if (conf.module.web) webService.init()
 
@@ -205,6 +209,7 @@ class Main : Plugin() {
         if (conf.module.chat) chatService.registerServerCommands(handler)
         if (conf.module.protect) protectService.registerServerCommands(handler)
         if (conf.module.achievement) achievementService.registerServerCommands(handler)
+        if (conf.module.contribution) contributionService.registerServerCommands(handler)
         if (conf.module.discord) discordService.registerServerCommands(handler)
         if (conf.module.web) webService.registerServerCommands(handler)
     }
@@ -241,6 +246,7 @@ class Main : Plugin() {
         if (conf.module.chat) chatService.registerClientCommands(handler)
         if (conf.module.protect) protectService.registerClientCommands(handler)
         if (conf.module.achievement) achievementService.registerClientCommands(handler)
+        if (conf.module.contribution) contributionService.registerClientCommands(handler)
         if (conf.module.discord) discordService.registerClientCommands(handler)
         if (conf.module.web) webService.registerClientCommands(handler)
     }

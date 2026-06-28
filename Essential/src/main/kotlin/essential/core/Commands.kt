@@ -11,7 +11,6 @@ import com.github.lalyos.jfiglet.FigletFont
 import essential.*
 import essential.common.*
 import essential.common.bundle.Bundle
-import essential.common.config.Config
 import essential.common.database.WorldHistoryBuffer
 import essential.common.database.data.*
 import essential.common.database.data.plugin.WarpCount
@@ -28,11 +27,15 @@ import essential.common.util.findPlayers
 import essential.common.util.findPlayersByName
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
+import essential.core.service.bridge.BridgeService
+import essential.core.service.chat.ChatService
+import essential.core.service.discord.DiscordService
 import essential.core.service.protect.ProtectConfig
 import essential.core.service.protect.ProtectService
 import essential.core.service.vote.VoteData
 import essential.core.service.vote.VoteSystem
 import essential.core.service.vote.VoteType
+import essential.core.service.web.WebService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -2849,10 +2852,12 @@ class Commands {
                 Permission.load()
             }
             Log.info(Bundle()["config.permission.updated"])
-            val newConf = Config.load("config", CoreConfig.serializer(), CoreConfig())
-            if (newConf != null) {
-                conf = newConf
-            }
+            Main.reloadConf()
+            if (conf.module.web) WebService.reloadConf()
+            if (conf.module.chat) ChatService.reloadConf()
+            if (conf.module.bridge) BridgeService.reloadConf()
+            if (conf.module.discord) DiscordService.reloadConf()
+            if (conf.module.protect) ProtectService.reloadConf()
             Log.info(Bundle()["config.reloaded"])
         } catch (e: Exception) {
             e.printStackTrace()
