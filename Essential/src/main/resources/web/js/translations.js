@@ -40,6 +40,7 @@ const translations = {
         'maps.sort_downloads': 'Downloads',
         'maps.sort_popular': 'Popularity',
         'maps.votes': 'Rating: {0} votes',
+        'maps.uploader': 'Uploaded by',
 
         // Server status page
         'server.title': 'Server Status',
@@ -166,6 +167,7 @@ const translations = {
         'maps.sort_downloads': '다운로드순',
         'maps.sort_popular': '인기순',
         'maps.votes': '평가: {0}표',
+        'maps.uploader': '업로드 한 사람',
 
         // Server status page
         'server.title': '서버 상태',
@@ -295,6 +297,7 @@ const translations = {
         'maps.sort_downloads': 'Популярні',
         'maps.sort_popular': 'Популярність',
         'maps.votes': 'Рейтинг: {0} голосів',
+        'maps.uploader': 'Завантажено',
 
         // Server status page
         'server.title': 'Стан сервера',

@@ -67,6 +67,8 @@ class WebServer {
     private val chatHistory = Collections.synchronizedList(mutableListOf<ChatMessage>())
     private val statusHistory = Collections.synchronizedList(mutableListOf<StatusDataPoint>())
     private val webCacheDir = File(rootPath.child("data/webCache").absolutePath())
+    private val uploadersFile = File(rootPath.child("data/map_uploaders.json").absolutePath())
+    private val uploadersMap = Collections.synchronizedMap(mutableMapOf<String, String>())
 
     @Serializable
     data class UserSession(val id: String, val username: String)
@@ -81,7 +83,8 @@ class WebServer {
         val description: String,
         val planet: String,
         val preview: String? = null,
-        val votes: Int = 0
+        val votes: Int = 0,
+        val uploader: String? = null
     )
 
     @Serializable
@@ -295,6 +298,9 @@ class WebServer {
                         }
 
                         get("/contribution") {
+                            if (!essential.core.Main.conf.module.contribution) {
+                                return@get call.respond(HttpStatusCode.Forbidden, "Contribution module is disabled")
+                            }
                             // Live: current online players, each with this game's contribution and their overall average.
                             // In PvP, include team so the client can group players by team.
                             val isPvp = Vars.state != null && !Vars.state.isMenu && Vars.state.rules.pvp
@@ -368,6 +374,18 @@ class WebServer {
         // Create web image cache directory if it doesn't exist
         if (!webCacheDir.exists()) {
             webCacheDir.mkdirs()
+        }
+
+        // Load map uploaders JSON if it exists
+        if (uploadersFile.exists()) {
+            try {
+                val jsonText = uploadersFile.readText()
+                val loadedMap: Map<String, String> = Json.decodeFromString(jsonText)
+                uploadersMap.putAll(loadedMap)
+                Log.info("Loaded ${loadedMap.size} map uploaders from JSON")
+            } catch (e: Exception) {
+                Log.err("Failed to load map uploaders JSON", e)
+            }
         }
 
         val isTest = try {
@@ -496,13 +514,14 @@ class WebServer {
             part.dispose()
         }
 
-        if (fileBytes == null) {
+        val bytes = fileBytes
+        if (bytes == null) {
             call.respond(HttpStatusCode.BadRequest, "No file uploaded")
             return
         }
 
         // Check file size
-        if (fileBytes.size > conf.maxFileSize) {
+        if (bytes.size > conf.maxFileSize) {
             call.respond(HttpStatusCode.BadRequest, "File too large")
             return
         }
@@ -515,7 +534,7 @@ class WebServer {
 
         // Create temporary file for validation
         val tempFile = File.createTempFile("map_", ".msav")
-        tempFile.writeBytes(fileBytes)
+        tempFile.writeBytes(bytes)
 
         // Validate map file without affecting the current game state
         try {
@@ -530,14 +549,45 @@ class WebServer {
             Files.copy(tempFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
             tempFile.delete()
 
+            val session = call.sessions.get<UserSession>()
+            val username = session?.username ?: "unknown"
+            val mapName = parsedMap.name()
+
+            // Fetch and cache map image immediately on upload using api.mindustry-tool
+            try {
+                val hash = sha256Hex(bytes)
+                val cacheFile = File(webCacheDir, "$hash.png")
+                if (!cacheFile.exists()) {
+                    val imageBytes = withContext(Dispatchers.IO) { fetchMapImage(bytes, fileName) }
+                    if (imageBytes != null) {
+                        val tmp = File(webCacheDir, "$hash.png.tmp")
+                        tmp.writeBytes(imageBytes)
+                        Files.move(tmp.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                        Log.info("Pre-generated and cached map image for uploaded map: $fileName")
+                    } else {
+                        Log.warn("Failed to pre-generate map image on upload: API returned null")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.err("Error pre-generating map image on upload", e)
+            }
+
+            // Save uploader to JSON file
+            try {
+                uploadersMap[mapName] = username
+                synchronized(uploadersMap) {
+                    val jsonText = Json.encodeToString(uploadersMap.toMap())
+                    uploadersFile.writeText(jsonText)
+                }
+            } catch (e: Exception) {
+                Log.err("Failed to save map uploader to JSON file", e)
+            }
+
             // Log the upload details
             try {
-                val session = call.sessions.get<UserSession>()
-                val username = session?.username ?: "unknown"
-                val map = MapIO.createMap(Fi(targetFile.absolutePath), true)
                 writeLog(
                     LogType.Web,
-                    "User '$username' uploaded file '$fileName' (Map name: '${map.plainName()}', Author: '${map.plainAuthor()}', Version: ${map.version}, Build: ${map.build}, Size: ${map.width}x${map.height})"
+                    "User '$username' uploaded file '$fileName' (Map name: '${parsedMap.plainName()}', Author: '${parsedMap.plainAuthor()}', Version: ${parsedMap.version}, Build: ${parsedMap.build}, Size: ${parsedMap.width}x${parsedMap.height})"
                 )
             } catch (le: Exception) {
                 Log.err("Error writing upload log", le)
@@ -661,6 +711,7 @@ class WebServer {
             val upvotes = ratings.count { it.rating >= 3 }
             val downvotes = ratings.count { it.rating < 3 }
             val netVotes = upvotes - downvotes
+            val uploader = uploadersMap[mapName]
 
             mapsList.add(
                 MapInfo(
@@ -669,7 +720,8 @@ class WebServer {
                     description = map.description(),
                     planet = map.tags.get("planet", "serpulo"),
                     preview = "api/maps/image/${URLEncoder.encode(mapName, "UTF-8")}",
-                    votes = netVotes
+                    votes = netVotes,
+                    uploader = uploader
                 )
             )
         }

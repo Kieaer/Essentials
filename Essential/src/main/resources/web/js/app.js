@@ -445,6 +445,7 @@ function createMapCard(map, showDownload, horizontal = false) {
     const unknownText = window.i18n.translate('maps.unknown');
     const noDescriptionText = window.i18n.translate('maps.no.description');
     const downloadText = window.i18n.translate('maps.download');
+    const uploaderText = window.i18n.translate('maps.uploader');
 
     // Theme selection depending on Planet
     const planetLower = (map.planet || 'serpulo').toLowerCase();
@@ -472,6 +473,7 @@ function createMapCard(map, showDownload, horizontal = false) {
                 <div class="map-meta">
                     <p><strong>${authorText}:</strong> ${formattedAuthor}</p>
                     <p><strong>${planetText}:</strong> ${planetDisplay}</p>
+                    ${map.uploader ? `<p><strong>${uploaderText}:</strong> ${map.uploader}</p>` : ''}
                     <p><strong>${votesText}</strong></p>
                 </div>
                 ${showDownload ? `
@@ -506,6 +508,7 @@ function createMapCard(map, showDownload, horizontal = false) {
                 <div class="map-meta">
                     <p><strong>${authorText}:</strong> ${formattedAuthor}</p>
                     <p><strong>${planetText} [Planet]:</strong> ${planetDisplay}</p>
+                    ${map.uploader ? `<p><strong>${uploaderText}:</strong> ${map.uploader}</p>` : ''}
                     <p><strong>${votesText}</strong></p>
                 </div>
                 <div class="map-actions">
@@ -1339,12 +1342,22 @@ function loadContributionRanking() {
 
     fetch('api/server/contribution')
         .then(response => {
+            if (response.status === 403) {
+                const card = document.getElementById('contribution-card');
+                if (card) card.style.display = 'none';
+                stopContributionPolling();
+                return null;
+            }
             if (response.ok) {
                 return response.json();
             }
             throw new Error('Failed to load contribution ranking');
         })
         .then(ranking => {
+            if (ranking === null) return;
+            const card = document.getElementById('contribution-card');
+            if (card) card.style.display = '';
+
             if (!ranking || ranking.length === 0) {
                 container.innerHTML = `<div class="chart-no-data">${window.i18n.translate('server.contribution.empty')}</div>`;
                 return;
