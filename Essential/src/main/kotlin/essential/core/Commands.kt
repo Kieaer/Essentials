@@ -492,9 +492,10 @@ class Commands {
     @ClientCommand("help", "[page]", "Show command lists")
     fun help(playerData: PlayerData, arg: Array<out String>) {
         if (arg.isNotEmpty() && !Strings.canParseInt(arg[0])) {
-            try {
-                playerData.send("command.help.${arg[0]}")
-            } catch (_: MissingResourceException) {
+            val key = "command.help.${arg[0]}"
+            if (playerData.bundle.resource.containsKey(key)) {
+                playerData.send(key)
+            } else {
                 playerData.err("command.help.not.exists")
             }
             return
@@ -504,9 +505,10 @@ class Commands {
         for (a in 0 until Vars.netServer.clientCommands.commandList.size) {
             val command = Vars.netServer.clientCommands.commandList[a]
             if (Permission.check(playerData, command.text)) {
-                val description = try {
-                    playerData.bundle["command.description." + command.text.lowercase()]
-                } catch (_: MissingResourceException) {
+                val key = "command.description." + command.text.lowercase()
+                val description = if (playerData.bundle.resource.containsKey(key)) {
+                    playerData.bundle[key]
+                } else {
                     command.description
                 }
                 temp.add("[orange] /${command.text} [white]${command.paramText} [lightgray]- $description\n")
