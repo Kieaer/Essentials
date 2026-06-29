@@ -456,6 +456,7 @@ fun tap(event: TapEvent) {
 fun wave(event: WaveEvent) {
     for (data in players) {
         data.exp += 500
+        data.waveClear++
     }
 
     if (conf.feature.game.wave.autoSkip > 1) {
