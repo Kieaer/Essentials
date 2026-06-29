@@ -56,6 +56,22 @@ object Config {
     }
 
     /**
+     * Check whether the user config file is missing any comment line that the canonical
+     * (freshly serialized) content carries. Used to upgrade older comment-less config files
+     * to the documented format on every startup.
+     */
+    fun hasMissingComments(userContent: String, canonicalContent: String): Boolean {
+        val userComments = userContent.lineSequence()
+            .map { it.trim() }
+            .filter { it.startsWith("#") }
+            .toSet()
+        return canonicalContent.lineSequence()
+            .map { it.trim() }
+            .filter { it.startsWith("#") }
+            .any { it !in userComments }
+    }
+
+    /**
      * Load configuration from a YAML file.
      *
      * @param name YAML file name in the config folder
@@ -96,7 +112,9 @@ object Config {
                 val userNode = yaml.parseToYamlNode(content)
                 val canonicalContent = yaml.encodeToString(serializer, config)
                 val canonicalNode = yaml.parseToYamlNode(canonicalContent)
-                if (hasMissingKeys(userNode, canonicalNode)) {
+                // Re-save when keys are missing (migration) or when the canonical comments
+                // are absent from the user file (upgrade older comment-less configs).
+                if (hasMissingKeys(userNode, canonicalNode) || hasMissingComments(content, canonicalContent)) {
                     save(name, serializer, config)
                 }
             } catch (e: Exception) {
