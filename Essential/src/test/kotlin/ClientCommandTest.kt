@@ -761,6 +761,8 @@ class ClientCommandTest {
 
     @Test
     fun client_meme() {
+        setPermission("admin", true)
+
         // Test meme command with router type
         clientCommand.handleMessage("/meme router", player)
 

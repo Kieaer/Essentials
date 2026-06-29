@@ -1206,29 +1206,59 @@ class Commands {
                 if (playerData.status.containsKey("router")) {
                     playerData.status.remove("router")
                 } else {
-                    // todo thread 개선
                     scope.launch {
-                        fun change(name: String) {
+                        suspend fun change(name: String): Boolean {
+                            if (!playerData.status.containsKey("router")) return false
                             playerData.player.name(name)
-                            Threads.sleep(500)
+                            delay(500.milliseconds)
+                            return playerData.status.containsKey("router")
                         }
 
                         playerData.status["router"] = "true"
-                        while (playerData.player.unit() != null && !playerData.player.unit().dead()) {
-                            loop.forEach {
-                                change(it)
+                        try {
+                            while (playerData.player.unit() != null && !playerData.player.unit().dead() && playerData.status.containsKey("router")) {
+                                var active = true
+                                for (name in loop) {
+                                    if (!change(name)) {
+                                        active = false
+                                        break
+                                    }
+                                }
+                                if (!active) break
+
+                                delay(5000.milliseconds)
+                                if (!playerData.status.containsKey("router")) break
+
+                                for (name in loop.reversed()) {
+                                    if (!change(name)) {
+                                        active = false
+                                        break
+                                    }
+                                }
+                                if (!active) break
+
+                                for (name in zero) {
+                                    if (!change(name)) {
+                                        active = false
+                                        break
+                                    }
+                                }
+                                if (!active) break
                             }
-                            if (!playerData.status.containsKey("router")) break
-                            delay(5000.milliseconds)
-                            loop.reversed().forEach {
-                                change(it)
+                        } finally {
+                            val permission = Permission[playerData]
+                            val targetName = if (permission.name.isNotEmpty() && permission.name != playerData.player.name()) {
+                                permission.name
+                            } else {
+                                playerData.name
                             }
-                            zero.forEach {
-                                change(it)
-                            }
+                            playerData.player.name(targetName)
                         }
                     }
                 }
+            }
+            else -> {
+                playerData.err("command.meme.not.found")
             }
         }
     }
