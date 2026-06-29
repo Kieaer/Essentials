@@ -9,6 +9,7 @@ import essential.common.log.LogType
 import essential.common.log.writeLog
 import essential.common.playTime
 import essential.common.players
+import essential.common.rootPath
 import essential.common.systemTimezone
 import essential.common.util.size
 import essential.common.util.toHString
@@ -30,8 +31,10 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import io.ktor.utils.io.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.toInstant
 import kotlinx.io.readByteArray
 import kotlinx.serialization.Serializable
@@ -43,10 +46,15 @@ import mindustry.gen.Groups
 import mindustry.io.MapIO
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
+import java.io.DataOutputStream
 import java.io.File
+import java.net.HttpURLConnection
 import java.net.ServerSocket
+import java.net.URL
+import java.net.URLEncoder
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 import java.util.*
 import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Clock
@@ -58,6 +66,7 @@ class WebServer {
     var boundPort: Int = 0
     private val chatHistory = Collections.synchronizedList(mutableListOf<ChatMessage>())
     private val statusHistory = Collections.synchronizedList(mutableListOf<StatusDataPoint>())
+    private val webCacheDir = File(rootPath.child("data/webCache").absolutePath())
 
     @Serializable
     data class UserSession(val id: String, val username: String)
@@ -261,6 +270,11 @@ class WebServer {
                                 val mapName = call.parameters["name"] ?: return@get call.respond(HttpStatusCode.BadRequest)
                                 handleMapDownload(call, mapName)
                             }
+
+                            get("/image/{name}") {
+                                val mapName = call.parameters["name"] ?: return@get call.respond(HttpStatusCode.BadRequest)
+                                handleMapImage(call, mapName)
+                            }
                         }
                     }
 
@@ -349,6 +363,11 @@ class WebServer {
         val uploadDir = File(conf.uploadPath)
         if (!uploadDir.exists()) {
             uploadDir.mkdirs()
+        }
+
+        // Create web image cache directory if it doesn't exist
+        if (!webCacheDir.exists()) {
+            webCacheDir.mkdirs()
         }
 
         val isTest = try {
@@ -559,6 +578,81 @@ class WebServer {
         call.respondFile(file)
     }
 
+    private suspend fun handleMapImage(call: ApplicationCall, mapName: String) {
+        val map = Vars.maps.all().find { it.name() == mapName }
+        if (map == null) {
+            call.respond(HttpStatusCode.NotFound, "Map not found")
+            return
+        }
+
+        val msavFile = File(map.file.absolutePath())
+        if (!msavFile.exists()) {
+            call.respond(HttpStatusCode.NotFound, "Map file not found")
+            return
+        }
+
+        val msavBytes = msavFile.readBytes()
+        val hash = sha256Hex(msavBytes)
+        val cacheFile = File(webCacheDir, "$hash.png")
+
+        // Fetch and cache image if missing
+        if (!cacheFile.exists()) {
+            try {
+                val image = withContext(Dispatchers.IO) { fetchMapImage(msavBytes, map.file.name()) }
+                if (image == null) {
+                    call.respond(HttpStatusCode.BadGateway, "Failed to fetch map image")
+                    return
+                }
+                val tmp = File(webCacheDir, "$hash.png.tmp")
+                tmp.writeBytes(image)
+                Files.move(tmp.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            } catch (e: Exception) {
+                Log.err("Failed to fetch/cache map image for '$mapName'", e)
+                call.respond(HttpStatusCode.BadGateway, "Failed to fetch map image")
+                return
+            }
+        }
+
+        call.respondFile(cacheFile)
+    }
+
+    private fun sha256Hex(data: ByteArray): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(data)
+        return digest.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun fetchMapImage(msavBytes: ByteArray, fileName: String): ByteArray? {
+        val boundary = "----EssentialBoundary${System.nanoTime()}"
+        val url = URL("https://api.mindustry-tool.com/api/v4/maps/image")
+        val conn = url.openConnection() as HttpURLConnection
+        try {
+            conn.requestMethod = "POST"
+            conn.doOutput = true
+            conn.connectTimeout = 10000
+            conn.readTimeout = 30000
+            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+
+            DataOutputStream(conn.outputStream).use { out ->
+                out.writeBytes("--$boundary\r\n")
+                out.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\n")
+                out.writeBytes("Content-Type: application/octet-stream\r\n\r\n")
+                out.write(msavBytes)
+                out.writeBytes("\r\n")
+                out.writeBytes("--$boundary--\r\n")
+                out.flush()
+            }
+
+            if (conn.responseCode !in 200..299) {
+                Log.err("Map image API returned HTTP ${conn.responseCode}")
+                return null
+            }
+
+            return conn.inputStream.use { it.readBytes() }
+        } finally {
+            conn.disconnect()
+        }
+    }
+
     private suspend fun getMaps(): List<MapInfo> {
         val mapsList = mutableListOf<MapInfo>()
         Vars.maps.all().filter { it.custom }.forEach { map ->
@@ -574,7 +668,7 @@ class WebServer {
                     author = map.author(),
                     description = map.description(),
                     planet = map.tags.get("planet", "serpulo"),
-                    preview = null, // We'll implement preview image generation later
+                    preview = "api/maps/image/${URLEncoder.encode(mapName, "UTF-8")}",
                     votes = netVotes
                 )
             )

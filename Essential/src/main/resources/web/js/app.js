@@ -405,6 +405,36 @@ function formatMindustryColors(text) {
 }
 
 // Create a map card element (vertical or horizontal layout)
+// Open a fullscreen popup showing the full map image
+function openMapImageModal(imageUrl, title) {
+    let overlay = document.getElementById('map-image-modal');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'map-image-modal';
+        overlay.className = 'map-image-modal';
+        overlay.innerHTML = `
+            <div class="map-image-modal-content">
+                <i class="material-icons map-image-modal-close">close</i>
+                <img class="map-image-modal-img" alt="">
+                <div class="map-image-modal-title"></div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const close = () => overlay.classList.remove('open');
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay || e.target.closest('.map-image-modal-close')) close();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') close();
+        });
+    }
+
+    overlay.querySelector('.map-image-modal-img').src = imageUrl;
+    overlay.querySelector('.map-image-modal-title').innerHTML = title || '';
+    overlay.classList.add('open');
+}
+
 function createMapCard(map, showDownload, horizontal = false) {
     const card = document.createElement('div');
     card.className = horizontal ? 'map-card-horizontal' : 'map-card-vertical';
@@ -425,9 +455,13 @@ function createMapCard(map, showDownload, horizontal = false) {
     const formattedName = formatMindustryColors(map.name);
     const votesText = window.i18n.translate('maps.votes', map.votes || 0);
 
+    // Random image focus position, re-rolled on every render
+    const bgPos = `${Math.floor(Math.random() * 101)}% ${Math.floor(Math.random() * 101)}%`;
+    const imageStyle = imageUrl ? `style="background-image: url(${imageUrl}); background-position: ${bgPos}"` : '';
+
     if (horizontal) {
         card.innerHTML = `
-            <div class="map-image-left ${planetClass}" ${imageUrl ? `style="background-image: url(${imageUrl})"` : ''}>
+            <div class="map-image-left ${planetClass}" ${imageStyle}>
                 ${!imageUrl ? '<i class="material-icons">map</i>' : ''}
             </div>
             <div class="map-info-right">
@@ -449,9 +483,19 @@ function createMapCard(map, showDownload, horizontal = false) {
                 ` : ''}
             </div>
         `;
+
+        // Click card -> open full map image popup (only when an image exists)
+        if (imageUrl) {
+            card.classList.add('map-card-clickable');
+            card.addEventListener('click', (e) => {
+                // Ignore clicks on the download link/button
+                if (e.target.closest('a')) return;
+                openMapImageModal(imageUrl, formattedName);
+            });
+        }
     } else {
         card.innerHTML = `
-            <div class="map-image-top ${planetClass}" ${imageUrl ? `style="background-image: url(${imageUrl})"` : ''}>
+            <div class="map-image-top ${planetClass}" ${imageStyle}>
                 ${!imageUrl ? '<i class="material-icons">map</i>' : ''}
             </div>
             <div class="map-info-bottom">
