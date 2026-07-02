@@ -18,6 +18,7 @@ import essential.core.service.protect.ProtectService.Companion.conf
 import kotlinx.coroutines.launch
 import ksp.command.ClientCommand
 import mindustry.Vars
+import mindustry.gen.Groups
 import mindustry.net.Administration.PlayerInfo
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.r2dbc.select
@@ -87,8 +88,11 @@ class Commands {
                         rebindAccountUuid(target.id, currentUuid)
                         target.uuid = currentUuid
                         Core.app.post {
-                            Events.fire(CustomEvents.PlayerDataLoad(target))
-                            player.sendMessage(bundle["command.login.success"])
+                            val activePlayer = Groups.player.find { p -> p.uuid() == currentUuid }
+                            if (activePlayer != null) {
+                                Events.fire(CustomEvents.PlayerDataLoad(target))
+                                activePlayer.sendMessage(bundle["command.login.success"])
+                            }
                         }
                     } catch (e: Exception) {
                         Log.err("Failed to login account ${arg[0]}", e)
@@ -147,8 +151,11 @@ class Commands {
                     }
                     Log.info(bundle["log.data_created", player.plainName()])
                     Core.app.post {
-                        Events.fire(CustomEvents.PlayerDataLoad(data))
-                        player.sendMessage(bundle["command.reg.success"])
+                        val activePlayer = Groups.player.find { p -> p.uuid() == currentUuid }
+                        if (activePlayer != null) {
+                            Events.fire(CustomEvents.PlayerDataLoad(data))
+                            activePlayer.sendMessage(bundle["command.reg.success"])
+                        }
                     }
                 }
             }

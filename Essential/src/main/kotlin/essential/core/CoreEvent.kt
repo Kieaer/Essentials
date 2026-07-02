@@ -510,23 +510,42 @@ fun serverLoad(event: ServerLoadEvent) {
         Events.on(PlayerJoin::class.java, Cons<PlayerJoin> {
             it.player.admin(false)
 
+            val player = it.player
+            val uuid = player.uuid()
+            val name = player.name
+            val locale = player.locale()
+            val con = player.con
+
             scope.launch {
-                val data = getPlayerData(it.player.uuid())
+                val data = getPlayerData(uuid)
 
                 if (data == null) {
-                    if (suspendTransaction {
-                            PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq it.player.name }.empty()
-                        }) {
-                        val data = createPlayerData(it.player)
-                        data.permission = "user"
-                        data.player = it.player
-                        Events.fire(CustomEvents.PlayerDataLoad(data))
+                    val nameExists = suspendTransaction {
+                        PlayerTable.select(PlayerTable.name).where { PlayerTable.name eq name }.empty().not()
+                    }
+                    if (!nameExists) {
+                        val newData = createPlayerData(player)
+                        newData.permission = "user"
+                        newData.player = player
+                        Core.app.post {
+                            val activePlayer = Groups.player.find { p -> p.uuid() == uuid }
+                            if (activePlayer != null) {
+                                Events.fire(CustomEvents.PlayerDataLoad(newData))
+                            }
+                        }
                     } else {
-                        Call.kick(it.player.con, Bundle(it.player.locale)["event.player.name.duplicate"])
+                        Core.app.post {
+                            Call.kick(con, Bundle(locale)["event.player.name.duplicate"])
+                        }
                     }
                 } else {
-                    data.player = it.player
-                    Events.fire(CustomEvents.PlayerDataLoad(data))
+                    data.player = player
+                    Core.app.post {
+                        val activePlayer = Groups.player.find { p -> p.uuid() == uuid }
+                        if (activePlayer != null) {
+                            Events.fire(CustomEvents.PlayerDataLoad(data))
+                        }
+                    }
                 }
             }
         }.also { listener -> eventListeners[PlayerJoin::class.java] = listener })

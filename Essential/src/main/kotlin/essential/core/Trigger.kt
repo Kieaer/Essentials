@@ -625,12 +625,13 @@ class Trigger {
                         it.afk = true
                         if (conf.feature.afk.enabled) {
                             if (conf.feature.afk.server == null) {
-
-                                it.player.kick(it.bundle["event.player.afk"])
-
+                                val kickedName = it.player.plainName()
                                 players.forEach { data ->
-                                    data.send("event.player.afk.other", it.player.plainName())
+                                    if (data.uuid != it.uuid) {
+                                        data.send("event.player.afk.other", kickedName)
+                                    }
                                 }
+                                it.player.kick(it.bundle["event.player.afk"])
                             } else {
                                 val server = conf.feature.afk.server!!.split(":")
                                 val port = if (server.size == 1) {

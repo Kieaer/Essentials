@@ -144,39 +144,60 @@ fun config(e: EventType.ConfigEvent) {
 @Event
 fun playerJoin(e: EventType.PlayerJoin) {
     e.player.admin(false)
+    val player = e.player
+    val uuid = player.uuid()
+    val plainName = player.plainName()
+    val locale = player.locale
+    val con = player.con
+
     scope.launch {
-        val data: PlayerData? = getPlayerData(e.player.uuid())
+        val data: PlayerData? = getPlayerData(uuid)
+        if (data != null) {
+            data.player = player
+        }
         if (conf.account.getAuthType() == ProtectConfig.AuthType.None || !conf.account.enabled) {
             if (data == null) {
                 val exists = suspendTransaction {
                     !PlayerTable
                         .select(PlayerTable.name)
-                        .where { PlayerTable.name eq e.player.plainName() }
+                        .where { PlayerTable.name eq plainName }
                         .empty()
                 }
 
                 if (!exists) {
                     try {
-                        val newData = createPlayerData(e.player)
+                        val newData = createPlayerData(player)
                         newData.permission = "user"
                         newData.update()
-                        Events.fire(CustomEvents.PlayerDataLoad(newData))
+                        arc.Core.app.post {
+                            val activePlayer = Groups.player.find { p -> p.uuid() == uuid }
+                            if (activePlayer != null) {
+                                Events.fire(CustomEvents.PlayerDataLoad(newData))
+                            }
+                        }
                     } catch (e: Exception) {
                         Log.err("Failed to create player data", e)
                     }
                 } else {
-                    val reason = Bundle(e.player.locale)["event.player.name.duplicate"]
-                    e.player.con.kick(reason, 0L)
+                    val reason = Bundle(locale)["event.player.name.duplicate"]
+                    arc.Core.app.post {
+                        con.kick(reason, 0L)
+                    }
                 }
             } else {
-                Events.fire(CustomEvents.PlayerDataLoad(data))
+                arc.Core.app.post {
+                    val activePlayer = Groups.player.find { p -> p.uuid() == uuid }
+                    if (activePlayer != null) {
+                        Events.fire(CustomEvents.PlayerDataLoad(data))
+                    }
+                }
             }
         } else if (conf.account.getAuthType() == ProtectConfig.AuthType.Discord) {
             if (data == null) {
                 val exists = suspendTransaction {
                     !PlayerTable
                         .select(PlayerTable.name)
-                        .where { PlayerTable.name eq e.player.plainName() }
+                        .where { PlayerTable.name eq plainName }
                         .empty()
                 }
 
@@ -184,17 +205,34 @@ fun playerJoin(e: EventType.PlayerJoin) {
                     //data.send("event.discord.not.registered")
                     // TODO discord 로그인 추가
                 } else {
-                    val reason = Bundle(e.player.locale)["event.player.name.duplicate"]
-                    e.player.con.kick(reason, 0L)
+                    val reason = Bundle(locale)["event.player.name.duplicate"]
+                    arc.Core.app.post {
+                        con.kick(reason, 0L)
+                    }
                 }
             } else {
-                Events.fire(CustomEvents.PlayerDataLoad(data))
+                arc.Core.app.post {
+                    val activePlayer = Groups.player.find { p -> p.uuid() == uuid }
+                    if (activePlayer != null) {
+                        Events.fire(CustomEvents.PlayerDataLoad(data))
+                    }
+                }
             }
         } else {
             if (data != null) {
-                Events.fire(CustomEvents.PlayerDataLoad(data))
+                arc.Core.app.post {
+                    val activePlayer = Groups.player.find { p -> p.uuid() == uuid }
+                    if (activePlayer != null) {
+                        Events.fire(CustomEvents.PlayerDataLoad(data))
+                    }
+                }
             } else {
-                e.player.sendMessage(Bundle(e.player.locale)["event.player.first.register"])
+                arc.Core.app.post {
+                    val activePlayer = Groups.player.find { p -> p.uuid() == uuid }
+                    if (activePlayer != null) {
+                        activePlayer.sendMessage(Bundle(locale)["event.player.first.register"])
+                    }
+                }
             }
         }
     }
