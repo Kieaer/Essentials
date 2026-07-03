@@ -504,6 +504,9 @@ body {
 
 .map-meta p {
     margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .download-outline-btn-centered {
@@ -736,6 +739,13 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+}
+
+.player-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .player-dot {
@@ -1081,6 +1091,10 @@ body {
     object-fit: contain;
     border-radius: var(--border-radius);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transform-origin: center center;
+    user-select: none;
+    -webkit-user-drag: none;
+    touch-action: none;
 }
 
 .map-image-modal-title {
