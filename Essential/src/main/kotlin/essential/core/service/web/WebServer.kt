@@ -1,23 +1,18 @@
 package essential.core.service.web
 
-import arc.Core
-import arc.Events
-import arc.files.Fi
 import arc.util.Log
-import essential.common.database.data.*
-import essential.common.log.LogType
-import essential.common.log.writeLog
-import essential.common.playTime
-import essential.common.players
-import essential.common.rootPath
-import essential.common.systemTimezone
-import essential.common.util.size
-import essential.common.util.toHString
-import essential.core.service.achievements.Achievement
 import essential.core.service.web.WebService.Companion.bundle
 import essential.core.service.web.WebService.Companion.conf
+import essential.core.service.web.achievement.AchievementController
+import essential.core.service.web.achievement.achievementRoutes
+import essential.core.service.web.auth.AuthController
+import essential.core.service.web.auth.UserSession
+import essential.core.service.web.auth.authRoutes
+import essential.core.service.web.maps.MapController
+import essential.core.service.web.maps.mapRoutes
+import essential.core.service.web.statistics.StatisticsController
+import essential.core.service.web.statistics.statisticsRoutes
 import io.ktor.http.*
-import io.ktor.http.content.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -26,164 +21,29 @@ import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.ratelimit.*
-import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
-import io.ktor.utils.io.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlinx.datetime.toInstant
-import kotlinx.io.readByteArray
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import mindustry.Vars
-import mindustry.game.EventType
-import mindustry.gen.Call
-import mindustry.gen.Groups
-import mindustry.io.MapIO
-import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
-import org.mindrot.jbcrypt.BCrypt
-import java.io.DataOutputStream
-import java.io.File
-import java.net.HttpURLConnection
 import java.net.ServerSocket
-import java.net.URL
-import java.net.URLEncoder
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import java.security.MessageDigest
-import java.util.*
 import javax.crypto.spec.SecretKeySpec
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 class WebServer {
     lateinit var server: EmbeddedServer<NettyApplicationEngine, NettyApplicationEngine.Configuration>
     var boundPort: Int = 0
-    private val chatHistory = Collections.synchronizedList(mutableListOf<ChatMessage>())
-    private val statusHistory = Collections.synchronizedList(mutableListOf<StatusDataPoint>())
-    private val webCacheDir = File(rootPath.child("data/webCache").absolutePath())
-    private val uploadersFile = File(rootPath.child("data/map_uploaders.json").absolutePath())
-    private val uploadersMap = Collections.synchronizedMap(mutableMapOf<String, String>())
 
-    @Serializable
-    data class UserSession(val id: String, val username: String)
-
-    @Serializable
-    data class LoginRequest(val username: String, val password: String)
-
-    @Serializable
-    data class MapInfo(
-        val name: String,
-        val author: String,
-        val description: String,
-        val planet: String,
-        val preview: String? = null,
-        val votes: Int = 0,
-        val uploader: String? = null
-    )
-
-    @Serializable
-    data class WebPlayerInfo(
-        val name: String,
-        val playTime: String
-    )
-
-    @Serializable
-    data class ServerStatus(
-        val map: String,
-        val players: List<WebPlayerInfo>,
-        val tps: Float,
-        val wave: Int,
-        val gameTime: String,
-        val mode: String,
-        val activeTeams: Int
-    )
-
-    @Serializable
-    data class ChatMessage(
-        val player: String,
-        val message: String,
-        val time: Long = System.currentTimeMillis(),
-        val isWeb: Boolean = false
-    )
-
-    @Serializable
-    data class AchievementInfo(
-        val name: String,
-        val title: String,
-        val description: String,
-        val goal: String,
-        val current: Int,
-        val target: Int,
-        val completed: Boolean,
-        val hidden: Boolean
-    )
-
-    @Serializable
-    data class MyInfo(
-        val name: String,
-        val uuid: String,
-        val firstPlayed: String,
-        val lastLogin: String,
-        val permission: String,
-        val level: Int,
-        val exp: Int,
-        val expMax: Int,
-        val blockPlaceCount: Int,
-        val blockBreakCount: Int,
-        val totalPlayed: String,
-        val attendanceDays: Int,
-        val pvpWinCount: Int,
-        val pvpLoseCount: Int,
-        val pvpWinRate: Int,
-        val waveClear: Int,
-        val attackClear: Int,
-        val achievementsCompleted: Int,
-        val achievementsTotal: Int,
-        val achievements: List<AchievementInfo>
-    )
-
-    @Serializable
-    data class ContributionEntry(
-        val name: String,
-        val current: Double,
-        val average: Double,
-        val games: Int,
-        val team: String? = null,
-        val teamColor: String? = null
-    )
-
-    @Serializable
-    data class StatusDataPoint(
-        val time: Long,
-        val tps: Float,
-        val players: Int,
-        val units: Int,
-        val buildings: Int,
-        val resources: Map<String, Int>? = null,
-        val teamResources: Map<String, Int>? = null,
-        val teamUnits: Map<String, Int>? = null,
-        val teamBuildings: Map<String, Int>? = null
-    )
+    val authController = AuthController()
+    val mapController = MapController()
+    val achievementController = AchievementController()
+    val statisticsController = StatisticsController()
 
     // Configure the application module
     private fun configureModule(application: Application) {
         with(application) {
-            launch {
-                while (true) {
-                    delay(60000.milliseconds)
-                    try {
-                        recordStatusPoint()
-                    } catch (e: Exception) {
-                        Log.err("Error recording status point", e)
-                    }
-                }
-            }
+            // Initialize controllers
+            mapController.init(this)
+            statisticsController.init(this)
 
             // Install necessary plugins
             install(ContentNegotiation) {
@@ -223,7 +83,7 @@ class WebServer {
 
             install(RateLimit) {
                 register {
-                    rateLimiter(limit = 60, refillPeriod = 60.seconds)
+                    rateLimiter(limit = 300, refillPeriod = 1.minutes)
                     requestKey { call ->
                         call.request.local.remoteAddress
                     }
@@ -235,159 +95,27 @@ class WebServer {
                 staticResources("/", "/web")
 
                 rateLimit {
-                    // Authentication routes
-                    route("/api/auth") {
-                        post("/login") {
-                            val loginRequest = call.receive<LoginRequest>()
-                            handleLogin(call, loginRequest)
-                        }
-
-                        get("/logout") {
-                            call.sessions.clear<UserSession>()
-                            call.respond(HttpStatusCode.OK)
-                        }
-
-                        get("/status") {
-                            val session = call.sessions.get<UserSession>()
-                            if (session != null) {
-                                call.respond(mapOf("username" to session.username))
-                            } else {
-                                call.respond(HttpStatusCode.Unauthorized)
-                            }
-                        }
-                    }
-
-                    // Map management routes
-                    route("/api/maps") {
-                        authenticate("auth-session") {
-                            get {
-                                val maps = getMaps()
-                                call.respond(maps)
-                            }
-
-                            post("/upload") {
-                                handleMapUpload(call)
-                            }
-
-                            get("/download/{name}") {
-                                val mapName = call.parameters["name"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-                                handleMapDownload(call, mapName)
-                            }
-
-                            get("/image/{name}") {
-                                val mapName = call.parameters["name"] ?: return@get call.respond(HttpStatusCode.BadRequest)
-                                handleMapImage(call, mapName)
-                            }
-                        }
-                    }
-
-                    // Personal player data route
-                    route("/api/me") {
-                        authenticate("auth-session") {
-                            get {
-                                getMyInfo(call)
-                            }
-                        }
-                    }
-
-                    // Server status routes
-                    route("/api/server") {
-                        get("/status") {
-                            val status = getServerStatus()
-                            call.respond(status)
-                        }
-
-                        get("/contribution") {
-                            if (!essential.core.Main.conf.module.contribution) {
-                                return@get call.respond(HttpStatusCode.Forbidden, "Contribution module is disabled")
-                            }
-                            // Live: current online players, each with this game's contribution and their overall average.
-                            // In PvP, include team so the client can group players by team.
-                            val isPvp = Vars.state != null && !Vars.state.isMenu && Vars.state.rules.pvp
-                            val snapshot = players.toList()
-                            val entries = snapshot.map { data ->
-                                val team = if (isPvp) data.player.team() else null
-                                ContributionEntry(
-                                    name = data.name,
-                                    current = data.currentContribution,
-                                    average = getAverageContribution(data),
-                                    games = getContributionCount(data),
-                                    team = team?.name,
-                                    teamColor = team?.color?.toString()?.let { "#$it" }
-                                )
-                            }.sortedByDescending { it.current }
-                            call.respond(entries)
-                        }
-
-                        authenticate("auth-session") {
-                            get("/chat") {
-                                val messages = chatHistory.filter { !it.message.startsWith("/") }.sortedBy { it.time }
-                                call.respond(messages)
-                            }
-
-                            post("/chat") {
-                                val session = call.sessions.get<UserSession>()
-                                    ?: return@post call.respond(HttpStatusCode.Unauthorized)
-                                val message = call.receiveText()
-
-                                // Validate chat message
-                                if (message.isBlank() || message.length > 100) {
-                                    return@post call.respond(HttpStatusCode.BadRequest, "Invalid message")
-                                }
-
-                                // Sanitize message to prevent code injection
-                                val sanitizedMessage = sanitizeMessage(message)
-
-                                // Send message to server
-                                Call.sendMessage("[cyan]<WEB>[white] ${session.username}: $sanitizedMessage")
-
-                                // Add to chat history
-                                val chatMessage = ChatMessage(session.username, sanitizedMessage, isWeb = true)
-                                chatHistory.add(chatMessage)
-                                if (chatHistory.size > 100) {
-                                    chatHistory.removeAt(0)
-                                }
-
-                                call.respond(HttpStatusCode.OK)
-                            }
-
-                            get("/history") {
-                                val history = synchronized(statusHistory) { statusHistory.toList() }
-                                call.respond(history)
-                            }
-                        }
-                    }
+                    authRoutes(authController)
+                    mapRoutes(mapController)
+                    achievementRoutes(achievementController)
+                    statisticsRoutes(statisticsController)
                 }
-
-
             }
         }
     }
 
+    private fun hex(key: String): ByteArray {
+        val result = ByteArray(16)
+        val keyBytes = key.toByteArray()
+
+        for (i in result.indices) {
+            result[i] = if (i < keyBytes.size) keyBytes[i] else 0
+        }
+
+        return result
+    }
+
     fun start() = synchronized(this@WebServer) {
-        // Create upload directory if it doesn't exist
-        val uploadDir = File(conf.uploadPath)
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs()
-        }
-
-        // Create web image cache directory if it doesn't exist
-        if (!webCacheDir.exists()) {
-            webCacheDir.mkdirs()
-        }
-
-        // Load map uploaders JSON if it exists
-        if (uploadersFile.exists()) {
-            try {
-                val jsonText = uploadersFile.readText()
-                val loadedMap: Map<String, String> = Json.decodeFromString(jsonText)
-                uploadersMap.putAll(loadedMap)
-                Log.info("Loaded ${loadedMap.size} map uploaders from JSON")
-            } catch (e: Exception) {
-                Log.err("Failed to load map uploaders JSON", e)
-            }
-        }
-
         val isTest = try {
             Class.forName("org.junit.Test")
             true
@@ -413,20 +141,6 @@ class WebServer {
             configureModule(this)
         }
 
-        Events.on(EventType.PlayerChatEvent::class.java) { event ->
-            val player = event.player
-            val message = event.message
-
-            // Add the chat message to the chat history
-            val chatMessage = ChatMessage(player.name(), message, isWeb = false)
-            chatHistory.add(chatMessage)
-            if (chatHistory.size > 100) {
-                chatHistory.removeAt(0)
-            }
-
-            Log.debug("Chat message added to history: ${player.name()}: $message")
-        }
-
         server.start(false)
         Log.info(bundle["web.server.started", boundPort.toString()])
     }
@@ -436,539 +150,5 @@ class WebServer {
             server.stop(1000, 2000)
             Log.info(bundle["web.server.stopped"])
         }
-    }
-
-    private suspend fun handleLogin(call: ApplicationCall, request: LoginRequest) {
-        try {
-            val playerData = getPlayerDataByName(request.username)
-
-            if (playerData == null) {
-                call.respond(HttpStatusCode.Unauthorized, "Invalid username or password")
-                return
-            }
-
-            // Check if account ID and password are set
-            if (playerData.accountID == null || playerData.accountPW == null) {
-                call.respond(HttpStatusCode.Unauthorized, "Account not set up")
-                return
-            }
-
-            // Check if account ID and password are the same
-            if (playerData.accountID == request.password) {
-                call.respond(
-                    HttpStatusCode.Forbidden,
-                    "Your username and password are the same. Please change your password."
-                )
-                return
-            }
-
-            // Check if Discord ID is set
-            if (playerData.discordID == null) {
-                call.respond(
-                    HttpStatusCode.Forbidden,
-                    mapOf("message" to "Please link your Discord account first", "discordUrl" to conf.discordUrl)
-                )
-                return
-            }
-
-            // Verify password using BCrypt
-            val passwordMatches = suspendTransaction {
-                val storedHash = playerData.accountPW
-                if (storedHash != null) {
-                    BCrypt.checkpw(request.password, storedHash)
-                } else {
-                    false
-                }
-            }
-
-            if (!passwordMatches) {
-                call.respond(HttpStatusCode.Unauthorized, "Invalid username or password")
-                return
-            }
-
-            // Create session
-            val session = UserSession(playerData.id.toString(), playerData.name)
-            call.sessions.set(session)
-
-            call.respond(HttpStatusCode.OK, mapOf("username" to playerData.name))
-        } catch (e: Exception) {
-            Log.err("Login error", e)
-            call.respond(HttpStatusCode.InternalServerError, "An error occurred during login")
-        }
-    }
-
-    private suspend fun handleMapUpload(call: ApplicationCall) {
-        val multipart = call.receiveMultipart()
-        var fileName = ""
-        var fileBytes: ByteArray? = null
-
-        multipart.forEachPart { part ->
-            when (part) {
-                is PartData.FileItem -> {
-                    fileName = part.originalFileName ?: "unknown.msav"
-                    fileBytes = part.provider().readRemaining().readByteArray()
-                }
-
-                else -> {}
-            }
-            part.dispose()
-        }
-
-        val bytes = fileBytes
-        if (bytes == null) {
-            call.respond(HttpStatusCode.BadRequest, "No file uploaded")
-            return
-        }
-
-        // Check file size
-        if (bytes.size > conf.maxFileSize) {
-            call.respond(HttpStatusCode.BadRequest, "File too large")
-            return
-        }
-
-        // Validate file extension
-        if (!fileName.endsWith(".msav")) {
-            call.respond(HttpStatusCode.BadRequest, "Invalid file type. Only .msav files are allowed")
-            return
-        }
-
-        // Create temporary file for validation
-        val tempFile = File.createTempFile("map_", ".msav")
-        tempFile.writeBytes(bytes)
-
-        // Validate map file without affecting the current game state
-        try {
-            // Validate that the map parses correctly without actually loading it into the server
-            val parsedMap = MapIO.createMap(Fi(tempFile.absolutePath), true)
-            if (parsedMap.width <= 0 || parsedMap.height <= 0) {
-                throw IllegalArgumentException("Invalid map dimensions: ${parsedMap.width}x${parsedMap.height}")
-            }
-
-            // Save the file
-            val targetFile = File(conf.uploadPath, fileName)
-            Files.copy(tempFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            tempFile.delete()
-
-            val session = call.sessions.get<UserSession>()
-            val username = session?.username ?: "unknown"
-            val mapName = parsedMap.name()
-
-            // Fetch and cache map image immediately on upload using api.mindustry-tool
-            try {
-                val hash = sha256Hex(bytes)
-                val cacheFile = File(webCacheDir, "$hash.png")
-                if (!cacheFile.exists()) {
-                    val imageBytes = withContext(Dispatchers.IO) { fetchMapImage(bytes, fileName) }
-                    if (imageBytes != null) {
-                        val tmp = File(webCacheDir, "$hash.png.tmp")
-                        tmp.writeBytes(imageBytes)
-                        Files.move(tmp.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                        Log.info("Pre-generated and cached map image for uploaded map: $fileName")
-                    } else {
-                        Log.warn("Failed to pre-generate map image on upload: API returned null")
-                    }
-                }
-            } catch (e: Exception) {
-                Log.err("Error pre-generating map image on upload", e)
-            }
-
-            // Save uploader to JSON file
-            try {
-                uploadersMap[mapName] = username
-                synchronized(uploadersMap) {
-                    val jsonText = Json.encodeToString(uploadersMap.toMap())
-                    uploadersFile.writeText(jsonText)
-                }
-            } catch (e: Exception) {
-                Log.err("Failed to save map uploader to JSON file", e)
-            }
-
-            // Log the upload details
-            try {
-                writeLog(
-                    LogType.Web,
-                    "User '$username' uploaded file '$fileName' (Map name: '${parsedMap.plainName()}', Author: '${parsedMap.plainAuthor()}', Version: ${parsedMap.version}, Build: ${parsedMap.build}, Size: ${parsedMap.width}x${parsedMap.height})"
-                )
-            } catch (le: Exception) {
-                Log.err("Error writing upload log", le)
-            }
-
-            // Reload maps
-            Core.app.post {
-                Vars.maps.reload()
-                Log.info("Maps reloaded after upload: $fileName")
-            }
-
-            call.respond(HttpStatusCode.OK, "Map uploaded successfully")
-        } catch (e: Exception) {
-            tempFile.delete()
-            Log.err("Map validation error", e)
-            call.respond(HttpStatusCode.BadRequest, "Invalid map file: ${e.message}")
-        }
-    }
-
-    private suspend fun handleMapDownload(call: ApplicationCall, mapName: String) {
-        val map = Vars.maps.all().find { it.name() == mapName }
-        if (map == null) {
-            call.respond(HttpStatusCode.NotFound, "Map not found")
-            return
-        }
-
-        val file = File(map.file.absolutePath())
-        if (!file.exists()) {
-            call.respond(HttpStatusCode.NotFound, "Map file not found")
-            return
-        }
-
-        call.response.header(
-            HttpHeaders.ContentDisposition,
-            ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, "${map.name()}.msav")
-                .toString()
-        )
-        call.respondFile(file)
-    }
-
-    private suspend fun handleMapImage(call: ApplicationCall, mapName: String) {
-        val map = Vars.maps.all().find { it.name() == mapName }
-        if (map == null) {
-            call.respond(HttpStatusCode.NotFound, "Map not found")
-            return
-        }
-
-        val msavFile = File(map.file.absolutePath())
-        if (!msavFile.exists()) {
-            call.respond(HttpStatusCode.NotFound, "Map file not found")
-            return
-        }
-
-        val msavBytes = msavFile.readBytes()
-        val hash = sha256Hex(msavBytes)
-        val cacheFile = File(webCacheDir, "$hash.png")
-
-        // Fetch and cache image if missing
-        if (!cacheFile.exists()) {
-            try {
-                val image = withContext(Dispatchers.IO) { fetchMapImage(msavBytes, map.file.name()) }
-                if (image == null) {
-                    call.respond(HttpStatusCode.BadGateway, "Failed to fetch map image")
-                    return
-                }
-                val tmp = File(webCacheDir, "$hash.png.tmp")
-                tmp.writeBytes(image)
-                Files.move(tmp.toPath(), cacheFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-            } catch (e: Exception) {
-                Log.err("Failed to fetch/cache map image for '$mapName'", e)
-                call.respond(HttpStatusCode.BadGateway, "Failed to fetch map image")
-                return
-            }
-        }
-
-        call.respondFile(cacheFile)
-    }
-
-    private fun sha256Hex(data: ByteArray): String {
-        val digest = MessageDigest.getInstance("SHA-256").digest(data)
-        return digest.joinToString("") { "%02x".format(it) }
-    }
-
-    private fun fetchMapImage(msavBytes: ByteArray, fileName: String): ByteArray? {
-        val boundary = "----EssentialBoundary${System.nanoTime()}"
-        val url = URL("https://api.mindustry-tool.com/api/v4/maps/image")
-        val conn = url.openConnection() as HttpURLConnection
-        try {
-            conn.requestMethod = "POST"
-            conn.doOutput = true
-            conn.connectTimeout = 10000
-            conn.readTimeout = 30000
-            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
-
-            DataOutputStream(conn.outputStream).use { out ->
-                out.writeBytes("--$boundary\r\n")
-                out.writeBytes("Content-Disposition: form-data; name=\"file\"; filename=\"$fileName\"\r\n")
-                out.writeBytes("Content-Type: application/octet-stream\r\n\r\n")
-                out.write(msavBytes)
-                out.writeBytes("\r\n")
-                out.writeBytes("--$boundary--\r\n")
-                out.flush()
-            }
-
-            if (conn.responseCode !in 200..299) {
-                Log.err("Map image API returned HTTP ${conn.responseCode}")
-                return null
-            }
-
-            return conn.inputStream.use { it.readBytes() }
-        } finally {
-            conn.disconnect()
-        }
-    }
-
-    private suspend fun getMaps(): List<MapInfo> {
-        val mapsList = mutableListOf<MapInfo>()
-        Vars.maps.all().filter { it.custom }.forEach { map ->
-            val mapName = map.name()
-            val ratings = getMapRatings(mapName)
-            val upvotes = ratings.count { it.rating >= 3 }
-            val downvotes = ratings.count { it.rating < 3 }
-            val netVotes = upvotes - downvotes
-            val uploader = uploadersMap[mapName]
-
-            mapsList.add(
-                MapInfo(
-                    name = mapName,
-                    author = map.author(),
-                    description = map.description(),
-                    planet = map.tags.get("planet", "serpulo"),
-                    preview = "api/maps/image/${URLEncoder.encode(mapName, "UTF-8")}",
-                    votes = netVotes,
-                    uploader = uploader
-                )
-            )
-        }
-        return mapsList
-    }
-
-    private suspend fun getMyInfo(call: ApplicationCall) {
-        val session = call.sessions.get<UserSession>()
-            ?: return call.respond(HttpStatusCode.Unauthorized)
-
-        val dbData = getPlayerDataByName(session.username)
-            ?: return call.respond(HttpStatusCode.NotFound, "Player not found")
-
-        // Prefer live (connected) data so runtime-only achievement progress is accurate
-        val data = players.find { it.uuid == dbData.uuid } ?: dbData
-
-        val completed = getPlayerAchievements(dbData).map { it.achievementName.lowercase() }.toSet()
-
-        // Load achievement names/descriptions in the account's language
-        val bundle = try {
-            ResourceBundle.getBundle(
-                "bundles/achievements/bundle",
-                Locale.forLanguageTag(dbData.languageTag.replace("_", "-"))
-            )
-        } catch (e: MissingResourceException) {
-            ResourceBundle.getBundle("bundles/achievements/bundle", Locale.ENGLISH)
-        }
-
-        fun localized(prefix: String, key: String, fallback: String): String = try {
-            bundle.getString("$prefix.$key")
-        } catch (e: MissingResourceException) {
-            fallback
-        }
-
-        val achievements = Achievement.entries.mapNotNull { ach ->
-            val key = ach.name.lowercase()
-            val isDone = completed.contains(key)
-            // Hide secret achievements until unlocked
-            if (ach.isHidden && !isDone) return@mapNotNull null
-
-            val target = ach.value()
-            val current = if (isDone) {
-                target
-            } else {
-                try {
-                    ach.current(data)
-                } catch (e: Exception) {
-                    0
-                }
-            }
-            AchievementInfo(
-                name = ach.name,
-                title = localized("achievement", key, ach.name),
-                description = localized("description", key, ""),
-                goal = localized("target", key, "").replace("{0}", target.toString()),
-                current = current.coerceIn(0, target),
-                target = target,
-                completed = isDone,
-                hidden = ach.isHidden
-            )
-        }
-
-        val info = MyInfo(
-            name = dbData.name,
-            uuid = dbData.uuid,
-            firstPlayed = dbData.firstPlayed.toString(),
-            lastLogin = dbData.lastLoginDate.toString(),
-            permission = dbData.permission,
-            level = dbData.level,
-            exp = dbData.exp,
-            expMax = essential.core.Commands.Exp.calculateFullTargetXp(dbData.level).toInt(),
-            blockPlaceCount = dbData.blockPlaceCount,
-            blockBreakCount = dbData.blockBreakCount,
-            totalPlayed = dbData.totalPlayed.toLong().seconds.toHString(),
-            attendanceDays = dbData.attendanceDays,
-            pvpWinCount = dbData.pvpWinCount.toInt(),
-            pvpLoseCount = dbData.pvpLoseCount.toInt(),
-            pvpWinRate = run {
-                val total = dbData.pvpWinCount + dbData.pvpLoseCount
-                if (total > 0) dbData.pvpWinCount * 100 / total else 0
-            },
-            waveClear = dbData.waveClear,
-            attackClear = dbData.attackClear,
-            achievementsCompleted = achievements.count { it.completed },
-            achievementsTotal = achievements.size,
-            achievements = achievements
-        )
-
-        call.respond(info)
-    }
-
-    private fun getServerStatus(): ServerStatus {
-        val playersList = mutableListOf<WebPlayerInfo>()
-        Groups.player.each { player ->
-            val playerData = players.find { it.uuid == player.uuid() }
-            val playtimeStr = if (playerData != null) {
-                val joinInstant = playerData.lastLoginDate.toInstant(systemTimezone)
-                val elapsedSeconds = (Clock.System.now().toEpochMilliseconds() - joinInstant.toEpochMilliseconds()) / 1000
-                elapsedSeconds.seconds.toHString()
-            } else {
-                "00:00"
-            }
-            playersList.add(WebPlayerInfo(player.name(), playtimeStr))
-        }
-
-        val mode = when {
-            Vars.state == null || Vars.state.isMenu -> "none"
-            Vars.state.rules.pvp -> "pvp"
-            Vars.state.rules.mode() == mindustry.game.Gamemode.survival || Vars.state.rules.mode() == mindustry.game.Gamemode.attack -> "wave"
-            else -> "none"
-        }
-
-        val activeTeams = if (Vars.state != null && !Vars.state.isMenu && Vars.state.teams != null && Vars.state.teams.active != null) {
-            Vars.state.teams.active.size
-        } else {
-            0
-        }
-
-        return ServerStatus(
-            map = if (Vars.state != null && Vars.state.map != null) Vars.state.map.name() else "Menu",
-            players = playersList,
-            tps = Core.graphics.framesPerSecond.toFloat(),
-            wave = if (Vars.state != null) Vars.state.wave else 0,
-            gameTime = playTime,
-            mode = mode,
-            activeTeams = activeTeams
-        )
-    }
-
-    private fun recordStatusPoint() {
-        if (Vars.state == null || Vars.state.isMenu) return
-
-        val mode = when {
-            Vars.state == null || Vars.state.isMenu -> "none"
-            Vars.state.rules.pvp -> "pvp"
-            Vars.state.rules.mode() == mindustry.game.Gamemode.survival || Vars.state.rules.mode() == mindustry.game.Gamemode.attack -> "wave"
-            else -> "none"
-        }
-
-        var resources: Map<String, Int>? = null
-        var teamResources: Map<String, Int>? = null
-        var teamUnits: Map<String, Int>? = null
-        var teamBuildings: Map<String, Int>? = null
-
-        if (mode == "wave") {
-            val resMap = mutableMapOf<String, Int>()
-            val cores = Vars.state.teams.cores(Vars.state.rules.defaultTeam)
-            if (cores != null && !cores.isEmpty) {
-                Vars.content.items().forEach { item ->
-                    if (!item.isHidden) {
-                        var sum = 0
-                        cores.forEach { core ->
-                            sum += core.items.get(item)
-                        }
-                        resMap[item.name] = sum
-                    }
-                }
-            }
-            resources = resMap
-        } else if (mode == "pvp") {
-            val teamResMap = mutableMapOf<String, Int>()
-            val teamUnitsMap = mutableMapOf<String, Int>()
-            val teamBuildingsMap = mutableMapOf<String, Int>()
-
-            if (Vars.state.teams != null && Vars.state.teams.active != null) {
-                Vars.state.teams.active.forEach { teamData ->
-                    val team = teamData.team
-                    val teamName = team.name
-
-                    // Compute team resources (sum of all items across all cores of this team)
-                    val cores = teamData.cores
-                    var totalRes = 0
-                    if (cores != null && !cores.isEmpty) {
-                        Vars.content.items().forEach { item ->
-                            if (!item.isHidden) {
-                                cores.forEach { core ->
-                                    totalRes += core.items.get(item)
-                                }
-                            }
-                        }
-                    }
-                    teamResMap[teamName] = totalRes
-
-                    // Compute team units
-                    var unitCount = 0
-                    for (unit in Groups.unit) {
-                        if (unit.team == team) {
-                            unitCount++
-                        }
-                    }
-                    teamUnitsMap[teamName] = unitCount
-
-                    // Compute team buildings
-                    var buildingCount = 0
-                    for (build in Groups.build) {
-                        if (build.team == team) {
-                            buildingCount++
-                        }
-                    }
-                    teamBuildingsMap[teamName] = buildingCount
-                }
-            }
-            teamResources = teamResMap
-            teamUnits = teamUnitsMap
-            teamBuildings = teamBuildingsMap
-        }
-
-        val point = StatusDataPoint(
-            time = System.currentTimeMillis(),
-            tps = Core.graphics.framesPerSecond.toFloat(),
-            players = Groups.player.size(),
-            units = Groups.unit.size,
-            buildings = Groups.build.size,
-            resources = resources,
-            teamResources = teamResources,
-            teamUnits = teamUnits,
-            teamBuildings = teamBuildings
-        )
-
-        synchronized(statusHistory) {
-            statusHistory.add(point)
-            if (statusHistory.size > 1440) {
-                statusHistory.removeAt(0)
-            }
-        }
-    }
-
-    private fun sanitizeMessage(message: String): String {
-        // Remove potentially dangerous characters and HTML tags
-        return message
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("&", "&amp;")
-            .replace("\"", "&quot;")
-            .replace("'", "&#x27;")
-            .replace("/", "&#x2F;")
-    }
-
-    private fun hex(key: String): ByteArray {
-        val result = ByteArray(16) // Use 16 bytes (256 bits) for AES-256
-        val keyBytes = key.toByteArray()
-
-        // Copy key bytes or pad with zeros
-        for (i in result.indices) {
-            result[i] = if (i < keyBytes.size) keyBytes[i] else 0
-        }
-
-        return result
     }
 }
