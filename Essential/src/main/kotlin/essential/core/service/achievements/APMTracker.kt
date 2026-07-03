@@ -22,6 +22,9 @@ class APMTracker {
         // Maximum number of action timestamps to store per player
         private const val MAX_ACTION_TIMESTAMPS = 1000
 
+        // Map of uuid -> map of threshold -> startTimestamp
+        private val thresholdStartTimes = mutableMapOf<String, MutableMap<Int, Long>>()
+
         init {
             Timer.schedule({APM_UPDATE_INTERVAL.toLong()
                 for (data in players) {
@@ -50,6 +53,7 @@ class APMTracker {
 
             if (data.apmTimestamps.isEmpty()) {
                 data.apm = 0
+                resetThresholds(data.uuid)
                 return
             }
 
@@ -63,20 +67,40 @@ class APMTracker {
             // Update player's APM
             data.apm = apm
 
-            // Check APM achievements
-            if (data.apm >= 200 && Achievement.APM200.success(data)) {
-                Achievement.APM200.set(data)
-            } else if (data.apm >= 100 && Achievement.APM100.success(data)) {
-                Achievement.APM100.set(data)
-            } else if (data.apm >= 50 && Achievement.APM50.success(data)) {
-                Achievement.APM50.set(data)
+            // Check APM achievements with duration tracking
+            val levels = listOf(
+                Pair(600, Achievement.APM50),
+                Pair(1200, Achievement.APM100),
+                Pair(2400, Achievement.APM200)
+            )
+
+            val playerStarts = thresholdStartTimes.computeIfAbsent(data.uuid) { mutableMapOf() }
+
+            for ((threshold, achievement) in levels) {
+                if (data.apm >= threshold) {
+                    val startTime = playerStarts[threshold]
+                    if (startTime == null) {
+                        playerStarts[threshold] = currentTime
+                    } else if (currentTime - startTime >= 60 * 1000) {
+                        if (achievement.success(data)) {
+                            achievement.set(data)
+                        }
+                    }
+                } else {
+                    playerStarts.remove(threshold)
+                }
             }
+        }
+
+        fun resetThresholds(uuid: String) {
+            thresholdStartTimes.remove(uuid)
         }
 
         // Initialize APM tracking for a player
         fun initPlayer(data: PlayerData) {
             data.apmTimestamps.clear()
             data.apm = 0
+            resetThresholds(data.uuid)
         }
 
         // Get detailed APM info for display

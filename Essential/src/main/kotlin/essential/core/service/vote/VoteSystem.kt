@@ -9,10 +9,13 @@ import arc.util.Time
 import arc.util.Timer
 import essential.common.*
 import essential.common.database.data.PlayerData
+import essential.common.database.data.getPlayerData
 import essential.common.event.CustomEvents
 import essential.common.permission.Permission
 import essential.common.util.findPlayerData
 import essential.core.earnEXP
+import essential.core.service.achievements.Achievement
+import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -203,6 +206,16 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                             if (Groups.player.find { a -> a.uuid() == voteData.targetUUID } == null) {
                                 Vars.netServer.admins.banPlayerID(voteData.targetUUID)
                                 send("command.vote.kick.target.banned", name)
+                                runBlocking {
+                                    val uuid = voteData.targetUUID
+                                    if (uuid != null) {
+                                        val data = getPlayerData(uuid)
+                                        if (data != null) {
+                                            data.status["record.voting.ban"] = "1"
+                                            Achievement.VotingBan.set(data)
+                                        }
+                                    }
+                                }
                                 Events.fire(
                                     CustomEvents.PlayerVoteBanned(
                                         voteData.starter.name,
@@ -212,6 +225,12 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                                     )
                                 )
                             } else {
+                                val targetPlayer = Groups.player.find { a -> a.uuid() == voteData.targetUUID }
+                                val data = if (targetPlayer != null) findPlayerData(targetPlayer.uuid()) else null
+                                if (data != null) {
+                                    data.status["record.voting.ban"] = "1"
+                                    Achievement.VotingBan.set(data)
+                                }
                                 voteData.target?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
                                 send("command.vote.kick.target.kicked", name)
                                 Events.fire(

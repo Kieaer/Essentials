@@ -7,14 +7,27 @@ import essential.common.database.data.PlayerData
 import essential.common.offlinePlayers
 import essential.common.players
 import essential.common.pluginData
+import essential.common.systemTimezone
 import essential.common.util.findPlayerData
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.monthsUntil
+import kotlinx.datetime.toLocalDateTime
 import ksp.event.Event
 import mindustry.Vars.state
 import mindustry.content.Planets
 import mindustry.game.EventType.*
 import mindustry.game.Team
 import mindustry.gen.Groups
+import mindustry.world.blocks.power.PowerGraph
 import java.util.*
+import kotlin.time.Clock
+
+private var isNoMiningFailed = false
+private var isNoPowerFailed = false
+private var isLowPowerFailed = false
+private var isNoTurretsFailed = false
+private var isFlareOnlyFailed = false
+private var isDuoTurretFailed = false
 
 private fun incrementActionCount(data: PlayerData) {
     APMTracker.trackAction(data)
@@ -47,14 +60,14 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
             }
 
             // Check for power nodes for LowPowerClear achievement
-            if (!event.breaking && (event.tile.block().name == "power-node-large")) {
-                // Power node large has capacity > 2k, mark the achievement as unachievable
-                data.status["record.map.clear.lowpower.failed"] = "1"
+            if (!event.breaking && (event.tile.block().name == "power-node-large" || event.tile.block().name == "surge-tower")) {
+                // Power node large / surge tower has capacity > 2k, mark the achievement as unachievable
+                isLowPowerFailed = true
             }
 
             // Check for turrets for NoTurretsClear achievement
             if (!event.breaking && event.tile.block().name.contains("turret")) {
-                data.status["record.map.clear.noturrets.failed"] = "1"
+                isNoTurretsFailed = true
             }
 
             // Check for power generators for NoPowerClear achievement
@@ -65,12 +78,12 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
                                 event.tile.block().name.contains("reactor")
                         )
             ) {
-                data.status["record.map.clear.nopower.failed"] = "1"
+                isNoPowerFailed = true
             }
 
             // Check for duo turrets for DuoTurretSurvival achievement
             if (!event.breaking && event.tile.block().name != "duo" && event.tile.block().name.contains("turret")) {
-                data.status["record.wave.duo.failed"] = "1"
+                isDuoTurretFailed = true
             }
         }
     }
@@ -123,6 +136,40 @@ fun gameover(event: GameOverEvent) {
                     data.status["record.pvp.win.streak"] = "1"
                     if (Achievement.PvPWinStreak.success(data)) {
                         Achievement.PvPWinStreak.set(data)
+                    }
+                }
+
+                // Track PvP wins on Serpulo
+                if (state.rules.planet === Planets.serpulo) {
+                    val winCount = data.status.getOrDefault("record.pvp.win.serpulo", "0").toInt() + 1
+                    data.status["record.pvp.win.serpulo"] = winCount.toString()
+                    if (Achievement.SerpuloPvPWin.success(data)) {
+                        Achievement.SerpuloPvPWin.set(data)
+                    }
+
+                    // Update both planets win count
+                    if (data.status.getOrDefault("record.pvp.win.erekir", "0").toInt() > 0) {
+                        val bothCount = data.status.getOrDefault("record.pvp.win.both", "0").toInt() + 1
+                        data.status["record.pvp.win.both"] = bothCount.toString()
+                        if (Achievement.BothPlanetsPvPWin.success(data)) {
+                            Achievement.BothPlanetsPvPWin.set(data)
+                        }
+                    }
+                } else if (state.rules.planet === Planets.erekir) {
+                    // Track PvP wins on Erekir
+                    val winCount = data.status.getOrDefault("record.pvp.win.erekir", "0").toInt() + 1
+                    data.status["record.pvp.win.erekir"] = winCount.toString()
+                    if (Achievement.ErekirPvPWin.success(data)) {
+                        Achievement.ErekirPvPWin.set(data)
+                    }
+
+                    // Update both planets win count
+                    if (data.status.getOrDefault("record.pvp.win.serpulo", "0").toInt() > 0) {
+                        val bothCount = data.status.getOrDefault("record.pvp.win.both", "0").toInt() + 1
+                        data.status["record.pvp.win.both"] = bothCount.toString()
+                        if (Achievement.BothPlanetsPvPWin.success(data)) {
+                            Achievement.BothPlanetsPvPWin.set(data)
+                        }
                     }
                 }
             } else {
@@ -178,7 +225,13 @@ fun gameover(event: GameOverEvent) {
         if (Achievement.Aggressor.success(data)) {
             Achievement.Aggressor.set(data)
         }
-        if (event.winner === data.player.team()) {
+        val isWin = if (state.rules.attackMode) {
+            event.winner === data.player.team() && state.rules.waveTeam.cores().isEmpty
+        } else {
+            event.winner === data.player.team() && !state.teams.playerCores().isEmpty
+        }
+
+        if (isWin) {
             if (Achievement.Asteroids.success(data)) {
                 Achievement.Asteroids.set(data)
             }
@@ -209,7 +262,7 @@ fun gameover(event: GameOverEvent) {
             }
 
             // Check for NoMiningClear achievement
-            if (!data.status.containsKey("record.map.clear.nomining.failed") && state.rules.attackMode) {
+            if (!isNoMiningFailed && state.rules.attackMode) {
                 data.status["record.map.clear.nomining"] = "1"
                 if (Achievement.NoMiningClear.success(data)) {
                     Achievement.NoMiningClear.set(data)
@@ -217,7 +270,7 @@ fun gameover(event: GameOverEvent) {
             }
 
             // Check for NoPowerClear achievement
-            if (!data.status.containsKey("record.map.clear.nopower.failed") && state.rules.attackMode) {
+            if (!isNoPowerFailed && state.rules.attackMode) {
                 data.status["record.map.clear.nopower"] = "1"
                 if (Achievement.NoPowerClear.success(data)) {
                     Achievement.NoPowerClear.set(data)
@@ -225,7 +278,7 @@ fun gameover(event: GameOverEvent) {
             }
 
             // Check for NoTurretsClear achievement
-            if (!data.status.containsKey("record.map.clear.noturrets.failed") && state.rules.attackMode) {
+            if (!isNoTurretsFailed && state.rules.attackMode) {
                 data.status["record.map.clear.noturrets"] = "1"
                 if (Achievement.NoTurretsClear.success(data)) {
                     Achievement.NoTurretsClear.set(data)
@@ -233,7 +286,7 @@ fun gameover(event: GameOverEvent) {
             }
 
             // Check for LowPowerClear achievement
-            if (!data.status.containsKey("record.map.clear.lowpower.failed") && state.rules.attackMode) {
+            if (!isLowPowerFailed && state.rules.attackMode) {
                 data.status["record.map.clear.lowpower"] = "1"
                 if (Achievement.LowPowerClear.success(data)) {
                     Achievement.LowPowerClear.set(data)
@@ -241,7 +294,7 @@ fun gameover(event: GameOverEvent) {
             }
 
             // Check for FlareOnlyClear achievement
-            if (!data.status.containsKey("record.map.clear.flareonly.failed") && state.rules.attackMode) {
+            if (!isFlareOnlyFailed && state.rules.attackMode) {
                 data.status["record.map.clear.flareonly"] = "1"
                 if (Achievement.FlareOnlyClear.success(data)) {
                     Achievement.FlareOnlyClear.set(data)
@@ -264,6 +317,15 @@ fun wave(event: WaveEvent) {
         data.status["record.wave"] = value.toString()
         if (Achievement.Defender.success(data)) {
             Achievement.Defender.set(data)
+        }
+
+        // DuoTurretSurvival progress
+        if (!isDuoTurretFailed) {
+            val duoWaves = data.status.getOrDefault("record.wave.duo", "0").toInt() + 1
+            data.status["record.wave.duo"] = duoWaves.toString()
+            if (Achievement.DuoTurretSurvival.success(data)) {
+                Achievement.DuoTurretSurvival.set(data)
+            }
         }
     }
 }
@@ -312,6 +374,16 @@ fun playerChat(event: PlayerChatEvent) {
                     Achievement.NewYear.set(data)
                 }
             }
+
+            // If the chat sender has "owner" permission, award MeetOwner to everyone
+            if (data.permission == "owner") {
+                players.forEach { otherPlayer ->
+                    otherPlayer.status["record.time.meetowner"] = "60"
+                    if (Achievement.MeetOwner.success(otherPlayer)) {
+                        Achievement.MeetOwner.set(otherPlayer)
+                    }
+                }
+            }
         }
     } else if (event.message.startsWith("/apm")) {
         // Display the current APM for testing
@@ -349,7 +421,7 @@ fun unitChange(event: UnitChangeEvent) {
                     true
                 ) && event.unit.type.name != "alpha" && event.unit.type.name != "beta" && event.unit.type.name != "gamma"
             ) {
-                data.status["record.map.clear.flareonly.failed"] = "1"
+                isFlareOnlyFailed = true
             }
         }
     }
@@ -481,53 +553,11 @@ fun updateSecond() {
                 if (Achievement.Serpulo.success(data)) {
                     Achievement.Serpulo.set(data)
                 }
-
-                // Track PvP wins on Serpulo
-                if (state.rules.pvp && data.status.getOrDefault("record.pvp.win.serpulo.tracked", "0")
-                        .toInt() == 0
-                ) {
-                    val winCount = data.status.getOrDefault("record.pvp.win.serpulo", "0").toInt() + 1
-                    data.status["record.pvp.win.serpulo"] = winCount.toString()
-                    data.status["record.pvp.win.serpulo.tracked"] = "1" // Mark as tracked for this game
-                    if (Achievement.SerpuloPvPWin.success(data)) {
-                        Achievement.SerpuloPvPWin.set(data)
-                    }
-
-                    // Update both planets win count
-                    if (data.status.getOrDefault("record.pvp.win.erekir", "0").toInt() > 0) {
-                        val bothCount = data.status.getOrDefault("record.pvp.win.both", "0").toInt() + 1
-                        data.status["record.pvp.win.both"] = bothCount.toString()
-                        if (Achievement.BothPlanetsPvPWin.success(data)) {
-                            Achievement.BothPlanetsPvPWin.set(data)
-                        }
-                    }
-                }
             } else if (state.rules.planet === Planets.erekir) {
                 val value = data.status.getOrDefault("record.time.erekir", "0").toInt() + 1
                 data.status["record.time.erekir"] = value.toString()
                 if (Achievement.Erekir.success(data)) {
                     Achievement.Erekir.set(data)
-                }
-
-                // Track PvP wins on Erekir
-                if (state.rules.pvp && data.status.getOrDefault("record.pvp.win.erekir.tracked", "0")
-                        .toInt() == 0
-                ) {
-                    val winCount = data.status.getOrDefault("record.pvp.win.erekir", "0").toInt() + 1
-                    data.status["record.pvp.win.erekir"] = winCount.toString()
-                    data.status["record.pvp.win.erekir.tracked"] = "1" // Mark as tracked for this game
-                    if (Achievement.ErekirPvPWin.success(data)) {
-                        Achievement.ErekirPvPWin.set(data)
-                    }
-
-                    // Update both planets win count
-                    if (data.status.getOrDefault("record.pvp.win.serpulo", "0").toInt() > 0) {
-                        val bothCount = data.status.getOrDefault("record.pvp.win.both", "0").toInt() + 1
-                        data.status["record.pvp.win.both"] = bothCount.toString()
-                        if (Achievement.BothPlanetsPvPWin.success(data)) {
-                            Achievement.BothPlanetsPvPWin.set(data)
-                        }
-                    }
                 }
             } else if (state.rules.infiniteResources) {
                 val value = data.status.getOrDefault("record.time.sandbox", "0").toInt() + 1
@@ -546,7 +576,57 @@ fun updateSecond() {
                 }
             }
 
+            // WarpServerDisconnect tracking - require 30 seconds of all warp servers being offline
+            if (pluginData.data.warpBlock.isNotEmpty() && pluginData.data.warpBlock.all { !it.online }) {
+                val warpOfflineTime = data.status.getOrDefault("record.warp.disconnect.duration", "0").toInt() + 1
+                data.status["record.warp.disconnect.duration"] = warpOfflineTime.toString()
+                if (warpOfflineTime >= 30) {
+                    data.status["record.warp.disconnect"] = "1"
+                    if (Achievement.WarpServerDisconnect.success(data)) {
+                        Achievement.WarpServerDisconnect.set(data)
+                    }
+                }
+            } else {
+                data.status["record.warp.disconnect.duration"] = "0"
+            }
+
             // APM calculation is now handled by APMTracker
+        }
+
+        // Check if any player unit is mining
+        if (!isNoMiningFailed) {
+            for (player in Groups.player) {
+                if (player.team() == Team.sharded && player.unit()?.mining() == true) {
+                    isNoMiningFailed = true
+                    break
+                }
+            }
+        }
+
+        // Check team power metrics
+        var totalPowerProduced = 0f
+        var hasPower = false
+        val checkedGraphs = mutableSetOf<PowerGraph>()
+        for (build in Groups.build) {
+            if (build.team() == Team.sharded && build.power != null) {
+                val graph = build.power.graph
+                if (graph != null) {
+                    if (graph.lastPowerProduced > 0f || graph.lastPowerStored > 0f) {
+                        hasPower = true
+                    }
+                    if (!checkedGraphs.contains(graph)) {
+                        checkedGraphs.add(graph)
+                        totalPowerProduced += graph.lastPowerProduced
+                    }
+                }
+            }
+        }
+
+        if (hasPower) {
+            isNoPowerFailed = true
+        }
+        if (totalPowerProduced > 2000f) {
+            isLowPowerFailed = true
         }
 
         // Check for owner presence
@@ -579,28 +659,34 @@ fun playerJoin(event: PlayerJoin) {
             Achievement.Attendance.set(data)
         }
 
-        // For Loyal achievement, we'll just set a flag that can be checked later
-        // This is a simplified approach without date calculations
-        data.status["record.login.loyal"] = "1"
-        if (Achievement.Loyal.success(data)) {
-            Achievement.Loyal.set(data)
-        }
+        // Calculate absence duration for Loyal achievements
+        val lastLogout = data.lastLogoutDate
+        if (lastLogout != null) {
+            val current = Clock.System.now().toLocalDateTime(systemTimezone)
+            val daysAbsent = lastLogout.date.daysUntil(current.date)
+            val monthsAbsent = lastLogout.date.monthsUntil(current.date)
 
-        // For LoyalSixMonths achievement
-        data.status["record.login.loyal.sixmonths"] = "1"
-        if (Achievement.LoyalSixMonths.success(data)) {
-            Achievement.LoyalSixMonths.set(data)
-        }
+            if (daysAbsent >= 5) {
+                data.status["record.login.loyal"] = "1"
+                if (Achievement.Loyal.success(data)) {
+                    Achievement.Loyal.set(data)
+                }
+            }
 
-        // For LoyalOneYearSixMonths achievement
-        data.status["record.login.loyal.oneyearsixmonths"] = "1"
-        if (Achievement.LoyalOneYearSixMonths.success(data)) {
-            Achievement.LoyalOneYearSixMonths.set(data)
-        }
+            if (monthsAbsent >= 6) {
+                data.status["record.login.loyal.sixmonths"] = "1"
+                if (Achievement.LoyalSixMonths.success(data)) {
+                    Achievement.LoyalSixMonths.set(data)
+                }
+            }
 
-        // Reset tracked flags for PvP wins
-        data.status["record.pvp.win.serpulo.tracked"] = "0"
-        data.status["record.pvp.win.erekir.tracked"] = "0"
+            if (monthsAbsent >= 18) {
+                data.status["record.login.loyal.oneyearsixmonths"] = "1"
+                if (Achievement.LoyalOneYearSixMonths.success(data)) {
+                    Achievement.LoyalOneYearSixMonths.set(data)
+                }
+            }
+        }
 
         // Reset map-specific achievement flags
         data.status.remove("record.map.clear.nomining.failed")
@@ -611,14 +697,7 @@ fun playerJoin(event: PlayerJoin) {
 
         // Reset time tracking for LongPlayNoAfk achievement
         data.status["record.time.noafk"] = "0"
-
-        // Check for WarpServerDisconnect achievement
-        if (pluginData.data.warpBlock.isEmpty()) {
-            data.status["record.warp.disconnect"] = "1"
-            if (Achievement.WarpServerDisconnect.success(data)) {
-                Achievement.WarpServerDisconnect.set(data)
-            }
-        }
+        data.status["record.warp.disconnect.duration"] = "0"
     }
 }
 
@@ -705,4 +784,14 @@ fun blockDestroy(event: BlockDestroyEvent) {
             }
         }
     }
+}
+
+@Event
+fun worldLoadEnd(event: WorldLoadEndEvent) {
+    isNoMiningFailed = false
+    isNoPowerFailed = false
+    isLowPowerFailed = false
+    isNoTurretsFailed = false
+    isFlareOnlyFailed = false
+    isDuoTurretFailed = false
 }

@@ -302,7 +302,7 @@ enum class Achievement {
 
     APM50 {
         override fun value(): Int{
-            return 50
+            return 600
         }
 
         override fun current(data: PlayerData): Int{
@@ -312,7 +312,7 @@ enum class Achievement {
 
     APM100 {
         override fun value(): Int{
-            return 100
+            return 1200
         }
 
         override fun current(data: PlayerData): Int{
@@ -322,7 +322,7 @@ enum class Achievement {
 
     APM200 {
         override fun value(): Int{
-            return 200
+            return 2400
         }
 
         override fun current(data: PlayerData): Int{
@@ -495,7 +495,7 @@ enum class Achievement {
     // See 'owner' permission user to get this
     MeetOwner {
         override fun value(): Int{
-            return 1
+            return 60
         }
 
         override val isHidden = true
