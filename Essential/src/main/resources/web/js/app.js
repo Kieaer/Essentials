@@ -368,40 +368,74 @@ function logout() {
         });
 }
 
-// Format Mindustry color tags (e.g. [#ff0000]Text) into styled spans
+// Mindustry named color palette (name -> hex). Matches arc.graphics.Colors defaults.
+const MINDUSTRY_TEXT_COLORS = {
+    'clear': '#ffffff', 'white': '#ffffff',
+    'lightgray': '#c1c1c1', 'gray': '#888888', 'grey': '#888888',
+    'darkgray': '#4d4d4d', 'black': '#000000',
+    'scarlet': '#ff2b2b', 'red': '#ff5555',
+    'orange': '#ff9a4d', 'gold': '#ffdb40', 'yellow': '#ffe555',
+    'lime': '#b7f93b', 'green': '#54d164', 'forest': '#3dd66f',
+    'cyan': '#5cffd0', 'teal': '#479bc7',
+    'blue': '#5b9eff', 'navy': '#3b6fd6', 'royal': '#404a86',
+    'purple': '#9b5cff', 'violet': '#7a5cff', 'magenta': '#ff5bda',
+    'pink': '#ff8ad1', 'coral': '#ff7a66',
+    'tan': '#d9c090', 'brown': '#7a5a3d', 'olive': '#a3ba5d', 'sand': '#e6d3a3',
+    'sky': '#7ce0ff', 'slate': '#4b69a5',
+    'accent': '#f9d27a', 'stat': '#ffd37f', 'unlaunched': '#a0a0a0',
+    'highlight': '#f9d27a', 'link': '#7aa6ff'
+};
+
+// Format Mindustry color tags into styled spans.
+// Supports [#rrggbb], [#rgb], named colors (e.g. [red], [tan], [scarlet]),
+// and [] which reverts to the previous color on the stack.
+// Each call returns a self-contained, balanced span tree so colors never
+// leak across players/maps (per-name color isolation).
 function formatMindustryColors(text) {
     if (!text) return '';
-    let formatted = text;
     // Escaping HTML tags to prevent XSS
-    formatted = formatted
+    let formatted = String(text)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#x27;');
 
-    let openSpans = 0;
-    formatted = formatted.replace(/\[#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\]/g, (match, color) => {
-        let prefix = '</span>'.repeat(openSpans);
-        openSpans = 1;
-        return `${prefix}<span style="color: #${color}">`;
-    });
-    
-    // Handle standard color names
-    const standardColors = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'cyan', 'white', 'grey', 'lightgray', 'darkgray'];
-    standardColors.forEach(color => {
-        const regex = new RegExp(`\\[${color}\\]`, 'g');
-        formatted = formatted.replace(regex, () => {
-            let prefix = '</span>'.repeat(openSpans);
-            openSpans = 1;
-            return `${prefix}<span style="color: ${color}">`;
-        });
+    const colorStack = [];
+    const namePattern = Object.keys(MINDUSTRY_TEXT_COLORS)
+        .sort((a, b) => b.length - a.length)
+        .join('|');
+    // Single left-to-right pass: [] reset | [#hex] | [name] (case-insensitive)
+    const tokenRegex = new RegExp(
+        `\\[\\]|\\[#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\\]|\\[(${namePattern})\\]`,
+        'gi'
+    );
+
+    formatted = formatted.replace(tokenRegex, (match, hex, name) => {
+        if (match === '[]') {
+            // Revert to previous color: pop current span.
+            if (colorStack.length > 0) {
+                colorStack.pop();
+                return '</span>';
+            }
+            return '';
+        }
+        if (hex) {
+            // Expand #rgb -> #rrggbb for consistency.
+            const expanded = hex.length === 3
+                ? hex.split('').map(c => c + c).join('')
+                : hex;
+            colorStack.push('#' + expanded);
+            return `<span style="color:#${expanded}">`;
+        }
+        const resolved = MINDUSTRY_TEXT_COLORS[name.toLowerCase()];
+        if (!resolved) return match;
+        colorStack.push(resolved);
+        return `<span style="color:${resolved}">`;
     });
 
-    if (openSpans > 0) {
-        formatted += '</span>'.repeat(openSpans);
-    }
-    return formatted;
+    // Close any spans left open (unbalanced tags) -> guarantees isolation.
+    return formatted + '</span>'.repeat(colorStack.length);
 }
 
 // Create a map card element (vertical or horizontal layout)
@@ -421,14 +455,177 @@ function openMapImageModal(imageUrl, title) {
         `;
         document.body.appendChild(overlay);
 
-        const close = () => overlay.classList.remove('open');
+        const img = overlay.querySelector('.map-image-modal-img');
+
+        // Zoom & pan state variables (retained in closure)
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let initialTouchDist = 0;
+        let initialScale = 1;
+
+        const updateTransform = () => {
+            img.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            if (scale > 1) {
+                img.style.cursor = isDragging ? 'grabbing' : 'grab';
+            } else {
+                img.style.cursor = 'zoom-in';
+            }
+        };
+
+        const resetZoom = () => {
+            scale = 1;
+            translateX = 0;
+            translateY = 0;
+            isDragging = false;
+            initialTouchDist = 0;
+            updateTransform();
+        };
+
+        // Expose resetZoom function on overlay element
+        overlay.resetZoom = resetZoom;
+
+        const close = () => {
+            overlay.classList.remove('open');
+            resetZoom();
+        };
+
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay || e.target.closest('.map-image-modal-close')) close();
         });
+
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') close();
+            if (e.key === 'Escape' && overlay.classList.contains('open')) close();
+        });
+
+        // 1. Mouse Scroll Zoom (PC)
+        img.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const oldScale = scale;
+            const zoomSpeed = 0.15;
+            
+            if (e.deltaY < 0) {
+                scale = Math.min(16, scale * (1 + zoomSpeed));
+            } else {
+                scale = Math.max(1, scale / (1 + zoomSpeed));
+            }
+
+            if (scale === 1) {
+                translateX = 0;
+                translateY = 0;
+            } else {
+                // Zoom towards mouse cursor:
+                const rect = img.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left - rect.width / 2;
+                const mouseY = e.clientY - rect.top - rect.height / 2;
+                translateX -= mouseX * (scale / oldScale - 1);
+                translateY -= mouseY * (scale / oldScale - 1);
+            }
+
+            updateTransform();
+        }, { passive: false });
+
+        // 2. Mouse Drag Pan (PC)
+        img.addEventListener('mousedown', (e) => {
+            // Only allow dragging if zoomed in
+            if (scale <= 1) return;
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            updateTransform();
+            e.preventDefault(); // Prevent text selection/drag ghosting
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                updateTransform();
+            }
+        });
+
+        // 3. Double Click Zoom (PC)
+        img.addEventListener('dblclick', (e) => {
+            if (scale > 1) {
+                resetZoom();
+            } else {
+                scale = 3;
+                const rect = img.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left - rect.width / 2;
+                const mouseY = e.clientY - rect.top - rect.height / 2;
+                translateX = -mouseX * 2;
+                translateY = -mouseY * 2;
+                updateTransform();
+            }
+        });
+
+        // 4. Touch Pinch-to-Zoom & Drag Pan (Mobile)
+        img.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                initialTouchDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                initialScale = scale;
+            } else if (e.touches.length === 1 && scale > 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - translateX;
+                startY = e.touches[0].clientY - translateY;
+            }
+        });
+
+        img.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && initialTouchDist > 0) {
+                e.preventDefault();
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const oldScale = scale;
+                scale = Math.min(16, Math.max(1, initialScale * (dist / initialTouchDist)));
+                
+                if (scale === 1) {
+                    translateX = 0;
+                    translateY = 0;
+                } else {
+                    // Zoom towards the midpoint of the two fingers:
+                    const rect = img.getBoundingClientRect();
+                    const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left - rect.width / 2;
+                    const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top - rect.height / 2;
+                    translateX -= midX * (scale / oldScale - 1);
+                    translateY -= midY * (scale / oldScale - 1);
+                }
+                updateTransform();
+            } else if (e.touches.length === 1 && isDragging && scale > 1) {
+                e.preventDefault();
+                translateX = e.touches[0].clientX - startX;
+                translateY = e.touches[0].clientY - startY;
+                updateTransform();
+            }
+        }, { passive: false });
+
+        img.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                initialTouchDist = 0;
+            }
+            if (e.touches.length === 0) {
+                isDragging = false;
+                updateTransform();
+            }
         });
     }
+
+    // Reset zoom state before opening
+    if (overlay.resetZoom) overlay.resetZoom();
 
     overlay.querySelector('.map-image-modal-img').src = imageUrl;
     overlay.querySelector('.map-image-modal-title').innerHTML = title || '';
@@ -456,14 +653,13 @@ function createMapCard(map, showDownload, horizontal = false) {
     const formattedName = formatMindustryColors(map.name);
     const votesText = window.i18n.translate('maps.votes', map.votes || 0);
 
-    // Random image focus position, re-rolled on every render
-    const bgPos = `${Math.floor(Math.random() * 101)}% ${Math.floor(Math.random() * 101)}%`;
-    const imageStyle = imageUrl ? `style="background-image: url(${imageUrl}); background-position: ${bgPos}"` : '';
+    const thumbnail = map.thumbnail || imageUrl;
+    const imageStyle = thumbnail ? `style="background-image: url(${thumbnail})"` : '';
 
     if (horizontal) {
         card.innerHTML = `
             <div class="map-image-left ${planetClass}" ${imageStyle}>
-                ${!imageUrl ? '<i class="material-icons">map</i>' : ''}
+                ${!thumbnail ? '<i class="material-icons">map</i>' : ''}
             </div>
             <div class="map-info-right">
                 <div class="map-header">
@@ -825,7 +1021,7 @@ function renderPlayerItem(player) {
     playerItem.innerHTML = `
         <div class="player-name-wrapper">
             <span class="player-dot"></span>
-            <span>${cleanName}</span>
+            <span class="player-name">${cleanName}</span>
         </div>
         <span class="player-duration">${durationText}</span>
     `;
