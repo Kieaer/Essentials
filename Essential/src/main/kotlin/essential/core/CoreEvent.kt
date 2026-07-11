@@ -1084,7 +1084,7 @@ fun configFileModified(event: CustomEvents.ConfigFileModified) {
 fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     val playerData = event.playerData
     val entity = Groups.player.find { p -> p.uuid() == playerData.uuid }
-    if (entity == null) return // if player is leaved when player data loading
+    if (entity == null || entity.con() == null || entity.con().hasDisconnected) return
     playerData.player = entity
     val player = playerData.player
     val message = StringBuilder()
@@ -1133,6 +1133,8 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
 
     playerData.isConnected = true
     players.removeIf { it.uuid == playerData.uuid }
+    // Final guard: do not add if player already disconnected
+    if (playerData.player.con() == null || playerData.player.con().hasDisconnected) return
     players.add(playerData)
     playerNumber++
 

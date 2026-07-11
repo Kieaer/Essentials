@@ -117,13 +117,13 @@ data class PlayerData(
 
     fun send(key: String, vararg args: Any) {
         val message = bundle.get(key, *args)
-        if (player.con() != null) player.sendMessage(message)
+        player.sendMessage(message)
         lastReceivedMessage = message
     }
 
     fun err(key: String, vararg args: Any) {
         val message = "[scarlet]" + bundle.get(key, *args)
-        if (player.con() != null) player.sendMessage(message)
+        player.sendMessage(message)
         lastReceivedMessage = message
     }
 
@@ -139,7 +139,7 @@ data class PlayerData(
      * @param message The message to send
      */
     fun sendDirect(message: String) {
-        if (player.con() != null) player.sendMessage(message)
+        player.sendMessage(message)
         lastReceivedMessage = message
     }
 }

@@ -452,6 +452,11 @@ class Trigger {
         var dpsBlockCalculateTick = 0
 
         Events.run(EventType.Trigger.update) {
+            val stale = players.filter { it.player.con() == null || it.player.con().hasDisconnected }
+            if (stale.isNotEmpty()) {
+                players.removeAll(stale.toSet())
+                return@run
+            }
             for (data in players) {
                 if (Vars.state.rules.pvp && data.player.unit() != null && data.player.team()
                         .cores().isEmpty && data.player.team() != Team.derelict && pvpPlayer.containsKey(data.uuid)
@@ -602,6 +607,8 @@ class Trigger {
         }
 
         Timer.schedule({
+            players.removeIf { it.player.con() == null || it.player.con().hasDisconnected }
+
             players.forEach {
                 it.totalPlayed++
                 it.currentPlayTime++
