@@ -129,16 +129,20 @@ object Permission {
                     scope.launch {
                         suspendTransaction {
                             PlayerTable.update({ PlayerTable.uuid eq uuid }) {
-                                it[PlayerTable.name] = permissionData.name
                                 it[PlayerTable.permission] = permissionData.group
+                                if (permissionData.name.isNotEmpty()) {
+                                    it[PlayerTable.name] = permissionData.name
+                                }
                             }
                         }
                     }
                 } else {
                     player.permission = permissionData.group
-                    player.name = permissionData.name
-                    player.player.name(permissionData.name)
                     player.player.admin(permissionData.admin)
+                    if (permissionData.name.isNotEmpty()) {
+                        player.name = permissionData.name
+                        player.player.name(permissionData.name)
+                    }
                 }
             }
         }
