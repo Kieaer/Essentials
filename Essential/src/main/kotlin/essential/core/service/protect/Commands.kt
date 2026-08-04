@@ -57,12 +57,13 @@ class Commands {
                 }
 
                 try {
-                    if(BCrypt.checkpw(arg[1], target.accountPW!!)) {
+                    if (!BCrypt.checkpw(arg[1], target.accountPW!!)) {
                         playerData.err("command.login.not.found")
                         return@post
                     }
                 } catch (e: Exception) {
                     playerData.err("command.login.not.found")
+                    return@post
                 }
 
                 if (target.isConnected) {
