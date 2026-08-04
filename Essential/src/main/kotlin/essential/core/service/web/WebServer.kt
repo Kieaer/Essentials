@@ -1,6 +1,7 @@
 package essential.core.service.web
 
 import arc.util.Log
+import essential.common.database.data.getPlayerDataByName
 import essential.core.service.web.WebService.Companion.bundle
 import essential.core.service.web.WebService.Companion.conf
 import essential.core.service.web.achievement.AchievementController
@@ -26,6 +27,8 @@ import io.ktor.server.routing.*
 import io.ktor.server.sessions.*
 import kotlinx.serialization.json.Json
 import java.net.ServerSocket
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import javax.crypto.spec.SecretKeySpec
 import kotlin.time.Duration.Companion.minutes
 
@@ -40,6 +43,11 @@ class WebServer {
 
     // Configure the application module
     private fun configureModule(application: Application) {
+        require(conf.sessionSecret.length >= 32) {
+            "Web sessions require a configured sessionSecret of at least 32 characters"
+        }
+        val (encryptionKey, signingKey) = sessionKeys(conf.sessionSecret)
+
         with(application) {
             // Initialize controllers
             mapController.init(this)
@@ -57,14 +65,13 @@ class WebServer {
                 cookie<UserSession>("USER_SESSION") {
                     cookie.path = "/"
                     cookie.maxAgeInSeconds = conf.sessionDuration
-                    cookie.secure = false
+                    cookie.secure = conf.secureCookie
+                    cookie.httpOnly = true
 
-                    // Create encryption key from session secret
-                    val encryptionKey = hex(conf.sessionSecret)
                     transform(
                         SessionTransportTransformerEncrypt(
-                            SecretKeySpec(encryptionKey, "AES"),
-                            SecretKeySpec(encryptionKey, "HmacSHA256")
+                            encryptionKey,
+                            signingKey
                         )
                     )
                 }
@@ -73,7 +80,9 @@ class WebServer {
             install(Authentication) {
                 session<UserSession>("auth-session") {
                     validate { session ->
-                        session
+                        getPlayerDataByName(session.username)
+                            ?.takeIf { it.id.toString() == session.id }
+                            ?.let { session }
                     }
                     challenge {
                         call.respond(HttpStatusCode.Unauthorized)
@@ -104,15 +113,11 @@ class WebServer {
         }
     }
 
-    private fun hex(key: String): ByteArray {
-        val result = ByteArray(16)
-        val keyBytes = key.toByteArray()
-
-        for (i in result.indices) {
-            result[i] = if (i < keyBytes.size) keyBytes[i] else 0
-        }
-
-        return result
+    private fun sessionKeys(secret: String): Pair<SecretKeySpec, SecretKeySpec> {
+        val digest = MessageDigest.getInstance("SHA-512")
+            .digest(secret.toByteArray(StandardCharsets.UTF_8))
+        return SecretKeySpec(digest.copyOfRange(0, 32), "AES") to
+            SecretKeySpec(digest.copyOfRange(32, 64), "HmacSHA256")
     }
 
     fun start() = synchronized(this@WebServer) {
