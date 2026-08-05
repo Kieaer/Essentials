@@ -41,7 +41,7 @@ class BridgeService : Plugin() {
         bundle.prefix = "[EssentialBridge]"
 
         if (!hasValidBridgeSecret(conf.sharedSecret)) {
-            Log.err("Bridge is disabled: configure a sharedSecret of at least 32 UTF-8 bytes on every bridge server")
+            Log.warn("Bridge is disabled: configure a sharedSecret of at least 32 UTF-8 bytes on every bridge server")
             return
         }
 
