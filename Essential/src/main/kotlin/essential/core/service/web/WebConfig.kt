@@ -17,6 +17,8 @@ data class WebConfig (
     val sessionDuration: Long = 3600,
     @YamlComment("Maximum file upload size in bytes (10 MB = 10485760 bytes)")
     val maxFileSize: Long = 10485760,
+    @YamlComment("Maximum requested width for generated map images")
+    val maxImageWidth: Int = 2048,
     @YamlComment("Discord server invitation URL shown to users who need to link their account")
     val discordUrl: String = "https://discord.gg/yourserver",
     @YamlComment("Enable WebSocket for real-time communication between web server and clients")

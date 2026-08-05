@@ -22,7 +22,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-import kotlinx.io.readByteArray
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -30,6 +29,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import mindustry.Vars
 import mindustry.io.MapIO
 import java.io.DataOutputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -54,6 +54,10 @@ data class MapInfo(
 )
 
 class MapController {
+    private companion object {
+        const val MAX_QUEUED_FETCHES = 32
+    }
+
     private class FetchTask(
         val hash: String,
         val msavBytes: ByteArray,
@@ -66,7 +70,7 @@ class MapController {
     private class MapHashCacheEntry(val lastModified: Long, val size: Long, val hash: String)
 
     private val activeTasks = ConcurrentHashMap<String, CompletableDeferred<ByteArray?>>()
-    private val fetchChannel = Channel<FetchTask>(Channel.UNLIMITED)
+    private val fetchChannel = Channel<FetchTask>(MAX_QUEUED_FETCHES)
     private val fetchSemaphore = Semaphore(3)
     private val mapHashCache = ConcurrentHashMap<String, MapHashCacheEntry>()
     private val uploadersMap = Collections.synchronizedMap(mutableMapOf<String, String>())
@@ -131,16 +135,27 @@ class MapController {
         val multipart = call.receiveMultipart()
         var fileName = ""
         var fileBytes: ByteArray? = null
+        var fileTooLarge = false
 
         multipart.forEachPart { part ->
             when (part) {
                 is PartData.FileItem -> {
                     fileName = part.originalFileName ?: "unknown.msav"
-                    fileBytes = part.provider().readRemaining().readByteArray()
+                    val bytes = readLimitedBytes(part.provider(), conf.maxFileSize)
+                    if (bytes == null) {
+                        fileTooLarge = true
+                    } else {
+                        fileBytes = bytes
+                    }
                 }
                 else -> {}
             }
             part.dispose()
+        }
+
+        if (fileTooLarge) {
+            call.respond(HttpStatusCode.BadRequest, "File too large")
+            return
         }
 
         val bytes = fileBytes
@@ -149,14 +164,10 @@ class MapController {
             return
         }
 
-        // Check file size
-        if (bytes.size > conf.maxFileSize) {
-            call.respond(HttpStatusCode.BadRequest, "File too large")
-            return
-        }
-
         // Validate file extension
-        if (!fileName.endsWith(".msav")) {
+        if (fileName.isBlank() || fileName.contains('/') || fileName.contains('\\') ||
+            !fileName.endsWith(".msav", ignoreCase = true)
+        ) {
             call.respond(HttpStatusCode.BadRequest, "Invalid file type. Only .msav files are allowed")
             return
         }
@@ -173,7 +184,12 @@ class MapController {
             }
 
             // Save the file
-            val targetFile = File(conf.uploadPath, fileName)
+            val uploadDir = File(conf.uploadPath).canonicalFile
+            val targetFile = File(uploadDir, fileName).canonicalFile
+            if (targetFile.parentFile != uploadDir) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid upload filename")
+                return
+            }
             Files.copy(tempFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
             tempFile.delete()
 
@@ -250,8 +266,14 @@ class MapController {
     }
 
     suspend fun handleMapImage(call: ApplicationCall, nameOrHash: String) {
-        val width = call.request.queryParameters["width"]?.toIntOrNull()
-        val suffix = if (width != null && width > 0) "_w$width" else ""
+        val widthParameter = call.request.queryParameters["width"]
+        val width = if (widthParameter == null) {
+            null
+        } else {
+            widthParameter.toIntOrNull()?.takeIf { it in 1..conf.maxImageWidth }
+                ?: return call.respond(HttpStatusCode.BadRequest, "Invalid image width")
+        }
+        val suffix = width?.let { "_w$it" } ?: ""
 
         val isHash = nameOrHash.length == 64 && nameOrHash.all { it.isDigit() || it in 'a'..'f' || it in 'A'..'F' }
         if (isHash) {
@@ -307,6 +329,23 @@ class MapController {
     private fun sha256Hex(data: ByteArray): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(data)
         return digest.joinToString("") { "%02x".format(it) }
+    }
+
+    private suspend fun readLimitedBytes(channel: ByteReadChannel, maxSize: Long): ByteArray? {
+        if (maxSize < 0) return null
+
+        val output = ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        while (true) {
+            val remaining = maxSize - output.size().toLong()
+            val requested = minOf(buffer.size.toLong(), remaining + 1).toInt()
+            val read = channel.readAvailable(buffer, 0, requested)
+            if (read == -1) break
+
+            output.write(buffer, 0, read)
+            if (output.size().toLong() > maxSize) return null
+        }
+        return output.toByteArray()
     }
 
     private suspend fun warmupMapImageCache() {
