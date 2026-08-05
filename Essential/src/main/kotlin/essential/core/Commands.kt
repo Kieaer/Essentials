@@ -2314,7 +2314,8 @@ class Commands {
                 }
                 val target = findPlayers(arg[1])
                 if (target != null) {
-                    if (Permission.check(playerData, "kick.admin")) {
+                    val targetData = players.find { it.uuid == target.uuid() }
+                    if (targetData != null && Permission.check(targetData, "kick.admin")) {
                         playerData.err("command.vote.kick.target.admin")
                     } else {
                         val voteData = VoteData(
