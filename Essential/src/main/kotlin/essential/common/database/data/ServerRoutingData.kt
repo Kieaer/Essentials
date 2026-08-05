@@ -9,6 +9,7 @@ import kotlinx.datetime.toLocalDateTime
 import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
 import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.r2dbc.update
@@ -80,12 +81,13 @@ suspend fun grantRoutingPermission(
  * Checks whether the player has permission to connect to a specific server.
  */
 @OptIn(ExperimentalTime::class)
-suspend fun checkRoutingPermission(playerUuid: String, targetPort: Int): Boolean {
+suspend fun checkRoutingPermission(playerUuid: String, targetServerName: String, targetPort: Int): Boolean {
     val now = Clock.System.now().toLocalDateTime(systemTimezone)
     
     return suspendTransaction {
         val sort = ServerRoutingTable.selectAll().where {
             (ServerRoutingTable.playerUuid eq playerUuid) and
+            (ServerRoutingTable.targetServerName eq targetServerName) and
             (ServerRoutingTable.targetPort eq targetPort) and
             (ServerRoutingTable.isUsed eq false) and
             (ServerRoutingTable.expiresAt greater now)
@@ -96,16 +98,23 @@ suspend fun checkRoutingPermission(playerUuid: String, targetPort: Int): Boolean
 }
 
 /**
- * Marks routing permission as used.
+ * Atomically consumes one permission for the intended destination server.
  */
 @OptIn(ExperimentalTime::class)
-suspend fun useRoutingPermission(playerUuid: String, targetPort: Int): Boolean {
+suspend fun consumeRoutingPermission(playerUuid: String, targetServerName: String, targetPort: Int): Boolean {
     val now = Clock.System.now().toLocalDateTime(systemTimezone)
     
     return suspendTransaction {
-        val updatedCount = ServerRoutingTable.update({
+        val permissionId = ServerRoutingTable.select(ServerRoutingTable.id).where {
             (ServerRoutingTable.playerUuid eq playerUuid) and
+            (ServerRoutingTable.targetServerName eq targetServerName) and
             (ServerRoutingTable.targetPort eq targetPort) and
+            (ServerRoutingTable.isUsed eq false) and
+            (ServerRoutingTable.expiresAt greater now)
+        }.limit(1).singleOrNull()?.get(ServerRoutingTable.id) ?: return@suspendTransaction false
+
+        val updatedCount = ServerRoutingTable.update({
+            (ServerRoutingTable.id eq permissionId) and
             (ServerRoutingTable.isUsed eq false) and
             (ServerRoutingTable.expiresAt greater now)
         }) {

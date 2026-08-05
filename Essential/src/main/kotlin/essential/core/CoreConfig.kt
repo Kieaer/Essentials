@@ -21,6 +21,8 @@ data class CoreConfig(
 data class Plugin(
     @YamlComment("Default language code (en: English, ko: Korean, etc.)")
     val lang: String = "en",
+    @YamlComment("Unique server identifier for hub routing; configure the destination's identifier on every non-hub server")
+    val serverId: String = "",
     @YamlComment("Automatically update the plugin when new version is available")
     val autoUpdate: Boolean = true,
     @YamlComment("Database configuration")

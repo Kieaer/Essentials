@@ -4,6 +4,7 @@ import PluginTest.Companion.newPlayer
 import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import essential.common.database.data.checkRoutingPermission
+import essential.common.database.data.consumeRoutingPermission
 import essential.common.database.data.plugin.WarpBlock
 import essential.common.database.table.ServerRoutingTable
 import essential.common.players
@@ -115,9 +116,12 @@ class FeatureTest {
         val currentMapName = Vars.state.map.name()
         val originalHubMapName = pluginData.hubMapName
         val originalWarpBlocks = pluginData.data.warpBlock.map { it.copy().apply { online = it.online } }
+        val originalConf = Main.conf
 
         try {
             val hubServerName = "hub-server"
+            val targetServerName = "target-server"
+            Main.conf = originalConf.copy(plugin = originalConf.plugin.copy(serverId = targetServerName))
             pluginData.hubMapName = hubServerName
             pluginData.data.warpBlock.clear()
             pluginData.data.warpBlock.add(
@@ -134,11 +138,11 @@ class FeatureTest {
             )
 
             val targetPort = Vars.port
-            seedRoutingPermission(testPlayer.uuid(), hubServerName, currentMapName, targetPort)
+            seedRoutingPermission(testPlayer.uuid(), hubServerName, targetServerName, targetPort)
 
             assertTrue(
                 awaitCondition {
-                    runBlocking { checkRoutingPermission(testPlayer.uuid(), targetPort) }
+                    runBlocking { checkRoutingPermission(testPlayer.uuid(), targetServerName, targetPort) }
                 },
                 "허브 워프 블록 이동 후 현재 서버 포트에 대한 라우팅 권한이 생성되어야 합니다."
             )
@@ -149,7 +153,7 @@ class FeatureTest {
 
             assertTrue(
                 awaitCondition {
-                    !runBlocking { checkRoutingPermission(testPlayer.uuid(), targetPort) }
+                    !runBlocking { checkRoutingPermission(testPlayer.uuid(), targetServerName, targetPort) }
                 },
                 "대상 서버 접속이 허용되면 라우팅 권한이 사용 처리되어야 합니다."
             )
@@ -159,6 +163,7 @@ class FeatureTest {
             pluginData.hubMapName = originalHubMapName
             pluginData.data.warpBlock.clear()
             pluginData.data.warpBlock.addAll(originalWarpBlocks)
+            Main.conf = originalConf
             clearRoutingPermission(testPlayer.uuid())
         }
     }
@@ -168,9 +173,12 @@ class FeatureTest {
         val testPlayer: mindustry.gen.Player = player.self()
         val originalHubMapName = pluginData.hubMapName
         val originalWarpBlocks = pluginData.data.warpBlock.map { it.copy().apply { online = it.online } }
+        val originalConf = Main.conf
 
         try {
             val hubServerName = "hub-server"
+            val targetServerName = "another-server"
+            Main.conf = originalConf.copy(plugin = originalConf.plugin.copy(serverId = "different-server"))
             pluginData.hubMapName = hubServerName
             pluginData.data.warpBlock.clear()
             pluginData.data.warpBlock.add(
@@ -187,11 +195,11 @@ class FeatureTest {
             )
 
             val targetPort = Vars.port + 1
-            seedRoutingPermission(testPlayer.uuid(), hubServerName, "another-server", targetPort)
+            seedRoutingPermission(testPlayer.uuid(), hubServerName, targetServerName, targetPort)
 
             assertTrue(
                 awaitCondition {
-                    runBlocking { checkRoutingPermission(testPlayer.uuid(), targetPort) }
+                    runBlocking { checkRoutingPermission(testPlayer.uuid(), targetServerName, targetPort) }
                 },
                 "허브 워프 블록 이동 후 설정된 대상 서버 포트로 라우팅 권한이 생성되어야 합니다."
             )
@@ -205,11 +213,30 @@ class FeatureTest {
                 "허용되지 않은 대상 서버 포트(현재 서버 포트와 불일치)로 직접 접속 시도가 오면 연결이 거부되어야 합니다."
             )
             assertEquals(connection.kickedMessage?.contains("Direct connection denied"), true)
-            assertTrue(runBlocking { checkRoutingPermission(testPlayer.uuid(), targetPort) })
+            assertTrue(runBlocking { checkRoutingPermission(testPlayer.uuid(), targetServerName, targetPort) })
         } finally {
             pluginData.hubMapName = originalHubMapName
             pluginData.data.warpBlock.clear()
             pluginData.data.warpBlock.addAll(originalWarpBlocks)
+            Main.conf = originalConf
+            clearRoutingPermission(testPlayer.uuid())
+        }
+    }
+
+    @Test
+    fun serverRoutingPermissionIsBoundToDestinationAndConsumedOnce() {
+        val testPlayer: mindustry.gen.Player = player.self()
+        val targetServerName = "target-server"
+        val targetPort = Vars.port
+
+        try {
+            seedRoutingPermission(testPlayer.uuid(), "hub-server", targetServerName, targetPort)
+
+            assertFalse(runBlocking { consumeRoutingPermission(testPlayer.uuid(), "other-server", targetPort) })
+            assertTrue(runBlocking { checkRoutingPermission(testPlayer.uuid(), targetServerName, targetPort) })
+            assertTrue(runBlocking { consumeRoutingPermission(testPlayer.uuid(), targetServerName, targetPort) })
+            assertFalse(runBlocking { consumeRoutingPermission(testPlayer.uuid(), targetServerName, targetPort) })
+        } finally {
             clearRoutingPermission(testPlayer.uuid())
         }
     }

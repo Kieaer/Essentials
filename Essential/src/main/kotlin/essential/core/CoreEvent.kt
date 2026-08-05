@@ -259,7 +259,7 @@ fun tap(event: TapEvent) {
                     val hubMapName = pluginData.hubMapName
                     if (hubMapName != null && currentMapName == hubMapName) {
                         scope.launch {
-                            val targetServerName = two.description.takeIf { it.isNotEmpty() } ?: "${two.ip}:${two.port}"
+                            val targetServerName = "${two.ip}:${two.port}"
                             val hubConnectionTime = Instant.fromEpochMilliseconds(event.player.con().connectTime).toLocalDateTime(systemTimezone)
                             grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
                             Call.connect(event.player.con(), two.ip, two.port)
@@ -985,7 +985,9 @@ fun connectPacket(event: ConnectPacketEvent) {
             scope.launch {
                 // Check whether the player has routing permission via the hub
                 val targetPort = Administration.Config.port.num()
-                val hasRoutingPermission = checkRoutingPermission(event.packet.uuid, targetPort)
+                val targetServerName = conf.plugin.serverId
+                val hasRoutingPermission = targetServerName.isNotBlank() &&
+                    consumeRoutingPermission(event.packet.uuid, targetServerName, targetPort)
 
                 if (!hasRoutingPermission) {
                     event.connection.kick("Direct connection denied - must route through hub server", 0L)
@@ -999,8 +1001,6 @@ fun connectPacket(event: ConnectPacketEvent) {
                             "Direct connection denied - must route through hub"
                         )
                     )
-                } else {
-                    useRoutingPermission(event.packet.uuid, targetPort)
                 }
             }
         }
