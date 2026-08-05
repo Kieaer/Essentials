@@ -551,7 +551,7 @@ class PluginTest {
                     val dialect = defaultDatabase?.dialect
                     assertNotNull(dialect, "Database should be initialized")
                     assertIs<PostgreSQLDialect>(dialect)
-                    val uuid = "hMHCIDJpHKQAAAAAbzCq5A=="
+                    val uuid = "migration-test-player"
                     val player = getPlayerData(uuid) ?: createPlayerData("upgrade-test", uuid, "upgrade-test", "upgrade-test")
                     assertNotNull(player, "Player should exist after upgrade")
                     assertFalse(checkPlayerBanned(player.player))
