@@ -5,24 +5,25 @@ pluginManagement {
         google()
         gradlePluginPortal()
         mavenCentral()
-        maven { url = uri("https://jitpack.io") }
     }
 }
 
 @Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
-    val snapshotIp = System.getenv("LOCAL_REPO_IP")
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-
     repositories {
         mavenCentral()
-        if (snapshotIp != null && snapshotIp.isNotEmpty()) {
-            maven {
-                url = uri("http://$snapshotIp/repository/maven-snapshots/")
-                isAllowInsecureProtocol = true
+
+        ivy {
+            url = uri("https://github.com/")
+            patternLayout {
+                artifact("/[organisation]/[module]/releases/download/[revision]/dependencies.jar")
             }
-        } else {
-            maven { url = uri("https://jitpack.io") }
+            metadataSources {
+                artifact()
+            }
+            content {
+                includeModule("Anuken", "Mindustry")
+            }
         }
     }
 }
