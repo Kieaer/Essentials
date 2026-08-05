@@ -651,6 +651,7 @@ function createMapCard(map, showDownload, horizontal = false) {
 
     const formattedAuthor = formatMindustryColors(map.author) || unknownText;
     const formattedName = formatMindustryColors(map.name);
+    const formattedUploader = formatMindustryColors(map.uploader);
     const votesText = window.i18n.translate('maps.votes', map.votes || 0);
 
     const thumbnail = map.thumbnail || imageUrl;
@@ -664,12 +665,12 @@ function createMapCard(map, showDownload, horizontal = false) {
             <div class="map-info-right">
                 <div class="map-header">
                     <h3 class="map-name">${formattedName}</h3>
-                    <i class="material-icons info-icon-btn" title="${map.description || noDescriptionText}">info_outline</i>
+                    <i class="material-icons info-icon-btn">info_outline</i>
                 </div>
                 <div class="map-meta">
                     <p><strong>${authorText}:</strong> ${formattedAuthor}</p>
                     <p><strong>${planetText}:</strong> ${planetDisplay}</p>
-                    ${map.uploader ? `<p><strong>${uploaderText}:</strong> ${map.uploader}</p>` : ''}
+                    ${formattedUploader ? `<p><strong>${uploaderText}:</strong> ${formattedUploader}</p>` : ''}
                     <p><strong>${votesText}</strong></p>
                 </div>
                 ${showDownload ? `
@@ -699,12 +700,12 @@ function createMapCard(map, showDownload, horizontal = false) {
             <div class="map-info-bottom">
                 <div class="map-header">
                     <h3 class="map-name">${formattedName}</h3>
-                    <i class="material-icons info-icon-btn" title="${map.description || noDescriptionText}">info_outline</i>
+                    <i class="material-icons info-icon-btn">info_outline</i>
                 </div>
                 <div class="map-meta">
                     <p><strong>${authorText}:</strong> ${formattedAuthor}</p>
                     <p><strong>${planetText} [Planet]:</strong> ${planetDisplay}</p>
-                    ${map.uploader ? `<p><strong>${uploaderText}:</strong> ${map.uploader}</p>` : ''}
+                    ${formattedUploader ? `<p><strong>${uploaderText}:</strong> ${formattedUploader}</p>` : ''}
                     <p><strong>${votesText}</strong></p>
                 </div>
                 <div class="map-actions">
@@ -715,6 +716,9 @@ function createMapCard(map, showDownload, horizontal = false) {
             </div>
         `;
     }
+
+    const infoIcon = card.querySelector('.info-icon-btn');
+    if (infoIcon) infoIcon.title = map.description || noDescriptionText;
 
     return card;
 }
