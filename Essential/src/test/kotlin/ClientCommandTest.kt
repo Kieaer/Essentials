@@ -50,7 +50,6 @@ class ClientCommandTest {
             loadGame(true)
 
             val p = newPlayer()
-            Vars.player = p.first.self()
             player = p.first.self()
 
             done = true

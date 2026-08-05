@@ -7,8 +7,8 @@ import arc.files.Fi
 import arc.graphics.Camera
 import arc.graphics.Color
 import arc.util.CommandHandler
-import arc.util.Http
 import arc.util.Log
+import arc.util.TaskQueue
 import arc.util.Time
 import essential.common.DATABASE_VERSION
 import essential.common.bundle
@@ -22,6 +22,7 @@ import essential.common.database.defaultDatabase
 import essential.common.database.worldHistoryDatabase
 import essential.common.players
 import essential.common.rootPath
+import essential.core.CoreConfig
 import essential.core.Main
 import essential.core.service.chat.ChatService
 import essential.core.service.web.WebService
@@ -53,7 +54,6 @@ import org.testcontainers.postgresql.PostgreSQLContainer
 import java.io.File
 import java.lang.Thread.sleep
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipFile
@@ -93,6 +93,7 @@ class PluginTest {
             path.child("scripts").deleteDirectory()
             if (deleteConfig) {
                 path.child("config").deleteDirectory()
+                Main.conf = CoreConfig()
             }
 
             path.child("locales").writeString("en", false)
@@ -119,14 +120,12 @@ class PluginTest {
 
             if (!path.child("scripts").exists()) {
                 path.child("scripts").mkdirs()
-                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/v157.2/core/assets/scripts/global.js")
-                    .submit { res ->
-                        path.child("scripts/global.js").writeString(res.resultAsString)
-                    }
-                Http.get("https://raw.githubusercontent.com/Anuken/Mindustry/v157.2/core/assets/scripts/base.js")
-                    .submit { res ->
-                        path.child("scripts/base.js").writeString(res.resultAsString)
-                    }
+                listOf("global.js", "base.js").forEach { script ->
+                    val contents = checkNotNull(PluginTest::class.java.getResourceAsStream("/scripts/$script")) {
+                        "oh no.. Anuke delete scripts/$script from dependencies.jar"
+                    }.bufferedReader().use { it.readText() }
+                    path.child("scripts/$script").writeString(contents, false)
+                }
             }
 
             if (loadPlugin) {
@@ -227,6 +226,7 @@ class PluginTest {
                 logic.play()
                 state.set(GameState.State.playing)
                 state.rules.limitMapArea = false
+                Team.all.forEach { t -> state.rules.teams.get(t).buildAi = false }
 
                 gameLoaded = true
             } catch (r: Throwable) {
@@ -292,12 +292,14 @@ class PluginTest {
         }
 
         fun updateTick(times: Int) {
+            Team.all.forEach { t -> state.rules.teams.get(t).buildAi = false }
             repeat(times) {
                 logic.update()
             }
         }
 
         fun updateTick(times: Int, codes: () -> Unit) {
+            Team.all.forEach { t -> state.rules.teams.get(t).buildAi = false }
             repeat(times) {
                 logic.update()
                 codes()
@@ -367,6 +369,14 @@ class PluginTest {
             var data: PlayerData? = null
             val deadline = System.currentTimeMillis() + 15000
             while (data == null && System.currentTimeMillis() < deadline) {
+                try {
+                    val field = HeadlessApplication::class.java.getDeclaredField("runnables")
+                    field.isAccessible = true
+                    val queue = field.get(Core.app) as TaskQueue
+                    queue.run()
+                } catch (e: Exception) {
+                    // ignore
+                }
                 sleep(16)
                 data = players.find { it.uuid == player.uuid() }
             }
@@ -467,6 +477,7 @@ class PluginTest {
     @Test
     fun dbUpgradeTest_20() {
         if (Core.app != null) stopPlugin()
+        Main.conf = CoreConfig()
 
         val dataDir = Paths.get("config", "mods", "Essentials", "data")
         dataDir.toFile().mkdirs()
@@ -512,6 +523,8 @@ class PluginTest {
 
         loadGame(deleteConfig = false)
         val originalConf = Main.conf
+        val configFile = rootPath.child("config/config.yaml")
+        val originalConfig = configFile.takeIf { it.exists() }?.readString()
         PostgreSQLContainer("postgres:17.0").apply {
             withDatabaseName("essential")
             withUsername("plugins")
@@ -560,6 +573,12 @@ class PluginTest {
             } finally {
                 stopPlugin()
                 Main.conf = originalConf
+                if (originalConfig == null) {
+                    configFile.delete()
+                } else {
+                    configFile.writeString(originalConfig, false)
+                }
+                gameLoaded = false
             }
         }
     }
