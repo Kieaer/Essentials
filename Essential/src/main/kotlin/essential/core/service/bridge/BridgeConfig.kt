@@ -9,6 +9,8 @@ data class BridgeConfig(
     var address: String = "127.0.0.1",
     @YamlComment("Bridge server port number")
     var port: Int = (10000..65535).random(),
+    @YamlComment("Shared secret for bridge authentication (at least 32 UTF-8 bytes; configure the same value on every server)")
+    var sharedSecret: String = "",
     @YamlComment("Settings for sharing data with bridge server")
     var sharing: SharingConfig = SharingConfig()
 )

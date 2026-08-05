@@ -20,6 +20,7 @@ class BridgeService : Plugin() {
         // Note: bridge 전용 번들이 없으므로 공통 번들을 사용합니다.
         var bundle: Bundle = Bundle(ResourceBundle.getBundle("bundles/common/bundle"))
         var isServerMode: Boolean = false
+        var isRunning: Boolean = false
         var conf: BridgeConfig = reloadConf()
 
         fun reloadConf() : BridgeConfig {
@@ -32,39 +33,45 @@ class BridgeService : Plugin() {
             }
         }
 
-        lateinit var network: Runnable
+        var network: Runnable? = null
     }
 
     var daemon: ExecutorService = Executors.newSingleThreadExecutor()
     override fun init() {
         bundle.prefix = "[EssentialBridge]"
 
-        // 서버간 연결할 포트 생성
-        try {
-            ServerSocket(conf.port).use {
-                isServerMode = true
-                network = Server()
-            }
-        } catch (_: IOException) {
-            isServerMode = false
-            network = Client()
+        if (!hasValidBridgeSecret(conf.sharedSecret)) {
+            Log.err("Bridge is disabled: configure a sharedSecret of at least 32 UTF-8 bytes on every bridge server")
+            return
         }
-        daemon.submit(network)
+
+        val server = Server.bind(conf.port)
+        network = if (server != null) {
+            isServerMode = true
+            server
+        } else {
+            isServerMode = false
+            Client()
+        }
+        isRunning = true
+        daemon.submit(requireNotNull(network))
 
         Core.app.addListener(object : ApplicationListener {
             override fun dispose() {
-                if (isServerMode) {
-                    for (socket in (network as Server).clients) {
+                val activeNetwork = network
+                if (isServerMode && activeNetwork is Server) {
+                    for (socket in activeNetwork.clients) {
                         try {
                             socket.close()
                         } catch (_: IOException) {
                         }
                     }
-                    (network as Server).shutdown()
-                } else {
-                    (network as Client).send("exit")
-                    (network as Client).cancel()
+                    activeNetwork.shutdown()
+                } else if (activeNetwork is Client) {
+                    activeNetwork.send("exit")
+                    activeNetwork.cancel()
                 }
+                isRunning = false
                 daemon.shutdownNow()
             }
         })

@@ -3,54 +3,36 @@ package essential.core.service.bridge
 import arc.util.Log
 import arc.util.Timer
 import essential.core.service.bridge.BridgeService.Companion.conf
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mindustry.gen.Call
+import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.IOException
+import java.io.InputStreamReader
 import java.io.OutputStreamWriter
-import java.lang.Runnable
 import java.net.InetSocketAddress
 import java.net.Socket
-import java.net.SocketTimeoutException
-import java.nio.ByteBuffer
-import java.nio.channels.AsynchronousSocketChannel
-import java.nio.charset.StandardCharsets
-import java.util.*
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 class Client : Runnable {
-    // Message queue for outgoing messages
-    private val messageQueue = ConcurrentLinkedQueue<String>()
-
-    // Async channel for non-blocking I/O
-    private var channel: AsynchronousSocketChannel? = null
-
-    // Coroutine scope for async operations
+    private val messageQueue = ArrayBlockingQueue<String>(128)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    // Buffer for reading data
-    private val readBuffer = ByteBuffer.allocate(8192)
-
-    // Buffer for writing data
-    private val writeBuffer = ByteBuffer.allocate(8192)
-
-    // Track if we're connected
     private val isConnected = AtomicBoolean(false)
-
-    // Track if we're currently reconnecting
     private val isReconnecting = AtomicBoolean(false)
 
-    // Last received message
+    @Volatile private var socket: Socket? = null
+    @Volatile private var writer: BufferedWriter? = null
     var lastReceivedMessage: String? = ""
 
-    // Maximum number of reconnection attempts
     private val maxReconnectAttempts = 5
-
-    // Current reconnection attempt
     private var reconnectAttempts = 0
-
-    // Delay between reconnection attempts (in seconds)
     private val reconnectDelay = 5f
 
     override fun run() {
@@ -60,41 +42,50 @@ class Client : Runnable {
     private fun connect() {
         scope.launch {
             try {
-                // Create a new async channel
-                channel = AsynchronousSocketChannel.open()
+                val connectedSocket = withContext(Dispatchers.IO) {
+                    Socket().apply {
+                        connect(InetSocketAddress(conf.address, conf.port), 5_000)
+                        soTimeout = 10_000
+                    }
+                }
+                val connectedReader = BufferedReader(InputStreamReader(connectedSocket.getInputStream()))
+                val connectedWriter = BufferedWriter(OutputStreamWriter(connectedSocket.getOutputStream()))
+                if (!authenticate(connectedReader, connectedWriter)) {
+                    connectedSocket.close()
+                    throw SecurityException("Bridge authentication failed")
+                }
 
-                // Connect to the server
-                val port = conf.port
-                val address = InetSocketAddress(conf.address, port)
-
-                scope.async {
-                    channel?.connect(address)?.get()
-                }.await()
-
+                connectedSocket.soTimeout = 0
+                socket = connectedSocket
+                writer = connectedWriter
                 isConnected.set(true)
                 reconnectAttempts = 0
                 Log.info(BridgeService.bundle["network.client.connected", conf.address])
-
-                // Start reading and writing
-                startReading()
+                startReading(connectedReader)
                 startWriting()
-
             } catch (e: Exception) {
                 handleConnectionFailure(e)
             }
         }
     }
 
+    private fun authenticate(reader: BufferedReader, writer: BufferedWriter): Boolean {
+        val command = readBridgeLine(reader)
+        val challenge = readBridgeLine(reader)
+        if (command != "auth-challenge" || challenge == null) return false
+        writer.write("auth-response")
+        writer.newLine()
+        writer.write(bridgeAuthenticationResponse(conf.sharedSecret, challenge))
+        writer.newLine()
+        writer.flush()
+        return true
+    }
+
     private fun handleConnectionFailure(e: Exception) {
-        isConnected.set(false)
-
-        if (reconnectAttempts < maxReconnectAttempts && !isReconnecting.get()) {
-            isReconnecting.set(true)
+        closeConnection()
+        if (reconnectAttempts < maxReconnectAttempts && isReconnecting.compareAndSet(false, true)) {
             reconnectAttempts++
-
             Log.warn("Connection failed (attempt $reconnectAttempts/$maxReconnectAttempts): ${e.message}")
-
-            // Schedule reconnection after delay
             Timer.schedule(object : Timer.Task() {
                 override fun run() {
                     isReconnecting.set(false)
@@ -106,56 +97,25 @@ class Client : Runnable {
         }
     }
 
-    private fun startReading() {
+    private fun startReading(reader: BufferedReader) {
         scope.launch {
             try {
                 while (isConnected.get()) {
-                    readBuffer.clear()
-
-                    // Read data asynchronously
-                    val bytesRead = scope.async {
-                        channel?.read(readBuffer)?.get() ?: -1
-                    }.await()
-
-                    if (bytesRead <= 0) {
-                        // Connection closed
-                        isConnected.set(false)
-                        handleConnectionFailure(IOException("Connection closed by server"))
-                        break
+                    when (val command = readBridgeLine(reader) ?: break) {
+                        "message" -> {
+                            val message = readBridgeLine(reader)?.let(::decodeBridgePayload)
+                                ?: throw IOException("Invalid bridge message payload")
+                            lastReceivedMessage = message
+                            Call.sendMessage(message)
+                        }
+                        "banned" -> readBridgeLine(reader) ?: throw IOException("Missing bridge ban payload")
+                        "exit" -> break
+                        else -> throw IOException("Unknown bridge command: $command")
                     }
-
-                    // Process the received data
-                    readBuffer.flip()
-                    val data = StandardCharsets.UTF_8.decode(readBuffer).toString()
-                    processReceivedData(data)
                 }
+                handleConnectionFailure(IOException("Connection closed by server"))
             } catch (e: Exception) {
-                if (isConnected.get()) {
-                    isConnected.set(false)
-                    handleConnectionFailure(e)
-                }
-            }
-        }
-    }
-
-    private fun processReceivedData(data: String) {
-        // Split the data by newlines to get individual messages
-        val lines = data.split("\n")
-
-        for (i in 0 until lines.size - 1 step 2) {
-            if (i + 1 < lines.size) {
-                val command = lines[i].trim()
-                val content = lines[i + 1].trim()
-
-                when (command) {
-                    "message" -> {
-                        lastReceivedMessage = content
-                        Call.sendMessage(content)
-                    }
-                    "exit" -> {
-                        closeConnection()
-                    }
-                }
+                if (isConnected.get()) handleConnectionFailure(e)
             }
         }
     }
@@ -163,108 +123,60 @@ class Client : Runnable {
     private fun startWriting() {
         scope.launch {
             try {
-                var lastFlushTime = System.currentTimeMillis()
-                val flushInterval = 100L // Flush every 100ms instead of every message
-
                 while (isConnected.get()) {
-                    if (messageQueue.isNotEmpty()) {
-                        val currentTime = System.currentTimeMillis()
-                        val message = messageQueue.poll()
-
-                        if (message != null) {
-                            writeBuffer.clear()
-                            writeBuffer.put(message.toByteArray(StandardCharsets.UTF_8))
-                            writeBuffer.flip()
-
-                            // Write data asynchronously
-                            scope.async {
-                                while (writeBuffer.hasRemaining()) {
-                                    channel?.write(writeBuffer)?.get()
-                                }
-                            }.await()
-
-                            // Only flush if it's been long enough since the last flush
-                            if (currentTime - lastFlushTime > flushInterval) {
-                                lastFlushTime = currentTime
-                            }
-                        }
-                    } else {
-                        // Sleep a bit to avoid busy waiting
-                        withContext(Dispatchers.IO) {
-                            Thread.sleep(10)
-                        }
+                    val message = messageQueue.poll(100, TimeUnit.MILLISECONDS) ?: continue
+                    val activeWriter = writer ?: throw IOException("Bridge connection has no writer")
+                    synchronized(activeWriter) {
+                        activeWriter.write(message)
+                        activeWriter.flush()
                     }
                 }
             } catch (e: Exception) {
-                if (isConnected.get()) {
-                    isConnected.set(false)
-                    handleConnectionFailure(e)
-                }
+                if (isConnected.get()) handleConnectionFailure(e)
             }
         }
     }
 
     fun cancel() {
-        isConnected.set(false)
-        scope.cancel()
         closeConnection()
+        scope.cancel()
     }
 
     private fun closeConnection() {
         isConnected.set(false)
+        writer = null
         try {
-            channel?.close()
-        } catch (e: Exception) {
-            Log.err("Error closing connection", e)
+            socket?.close()
+        } catch (e: IOException) {
+            Log.err("Error closing bridge connection", e)
+        } finally {
+            socket = null
         }
     }
 
     fun message(message: String) {
-        if (isConnected.get()) {
-            messageQueue.add("message\n$message\n")
-        } else {
-            Log.warn("Cannot send message: not connected")
-        }
+        sendPayload("message", message)
     }
 
     fun send(command: String, vararg parameter: String?) {
         when (command) {
-            "crash" -> {
-                scope.launch {
-                    try {
-                        withContext(Dispatchers.IO) {
-                            Socket("mindustry.kr", 6000).use { socket ->
-                                socket.setSoTimeout(5000)
-                                BufferedWriter(OutputStreamWriter(socket.getOutputStream())).use { out ->
-                                    out.write("crash\n")
-                                    Scanner(socket.getInputStream()).use { sc ->
-                                        sc.nextLine()
-                                        out.write(parameter[0] + "\n")
-                                        out.write("null")
-                                        sc.nextLine()
-                                        Log.info("Crash log reported!")
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e: SocketTimeoutException) {
-                        Log.warn("Connection timed out. Crash report server may be closed.")
-                    } catch (e: IOException) {
-                        Log.err(e)
-                    }
-                }
-            }
+            "crash" -> sendPayload("crash", parameter.firstOrNull().orEmpty())
+            "exit" -> closeConnection()
+            else -> Log.warn("Unknown bridge command: $command")
+        }
+    }
 
-            "exit" -> {
-                if (isConnected.get()) {
-                    messageQueue.add("exit\n")
-                    closeConnection()
-                }
-            }
-
-            else -> {
-                Log.warn("Unknown command: $command")
-            }
+    private fun sendPayload(command: String, payload: String) {
+        if (!isConnected.get()) {
+            Log.warn("Cannot send bridge message: not connected")
+            return
+        }
+        if (payload.toByteArray().size > MAX_BRIDGE_LINE_LENGTH / 2) {
+            Log.warn("Bridge message exceeds the configured size limit")
+            return
+        }
+        if (!messageQueue.offer("$command\n${encodeBridgePayload(payload)}\n")) {
+            Log.warn("Bridge message queue is full")
         }
     }
 }

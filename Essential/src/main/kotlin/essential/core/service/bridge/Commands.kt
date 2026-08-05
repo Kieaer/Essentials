@@ -1,5 +1,6 @@
 package essential.core.service.bridge
 
+import arc.util.Log
 import essential.common.database.data.PlayerData
 import ksp.command.ClientCommand
 import mindustry.gen.Call
@@ -13,12 +14,14 @@ class Commands {
     fun broadcast(playerData: PlayerData?, arg: Array<out String>) {
         val message = arg[0]
 
-        if (BridgeService.isServerMode) {
-            (BridgeService.network as Server).sendAll("message", message)
-            (BridgeService.network as Server).lastSentMessage = message
-            Call.sendMessage(message)
-        } else {
-            (BridgeService.network as Client).message(message)
+        when (val network = BridgeService.network) {
+            is Server -> {
+                network.sendAll("message", message)
+                network.lastSentMessage = message
+                Call.sendMessage(message)
+            }
+            is Client -> network.message(message)
+            null -> Log.warn("Bridge is not configured; broadcast was not sent")
         }
     }
 }
