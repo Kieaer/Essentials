@@ -2,6 +2,11 @@ package essential.core.service.web
 
 import com.charleskorn.kaml.YamlComment
 import kotlinx.serialization.Serializable
+import java.security.SecureRandom
+import java.util.Base64
+
+private fun generateSessionSecret(): String =
+    ByteArray(48).also(SecureRandom()::nextBytes).let(Base64.getUrlEncoder().withoutPadding()::encodeToString)
 
 @Serializable
 data class WebConfig (
@@ -10,7 +15,7 @@ data class WebConfig (
     @YamlComment("Directory path where uploaded map files are stored")
     val uploadPath: String = "config/maps",
     @YamlComment("At least 32 characters of secret material used to encrypt and sign session cookies")
-    val sessionSecret: String = "",
+    val sessionSecret: String = generateSessionSecret(),
     @YamlComment("Only send session cookies over HTTPS")
     val secureCookie: Boolean = true,
     @YamlComment("Session validity duration in seconds (1 hour = 3600 seconds)")

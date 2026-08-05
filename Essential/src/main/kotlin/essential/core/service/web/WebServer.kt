@@ -116,8 +116,10 @@ class WebServer {
     private fun sessionKeys(secret: String): Pair<SecretKeySpec, SecretKeySpec> {
         val digest = MessageDigest.getInstance("SHA-512")
             .digest(secret.toByteArray(StandardCharsets.UTF_8))
-        return SecretKeySpec(digest.copyOfRange(0, 32), "AES") to
-            SecretKeySpec(digest.copyOfRange(32, 64), "HmacSHA256")
+        // Ktor's session transformer uses this value as both the AES key and IV;
+        // its supported transport format therefore requires exactly 16 bytes.
+        return SecretKeySpec(digest.copyOfRange(0, 16), "AES") to
+            SecretKeySpec(digest.copyOfRange(16, 48), "HmacSHA256")
     }
 
     fun start() = synchronized(this@WebServer) {
