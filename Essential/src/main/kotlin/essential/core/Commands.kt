@@ -2289,7 +2289,7 @@ class Commands {
             return
         }
 
-        if (voterCooldown.containsKey(playerData.player.plainName())) {
+        if (voterCooldown.containsKey(playerData.uuid)) {
             playerData.err(coolTime)
             return
         }
