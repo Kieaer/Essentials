@@ -96,7 +96,20 @@ val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
 lateinit var actionFilter: Administration.ActionFilter
 
 private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}$")
+private val motdLocaleRegex = Regex("^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$")
 val worldEditSelection = mutableMapOf<String, WorldEditSelection>()
+
+internal fun normalizedMotdLocale(rawLocale: String): String? {
+    val tag = Locale.forLanguageTag(rawLocale.replace('_', '-')).toLanguageTag()
+    return tag.takeIf { it != "und" && motdLocaleRegex.matches(it) }
+}
+
+internal fun readMotd(rawLocale: String): String? {
+    val motdDirectory = rootPath.child("motd")
+    val localizedFile = normalizedMotdLocale(rawLocale)?.let { motdDirectory.child("$it.txt") }
+    val file = localizedFile?.takeIf { it.exists() } ?: motdDirectory.child("en.txt")
+    return file.takeIf { it.exists() }?.readString()
+}
 
 var dpsBlocks = 0f
 var dpsTile: Tile? = null
@@ -1105,14 +1118,7 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     playerData.player.admin(Permission[playerData].admin)
 
     // Load the Message of the Day (MOTD) based on the player's language
-    val motd = if (rootPath.child("motd/${player.locale()}.txt").exists()) {
-        rootPath.child("motd/${player.locale()}.txt").readString()
-    } else if (rootPath.child("motd").list().isNotEmpty()) {
-        val file = rootPath.child("motd/en.txt")
-        if (file.exists()) file.readString() else null
-    } else {
-        null
-    }
+    val motd = readMotd(player.locale())
 
     // If the MOTD exceeds 10 lines, display it as a full-screen message
     if (motd != null) {

@@ -1268,12 +1268,7 @@ class Commands {
     @ClientCommand("motd", description = "Show server's message of the day")
     fun motd(playerData: PlayerData) {
         val player = playerData.player
-        val motd = if (rootPath.child("motd/${player.locale()}.txt").exists()) {
-            rootPath.child("motd/${player.locale()}.txt").readString()
-        } else {
-            val file = rootPath.child("motd/en.txt")
-            if (file.exists()) file.readString() else ""
-        }
+        val motd = readMotd(player.locale()).orEmpty()
         if (motd.isNotEmpty()) {
             val count = motd.split("\r\n|\r|\n").toTypedArray().size
             if (count > 10) Call.infoMessage(player.con(), motd) else player.sendMessage(motd)
