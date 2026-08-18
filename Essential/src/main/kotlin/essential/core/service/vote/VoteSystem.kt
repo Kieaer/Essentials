@@ -314,14 +314,11 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         }
 
                         VoteType.Random -> {
-                            if (nextVoteAvailable.hasPassedNow() && !Permission.check(voteData.starter, "vote.random.bypass")) {
-                                send("command.vote.random.cool")
-                            } else {
-                                voterCooldown[voteData.starter.uuid] = timeSource.markNow().plus(7.minutes)
-                                nextVoteAvailable = timeSource.markNow().plus(5.minutes)
-                                send("command.vote.random.done")
-                                send("command.vote.random.is")
-                                Time.runTask(180f, object : Timer.Task() {
+                            voterCooldown[voteData.starter.uuid] = timeSource.markNow().plus(7.minutes)
+                            nextVoteAvailable = timeSource.markNow().plus(5.minutes)
+                            send("command.vote.random.done")
+                            send("command.vote.random.is")
+                            Time.runTask(180f, object : Timer.Task() {
                                     override fun run() {
                                         when (kotlin.random.Random.nextInt(7)) {
                                             0 -> {
@@ -430,7 +427,6 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                                         }
                                     }
                                 })
-                            }
                         }
                     }
 

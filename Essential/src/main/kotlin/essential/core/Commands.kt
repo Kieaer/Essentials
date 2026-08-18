@@ -2289,9 +2289,23 @@ class Commands {
             return
         }
 
-        if (voterCooldown.containsKey(playerData.uuid)) {
-            playerData.err(coolTime)
+        if (arg[0] == "reset") {
+            if (!Permission.check(playerData, "vote.reset")) return
+            isVoting = false
+            nextVoteAvailable = timeSource.markNow()
+            voterCooldown.clear()
+            playerData.send("command.vote.reset")
             return
+        }
+
+        val cooldown = voterCooldown[playerData.uuid]
+        if (cooldown != null) {
+            if (!cooldown.hasPassedNow()) {
+                playerData.err(coolTime)
+                return
+            } else {
+                voterCooldown.remove(playerData.uuid)
+            }
         }
 
         val solo = players.size == 1 && arg[0] == "map"
@@ -2465,14 +2479,6 @@ class Commands {
                 } else {
                     playerData.err(coolTime)
                 }
-            }
-
-            "reset" -> {
-                if (!Permission.check(playerData, "vote.reset")) return
-                isVoting = false
-                nextVoteAvailable = timeSource.markNow()
-                voterCooldown.clear()
-                playerData.send("command.vote.reset")
             }
 
             else -> {

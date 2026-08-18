@@ -11,6 +11,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
@@ -57,7 +58,7 @@ val playTime : String get() = (timeSource.markNow() - mapStartTime).toHString()
 var nextVoteAvailable : TimeMark = timeSource.markNow()
 
 /** Remaining vote cooldown per player (UUID -> TimeMark) */
-var voterCooldown = mutableMapOf<String, TimeMark>()
+var voterCooldown = ConcurrentHashMap<String, TimeMark>()
 
 /** Whether a vote is in progress */
 var isVoting = false
