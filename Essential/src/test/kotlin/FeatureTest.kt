@@ -5,17 +5,23 @@ import PluginTest.Companion.player
 import PluginTest.Companion.setPermission
 import essential.common.database.data.checkRoutingPermission
 import essential.common.database.data.consumeRoutingPermission
+import essential.common.database.data.getPlayerData
 import essential.common.database.data.plugin.WarpBlock
 import essential.common.database.table.ServerRoutingTable
 import essential.common.players
+import essential.common.permission.Permission
 import essential.common.pluginData
 import essential.common.systemTimezone
 import essential.core.Main
 import essential.core.connectPacket
+import essential.core.tap
+import arc.Events
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.toLocalDateTime
 import mindustry.Vars
 import mindustry.game.EventType.ConnectPacketEvent
+import mindustry.game.EventType.TapEvent
+import mindustry.game.EventType.WorldLoadEvent
 import mindustry.game.Team
 import mindustry.net.NetConnection
 import mindustry.net.Packets
@@ -311,5 +317,111 @@ class FeatureTest {
         // The one with lowest win rate should have 4, one with second lowest should have 3, others 2.
         assertTrue(finalCounts.contains(4))
         assertTrue(finalCounts.contains(3))
+    }
+
+    @Test
+    fun pvpWorldLoadAutoTeamTest() {
+        setPermission("owner", true)
+
+        Main.conf = Main.conf.copy(feature = Main.conf.feature.copy(pvp = Main.conf.feature.pvp.copy(autoTeam = true, spector = true)))
+
+        clientCommand.handleMessage("/changemap Glacier pvp", player)
+        assertTrue(awaitCondition(7000L, 100L) { Vars.state.rules.pvp })
+
+        val testTeams = listOf(Team.sharded, Team.crux)
+        for (team in testTeams) {
+            val tile = PluginTest.randomTile()
+            tile.setNet(mindustry.content.Blocks.coreShard, team, 0)
+        }
+
+        val p1 = newPlayer()
+        p1.first.team(Team.sharded)
+        p1.second.pvpWinCount = 8
+        p1.second.pvpLoseCount = 2
+
+        val p2 = newPlayer()
+        p2.first.team(Team.sharded)
+        p2.second.pvpWinCount = 7
+        p2.second.pvpLoseCount = 3
+
+        // Simulate players who lost the previous match and became derelict
+        val p3 = newPlayer()
+        p3.first.team(Team.derelict)
+        p3.second.pvpWinCount = 4
+        p3.second.pvpLoseCount = 6
+
+        val p4 = newPlayer()
+        p4.first.team(Team.derelict)
+        p4.second.pvpWinCount = 3
+        p4.second.pvpLoseCount = 7
+
+        // Simulate an intentional spectator with pvp.spector permission
+        val pAdmin = newPlayer()
+        pAdmin.first.team(Team.derelict)
+        setPermission(pAdmin.first, "admin", true)
+
+        // Fire WorldLoadEvent to simulate transitioning to the next world
+        Events.fire(WorldLoadEvent())
+
+        // Non-spectator players should no longer be Team.derelict
+        assertNotEquals(Team.derelict, p1.first.team(), "Player 1 should not be derelict after world load")
+        assertNotEquals(Team.derelict, p2.first.team(), "Player 2 should not be derelict after world load")
+        assertNotEquals(Team.derelict, p3.first.team(), "Player 3 should not be derelict after world load")
+        assertNotEquals(Team.derelict, p4.first.team(), "Player 4 should not be derelict after world load")
+
+        // Player with pvp.spector permission should remain Team.derelict
+        assertEquals(Team.derelict, pAdmin.first.team(), "Admin spectator should remain derelict")
+
+        // Non-spectator players should be balanced between the active teams
+        val activeNonSpectators = players.filter { !Permission.check(it, "pvp.spector") }
+        val shardedCount = activeNonSpectators.count { it.player.team() == Team.sharded }
+        val cruxCount = activeNonSpectators.count { it.player.team() == Team.crux }
+        assertEquals(activeNonSpectators.size, shardedCount + cruxCount, "All active non-spectators should be on Sharded or Crux")
+        assertTrue(kotlin.math.abs(shardedCount - cruxCount) <= 2, "Teams should be balanced within autoTeam handicap range")
+    }
+
+    @Test
+    fun playerDataSavedBeforeWarpBlockTransfer() {
+        val p = newPlayer()
+        val testPlayer = p.first
+        val testPlayerData = p.second
+        val currentMapName = Vars.state.map.name()
+        val originalWarpBlocks = pluginData.data.warpBlock.map { it.copy().apply { online = it.online } }
+
+        try {
+            val tile = PluginTest.randomTile()
+            tile.setBlock(mindustry.content.Blocks.router)
+
+            pluginData.data.warpBlock.clear()
+            pluginData.data.warpBlock.add(
+                WarpBlock(
+                    mapName = currentMapName,
+                    x = tile.build.tileX(),
+                    y = tile.build.tileY(),
+                    tileName = tile.block().name,
+                    size = 1,
+                    ip = "127.0.0.1",
+                    port = 6567,
+                    description = "warp-test-target"
+                ).apply { online = true }
+            )
+
+            testPlayerData.exp = 99999
+            testPlayerData.totalPlayed = 88888
+            testPlayerData.blockPlaceCount = 77777
+
+            tap(TapEvent(testPlayer, tile))
+
+            assertTrue(
+                awaitCondition {
+                    val dbData = runBlocking { getPlayerData(testPlayerData.uuid) }
+                    dbData != null && dbData.exp == 99999 && dbData.totalPlayed == 88888 && dbData.blockPlaceCount == 77777 && !dbData.isConnected
+                },
+                "WarpBlock 탭 후 대상 서버 연결 전에 playerData가 DB에 즉시 저장되어야 합니다."
+            )
+        } finally {
+            pluginData.data.warpBlock.clear()
+            pluginData.data.warpBlock.addAll(originalWarpBlocks)
+        }
     }
 }

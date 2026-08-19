@@ -47,7 +47,9 @@ import java.nio.ByteBuffer
 import java.util.function.Consumer
 import kotlin.math.floor
 import kotlin.random.Random
+import kotlin.time.Clock
 import kotlin.time.Instant
+import essential.common.database.data.update
 
 
 class Trigger {
@@ -555,14 +557,18 @@ class Trigger {
 
                         val currentMapName = Vars.state.map.name()
                         val hubMapName = pluginData.hubMapName
-                        if (hubMapName != null && currentMapName == hubMapName) {
-                            scope.launch {
+                        scope.launch {
+                            data.lastPlayedWorldName = Vars.state.map.plainName()
+                            data.lastPlayedWorldMode = Vars.state.rules.modeName
+                            data.lastLogoutDate = Clock.System.now().toLocalDateTime(systemTimezone)
+                            data.isConnected = false
+                            data.update()
+
+                            if (hubMapName != null && currentMapName == hubMapName) {
                                 val targetServerName = "${two.ip}:${two.port}"
                                 val hubConnectionTime = Instant.fromEpochMilliseconds(data.player.con().connectTime).toLocalDateTime(systemTimezone)
                                 grantRoutingPermission(data.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
-                                Call.connect(data.player.con(), two.ip, two.port)
                             }
-                        } else {
                             Call.connect(data.player.con(), two.ip, two.port)
                         }
                         break
@@ -649,15 +655,19 @@ class Trigger {
 
                                 val currentMapName = Vars.state.map.name()
                                 val hubMapName = pluginData.hubMapName
-                                if (hubMapName != null && currentMapName == hubMapName) {
-                                    scope.launch {
+                                scope.launch {
+                                    it.lastPlayedWorldName = Vars.state.map.plainName()
+                                    it.lastPlayedWorldMode = Vars.state.rules.modeName
+                                    it.lastLogoutDate = Clock.System.now().toLocalDateTime(systemTimezone)
+                                    it.isConnected = false
+                                    it.update()
+
+                                    if (hubMapName != null && currentMapName == hubMapName) {
                                         val targetServerName = if (server.size == 1) "${server[0]}:6567" else "${server[0]}:${server[1]}"
                                         val hubConnectionTime = Instant.fromEpochMilliseconds(it.player.con().connectTime).toLocalDateTime(systemTimezone)
                                         grantRoutingPermission(it.player.uuid(), hubMapName, targetServerName, port, hubConnectionTime)
                                         Log.debug("Granted routing permission for ${it.player.plainName()} to $targetServerName (AFK)")
-                                        Call.connect(it.player.con(), server[0], port)
                                     }
-                                } else {
                                     Call.connect(it.player.con(), server[0], port)
                                 }
                             }

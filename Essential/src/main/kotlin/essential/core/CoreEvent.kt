@@ -242,8 +242,8 @@ fun tap(event: TapEvent) {
         pluginData.data.warpBlock.forEach { two ->
             if (two.mapName == Vars.state.map.name() && event.tile.block().name == two.tileName && event.tile.build.tileX() == two.x && event.tile.build.tileY() == two.y) {
                 if (two.online) {
-                    players.forEach { data ->
-                        data.send("event.tap.server", event.player.plainName(), two.description)
+                    players.forEach { p ->
+                        p.send("event.tap.server", event.player.plainName(), two.description)
                     }
                     // why?
                     val format = NumberFormat.getNumberInstance(Locale.US)
@@ -257,14 +257,18 @@ fun tap(event: TapEvent) {
 
                     val currentMapName = Vars.state.map.name()
                     val hubMapName = pluginData.hubMapName
-                    if (hubMapName != null && currentMapName == hubMapName) {
-                        scope.launch {
+                    scope.launch {
+                        data.lastPlayedWorldName = Vars.state.map.plainName()
+                        data.lastPlayedWorldMode = Vars.state.rules.modeName
+                        data.lastLogoutDate = Clock.System.now().toLocalDateTime(systemTimezone)
+                        data.isConnected = false
+                        data.update()
+
+                        if (hubMapName != null && currentMapName == hubMapName) {
                             val targetServerName = "${two.ip}:${two.port}"
                             val hubConnectionTime = Instant.fromEpochMilliseconds(event.player.con().connectTime).toLocalDateTime(systemTimezone)
                             grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
-                            Call.connect(event.player.con(), two.ip, two.port)
                         }
-                    } else {
                         Call.connect(event.player.con(), two.ip, two.port)
                     }
                 }
@@ -283,14 +287,18 @@ fun tap(event: TapEvent) {
 
                 val currentMapName = Vars.state.map.name()
                 val hubMapName = pluginData.hubMapName
-                if (hubMapName != null && currentMapName == hubMapName) {
-                    scope.launch {
+                scope.launch {
+                    data.lastPlayedWorldName = Vars.state.map.plainName()
+                    data.lastPlayedWorldMode = Vars.state.rules.modeName
+                    data.lastLogoutDate = Clock.System.now().toLocalDateTime(systemTimezone)
+                    data.isConnected = false
+                    data.update()
+
+                    if (hubMapName != null && currentMapName == hubMapName) {
                         val targetServerName = "${two.ip}:${two.port}"
                         val hubConnectionTime = Instant.fromEpochMilliseconds(event.player.con().connectTime).toLocalDateTime(systemTimezone)
                         grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
-                        Call.connect(event.player.con(), two.ip, two.port)
                     }
-                } else {
                     Call.connect(event.player.con(), two.ip, two.port)
                 }
                 continue
