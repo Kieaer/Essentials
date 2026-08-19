@@ -1,6 +1,5 @@
 package essential.common.database.data
 
-import essential.common.DATABASE_VERSION
 import essential.common.database.data.plugin.WarpBlock
 import essential.common.database.data.plugin.WarpCount
 import essential.common.database.data.plugin.WarpTotal
@@ -46,7 +45,7 @@ suspend fun createPluginData(): PluginData {
     val displayData = DisplayData()
     return suspendTransaction {
         PluginTable.insert {
-            it[PluginTable.databaseVersion] = DATABASE_VERSION
+            it[PluginTable.databaseVersion] = 0u
             it[PluginTable.hubMapName] = null
             it[PluginTable.data] = Json.encodeToString(displayData)
         }

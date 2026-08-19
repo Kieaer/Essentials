@@ -16,8 +16,6 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
-/** Current database version */
-const val DATABASE_VERSION: UByte = 5u
 
 /** Plugin version */
 val PLUGIN_VERSION: String get() {

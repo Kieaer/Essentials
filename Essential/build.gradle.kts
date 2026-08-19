@@ -22,6 +22,7 @@ dependencies {
     implementation(libs.bundles.kotlinxEcosystem)
     implementation(libs.bundles.exposed)
     implementation(libs.bundles.r2dbc.drivers)
+    implementation(libs.bundles.flyway)
     implementation(libs.bundles.ktor)
     implementation(libs.jfiglet)
     implementation(libs.maven.check)
@@ -35,6 +36,7 @@ dependencies {
     testImplementation(libs.bundles.kotlinxEcosystem)
     testImplementation(libs.bundles.exposed)
     testImplementation(libs.bundles.r2dbc.drivers)
+    testImplementation(libs.bundles.flyway)
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.jbcrypt)
 }

@@ -99,7 +99,11 @@
 # ProGuard doesn't remove or rename resources unless configured with -adaptresourcefilenames/-adaptresourcefilecontents.
 # Since we don't use those options here, no explicit resource keep rules are required.
 
-# 9) If you enable obfuscation later, you may also want to preserve names in these packages to be extra safe:
+# 9) Flyway Database Migrations
+-keep class org.flywaydb.** { *; }
+-dontwarn org.flywaydb.**
+
+# 10) If you enable obfuscation later, you may also want to preserve names in these packages to be extra safe:
 # -keepnames class essential.** { *; }
 # -keepnames class io.ktor.** { *; }
 # -keepnames class org.jetbrains.exposed.** { *; }

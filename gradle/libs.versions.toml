@@ -6,6 +6,7 @@ kotlinxSerialization = "1.11.0"
 ksp = "2.3.7"
 kotlinpoet = "2.3.0"
 
+arc = "v159.7"
 mindustry = "v159.7"
 local = "local-SNAPSHOT"
 kaml = "0.104.0"
@@ -35,11 +36,17 @@ r2dbcPostgresql = "1.1.1.RELEASE"
 
 testcontainers = "2.0.4"
 jdbcPostgresql = "42.7.7"
+mariadb = "3.5.1"
+flyway = "10.21.0"
 
 [libraries]
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+flyway-mysql = { module = "org.flywaydb:flyway-mysql", version.ref = "flyway" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "jdbcPostgresql" }
+mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mariadb" }
 
 kotlinxSerializer = { module="org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization"}
 kotlinxDatetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime-jvm", version.ref = "kotlinxDatetime" }
@@ -81,6 +88,7 @@ jts = { module = "org.locationtech.jts:jts-core", version.ref = "jts" }
 jbcrypt = { module = "de.svenkubiak:jBCrypt", version.ref = "jbcrypt" }
 lingua = { module = "com.github.pemistahl:lingua", version.ref = "lingua" }
 discord = { module = "net.dv8tion:JDA", version.ref = "discord" }
+headless = { module = "com.github.Anuken.Arc:backend-headless", version.ref = "arc" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlinpoet = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
@@ -98,8 +106,9 @@ proguard = { module = "com.guardsquare:proguard-base", version.ref = "proguard"}
 kotlinxEcosystem = ["kotlinxDatetime", "kotlinxCoroutines", "kotlinxSerializer"]
 exposed = ["exposed-core", "exposed-r2dbc", "exposed-kotlin-time", "exposed-json", "exposed-migration-core", "exposed-migration-r2dbc"]
 game = ["mindustry"]
-game-test = ["mindustry", "datafaker", "mockito", "jts"]
+game-test = ["mindustry", "headless", "datafaker", "mockito", "jts"]
 r2dbc-drivers = ["r2dbc-h2", "r2dbc-mariadb", "r2dbc-mysql", "r2dbc-pool", "r2dbc-postgresql"]
+flyway = ["flyway-core", "flyway-database-postgresql", "flyway-mysql", "postgresql", "mariadb"]
 ktor = ["ktor", "ktor-netty", "ktor-content", "ktor-serialize-json", "ktor-auth", "ktor-auth-jwt", "ktor-sessions", "ktor-html", "ktor-websockets", "ktor-rate-limit"]
 testcontainers = ["testcontainers", "testcontainers-postgresql", "postgresql"]
 

@@ -1,7 +1,6 @@
 package essential.common.database
 
 import arc.util.Log
-import essential.common.DATABASE_VERSION
 import essential.common.bundle
 import essential.common.database.data.getPluginData
 import essential.common.database.data.update
@@ -38,6 +37,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mariadb.r2dbc.MariadbConnectionConfiguration
 import org.mariadb.r2dbc.MariadbConnectionFactory
+import org.flywaydb.core.Flyway
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import java.time.Duration
@@ -107,7 +107,12 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
 
     TransactionManager.defaultDatabase = defaultDatabase!!
 
-    upgradeDatabase()
+    upgradeLegacyDatabase()
+
+    val currentDbVersion = runFlywayMigration(databaseType, r2dbcUrl, user, pass)
+    if (currentDbVersion != null) {
+        currentDbVersion.toUByteOrNull()?.let { updatePluginVersion(it) }
+    }
 
     suspendTransaction {
         val tablesToCreate = listOf(
@@ -121,6 +126,48 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
         )
 
         SchemaUtils.create(*tablesToCreate.toTypedArray())
+    }
+}
+
+/**
+ * Execute Flyway migrations
+ */
+fun runFlywayMigration(databaseType: String, r2dbcUrl: String, user: String, pass: String): String? {
+    val (jdbcUrl, effectiveUser, effectivePass) = when (databaseType) {
+        "postgresql" -> {
+            val (host, port, database) = parseR2dbcUrl(r2dbcUrl, "postgresql://", "5432")
+            Triple("jdbc:postgresql://$host:$port/$database", user, pass)
+        }
+        "mysql" -> {
+            val (host, port, database) = parseR2dbcUrl(r2dbcUrl, "mysql://", "3306")
+            Triple("jdbc:mysql://$host:$port/$database", user, pass)
+        }
+        "mariadb" -> {
+            val (host, port, database) = parseR2dbcUrl(r2dbcUrl, "mariadb://", "3306")
+            Triple("jdbc:mariadb://$host:$port/$database", user, pass)
+        }
+        else -> Triple("jdbc:h2:./config/mods/Essentials/data/database;AUTO_SERVER=TRUE", "sa", "123")
+    }
+
+    val modClassLoader = Main::class.java.classLoader
+    val prevClassLoader = Thread.currentThread().contextClassLoader
+    return try {
+        Thread.currentThread().contextClassLoader = modClassLoader
+        val flyway = Flyway.configure(modClassLoader)
+            .dataSource(jdbcUrl, effectiveUser, effectivePass)
+            .locations("classpath:db/migration")
+            .baselineOnMigrate(true)
+            .baselineVersion("5")
+            .load()
+        flyway.migrate()
+        val currentVersion = flyway.info().current()?.version?.version ?: "5"
+        Log.info(bundle["database.upgrade.upToDate", currentVersion])
+        currentVersion
+    } catch (e: Exception) {
+        Log.err("Flyway migration failed: ${e.message}", e)
+        null
+    } finally {
+        Thread.currentThread().contextClassLoader = prevClassLoader
     }
 }
 
@@ -210,7 +257,9 @@ private suspend fun updatePluginVersion(version: UByte) {
     }
 }
 
-private suspend fun upgradeDatabase() {
+private const val LEGACY_BASELINE_VERSION: UByte = 5u
+
+private suspend fun upgradeLegacyDatabase() {
     try {
         var currentVersion: UByte?
 
@@ -239,14 +288,13 @@ private suspend fun upgradeDatabase() {
         }
 
         if (currentVersion == null) {
-            Log.info(bundle["database.upgrade.upToDate", DATABASE_VERSION])
             return
         }
 
-        if (currentVersion < DATABASE_VERSION) {
-            Log.info(bundle["database.upgrade.start", currentVersion, DATABASE_VERSION])
+        if (currentVersion < LEGACY_BASELINE_VERSION) {
+            Log.info(bundle["database.upgrade.start", currentVersion, LEGACY_BASELINE_VERSION])
 
-            for (v in (currentVersion.toUInt() + 1u)..DATABASE_VERSION.toUInt()) {
+            for (v in (currentVersion.toUInt() + 1u)..LEGACY_BASELINE_VERSION.toUInt()) {
                 val version = v.toUByte()
                 val dialectSuffix = when (defaultDatabase!!.config.explicitDialect) {
                     is H2Dialect -> "_h2"
@@ -264,28 +312,28 @@ private suspend fun upgradeDatabase() {
                             val sqlScript = inputStream.bufferedReader(StandardCharsets.UTF_8).use { it.readText() }
                             Log.info(bundle["database.upgrade.execute", sqlFile])
 
-                             suspendTransaction {
-                                 sqlScript.split(";").map { it.trim() }.filter { it.isNotEmpty() }.forEach { statement ->
-                                     try {
-                                         exec(statement)
-                                     } catch (e: Throwable) {
-                                         val isCritical = statement.contains("plugin_data", true) ||
-                                             statement.contains("players", true)
-                                         if (isCritical) {
-                                             throw IllegalStateException("Critical statement failed: $statement", e)
-                                         }
-                                         Log.warn("Failed to execute statement: $statement. Reason: ${e.message}")
-                                     }
-                                 }
+                            suspendTransaction {
+                                sqlScript.split(";").map { it.trim() }.filter { it.isNotEmpty() }.forEach { statement ->
+                                    try {
+                                        exec(statement)
+                                    } catch (e: Throwable) {
+                                        val isCritical = statement.contains("plugin_data", true) ||
+                                            statement.contains("players", true)
+                                        if (isCritical) {
+                                            throw IllegalStateException("Critical statement failed: $statement", e)
+                                        }
+                                        Log.warn("Failed to execute statement: $statement. Reason: ${e.message}")
+                                    }
+                                }
 
-                                 updatePluginVersion(version)
-                                 
-                                 if (version == 4u.toUByte()) {
-                                     migrateStatusToAchievements()
-                                 }
-                             }
-                             break
-                         } catch (e: Throwable) {
+                                updatePluginVersion(version)
+                                
+                                if (version == 4u.toUByte()) {
+                                    migrateStatusToAchievements()
+                                }
+                            }
+                            break
+                        } catch (e: Throwable) {
                             e.printStackTrace()
                             throw e
                         }
@@ -293,12 +341,8 @@ private suspend fun upgradeDatabase() {
                 }
             }
 
-            // Final version update
-            updatePluginVersion(DATABASE_VERSION)
-
+            updatePluginVersion(LEGACY_BASELINE_VERSION)
             Log.info(bundle["database.upgrade.end"])
-        } else {
-            Log.info(bundle["database.upgrade.upToDate", DATABASE_VERSION])
         }
     } catch (e: Exception) {
         e.printStackTrace()

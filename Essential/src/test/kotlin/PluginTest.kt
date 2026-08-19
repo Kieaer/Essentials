@@ -10,7 +10,6 @@ import arc.util.CommandHandler
 import arc.util.Log
 import arc.util.TaskQueue
 import arc.util.Time
-import essential.common.DATABASE_VERSION
 import essential.common.bundle
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
@@ -477,6 +476,7 @@ class PluginTest {
     @Test
     fun dbUpgradeTest_20() {
         if (Core.app != null) stopPlugin()
+        loadGame(deleteConfig = false)
         Main.conf = CoreConfig()
 
         val dataDir = Paths.get("config", "mods", "Essentials", "data")
@@ -496,7 +496,7 @@ class PluginTest {
         file.copyTo(target, true)
 
         loadGame(deleteConfig = false, logHandler = {
-            val alreadyUpgraded = bundle["database.upgrade.upToDate", DATABASE_VERSION]
+            val alreadyUpgraded = bundle["database.upgrade.upToDate", "6"]
             if (it.contains(alreadyUpgraded)) {
                 fail("Upgrade logic not executed")
             }
