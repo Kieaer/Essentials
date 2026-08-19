@@ -41,6 +41,13 @@ const translations = {
         'maps.sort_popular': 'Popularity',
         'maps.votes': 'Rating: {0} votes',
         'maps.uploader': 'Uploaded by',
+        'maps.delete': 'Delete',
+        'maps.delete.title': 'Delete Map',
+        'maps.delete.confirm': 'Are you sure you want to delete the map "{0}"?',
+        'maps.delete.button': 'Delete',
+        'maps.delete.cancel': 'Cancel',
+        'maps.delete.success': 'Map deleted successfully',
+        'maps.delete.error': 'Failed to delete map',
 
         // Server status page
         'server.title': 'Server Status',
@@ -168,6 +175,13 @@ const translations = {
         'maps.sort_popular': '인기순',
         'maps.votes': '평가: {0}표',
         'maps.uploader': '업로드 한 사람',
+        'maps.delete': '삭제',
+        'maps.delete.title': '맵 삭제',
+        'maps.delete.confirm': '"{0}" 맵을 삭제하시겠습니까?',
+        'maps.delete.button': '삭제',
+        'maps.delete.cancel': '취소',
+        'maps.delete.success': '맵이 성공적으로 삭제되었습니다',
+        'maps.delete.error': '맵 삭제 실패',
 
         // Server status page
         'server.title': '서버 상태',
@@ -298,6 +312,13 @@ const translations = {
         'maps.sort_popular': 'Популярність',
         'maps.votes': 'Рейтинг: {0} голосів',
         'maps.uploader': 'Завантажено',
+        'maps.delete': 'Видалити',
+        'maps.delete.title': 'Видалити карту',
+        'maps.delete.confirm': 'Ви впевнені, що хочете видалити карту "{0}"?',
+        'maps.delete.button': 'Видалити',
+        'maps.delete.cancel': 'Скасувати',
+        'maps.delete.success': 'Карту успішно видалено',
+        'maps.delete.error': 'Не вдалося видалити карту',
 
         // Server status page
         'server.title': 'Стан сервера',

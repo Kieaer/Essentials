@@ -43,6 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set up map upload
     setupMapUpload();
 
+    // Set up map delete
+    setupMapDelete();
+
     // Set up map filter bar
     setupMapFilters();
 
@@ -632,6 +635,16 @@ function openMapImageModal(imageUrl, title) {
     overlay.classList.add('open');
 }
 
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#x27;');
+}
+
 function createMapCard(map, showDownload, horizontal = false) {
     const card = document.createElement('div');
     card.className = horizontal ? 'map-card-horizontal' : 'map-card-vertical';
@@ -643,6 +656,7 @@ function createMapCard(map, showDownload, horizontal = false) {
     const noDescriptionText = window.i18n.translate('maps.no.description');
     const downloadText = window.i18n.translate('maps.download');
     const uploaderText = window.i18n.translate('maps.uploader');
+    const deleteText = window.i18n.translate('maps.delete');
 
     // Theme selection depending on Planet
     const planetLower = (map.planet || 'serpulo').toLowerCase();
@@ -653,6 +667,9 @@ function createMapCard(map, showDownload, horizontal = false) {
     const formattedName = formatMindustryColors(map.name);
     const formattedUploader = formatMindustryColors(map.uploader);
     const votesText = window.i18n.translate('maps.votes', map.votes || 0);
+
+    const isUploader = isLoggedIn && currentUsername && map.uploader &&
+        currentUsername.toLowerCase() === map.uploader.toLowerCase();
 
     const thumbnail = map.thumbnail || imageUrl;
     const imageStyle = thumbnail ? `style="background-image: url(${thumbnail})"` : '';
@@ -673,13 +690,18 @@ function createMapCard(map, showDownload, horizontal = false) {
                     ${formattedUploader ? `<p><strong>${uploaderText}:</strong> ${formattedUploader}</p>` : ''}
                     <p><strong>${votesText}</strong></p>
                 </div>
-                ${showDownload ? `
                 <div class="map-actions">
+                    ${showDownload ? `
                     <a href="api/maps/download/${encodeURIComponent(map.name)}" class="download-outline-btn">
                         <i class="material-icons">file_download</i> <span>${downloadText}</span>
                     </a>
+                    ` : ''}
+                    ${isUploader ? `
+                    <button type="button" class="delete-outline-btn delete-map-btn" data-map-name="${escapeHtml(map.name)}">
+                        <i class="material-icons">delete_outline</i> <span>${deleteText}</span>
+                    </button>
+                    ` : ''}
                 </div>
-                ` : ''}
             </div>
         `;
 
@@ -687,8 +709,8 @@ function createMapCard(map, showDownload, horizontal = false) {
         if (imageUrl) {
             card.classList.add('map-card-clickable');
             card.addEventListener('click', (e) => {
-                // Ignore clicks on the download link/button
-                if (e.target.closest('a')) return;
+                // Ignore clicks on the download link/button or delete button
+                if (e.target.closest('a') || e.target.closest('.delete-map-btn')) return;
                 openMapImageModal(imageUrl, formattedName);
             });
         }
@@ -708,10 +730,17 @@ function createMapCard(map, showDownload, horizontal = false) {
                     ${formattedUploader ? `<p><strong>${uploaderText}:</strong> ${formattedUploader}</p>` : ''}
                     <p><strong>${votesText}</strong></p>
                 </div>
-                <div class="map-actions">
-                    <a href="api/maps/download/${encodeURIComponent(map.name)}" class="download-outline-btn-centered">
+                <div class="map-actions" style="display: flex; gap: 8px;">
+                    ${showDownload ? `
+                    <a href="api/maps/download/${encodeURIComponent(map.name)}" class="download-outline-btn-centered" style="flex: 1;">
                         <i class="material-icons">file_download</i> <span>${downloadText}</span>
                     </a>
+                    ` : ''}
+                    ${isUploader ? `
+                    <button type="button" class="delete-outline-btn-centered delete-map-btn" style="flex: 1;" data-map-name="${escapeHtml(map.name)}">
+                        <i class="material-icons">delete_outline</i> <span>${deleteText}</span>
+                    </button>
+                    ` : ''}
                 </div>
             </div>
         `;
@@ -719,6 +748,14 @@ function createMapCard(map, showDownload, horizontal = false) {
 
     const infoIcon = card.querySelector('.info-icon-btn');
     if (infoIcon) infoIcon.title = map.description || noDescriptionText;
+
+    const deleteBtn = card.querySelector('.delete-map-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openDeleteMapDialog(map.name);
+        });
+    }
 
     return card;
 }
@@ -999,6 +1036,7 @@ function setupMapUpload() {
             if (response.ok) {
                 uploadDialog.close();
                 loadMaps();
+                loadFeaturedMaps();
                 showSnackbar(window.i18n.translate('upload.success'));
             } else {
                 return response.text().then(text => {
@@ -1011,6 +1049,82 @@ function setupMapUpload() {
             uploadError.style.display = 'block';
         });
     });
+}
+
+// Map name pending deletion
+let mapNameToDelete = null;
+
+// Set up map delete dialog actions
+function setupMapDelete() {
+    const deleteDialog = document.getElementById('delete-map-dialog');
+    const deleteCancel = document.getElementById('delete-cancel');
+    const deleteCloseIcon = document.getElementById('delete-close-icon');
+    const deleteConfirm = document.getElementById('delete-confirm');
+    const deleteError = document.getElementById('delete-map-error');
+
+    if (deleteCancel && deleteDialog) {
+        deleteCancel.addEventListener('click', () => {
+            deleteDialog.close();
+            mapNameToDelete = null;
+        });
+    }
+
+    if (deleteCloseIcon && deleteDialog) {
+        deleteCloseIcon.addEventListener('click', () => {
+            deleteDialog.close();
+            mapNameToDelete = null;
+        });
+    }
+
+    if (deleteConfirm && deleteDialog) {
+        deleteConfirm.addEventListener('click', () => {
+            if (!mapNameToDelete) return;
+
+            if (deleteError) deleteError.style.display = 'none';
+
+            fetch(`api/maps/${encodeURIComponent(mapNameToDelete)}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    deleteDialog.close();
+                    mapNameToDelete = null;
+                    showSnackbar(window.i18n.translate('maps.delete.success'));
+                    loadMaps();
+                    loadFeaturedMaps();
+                } else {
+                    return response.text().then(text => {
+                        throw new Error(text || window.i18n.translate('maps.delete.error'));
+                    });
+                }
+            })
+            .catch(error => {
+                if (deleteError) {
+                    deleteError.textContent = error.message;
+                    deleteError.style.display = 'block';
+                } else {
+                    showSnackbar(error.message);
+                }
+            });
+        });
+    }
+}
+
+// Open confirmation modal for deleting a map
+function openDeleteMapDialog(mapName) {
+    const deleteDialog = document.getElementById('delete-map-dialog');
+    const deleteMessage = document.getElementById('delete-map-message');
+    const deleteError = document.getElementById('delete-map-error');
+
+    if (!deleteDialog) return;
+
+    mapNameToDelete = mapName;
+    if (deleteError) deleteError.style.display = 'none';
+    if (deleteMessage) {
+        deleteMessage.textContent = window.i18n.translate('maps.delete.confirm', mapName);
+    }
+
+    deleteDialog.showModal();
 }
 
 // Render dynamic player item row

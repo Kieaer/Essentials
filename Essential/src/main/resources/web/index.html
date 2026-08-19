@@ -409,6 +409,24 @@
                 <button type="button" class="dialog-btn confirm-btn" id="upload-confirm" data-i18n="upload.button">업로드</button>
             </div>
         </dialog>
+
+        <!--/* Delete Map Confirmation Dialog */-->
+        <dialog class="custom-dialog" id="delete-map-dialog">
+            <div class="dialog-header">
+                <h3 data-i18n="maps.delete.title">맵 삭제</h3>
+                <button class="dialog-close-btn" id="delete-close-icon">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <div class="dialog-body">
+                <p id="delete-map-message" data-i18n="maps.delete.confirm">이 맵을 삭제하시겠습니까?</p>
+                <div id="delete-map-error" class="upload-error-msg" style="display: none;"></div>
+            </div>
+            <div class="dialog-footer">
+                <button type="button" class="dialog-btn cancel-btn" id="delete-cancel" data-i18n="maps.delete.cancel">취소</button>
+                <button type="button" class="dialog-btn delete-confirm-btn" id="delete-confirm" data-i18n="maps.delete.button">삭제</button>
+            </div>
+        </dialog>
     </div>
 </body>
 </html>

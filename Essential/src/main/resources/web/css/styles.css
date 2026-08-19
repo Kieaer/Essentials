@@ -532,6 +532,30 @@ body {
     color: white;
 }
 
+.delete-outline-btn-centered {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--border-radius-sm);
+    border: 1.5px solid #ef4444;
+    color: #ef4444;
+    background: none;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+    transition: var(--transition-default);
+    width: 100%;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.delete-outline-btn-centered:hover {
+    background-color: #ef4444;
+    color: white;
+}
+
 /* Map Upload Card Shortcut */
 .upload-shortcut-card {
     background-color: var(--accent-orange-bg);
@@ -1151,6 +1175,29 @@ body {
     color: white;
 }
 
+.delete-outline-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 5px 12px;
+    border-radius: var(--border-radius-sm);
+    border: 1.5px solid #ef4444;
+    color: #ef4444;
+    background: none;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 12px;
+    transition: var(--transition-default);
+    width: max-content;
+    cursor: pointer;
+}
+
+.delete-outline-btn:hover {
+    background-color: #ef4444;
+    color: white;
+}
+
 /* Fallback planet themes for map cards (when preview is null) */
 .serpulo-theme {
     background: linear-gradient(135deg, #334155, #1e293b);
@@ -1320,6 +1367,15 @@ body {
 
 .confirm-btn:hover {
     background-color: var(--accent-orange-hover);
+}
+
+.delete-confirm-btn {
+    background-color: #ef4444;
+    color: white;
+}
+
+.delete-confirm-btn:hover {
+    background-color: #dc2626;
 }
 
 /* Modern Login Page Redesign */

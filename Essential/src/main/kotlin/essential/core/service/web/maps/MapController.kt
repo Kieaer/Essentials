@@ -244,6 +244,79 @@ class MapController {
         }
     }
 
+    suspend fun handleMapDelete(call: ApplicationCall, mapName: String) {
+        val session = call.sessions.get<UserSession>()
+        if (session == null) {
+            call.respond(HttpStatusCode.Unauthorized, "Unauthorized")
+            return
+        }
+
+        val map = Vars.maps.all().find { it.name() == mapName }
+        if (map == null) {
+            call.respond(HttpStatusCode.NotFound, "Map not found")
+            return
+        }
+
+        if (!map.custom) {
+            call.respond(HttpStatusCode.Forbidden, "Cannot delete default maps")
+            return
+        }
+
+        val uploader = uploadersMap[map.name()]
+        if (uploader == null || !uploader.equals(session.username, ignoreCase = true)) {
+            call.respond(HttpStatusCode.Forbidden, "You can only delete maps that you uploaded")
+            return
+        }
+
+        val mapFile = File(map.file.absolutePath())
+        val hash = getMapHash(mapFile)
+        val plainName = map.plainName()
+
+        // Remove uploader record
+        try {
+            uploadersMap.remove(map.name())
+            withContext(Dispatchers.IO) {
+                synchronized(uploadersMap) {
+                    val jsonText = Json.encodeToString(uploadersMap.toMap())
+                    uploadersFile.writeText(jsonText)
+                }
+            }
+        } catch (e: Exception) {
+            Log.err("Failed to update map uploaders JSON after deletion", e)
+        }
+
+        // Remove cache entries and image files
+        mapHashCache.remove(mapFile.absolutePath)
+        if (hash != null) {
+            withContext(Dispatchers.IO) {
+                try {
+                    webCacheDir.listFiles { _, name -> name.startsWith(hash) }?.forEach { it.delete() }
+                } catch (e: Exception) {
+                    Log.err("Failed to delete cached map images for hash $hash", e)
+                }
+            }
+        }
+
+        // Remove map from Mindustry and reload
+        Core.app.post {
+            Vars.maps.removeMap(map)
+            Vars.maps.reload()
+            Log.info("Map deleted: ${map.name()} by user '${session.username}'")
+        }
+
+        // Log the deletion
+        try {
+            writeLog(
+                LogType.Web,
+                "User '${session.username}' deleted map '$plainName' (file: '${mapFile.name}')"
+            )
+        } catch (le: Exception) {
+            Log.err("Error writing map delete log", le)
+        }
+
+        call.respond(HttpStatusCode.OK, "Map deleted successfully")
+    }
+
     suspend fun handleMapDownload(call: ApplicationCall, mapName: String) {
         val map = Vars.maps.all().find { it.name() == mapName }
         if (map == null) {
@@ -637,6 +710,11 @@ fun Route.mapRoutes(controller: MapController) {
 
             post("/upload") {
                 controller.handleMapUpload(call)
+            }
+
+            delete("/{name}") {
+                val mapName = call.parameters["name"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
+                controller.handleMapDelete(call, mapName)
             }
 
             get("/download/{name}") {
