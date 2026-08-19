@@ -302,7 +302,7 @@ enum class Achievement {
 
     APM50 {
         override fun value(): Int{
-            return 600
+            return 50
         }
 
         override fun current(data: PlayerData): Int{
@@ -312,7 +312,7 @@ enum class Achievement {
 
     APM100 {
         override fun value(): Int{
-            return 1200
+            return 100
         }
 
         override fun current(data: PlayerData): Int{
@@ -322,7 +322,7 @@ enum class Achievement {
 
     APM200 {
         override fun value(): Int{
-            return 2400
+            return 200
         }
 
         override fun current(data: PlayerData): Int{

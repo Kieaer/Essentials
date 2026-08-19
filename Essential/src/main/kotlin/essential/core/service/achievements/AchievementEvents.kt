@@ -29,10 +29,6 @@ private var isNoTurretsFailed = false
 private var isFlareOnlyFailed = false
 private var isDuoTurretFailed = false
 
-private fun incrementActionCount(data: PlayerData) {
-    APMTracker.trackAction(data)
-}
-
 @Event
 fun blockBuildEnd(event: BlockBuildEndEvent) {
     val unit = event.unit ?: return
@@ -40,9 +36,6 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
         val player = unit.player
         val data: PlayerData? = if (player != null) findPlayerData(player.uuid()) else null
         if (data != null) {
-            // Increment action count for APM calculation
-            incrementActionCount(data)
-
             if (Achievement.Builder.success(data)) {
                 Achievement.Builder.set(data)
             }
@@ -310,9 +303,6 @@ fun gameover(event: GameOverEvent) {
 @Event
 fun wave(event: WaveEvent) {
     players.forEach { data ->
-        // Increment action count for APM calculation
-        incrementActionCount(data)
-
         val value = data.status.getOrDefault("record.wave", "0").toInt() + 1
         data.status["record.wave"] = value.toString()
         if (Achievement.Defender.success(data)) {
@@ -358,9 +348,6 @@ fun playerChat(event: PlayerChatEvent) {
     if (!event.message.startsWith("/")) {
         val data: PlayerData? = findPlayerData(event.player.uuid())
         if (data != null) {
-            // Increment action count for APM calculation
-            incrementActionCount(data)
-
             val value = data.status.getOrDefault("record.time.chat", "0").toInt() + 1
             data.status["record.time.chat"] = value.toString()
             if (Achievement.Chatter.success(data)) {
@@ -401,9 +388,6 @@ fun unitChange(event: UnitChangeEvent) {
     if (event.player != null && event.unit != null) {
         val data: PlayerData? = findPlayerData(event.player.uuid())
         if (data != null) {
-            // Increment action count for APM calculation
-            incrementActionCount(data)
-
             if (state.rules.planet === Planets.serpulo && event.unit.type.name.equals("quad", true)) {
                 data.status["record.unit.serpulo.quad"] = "1"
                 if (Achievement.SerpuloQuad.success(data)) {
@@ -434,8 +418,6 @@ fun unitDestroy(event: UnitDestroyEvent) {
         val data: PlayerData? = findPlayerData(player.uuid())
 
         if (data != null && event.unit != null && event.unit.team() != player.team()) {
-            // Increment action count for APM calculation
-            incrementActionCount(data)
             val playerUnit = player.unit() ?: continue
 
             // Check for CrawlerBlockDestroyer achievement
@@ -717,70 +699,6 @@ fun playerLeave(event: PlayerLeave) {
                 if (Achievement.LeaveAndLosePvP.success(data)) {
                     Achievement.LeaveAndLosePvP.set(data)
                 }
-            }
-        }
-    }
-}
-
-@Event
-fun withdraw(event: WithdrawEvent) {
-    val player = event.player ?: return
-    val data: PlayerData? = findPlayerData(player.uuid())
-    if (data != null) {
-        // Increment action count for APM calculation
-        incrementActionCount(data)
-    }
-}
-
-@Event
-fun deposit(event: DepositEvent) {
-    val player = event.player ?: return
-    val data: PlayerData? = findPlayerData(player.uuid())
-    if (data != null) {
-        // Increment action count for APM calculation
-        incrementActionCount(data)
-    }
-}
-
-@Event
-fun config(event: ConfigEvent) {
-    val player = event.player ?: return
-    val data: PlayerData? = findPlayerData(player.uuid())
-    if (data != null) {
-        // Increment action count for APM calculation
-        incrementActionCount(data)
-    }
-}
-
-@Event
-fun tap(event: TapEvent) {
-    val data: PlayerData? = findPlayerData(event.player.uuid())
-    if (data != null) {
-        // Increment action count for APM calculation
-        incrementActionCount(data)
-    }
-}
-
-@Event
-fun blockBuildBegin(event: BlockBuildBeginEvent) {
-    if (event.unit.isPlayer) {
-        val data: PlayerData? = findPlayerData(event.unit.player.uuid())
-        if (data != null) {
-            // Increment action count for APM calculation
-            incrementActionCount(data)
-        }
-    }
-}
-
-@Event
-fun blockDestroy(event: BlockDestroyEvent) {
-    if (event.tile != null) {
-        // Find the player who destroyed the block
-        for (player in Groups.player) {
-            val data: PlayerData? = findPlayerData(player.uuid())
-            if (data != null && player.team() != event.tile.team()) {
-                // Increment action count for APM calculation
-                incrementActionCount(data)
             }
         }
     }

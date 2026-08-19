@@ -109,11 +109,6 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
 
     upgradeLegacyDatabase()
 
-    val currentDbVersion = runFlywayMigration(databaseType, r2dbcUrl, user, pass)
-    if (currentDbVersion != null) {
-        currentDbVersion.toUByteOrNull()?.let { updatePluginVersion(it) }
-    }
-
     suspendTransaction {
         val tablesToCreate = listOf(
             PlayerTable,
@@ -126,6 +121,11 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
         )
 
         SchemaUtils.create(*tablesToCreate.toTypedArray())
+    }
+
+    val currentDbVersion = runFlywayMigration(databaseType, r2dbcUrl, user, pass)
+    if (currentDbVersion != null) {
+        currentDbVersion.toUByteOrNull()?.let { updatePluginVersion(it) }
     }
 }
 
