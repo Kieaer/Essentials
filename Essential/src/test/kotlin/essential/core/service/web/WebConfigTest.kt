@@ -1,4 +1,5 @@
-import essential.core.service.web.WebConfig
+package essential.core.service.web
+
 import kotlin.test.Test
 import kotlin.test.assertTrue
 

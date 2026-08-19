@@ -1,5 +1,5 @@
-import PluginTest.Companion.loadGame
-import PluginTest.Companion.newPlayer
+package essential.core.service.web
+
 import essential.common.database.data.getAverageContribution
 import essential.common.database.data.getContributionCount
 import essential.common.database.data.getPlayerContributions
@@ -17,14 +17,14 @@ class ContributionTest {
     @BeforeTest
     fun setup() {
         if (!done) {
-            loadGame(true)
+            PluginTest.loadGame(true)
             done = true
         }
     }
 
     @Test
     fun contribution_insertAndAverage() {
-        val target = newPlayer()
+        val target = PluginTest.newPlayer()
         runBlocking {
             insertContribution(target.second, "pvp", "map-a", 100.0)
             insertContribution(target.second, "pvp", "map-b", 200.0)
@@ -40,7 +40,7 @@ class ContributionTest {
 
     @Test
     fun contribution_emptyAverageIsZero() {
-        val target = newPlayer()
+        val target = PluginTest.newPlayer()
         runBlocking {
             assertEquals(0, getContributionCount(target.second))
             assertEquals(0.0, getAverageContribution(target.second), 0.001)

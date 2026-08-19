@@ -1,3 +1,5 @@
+package essential.core
+
 import PluginTest.Companion.loadGame
 import PluginTest.Companion.newPlayer
 import PluginTest.Companion.serverCommand

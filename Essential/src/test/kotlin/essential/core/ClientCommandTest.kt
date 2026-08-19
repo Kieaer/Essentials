@@ -1,3 +1,5 @@
+package essential.core
+
 import PluginTest.Companion.clientCommand
 import PluginTest.Companion.createPlayer
 import PluginTest.Companion.err
@@ -14,10 +16,11 @@ import essential.common.database.data.PlayerData
 import essential.common.database.data.getPlayerData
 import essential.common.players
 import essential.common.pluginData
+import essential.common.timeSource
 import essential.common.util.findPlayerData
-import essential.core.Commands
-import essential.core.dpsBlocks
+import essential.common.voterCooldown
 import kotlinx.coroutines.runBlocking
+import kotlin.time.Duration.Companion.minutes
 import mindustry.Vars
 import mindustry.Vars.world
 import mindustry.content.Blocks
@@ -1191,6 +1194,22 @@ class ClientCommandTest {
 
         // Test without providing parameters
         clientCommand.handleMessage("/vote", player)
+
+        // Test vote cooldown active
+        voterCooldown[playerData.uuid] = timeSource.markNow().plus(3.minutes)
+        clientCommand.handleMessage("/vote skip 1", player)
+        assertEquals(err("command.vote.coolTime"), playerData.lastReceivedMessage)
+
+        // Test vote cooldown expired
+        voterCooldown[playerData.uuid] = timeSource.markNow().minus(1.minutes)
+        clientCommand.handleMessage("/vote invalidtype", player)
+        assertFalse(voterCooldown.containsKey(playerData.uuid))
+
+        // Test vote reset command
+        setPermission("owner", true)
+        voterCooldown[playerData.uuid] = timeSource.markNow().plus(3.minutes)
+        clientCommand.handleMessage("/vote reset", player)
+        assertFalse(voterCooldown.containsKey(playerData.uuid))
     }
 
     @Test
