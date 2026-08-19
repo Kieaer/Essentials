@@ -9,7 +9,13 @@ plugins {
     jacoco
 }
 
+val mindustryAssets: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
 dependencies {
+    mindustryAssets("Anuken:Mindustry:${rootProject.libs.versions.mindustry.get()}:assets@jar")
     compileOnly(rootProject.libs.bundles.game)
     ksp(project(":ksp-processor"))
     implementation(project(":ksp-processor"))
@@ -31,6 +37,50 @@ dependencies {
     testImplementation(libs.bundles.r2dbc.drivers)
     testImplementation(libs.bundles.testcontainers)
     testImplementation(libs.jbcrypt)
+}
+
+abstract class ExtractMindustryBundlesTask @javax.inject.Inject constructor(
+    private val archiveOperations: ArchiveOperations,
+    private val fileSystemOperations: FileSystemOperations
+) : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val assetsJar: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun extract() {
+        val jarFiles = assetsJar.files
+        if (jarFiles.isEmpty()) return
+
+        fileSystemOperations.sync {
+            jarFiles.forEach { jar ->
+                from(archiveOperations.zipTree(jar)) {
+                    include("**/bundle*.properties")
+                    eachFile {
+                        path = "bundles/mindustry/" + name
+                    }
+                    includeEmptyDirs = false
+                }
+            }
+            into(outputDir)
+        }
+    }
+}
+
+val extractMindustryBundles by tasks.registering(ExtractMindustryBundlesTask::class) {
+    assetsJar.from(mindustryAssets)
+    outputDir.set(layout.buildDirectory.dir("generated/resources/mindustry-bundles"))
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir(extractMindustryBundles)
+        }
+    }
 }
 
 
