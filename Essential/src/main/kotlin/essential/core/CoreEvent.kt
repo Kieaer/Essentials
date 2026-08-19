@@ -935,10 +935,44 @@ fun worldLoad(event: WorldLoadEvent) {
 
     if (Vars.state.rules.pvp) {
         pvpSpecters.clear()
+        pvpPlayer.clear()
+
+        val activeTeams = Vars.state.teams?.active
+        val hasActiveTeams = activeTeams != null && activeTeams.any()
 
         for (data in players) {
             if (Permission.check(data, "pvp.spector")) {
                 data.player.team(Team.derelict)
+            }
+        }
+
+        if (hasActiveTeams) {
+            val nonSpectators = players.filter { !Permission.check(it, "pvp.spector") }
+            if (conf.feature.pvp.autoTeam) {
+                nonSpectators.forEach { it.player.team(Team.derelict) }
+                nonSpectators.forEach { data ->
+                    val bestTeam = selectAutoTeam(data)
+                    if (bestTeam != null) {
+                        data.player.team(bestTeam)
+                        pvpPlayer[data.uuid] = bestTeam
+                    }
+                }
+            } else {
+                nonSpectators.forEach { data ->
+                    val currentTeam = data.player.team()
+                    val isCurrentTeamActive = activeTeams.any { it.team == currentTeam }
+                    if (currentTeam == Team.derelict || !isCurrentTeamActive) {
+                        val bestTeam = activeTeams.minByOrNull { teamData ->
+                            players.count { it.player.team() == teamData.team }
+                        }?.team
+                        if (bestTeam != null) {
+                            data.player.team(bestTeam)
+                            pvpPlayer[data.uuid] = bestTeam
+                        }
+                    } else {
+                        pvpPlayer[data.uuid] = currentTeam
+                    }
+                }
             }
         }
     }
@@ -1163,38 +1197,10 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
 
 
             conf.feature.pvp.autoTeam -> {
-                val state = Vars.state
-                if (state != null && state.teams != null) {
-                    val activeTeams = state.teams.active
-                    if (activeTeams != null && activeTeams.any()) {
-                        val teamStats = activeTeams.map { teamData ->
-                            val team = teamData.team
-                            val teamPlayers = players.filter {
-                                val p = it.player
-                                p.team() == team && it.uuid != playerData.uuid
-                            }
-                            val playerCount = teamPlayers.size
-                            val avgWinRate = if (teamPlayers.isEmpty()) 0.5 else teamPlayers.map {
-                                val total = it.pvpWinCount + it.pvpLoseCount
-                                if (total == 0) 0.5 else it.pvpWinCount.toDouble() / total
-                            }.average()
-                            team to (playerCount to avgWinRate)
-                        }.toList()
-
-                        if (teamStats.isNotEmpty()) {
-                            val sortedByWinRate = teamStats.sortedBy { it.second.second }
-
-                            val bestTeam = sortedByWinRate.find { stats ->
-                                val team = stats.first
-                                val count = stats.second.first
-                                val otherTeams = teamStats.filter { it.first != team }
-                                val minOthers = if (otherTeams.isEmpty()) count else otherTeams.minOf { it.second.first }
-                                count < minOthers + 2
-                            }?.first ?: sortedByWinRate.first().first
-
-                            player.team(bestTeam)
-                        }
-                    }
+                val bestTeam = selectAutoTeam(playerData)
+                if (bestTeam != null) {
+                    player.team(bestTeam)
+                    pvpPlayer[playerData.uuid] = bestTeam
                 }
             }
         }
@@ -1220,6 +1226,41 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
 
     Log.debug("${playerData.name} data loaded.")
     Events.fire(CustomEvents.PlayerDataLoadEnd(playerData))
+}
+
+fun selectAutoTeam(playerData: PlayerData, targetPlayers: List<PlayerData> = players): Team? {
+    val state = Vars.state ?: return null
+    val teams = state.teams ?: return null
+    val activeTeams = teams.active ?: return null
+    if (!activeTeams.any()) return null
+
+    val teamStats = activeTeams.map { teamData ->
+        val team = teamData.team
+        val teamPlayers = targetPlayers.filter {
+            val p = it.player
+            p.team() == team && it.uuid != playerData.uuid
+        }
+        val playerCount = teamPlayers.size
+        val avgWinRate = if (teamPlayers.isEmpty()) 0.5 else teamPlayers.map {
+            val total = it.pvpWinCount + it.pvpLoseCount
+            if (total == 0) 0.5 else it.pvpWinCount.toDouble() / total
+        }.average()
+        team to (playerCount to avgWinRate)
+    }.toList()
+
+    if (teamStats.isEmpty()) return null
+
+    val sortedByWinRate = teamStats.sortedBy { it.second.second }
+
+    val bestTeam = sortedByWinRate.find { stats ->
+        val team = stats.first
+        val count = stats.second.first
+        val otherTeams = teamStats.filter { it.first != team }
+        val minOthers = if (otherTeams.isEmpty()) count else otherTeams.minOf { it.second.first }
+        count < minOthers + 2
+    }?.first ?: sortedByWinRate.first().first
+
+    return bestTeam
 }
 
 fun earnEXP(winner: Team, p: Playerc, target: PlayerData, isConnected: Boolean) {
