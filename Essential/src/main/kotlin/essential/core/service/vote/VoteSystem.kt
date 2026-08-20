@@ -23,6 +23,7 @@ import mindustry.content.UnitTypes
 import mindustry.content.Weathers
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.EventType.WorldLoadEvent
+import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.io.SaveIO
@@ -62,6 +63,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                         VoteType.Skip -> bundle["command.vote.skip.start", voteData.wave!!]
                         VoteType.Back -> bundle["command.vote.back.start", voteData.reason!!]
                         VoteType.Random -> bundle["command.vote.random.start"]
+                        VoteType.Draw -> bundle["command.vote.draw.start"]
                     }
                 )
                 playerData.send("command.vote.how")
@@ -266,6 +268,18 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                             } else {
                                 isSurrender = true
                                 Events.fire(GameOverEvent(Vars.state.rules.waveTeam))
+                            }
+                        }
+
+                        VoteType.Draw -> {
+                            if (!Permission.check(voteData.starter, "vote.pass")) {
+                                voterCooldown[voteData.starter.uuid] = timeSource.markNow().plus(3.minutes)
+                            }
+                            val event = CustomEvents.VoteDrawEvent(voteData.starter)
+                            Events.fire(event)
+                            if (!event.handled) {
+                                isSurrender = true
+                                Events.fire(GameOverEvent(Team.derelict))
                             }
                         }
 

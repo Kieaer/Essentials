@@ -65,6 +65,7 @@ user:
     - url
     - vote
     - vote.back
+    - vote.draw
     - vote.gg
     - vote.kick
     - vote.map

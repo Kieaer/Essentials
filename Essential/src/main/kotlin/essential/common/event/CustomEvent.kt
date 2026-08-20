@@ -18,4 +18,7 @@ object CustomEvents {
     class PlayerDataLoadEnd(val playerData: PlayerData)
     class ConfigFileModified(val kind: WatchEvent.Kind<out Any>, val paths: String)
     class PlayerDiscordRequested(val uuid: String)
+    class VoteDrawEvent(val starter: PlayerData) {
+        var handled: Boolean = false
+    }
 }

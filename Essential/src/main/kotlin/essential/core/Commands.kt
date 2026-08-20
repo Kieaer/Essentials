@@ -2269,7 +2269,7 @@ class Commands {
         }
     }
 
-    @ClientCommand("vote", "<kick/map/gg/skip/back/random> [player/amount/world] [reason]", "Start voting")
+    @ClientCommand("vote", "<kick/map/gg/skip/back/random/draw> [player/amount/world] [reason]", "Start voting")
     fun vote(playerData: PlayerData, arg: Array<out String>) {
         val coolTime = "command.vote.coolTime"
         val noReason = "command.vote.no.reason"
@@ -2475,6 +2475,21 @@ class Commands {
                         starter = playerData
                     )
                     nextVoteAvailable = timeSource.markNow().plus(6.minutes)
+                    start(voteData)
+                } else {
+                    playerData.err(coolTime)
+                }
+            }
+
+            // vote draw
+            "draw" -> {
+                if (!Permission.check(playerData, "vote.draw")) return
+                if (nextVoteAvailable.hasPassedNow()) {
+                    val voteData = VoteData(
+                        type = VoteType.Draw,
+                        starter = playerData
+                    )
+                    nextVoteAvailable = timeSource.markNow().plus(2.minutes)
                     start(voteData)
                 } else {
                     playerData.err(coolTime)
