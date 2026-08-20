@@ -1,5 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.ShadowJavaPlugin.Companion.shadowJar
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import java.util.Collections
+import java.util.zip.ZipFile
 
 plugins {
     alias(libs.plugins.kotlin)
@@ -14,22 +16,39 @@ val mindustryAssets: Configuration by configurations.creating {
     isCanBeResolved = true
 }
 
+val proguard by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+val proguardLibraries by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
+configurations.configureEach {
+    exclude(group = "com.github.waffle", module = "waffle-jna")
+}
+
 dependencies {
     mindustryAssets("Anuken:Mindustry:${rootProject.libs.versions.mindustry.get()}:assets@jar")
     compileOnly(rootProject.libs.bundles.game)
     ksp(project(":ksp-processor"))
     implementation(project(":ksp-processor"))
+    implementation(kotlin("reflect"))
     implementation(libs.bundles.kotlinxEcosystem)
     implementation(libs.bundles.exposed)
     implementation(libs.bundles.r2dbc.drivers)
     implementation(libs.bundles.flyway)
     implementation(libs.bundles.ktor)
+    implementation(libs.reactor.netty.core)
     implementation(libs.jfiglet)
     implementation(libs.maven.check)
     implementation(libs.kaml)
     implementation(libs.jbcrypt)
 
-    implementation(libs.proguard)
+    proguard(libs.proguard)
+    proguardLibraries(rootProject.libs.bundles.game)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.bundles.game.test)
@@ -87,44 +106,125 @@ sourceSets {
 
 
 tasks.register<JavaExec>("proguardJar") {
-    val shadowJarFile = tasks.shadowJar.get().archiveFile.get().asFile
-    val outputFile = File(buildDir, "libs/${project.name}-proguard.jar")
+    group = "build"
+    description = "Shrinks the standalone Essentials jar and verifies reflective runtime resources."
+    notCompatibleWithConfigurationCache("Runs ProGuard and inspects the generated archive in task actions.")
+    dependsOn(tasks.shadowJar)
 
-    // Make sure the output directory exists
-    doFirst {
-        outputFile.parentFile.mkdirs()
-    }
+    val inputJar = tasks.shadowJar.flatMap { it.archiveFile }
+    val outputJar = layout.buildDirectory.file("libs/${project.name}-proguard.jar")
+    val rulesFile = rootProject.layout.projectDirectory.file("proguard-rules.pro")
 
-    // Configure the JavaExec task
+    inputs.file(inputJar)
+    inputs.file(rulesFile)
+    inputs.files(proguardLibraries)
+    outputs.file(outputJar)
+
     mainClass.set("proguard.ProGuard")
-    classpath = configurations.runtimeClasspath.get()
+    classpath = proguard
 
-    // ProGuard arguments
-    val argsList = mutableListOf(
-        "-injars", shadowJarFile.absolutePath,
-        "-outjars", outputFile.absolutePath,
-        "-printmapping", "${buildDir}/proguard/mapping.txt",
-        "-printseeds", "${buildDir}/proguard/seeds.txt",
-        "-printusage", "${buildDir}/proguard/usage.txt",
-        "@${rootProject.projectDir}/proguard-rules.pro"
-    )
+    doFirst {
+        val outputFile = outputJar.get().asFile
+        outputFile.parentFile.mkdirs()
+        layout.buildDirectory.dir("proguard").get().asFile.mkdirs()
 
-    // Provide ALL compile+runtime classpath entries as library jars for analysis only
-    // (exclude the fat shadow jar which is already passed as -injars)
-    val runtimeFiles = configurations.runtimeClasspath.get().files
-    val compileFiles = configurations.compileClasspath.get().files
-    val allLibs = (runtimeFiles + compileFiles)
-        .asSequence()
-        .filter { it.exists() && it != shadowJarFile }
-        .distinctBy { it.absolutePath }
-        .toList()
-    allLibs.forEach { file ->
-        argsList.addAll(listOf("-libraryjars", file.absolutePath))
+        val proguardArgs = mutableListOf(
+            "-injars", inputJar.get().asFile.absolutePath,
+            "-outjars", outputFile.absolutePath,
+            "-printmapping", layout.buildDirectory.file("proguard/mapping.txt").get().asFile.absolutePath,
+            "-printseeds", layout.buildDirectory.file("proguard/seeds.txt").get().asFile.absolutePath,
+            "-printusage", layout.buildDirectory.file("proguard/usage.txt").get().asFile.absolutePath,
+            "@${rulesFile.asFile.absolutePath}"
+        )
+
+        proguardLibraries.files
+            .filter { it.exists() }
+            .distinctBy { it.absolutePath }
+            .forEach { proguardArgs.addAll(listOf("-libraryjars", it.absolutePath)) }
+
+        args = proguardArgs
     }
 
-    args = argsList
-    doFirst {
-        File("${buildDir}/proguard").mkdirs()
+    doLast {
+        val outputFile = outputJar.get().asFile
+        val requiredEntries = setOf(
+            "plugin.json",
+            "essential/core/Main.class",
+            "db/migration/V6__update_apm_achievements.sql",
+            "META-INF/services/org.flywaydb.core.extensibility.Plugin",
+            "META-INF/services/java.sql.Driver",
+            "org/flywaydb/core/Flyway.class",
+            "org/flywaydb/core/internal/database/h2/H2DatabaseType.class",
+            "org/flywaydb/database/postgresql/PostgreSQLDatabaseType.class",
+            "org/flywaydb/database/mysql/MySQLDatabaseType.class",
+            "org/flywaydb/database/mysql/mariadb/MariaDBDatabaseType.class",
+            "org/h2/Driver.class",
+            "org/postgresql/Driver.class",
+            "org/mariadb/jdbc/Driver.class",
+            "essential/core/service/web/auth/UserSession\$\$serializer.class"
+        )
+        val forbiddenEntries = setOf(
+            "arc64.dll",
+            "libarc64.so",
+            "libarcarm64.so",
+            "libarc64.dylib",
+            "libarcarm64.dylib"
+        )
+        val forbiddenPrefixes = listOf(
+            "arc/",
+            "mindustry/",
+            "server/",
+            "proguard/",
+            "com/guardsquare/proguard/",
+            "com/google/devtools/ksp/",
+            "com/squareup/kotlinpoet/",
+            "com/squareup/javapoet/",
+            "META-INF/proguard/",
+            "META-INF/com.android.tools/",
+            "META-INF/maven/",
+            "META-INF/native-image/",
+            "META-INF/rewrite/"
+        )
+
+        ZipFile(outputFile).use { zip ->
+            val entries = Collections.list(zip.entries())
+            val duplicateEntries = entries.groupingBy { it.name }.eachCount().filterValues { it > 1 }.keys
+            check(duplicateEntries.isEmpty()) {
+                "Duplicate entries remain in the ProGuard jar: ${duplicateEntries.sorted().joinToString()}"
+            }
+
+            val entryNames = entries.mapTo(mutableSetOf()) { it.name }
+            val missingRequired = requiredEntries - entryNames
+            check(missingRequired.isEmpty()) {
+                "ProGuard removed required runtime entries: ${missingRequired.sorted().joinToString()}"
+            }
+
+            val leakedEntries = entryNames.filter { name ->
+                name in forbiddenEntries || forbiddenPrefixes.any(name::startsWith)
+            }
+            check(leakedEntries.isEmpty()) {
+                "Build-time or host-provided entries leaked into the ProGuard jar: ${leakedEntries.sorted().joinToString()}"
+            }
+
+            val missingProviders = mutableListOf<String>()
+            entries.asSequence()
+                .filter { !it.isDirectory && it.name.startsWith("META-INF/services/") }
+                .forEach { serviceEntry ->
+                    zip.getInputStream(serviceEntry).bufferedReader().useLines { lines ->
+                        lines.map { it.substringBefore('#').trim() }
+                            .filter { it.isNotEmpty() }
+                            .forEach { provider ->
+                                val providerClass = provider.substringBefore(';').replace('.', '/') + ".class"
+                                if (providerClass !in entryNames) {
+                                    missingProviders += "${serviceEntry.name}: $provider"
+                                }
+                            }
+                    }
+                }
+            check(missingProviders.isEmpty()) {
+                "Service descriptors reference removed providers:\n${missingProviders.sorted().joinToString("\n")}"
+            }
+        }
     }
 }
 
