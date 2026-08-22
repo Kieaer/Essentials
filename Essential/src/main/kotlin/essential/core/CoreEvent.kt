@@ -945,7 +945,9 @@ fun worldLoad(event: WorldLoadEvent) {
         pvpSpecters.clear()
         pvpPlayer.clear()
 
-        val activeTeams = Vars.state.teams?.active
+        val activeTeams = Vars.state.teams?.active?.filter {
+            it.team != Team.derelict && it.hasCore() && !(Vars.state.rules.waves && Vars.state.rules.waveTeam == it.team)
+        }
         val hasActiveTeams = activeTeams != null && activeTeams.any()
 
         for (data in players) {
@@ -1240,13 +1242,15 @@ fun selectAutoTeam(playerData: PlayerData, targetPlayers: List<PlayerData> = pla
     val state = Vars.state ?: return null
     val teams = state.teams ?: return null
     val activeTeams = teams.active ?: return null
-    if (!activeTeams.any()) return null
+    val playableTeams = activeTeams.filter {
+        it.team != Team.derelict && it.hasCore() && !(state.rules.waves && state.rules.waveTeam == it.team)
+    }
+    if (!playableTeams.any()) return null
 
-    val teamStats = activeTeams.map { teamData ->
+    val teamStats = playableTeams.map { teamData ->
         val team = teamData.team
         val teamPlayers = targetPlayers.filter {
-            val p = it.player
-            p.team() == team && it.uuid != playerData.uuid
+            it.player.team() == team && it.uuid != playerData.uuid
         }
         val playerCount = teamPlayers.size
         val avgWinRate = if (teamPlayers.isEmpty()) 0.5 else teamPlayers.map {
