@@ -10,6 +10,7 @@ import arc.util.Timer
 import essential.common.*
 import essential.common.database.data.PlayerData
 import essential.common.database.data.getPlayerData
+import essential.common.database.data.update
 import essential.common.event.CustomEvents
 import essential.common.permission.Permission
 import essential.common.util.findPlayerData
@@ -204,18 +205,17 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
 
                     when (voteData.type) {
                         VoteType.Kick -> {
-                            val name = Vars.netServer.admins.getInfo(voteData.targetUUID).lastName
-                            if (Groups.player.find { a -> a.uuid() == voteData.targetUUID } == null) {
-                                Vars.netServer.admins.banPlayerID(voteData.targetUUID)
+                            val targetUUID = voteData.targetUUID!!
+                            val name = Vars.netServer.admins.getInfo(targetUUID).lastName
+                            val targetPlayer = Groups.player.find { a -> a.uuid() == targetUUID }
+                            if (targetPlayer == null) {
+                                Vars.netServer.admins.banPlayerID(targetUUID)
                                 send("command.vote.kick.target.banned", name)
                                 runBlocking {
-                                    val uuid = voteData.targetUUID
-                                    if (uuid != null) {
-                                        val data = getPlayerData(uuid)
-                                        if (data != null) {
-                                            data.status["record.voting.ban"] = "1"
-                                            Achievement.VotingBan.set(data)
-                                        }
+                                    val data = getPlayerData(targetUUID)
+                                    if (data != null) {
+                                        data.isBanned = true
+                                        data.update()
                                     }
                                 }
                                 Events.fire(
@@ -227,13 +227,15 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                                     )
                                 )
                             } else {
-                                val targetPlayer = Groups.player.find { a -> a.uuid() == voteData.targetUUID }
-                                val data = if (targetPlayer != null) findPlayerData(targetPlayer.uuid()) else null
+                                val data = findPlayerData(targetUUID)
                                 if (data != null) {
-                                    data.status["record.voting.ban"] = "1"
-                                    Achievement.VotingBan.set(data)
+                                    data.isBanned = true
+                                    if (voteData.starter.uuid == targetUUID) {
+                                        voteData.starter.status["record.voting.ban"] = "1"
+                                        Achievement.VotingBan.set(voteData.starter)
+                                    }
                                 }
-                                voteData.target?.kick(Packets.KickReason.kick, 60 * 60 * 3000)
+                                targetPlayer.kick(Packets.KickReason.kick, 60 * 60 * 3000)
                                 send("command.vote.kick.target.kicked", name)
                                 Events.fire(
                                     CustomEvents.PlayerVoteKicked(

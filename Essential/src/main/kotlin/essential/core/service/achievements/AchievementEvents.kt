@@ -197,7 +197,7 @@ fun gameover(event: GameOverEvent) {
                     .maxByOrNull { it.value }?.value ?: 0
 
                 // If the enemy team had 3 or more players than the winner team
-                if (largestEnemyTeamCount >= winnerTeamCount + 3) {
+                if (largestEnemyTeamCount >= winnerTeamCount + 3 && data.player.team() != Team.derelict) {
                     data.status["record.pvp.underdog"] = "1"
                     if (Achievement.PvPUnderdog.success(data)) {
                         Achievement.PvPUnderdog.set(data)
