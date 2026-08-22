@@ -496,7 +496,7 @@ class PluginTest {
         file.copyTo(target, true)
 
         loadGame(deleteConfig = false, logHandler = {
-            val alreadyUpgraded = bundle["database.upgrade.upToDate", "6"]
+            val alreadyUpgraded = bundle["database.upgrade.upToDate", "7"]
             if (it.contains(alreadyUpgraded)) {
                 fail("Upgrade logic not executed")
             }
