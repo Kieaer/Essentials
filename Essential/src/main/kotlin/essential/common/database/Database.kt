@@ -37,7 +37,6 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mariadb.r2dbc.MariadbConnectionConfiguration
 import org.mariadb.r2dbc.MariadbConnectionFactory
-import org.flywaydb.core.Flyway
 import java.nio.charset.StandardCharsets
 import java.nio.file.Paths
 import java.time.Duration
@@ -133,41 +132,24 @@ suspend fun databaseInit(r2dbcUrl: String, user: String, pass: String) {
  * Execute Flyway migrations
  */
 fun runFlywayMigration(databaseType: String, r2dbcUrl: String, user: String, pass: String): String? {
-    val (jdbcUrl, effectiveUser, effectivePass) = when (databaseType) {
-        "postgresql" -> {
-            val (host, port, database) = parseR2dbcUrl(r2dbcUrl, "postgresql://", "5432")
-            Triple("jdbc:postgresql://$host:$port/$database", user, pass)
-        }
-        "mysql" -> {
-            val (host, port, database) = parseR2dbcUrl(r2dbcUrl, "mysql://", "3306")
-            Triple("jdbc:mysql://$host:$port/$database", user, pass)
-        }
-        "mariadb" -> {
-            val (host, port, database) = parseR2dbcUrl(r2dbcUrl, "mariadb://", "3306")
-            Triple("jdbc:mariadb://$host:$port/$database", user, pass)
-        }
-        else -> Triple("jdbc:h2:./config/mods/Essentials/data/database;AUTO_SERVER=TRUE", "sa", "123")
-    }
-
-    val modClassLoader = Main::class.java.classLoader
-    val prevClassLoader = Thread.currentThread().contextClassLoader
     return try {
-        Thread.currentThread().contextClassLoader = modClassLoader
-        val flyway = Flyway.configure(modClassLoader)
-            .dataSource(jdbcUrl, effectiveUser, effectivePass)
-            .locations("classpath:db/migration")
-            .baselineOnMigrate(true)
-            .baselineVersion("5")
-            .load()
-        flyway.migrate()
-        val currentVersion = flyway.info().current()?.version?.version ?: "5"
-        Log.info(bundle["database.upgrade.upToDate", currentVersion])
-        currentVersion
-    } catch (e: Exception) {
-        Log.err("Flyway migration failed: ${e.message}", e)
+        val migrationClass = Class.forName("essential.core.service.migration.FlywayMigration")
+        migrationClass.getMethod(
+            "migrate",
+            String::class.java,
+            String::class.java,
+            String::class.java,
+            String::class.java,
+        ).invoke(null, databaseType, r2dbcUrl, user, pass) as? String
+    } catch (_: ClassNotFoundException) {
+        Log.info("Flyway migration module is not included; database migration was skipped.")
         null
-    } finally {
-        Thread.currentThread().contextClassLoader = prevClassLoader
+    } catch (e: ReflectiveOperationException) {
+        Log.err("Failed to invoke the Flyway migration module", e)
+        null
+    } catch (e: LinkageError) {
+        Log.err("Flyway migration module dependencies are unavailable", e)
+        null
     }
 }
 
@@ -349,7 +331,7 @@ private suspend fun upgradeLegacyDatabase() {
     }
 }
 
-private fun parseR2dbcUrl(r2dbcUrl: String, prefix: String, defaultPort: String): Triple<String, Int, String> {
+internal fun parseR2dbcUrl(r2dbcUrl: String, prefix: String, defaultPort: String): Triple<String, Int, String> {
     val url = r2dbcUrl.removePrefix(prefix)
     val host = url.substringBefore(":").substringBefore("/")
     val port = url.substringAfter(":", defaultPort).substringBefore("/")

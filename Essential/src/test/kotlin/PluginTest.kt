@@ -23,8 +23,6 @@ import essential.common.players
 import essential.common.rootPath
 import essential.core.CoreConfig
 import essential.core.Main
-import essential.core.service.chat.ChatService
-import essential.core.service.web.WebService
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.Vars.*
@@ -605,8 +603,10 @@ class PluginTest {
         val configDir = rootPath.child("config")
         configDir.mkdirs()
 
-        val originalWebConf = WebService.conf
-        val originalChatConf = ChatService.conf
+        val webService = optionalServiceClass("essential.core.service.web.WebService") ?: return
+        val chatService = optionalServiceClass("essential.core.service.chat.ChatService") ?: return
+        val originalWebConf = serviceConf(webService)
+        val originalChatConf = serviceConf(chatService)
 
         val oldConfigs = listOf(
             "config.yaml",
@@ -626,24 +626,47 @@ class PluginTest {
         }
 
         try {
-            WebService.conf = WebService.reloadConf()
-            ChatService.conf = ChatService.reloadConf()
+            val webConf = reloadServiceConf(webService)
+            val chatConf = reloadServiceConf(chatService)
 
-            assertEquals(32148, WebService.conf.port)
+            assertEquals(32148, webConf.javaClass.getMethod("getPort").invoke(webConf))
 
             val updatedWebContent = configDir.child("config_web.yaml").readString()
             assertTrue(updatedWebContent.contains("sessionSecret"), "config_web.yaml should be upgraded with sessionSecret")
             assertTrue(updatedWebContent.contains("enableWebSocket"), "config_web.yaml should be upgraded with enableWebSocket")
 
-            assertEquals("%player.name[orange] >[white] %chat", ChatService.conf.chatFormat)
+            assertEquals("%player.name[orange] >[white] %chat", chatConf.javaClass.getMethod("getChatFormat").invoke(chatConf))
 
             val updatedChatContent = configDir.child("config_chat.yaml").readString()
             assertTrue(updatedChatContent.contains("strict"), "config_chat.yaml should be upgraded with strict")
             assertTrue(updatedChatContent.contains("blacklist"), "config_chat.yaml should be upgraded with blacklist")
         } finally {
             for (configName in oldConfigs) configDir.child(configName).delete()
-            WebService.conf = originalWebConf
-            ChatService.conf = originalChatConf
+            setServiceConf(webService, originalWebConf)
+            setServiceConf(chatService, originalChatConf)
         }
+    }
+
+    private fun optionalServiceClass(name: String): Class<*>? = runCatching { Class.forName(name) }.getOrNull()
+
+    private fun serviceCompanion(serviceClass: Class<*>): Any = serviceClass.getField("Companion").get(null)
+
+    private fun serviceConf(serviceClass: Class<*>): Any {
+        val companion = serviceCompanion(serviceClass)
+        return companion.javaClass.getMethod("getConf").invoke(companion)
+    }
+
+    private fun reloadServiceConf(serviceClass: Class<*>): Any {
+        val companion = serviceCompanion(serviceClass)
+        val conf = companion.javaClass.getMethod("reloadConf").invoke(companion)
+        setServiceConf(serviceClass, conf)
+        return conf
+    }
+
+    private fun setServiceConf(serviceClass: Class<*>, conf: Any) {
+        val companion = serviceCompanion(serviceClass)
+        companion.javaClass.methods
+            .first { method -> method.name == "setConf" && method.parameterCount == 1 }
+            .invoke(companion, conf)
     }
 }

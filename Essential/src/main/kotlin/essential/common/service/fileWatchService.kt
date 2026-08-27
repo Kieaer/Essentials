@@ -8,10 +8,11 @@ import java.nio.file.*
 fun fileWatchService() {
     val watchService: WatchService = FileSystems.getDefault().newWatchService()
 
-    Paths.get(rootPath.child("config/").absolutePath())
-        .register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
-
     try {
+        val configPath = Paths.get(rootPath.child("config/").absolutePath())
+        Files.createDirectories(configPath)
+        configPath.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY)
+
         while (Thread.currentThread().isInterrupted.not()) {
             val watchKey = watchService.take()
             for (event in watchKey.pollEvents()) {
@@ -26,6 +27,11 @@ fun fileWatchService() {
         }
     } catch (e: InterruptedException) {
         Thread.currentThread().interrupt()
+    } catch (_: NoSuchFileException) {
+        // The plugin can be disposed while the watcher is starting (notably in
+        // headless smoke tests). There is no directory left to watch.
+    } catch (_: ClosedWatchServiceException) {
+        // Normal shutdown closes the service while the watcher is blocked.
     } finally {
         watchService.close()
     }

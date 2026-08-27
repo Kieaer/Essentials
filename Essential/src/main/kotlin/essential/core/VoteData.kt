@@ -1,4 +1,4 @@
-package essential.core.service.vote
+package essential.core
 
 import essential.common.database.data.PlayerData
 import mindustry.Vars
@@ -6,7 +6,8 @@ import mindustry.game.Team
 import mindustry.gen.Playerc
 import mindustry.maps.Map
 
-data class VoteData (
+/** Core-side request model consumed by the optional vote service. */
+data class VoteData(
     var type: VoteType,
     var target: Playerc? = null,
     var targetUUID: String? = null,
@@ -14,5 +15,9 @@ data class VoteData (
     var map: Map? = null,
     var wave: Int? = null,
     var starter: PlayerData,
-    var team: Team = Vars.state.rules.defaultTeam
+    var team: Team = Vars.state.rules.defaultTeam,
 )
+
+enum class VoteType {
+    Kick, Map, GameOver, Skip, Back, Random, Draw,
+}

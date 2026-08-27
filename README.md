@@ -13,6 +13,33 @@ Basically, this plugin focuses on finding cheats and griefers, but it adds addit
 ## Installation
 Put this plugin in the ``<server folder location>/config/mods`` folder.
 
+## Modular builds
+
+Use `-PexcludeModules` to compile an artifact without optional services. The
+matching Kotlin source, generated code, resources, and (for `web`) web-server
+libraries are excluded from both `shadowJar` and `proguardJar`.
+
+```shell
+# Standard JAR without the Web service and its assets/libraries
+./gradlew :Essential:shadowJar -PexcludeModules=web
+
+# Standard JAR without Discord and achievements
+./gradlew :Essential:shadowJar -PexcludeModules=discord,achievements
+
+# ProGuard JAR with every optional service omitted
+./gradlew :Essential:proguardJar -PexcludeModules=services
+```
+
+Supported module names are `achievements`, `bridge`, `chat`, `contribution`,
+`discord`, `effect`, `protect`, `vote`, and `web`. `achievement` is accepted as
+an alias; `services` (also `core/services`) expands to every optional module.
+Run `:Essential:verifyModuleExclusions` with a `shadowJar` build to inspect the
+artifact and enforce that the requested code/resources are absent.
+
+The full test suite targets the full distribution. For a modular build, the
+`test` task runs a headless Mindustry boot smoke test against the exact sources
+packaged in that artifact.
+
 ## Client commands
 | Command      | Parameter                                                               | Description                                                                      |
 |:-------------|:------------------------------------------------------------------------|:---------------------------------------------------------------------------------|

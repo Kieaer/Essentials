@@ -26,6 +26,14 @@
 
 -keep,allowoptimization class essential.core.Commands { *; }
 
+-keep class essential.core.service.**Service { *; }
+-keep class essential.core.service.**Service$Companion { *; }
+-keep class essential.core.service.effect.EffectSystem { *; }
+-keep class essential.core.service.vote.VoteSystem { *; }
+-keep class essential.core.service.achievements.AchievementHooks { *; }
+-keep class essential.core.service.web.achievement.AchievementWebModule { *; }
+-keep class essential.core.service.migration.FlywayMigration { *; }
+
 -keepdirectories db/migration
 
 -keep interface kotlin.reflect.jvm.internal.impl.builtins.BuiltInsLoader
@@ -138,6 +146,8 @@
 -dontwarn io.netty.handler.codec.compression.**
 -dontwarn io.netty.handler.codec.protobuf.**
 -dontwarn io.netty.handler.ssl.OpenSslParametersUtil
+-dontwarn org.eclipse.jetty.alpn.**
+-dontwarn org.eclipse.jetty.npn.**
 -dontwarn io.netty.handler.ssl.util.**
 -dontwarn io.netty.pkitesting.**
 -dontwarn org.conscrypt.**

@@ -148,3 +148,11 @@ fun Route.achievementRoutes(controller: AchievementController) {
         }
     }
 }
+
+/** Reflection entry point used by the Web module when achievements are packaged. */
+object AchievementWebModule {
+    @JvmStatic
+    fun registerRoutes(route: Route) {
+        route.achievementRoutes(AchievementController())
+    }
+}

@@ -19,13 +19,6 @@ import essential.common.service.fileWatchService
 import essential.core.generated.registerGeneratedClientCommands
 import essential.core.generated.registerGeneratedEventHandlers
 import essential.core.generated.registerGeneratedServerCommands
-import essential.core.service.achievements.AchievementService
-import essential.core.service.bridge.BridgeService
-import essential.core.service.chat.ChatService
-import essential.core.service.contribution.ContributionService
-import essential.core.service.discord.DiscordService
-import essential.core.service.protect.ProtectService
-import essential.core.service.web.WebService
 import kotlinx.coroutines.*
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
@@ -62,14 +55,6 @@ class Main : Plugin() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val threadPool: ExecutorService = Executors.newFixedThreadPool(2)
     }
-
-    private val bridgeService = BridgeService()
-    private val chatService = ChatService()
-    private val protectService = ProtectService()
-    private val achievementService = AchievementService()
-    private val contributionService = ContributionService()
-    private val discordService = DiscordService()
-    private val webService = WebService()
 
     override fun init() = runBlocking {
         // 플러그인 언어 설정 및 태그 추가
@@ -190,13 +175,7 @@ class Main : Plugin() {
             }
         })
 
-        if (conf.module.bridge) bridgeService.init()
-        if (conf.module.chat) chatService.init()
-        if (conf.module.protect) protectService.init()
-        if (conf.module.achievement) achievementService.init()
-        if (conf.module.contribution) contributionService.init()
-        if (conf.module.discord) discordService.init()
-        if (conf.module.web) webService.init()
+        ModuleRuntime.initEnabledServices()
 
         Log.info(bundle["event.plugin.loaded"])
     }
@@ -205,13 +184,7 @@ class Main : Plugin() {
         registerGeneratedServerCommands(handler)
         removeBannedCommands(handler)
 
-        if (conf.module.bridge) bridgeService.registerServerCommands(handler)
-        if (conf.module.chat) chatService.registerServerCommands(handler)
-        if (conf.module.protect) protectService.registerServerCommands(handler)
-        if (conf.module.achievement) achievementService.registerServerCommands(handler)
-        if (conf.module.contribution) contributionService.registerServerCommands(handler)
-        if (conf.module.discord) discordService.registerServerCommands(handler)
-        if (conf.module.web) webService.registerServerCommands(handler)
+        ModuleRuntime.registerServerCommands(handler)
     }
 
 
@@ -242,13 +215,7 @@ class Main : Plugin() {
             }
         }
 
-        if (conf.module.bridge) bridgeService.registerClientCommands(handler)
-        if (conf.module.chat) chatService.registerClientCommands(handler)
-        if (conf.module.protect) protectService.registerClientCommands(handler)
-        if (conf.module.achievement) achievementService.registerClientCommands(handler)
-        if (conf.module.contribution) contributionService.registerClientCommands(handler)
-        if (conf.module.discord) discordService.registerClientCommands(handler)
-        if (conf.module.web) webService.registerClientCommands(handler)
+        ModuleRuntime.registerClientCommands(handler)
     }
 
     private fun removeBannedCommands(handler: CommandHandler) {

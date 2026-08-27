@@ -21,7 +21,6 @@ import essential.common.systemTimezone
 import essential.common.util.findPlayerData
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
-import essential.core.service.effect.EffectSystem
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.toLocalDateTime
@@ -748,7 +747,7 @@ class Trigger {
 
         Events.on(EventType.ServerLoadEvent::class.java) {
             if (conf.feature.level.effect.enabled) {
-                Timer.schedule(EffectSystem(), 0f, 0.05f)
+                ModuleRuntime.scheduleLevelEffects()
             }
             coreListeners.forEach {
                 Core.app.addListener(it)

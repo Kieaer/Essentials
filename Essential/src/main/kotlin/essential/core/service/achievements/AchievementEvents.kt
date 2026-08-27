@@ -4,6 +4,8 @@ import arc.Events
 import arc.util.Timer
 import essential.common.bundle.Bundle
 import essential.common.database.data.PlayerData
+import essential.common.database.data.getPlayerAchievements
+import essential.common.event.CustomEvents
 import essential.common.offlinePlayers
 import essential.common.players
 import essential.common.pluginData
@@ -21,6 +23,7 @@ import mindustry.gen.Groups
 import mindustry.world.blocks.power.PowerGraph
 import java.util.*
 import kotlin.time.Clock
+import kotlinx.coroutines.runBlocking
 
 private var isNoMiningFailed = false
 private var isNoPowerFailed = false
@@ -28,6 +31,32 @@ private var isLowPowerFailed = false
 private var isNoTurretsFailed = false
 private var isFlareOnlyFailed = false
 private var isDuoTurretFailed = false
+
+/** Executes achievement initialization after the core player-data load flow. */
+object AchievementHooks {
+    fun processPlayerDataLoad(playerData: PlayerData) {
+        runBlocking {
+            getPlayerAchievements(playerData).forEach { achievement ->
+                playerData.achievementStatus.add(achievement.achievementName)
+            }
+        }
+
+        for (achievement in Achievement.entries) {
+            if (achievement.isHidden) continue
+            try {
+                if (achievement.success(playerData)) {
+                    achievement.set(playerData)
+                }
+            } catch (e: Exception) {
+                arc.util.Log.err("Failed to evaluate achievement ${achievement.name} for ${playerData.name}", e)
+            }
+        }
+    }
+
+    fun awardVotingBan(playerData: PlayerData) {
+        Achievement.VotingBan.set(playerData)
+    }
+}
 
 @Event
 fun blockBuildEnd(event: BlockBuildEndEvent) {

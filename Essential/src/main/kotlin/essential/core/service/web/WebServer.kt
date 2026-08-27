@@ -4,8 +4,6 @@ import arc.util.Log
 import essential.common.database.data.getPlayerDataByName
 import essential.core.service.web.WebService.Companion.bundle
 import essential.core.service.web.WebService.Companion.conf
-import essential.core.service.web.achievement.AchievementController
-import essential.core.service.web.achievement.achievementRoutes
 import essential.core.service.web.auth.AuthController
 import essential.core.service.web.auth.UserSession
 import essential.core.service.web.auth.authRoutes
@@ -38,7 +36,6 @@ class WebServer {
 
     val authController = AuthController()
     val mapController = MapController()
-    val achievementController = AchievementController()
     val statisticsController = StatisticsController()
 
     // Configure the application module
@@ -106,10 +103,23 @@ class WebServer {
                 rateLimit {
                     authRoutes(authController)
                     mapRoutes(mapController)
-                    achievementRoutes(achievementController)
+                    registerAchievementRoutesIfAvailable()
                     statisticsRoutes(statisticsController)
                 }
             }
+        }
+    }
+
+    /** The achievements endpoint is optional when the achievements module is omitted. */
+    private fun Route.registerAchievementRoutesIfAvailable() {
+        try {
+            Class.forName("essential.core.service.web.achievement.AchievementWebModule")
+                .getMethod("registerRoutes", Route::class.java)
+                .invoke(null, this)
+        } catch (_: ClassNotFoundException) {
+            // The modular artifact intentionally excludes the achievements endpoint.
+        } catch (e: ReflectiveOperationException) {
+            Log.err("Failed to register optional achievements web routes", e)
         }
     }
 

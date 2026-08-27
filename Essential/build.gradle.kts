@@ -1,4 +1,10 @@
 import com.github.jengelman.gradle.plugins.shadow.ShadowJavaPlugin.Companion.shadowJar
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import java.util.Collections
 import java.util.zip.ZipFile
@@ -9,6 +15,108 @@ plugins {
     alias(libs.plugins.ksp)
     `java-library`
     jacoco
+}
+
+/**
+ * Comma-separated optional modules to omit from an artifact.
+ *
+ * Examples:
+ *   -PexcludeModules=web
+ *   -PexcludeModules=discord,achievements
+ *   -PexcludeModules=services
+ */
+val optionalModules = setOf(
+    "achievements",
+    "bridge",
+    "chat",
+    "contribution",
+    "discord",
+    "effect",
+    "migration",
+    "protect",
+    "vote",
+    "web",
+)
+
+val moduleAliases = mapOf(
+    "achievement" to "achievements",
+    "achievements" to "achievements",
+    "core/service" to "services",
+    "core/services" to "services",
+    "db-migrate" to "migration",
+    "db-migration" to "migration",
+    "flyway" to "migration",
+    "migrate" to "migration",
+    "service" to "services",
+    "services" to "services",
+)
+
+val excludedModules = providers.gradleProperty("excludeModules")
+    .orNull
+    .orEmpty()
+    .split(',')
+    .map(String::trim)
+    .filter(String::isNotEmpty)
+    .flatMap { requestedModule ->
+        val normalized = requestedModule.lowercase()
+        when (val module = moduleAliases[normalized] ?: normalized) {
+            "services" -> optionalModules
+            in optionalModules -> setOf(module)
+            else -> throw GradleException(
+                "Unknown module '$requestedModule'. Use one of: " +
+                    "${(optionalModules + "services").sorted().joinToString(", ")}."
+            )
+        }
+    }
+    .toSortedSet()
+
+val excludedSourcePatterns = buildList {
+    excludedModules.forEach { module ->
+        add("essential/core/service/$module/**")
+    }
+    if ("achievements" in excludedModules) {
+        // The web achievement endpoint depends on the achievements service.
+        add("essential/core/service/web/achievement/**")
+    }
+}
+
+val excludedResourcePatterns = buildList {
+    if ("web" in excludedModules) {
+        add("web/**")
+        add("bundles/web/**")
+    }
+    if ("achievements" in excludedModules) {
+        add("bundles/achievements/**")
+    }
+    if ("migration" in excludedModules) {
+        add("db/migration/**")
+    }
+}
+
+val excludedTestSourcePatterns = buildList {
+    excludedModules.forEach { module ->
+        add("essential/core/service/$module/**")
+    }
+}
+
+val excludedCodePrefixValues = excludedSourcePatterns
+    .filter { it.endsWith("/**") }
+    .map { it.removeSuffix("/**").replace('.', '/') }
+val excludedResourcePrefixValues = excludedResourcePatterns
+    .filter { it.endsWith("/**") }
+    .map { it.removeSuffix("/**") }
+val webModuleExcluded = "web" in excludedModules
+val migrationModuleExcluded = "migration" in excludedModules
+val excludedDependencyPrefixValues = buildList {
+    if (migrationModuleExcluded) {
+        add("org/flywaydb/")
+        add("org/postgresql/")
+        add("org/mariadb/jdbc/")
+    }
+}
+
+if (excludedModules.isNotEmpty()) {
+    logger.lifecycle("Building Essentials without optional modules: ${excludedModules.joinToString(", ")}")
 }
 
 val mindustryAssets: Configuration by configurations.creating {
@@ -26,6 +134,149 @@ val proguardLibraries by configurations.creating {
     isCanBeResolved = true
 }
 
+abstract class VerifyModuleExclusionsTask : DefaultTask() {
+    @get:InputFile
+    abstract val archiveFile: RegularFileProperty
+
+    @get:Input
+    abstract val excludedCodePrefixes: ListProperty<String>
+
+    @get:Input
+    abstract val excludedResourcePrefixes: ListProperty<String>
+
+    @get:Input
+    abstract val excludedDependencyPrefixes: ListProperty<String>
+
+    @get:Input
+    abstract val excludesWeb: Property<Boolean>
+
+    @TaskAction
+    fun verify() {
+        ZipFile(archiveFile.get().asFile).use { zip ->
+            val entryNames = Collections.list(zip.entries()).mapTo(mutableSetOf()) { it.name }
+            val excludedEntries = entryNames.filter { entry ->
+                !entry.endsWith('/') && (excludedCodePrefixes.get().any(entry::startsWith) ||
+                    excludedResourcePrefixes.get().any(entry::startsWith))
+            }
+            check(excludedEntries.isEmpty()) {
+                "Excluded module code or resources are present in the shadow jar: ${excludedEntries.sorted().joinToString()}"
+            }
+
+            val excludedDependencies = entryNames.filter { entry ->
+                !entry.endsWith('/') && excludedDependencyPrefixes.get().any(entry::startsWith)
+            }
+            check(excludedDependencies.isEmpty()) {
+                "Excluded module libraries are present in the shadow jar: ${excludedDependencies.sorted().joinToString()}"
+            }
+
+            if (excludesWeb.get()) {
+                val ktorEntries = entryNames.filter { it.startsWith("io/ktor/") }
+                check(ktorEntries.isEmpty()) {
+                    "Ktor web libraries are present although the web module is excluded: ${ktorEntries.sorted().joinToString()}"
+                }
+            }
+        }
+    }
+}
+
+abstract class VerifyProguardJarTask : DefaultTask() {
+    @get:InputFile
+    abstract val archiveFile: RegularFileProperty
+
+    @get:Input
+    abstract val requiredEntries: ListProperty<String>
+
+    @get:Input
+    abstract val excludedCodePrefixes: ListProperty<String>
+
+    @get:Input
+    abstract val excludedResourcePrefixes: ListProperty<String>
+
+    @get:Input
+    abstract val excludedDependencyPrefixes: ListProperty<String>
+
+    @TaskAction
+    fun verify() {
+        val forbiddenEntries = setOf(
+            "arc64.dll",
+            "libarc64.so",
+            "libarcarm64.so",
+            "libarc64.dylib",
+            "libarcarm64.dylib",
+        )
+        val forbiddenPrefixes = listOf(
+            "arc/",
+            "mindustry/",
+            "server/",
+            "proguard/",
+            "com/guardsquare/proguard/",
+            "com/google/devtools/ksp/",
+            "com/squareup/kotlinpoet/",
+            "com/squareup/javapoet/",
+            "META-INF/proguard/",
+            "META-INF/com.android.tools/",
+            "META-INF/maven/",
+            "META-INF/native-image/",
+            "META-INF/rewrite/",
+        )
+
+        ZipFile(archiveFile.get().asFile).use { zip ->
+            val entries = Collections.list(zip.entries())
+            val duplicateEntries = entries.groupingBy { it.name }.eachCount().filterValues { it > 1 }.keys
+            check(duplicateEntries.isEmpty()) {
+                "Duplicate entries remain in the ProGuard jar: ${duplicateEntries.sorted().joinToString()}"
+            }
+
+            val entryNames = entries.mapTo(mutableSetOf()) { it.name }
+            val missingRequired = requiredEntries.get().toSet() - entryNames
+            check(missingRequired.isEmpty()) {
+                "ProGuard removed required runtime entries: ${missingRequired.sorted().joinToString()}"
+            }
+
+            val leakedEntries = entryNames.filter { name ->
+                name in forbiddenEntries || forbiddenPrefixes.any(name::startsWith)
+            }
+            check(leakedEntries.isEmpty()) {
+                "Build-time or host-provided entries leaked into the ProGuard jar: ${leakedEntries.sorted().joinToString()}"
+            }
+
+            val excludedEntries = entryNames.filter { entry ->
+                !entry.endsWith('/') && (excludedCodePrefixes.get().any(entry::startsWith) ||
+                    excludedResourcePrefixes.get().any(entry::startsWith))
+            }
+            check(excludedEntries.isEmpty()) {
+                "Excluded module code or resources are present in the ProGuard jar: ${excludedEntries.sorted().joinToString()}"
+            }
+
+            val excludedDependencies = entryNames.filter { entry ->
+                !entry.endsWith('/') && excludedDependencyPrefixes.get().any(entry::startsWith)
+            }
+            check(excludedDependencies.isEmpty()) {
+                "Excluded module libraries are present in the ProGuard jar: ${excludedDependencies.sorted().joinToString()}"
+            }
+
+            val missingProviders = mutableListOf<String>()
+            entries.asSequence()
+                .filter { !it.isDirectory && it.name.startsWith("META-INF/services/") }
+                .forEach { serviceEntry ->
+                    zip.getInputStream(serviceEntry).bufferedReader().useLines { lines ->
+                        lines.map { it.substringBefore('#').trim() }
+                            .filter { it.isNotEmpty() }
+                            .forEach { provider ->
+                                val providerClass = provider.substringBefore(';').replace('.', '/') + ".class"
+                                if (providerClass !in entryNames) {
+                                    missingProviders += "${serviceEntry.name}: $provider"
+                                }
+                            }
+                    }
+                }
+            check(missingProviders.isEmpty()) {
+                "Service descriptors reference removed providers:\n${missingProviders.sorted().joinToString("\n")}"
+            }
+        }
+    }
+}
+
 configurations.configureEach {
     exclude(group = "com.github.waffle", module = "waffle-jna")
 }
@@ -39,9 +290,13 @@ dependencies {
     implementation(libs.bundles.kotlinxEcosystem)
     implementation(libs.bundles.exposed)
     implementation(libs.bundles.r2dbc.drivers)
-    implementation(libs.bundles.flyway)
-    implementation(libs.bundles.ktor)
-    implementation(libs.reactor.netty.core)
+    if (!migrationModuleExcluded) {
+        implementation(libs.bundles.flyway)
+    }
+    if ("web" !in excludedModules) {
+        implementation(libs.bundles.ktor)
+        implementation(libs.reactor.netty.core)
+    }
     implementation(libs.jfiglet)
     implementation(libs.maven.check)
     implementation(libs.kaml)
@@ -100,135 +355,105 @@ sourceSets {
     main {
         resources {
             srcDir(extractMindustryBundles)
+            exclude(*excludedResourcePatterns.toTypedArray())
         }
     }
 }
 
-
-tasks.register<JavaExec>("proguardJar") {
-    group = "build"
-    description = "Shrinks the standalone Essentials jar and verifies reflective runtime resources."
-    notCompatibleWithConfigurationCache("Runs ProGuard and inspects the generated archive in task actions.")
-    dependsOn(tasks.shadowJar)
-
-    val inputJar = tasks.shadowJar.flatMap { it.archiveFile }
-    val outputJar = layout.buildDirectory.file("libs/${project.name}-proguard.jar")
-    val rulesFile = rootProject.layout.projectDirectory.file("proguard-rules.pro")
-
-    inputs.file(inputJar)
-    inputs.file(rulesFile)
-    inputs.files(proguardLibraries)
-    outputs.file(outputJar)
-
-    mainClass.set("proguard.ProGuard")
-    classpath = proguard
-
-    doFirst {
-        val outputFile = outputJar.get().asFile
-        outputFile.parentFile.mkdirs()
-        layout.buildDirectory.dir("proguard").get().asFile.mkdirs()
-
-        val proguardArgs = mutableListOf(
-            "-injars", inputJar.get().asFile.absolutePath,
-            "-outjars", outputFile.absolutePath,
-            "-printmapping", layout.buildDirectory.file("proguard/mapping.txt").get().asFile.absolutePath,
-            "-printseeds", layout.buildDirectory.file("proguard/seeds.txt").get().asFile.absolutePath,
-            "-printusage", layout.buildDirectory.file("proguard/usage.txt").get().asFile.absolutePath,
-            "@${rulesFile.asFile.absolutePath}"
-        )
-
-        proguardLibraries.files
-            .filter { it.exists() }
-            .distinctBy { it.absolutePath }
-            .forEach { proguardArgs.addAll(listOf("-libraryjars", it.absolutePath)) }
-
-        args = proguardArgs
+kotlin {
+    sourceSets.named("main") {
+        kotlin.exclude(*excludedSourcePatterns.toTypedArray())
     }
+    sourceSets.named("test") {
+        kotlin.exclude(*excludedTestSourcePatterns.toTypedArray())
+    }
+}
 
-    doLast {
-        val outputFile = outputJar.get().asFile
-        val requiredEntries = setOf(
-            "plugin.json",
-            "essential/core/Main.class",
-            "db/migration/V6__update_apm_achievements.sql",
+
+val proguardInputJar = tasks.shadowJar.flatMap { it.archiveFile }
+val proguardOutputJar = layout.buildDirectory.file("libs/${project.name}-proguard.jar")
+val proguardRulesFile = rootProject.layout.projectDirectory.file("proguard-rules.pro")
+val proguardOutputDirectory = proguardOutputJar.get().asFile.parentFile
+val proguardLibraryFiles = proguardLibraries.files
+    .filter { it.exists() }
+    .distinctBy { it.absolutePath }
+val proguardArguments = buildList {
+    addAll(listOf(
+        "-injars", proguardInputJar.get().asFile.absolutePath,
+        "-outjars", proguardOutputJar.get().asFile.absolutePath,
+        "-printmapping", File(proguardOutputDirectory, "${project.name}-proguard-mapping.txt").absolutePath,
+        "-printseeds", File(proguardOutputDirectory, "${project.name}-proguard-seeds.txt").absolutePath,
+        "-printusage", File(proguardOutputDirectory, "${project.name}-proguard-usage.txt").absolutePath,
+        "@${proguardRulesFile.asFile.absolutePath}",
+    ))
+    proguardLibraryFiles.forEach { library -> addAll(listOf("-libraryjars", library.absolutePath)) }
+}
+val requiredProguardEntries = buildList {
+    addAll(listOf(
+        "plugin.json",
+        "essential/core/Main.class",
+        "META-INF/services/java.sql.Driver",
+        "org/h2/Driver.class",
+    ))
+    if (!migrationModuleExcluded) {
+        addAll(listOf(
+            "essential/core/service/migration/FlywayMigration.class",
             "META-INF/services/org.flywaydb.core.extensibility.Plugin",
-            "META-INF/services/java.sql.Driver",
             "org/flywaydb/core/Flyway.class",
             "org/flywaydb/core/internal/database/h2/H2DatabaseType.class",
             "org/flywaydb/database/postgresql/PostgreSQLDatabaseType.class",
             "org/flywaydb/database/mysql/MySQLDatabaseType.class",
             "org/flywaydb/database/mysql/mariadb/MariaDBDatabaseType.class",
-            "org/h2/Driver.class",
             "org/postgresql/Driver.class",
             "org/mariadb/jdbc/Driver.class",
-            "essential/core/service/web/auth/UserSession\$\$serializer.class"
-        )
-        val forbiddenEntries = setOf(
-            "arc64.dll",
-            "libarc64.so",
-            "libarcarm64.so",
-            "libarc64.dylib",
-            "libarcarm64.dylib"
-        )
-        val forbiddenPrefixes = listOf(
-            "arc/",
-            "mindustry/",
-            "server/",
-            "proguard/",
-            "com/guardsquare/proguard/",
-            "com/google/devtools/ksp/",
-            "com/squareup/kotlinpoet/",
-            "com/squareup/javapoet/",
-            "META-INF/proguard/",
-            "META-INF/com.android.tools/",
-            "META-INF/maven/",
-            "META-INF/native-image/",
-            "META-INF/rewrite/"
-        )
-
-        ZipFile(outputFile).use { zip ->
-            val entries = Collections.list(zip.entries())
-            val duplicateEntries = entries.groupingBy { it.name }.eachCount().filterValues { it > 1 }.keys
-            check(duplicateEntries.isEmpty()) {
-                "Duplicate entries remain in the ProGuard jar: ${duplicateEntries.sorted().joinToString()}"
-            }
-
-            val entryNames = entries.mapTo(mutableSetOf()) { it.name }
-            val missingRequired = requiredEntries - entryNames
-            check(missingRequired.isEmpty()) {
-                "ProGuard removed required runtime entries: ${missingRequired.sorted().joinToString()}"
-            }
-
-            val leakedEntries = entryNames.filter { name ->
-                name in forbiddenEntries || forbiddenPrefixes.any(name::startsWith)
-            }
-            check(leakedEntries.isEmpty()) {
-                "Build-time or host-provided entries leaked into the ProGuard jar: ${leakedEntries.sorted().joinToString()}"
-            }
-
-            val missingProviders = mutableListOf<String>()
-            entries.asSequence()
-                .filter { !it.isDirectory && it.name.startsWith("META-INF/services/") }
-                .forEach { serviceEntry ->
-                    zip.getInputStream(serviceEntry).bufferedReader().useLines { lines ->
-                        lines.map { it.substringBefore('#').trim() }
-                            .filter { it.isNotEmpty() }
-                            .forEach { provider ->
-                                val providerClass = provider.substringBefore(';').replace('.', '/') + ".class"
-                                if (providerClass !in entryNames) {
-                                    missingProviders += "${serviceEntry.name}: $provider"
-                                }
-                            }
-                    }
-                }
-            check(missingProviders.isEmpty()) {
-                "Service descriptors reference removed providers:\n${missingProviders.sorted().joinToString("\n")}"
-            }
-        }
+        ))
     }
+    if (!webModuleExcluded) add("essential/core/service/web/auth/UserSession\$\$serializer.class")
+}
+
+val verifyProguardJar = tasks.register<VerifyProguardJarTask>("verifyProguardJar") {
+    group = "verification"
+    description = "Verifies the ProGuard jar's runtime entries and modular exclusions."
+    archiveFile.set(proguardOutputJar)
+    requiredEntries.set(requiredProguardEntries)
+    excludedCodePrefixes.set(excludedCodePrefixValues)
+    excludedResourcePrefixes.set(excludedResourcePrefixValues)
+    excludedDependencyPrefixes.set(excludedDependencyPrefixValues)
+}
+
+tasks.register<JavaExec>("proguardJar") {
+    group = "build"
+    description = "Shrinks the standalone Essentials jar and verifies reflective runtime resources."
+    dependsOn(tasks.shadowJar)
+    finalizedBy(verifyProguardJar)
+
+    inputs.file(proguardInputJar)
+    inputs.file(proguardRulesFile)
+    inputs.files(proguardLibraries)
+    outputs.file(proguardOutputJar)
+
+    mainClass.set("proguard.ProGuard")
+    classpath = proguard
+    args = proguardArguments
+}
+
+val shadowArchive = tasks.shadowJar.flatMap { it.archiveFile }
+
+tasks.register<VerifyModuleExclusionsTask>("verifyModuleExclusions") {
+    group = "verification"
+    description = "Verifies that a modular shadow jar contains no excluded code or resources."
+    dependsOn(tasks.shadowJar)
+    archiveFile.set(shadowArchive)
+    excludedCodePrefixes.set(excludedCodePrefixValues)
+    excludedResourcePrefixes.set(excludedResourcePrefixValues)
+    excludedDependencyPrefixes.set(excludedDependencyPrefixValues)
+    excludesWeb.set(webModuleExcluded)
 }
 
 tasks.test {
+    if (excludedModules.isNotEmpty()) {
+        include("**/ModularPluginSmokeTest.class")
+    }
     testLogging {
         events("failed")
         exceptionFormat = TestExceptionFormat.FULL
@@ -249,16 +474,12 @@ tasks.processResources {
     doLast {
         val destDir = destinationDir
 
-        // Last non-whitespace char already emitted (used to disambiguate regex vs division)
         fun lastNonWs(sb: StringBuilder): Char? {
             for (idx in sb.length - 1 downTo 0) {
                 if (!sb[idx].isWhitespace()) return sb[idx]
             }
             return null
         }
-
-        // A '/' starts a regex literal (not division) when the preceding significant token
-        // is an operator, opener, separator, or the start of input.
         val regexAllowedChars = "([{,;:=+-*%&|^~!?<>"
         fun regexAllowed(prev: Char?): Boolean = prev == null || prev in regexAllowedChars
 

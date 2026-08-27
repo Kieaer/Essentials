@@ -35,6 +35,9 @@ class ProtectService : Plugin() {
             }
         }
 
+        fun isPasswordAuthenticationEnabled(): Boolean =
+            conf.account.enabled && conf.account.getAuthType() == ProtectConfig.AuthType.Password
+
         var pluginData: PluginData = PluginData()
     }
 

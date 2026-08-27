@@ -15,7 +15,9 @@ import essential.common.event.CustomEvents
 import essential.common.permission.Permission
 import essential.common.util.findPlayerData
 import essential.core.earnEXP
-import essential.core.service.achievements.Achievement
+import essential.core.ModuleRuntime
+import essential.core.VoteData
+import essential.core.VoteType
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -232,7 +234,7 @@ class VoteSystem(val voteData: VoteData) : Timer.Task() {
                                     data.isBanned = true
                                     if (voteData.starter.uuid == targetUUID) {
                                         voteData.starter.status["record.voting.ban"] = "1"
-                                        Achievement.VotingBan.set(voteData.starter)
+                                        ModuleRuntime.awardVotingBan(voteData.starter)
                                     }
                                 }
                                 targetPlayer.kick(Packets.KickReason.kick, 60 * 60 * 3000)

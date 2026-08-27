@@ -27,15 +27,6 @@ import essential.common.util.findPlayers
 import essential.common.util.findPlayersByName
 import essential.core.Main.Companion.conf
 import essential.core.Main.Companion.scope
-import essential.core.service.bridge.BridgeService
-import essential.core.service.chat.ChatService
-import essential.core.service.discord.DiscordService
-import essential.core.service.protect.ProtectConfig
-import essential.core.service.protect.ProtectService
-import essential.core.service.vote.VoteData
-import essential.core.service.vote.VoteSystem
-import essential.core.service.vote.VoteType
-import essential.core.service.web.WebService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -209,7 +200,7 @@ class Commands {
             }
 
             val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
-            if (ProtectService.conf.account.getAuthType() != ProtectConfig.AuthType.Password || !ProtectService.conf.account.enabled) {
+            if (!ModuleRuntime.isPasswordAuthenticationEnabled()) {
                 playerData.accountID = playerData.name
             }
             playerData.accountPW = password
@@ -2278,7 +2269,10 @@ class Commands {
         fun start(voteData: VoteData) {
             if (!isVoting) {
                 isVoting = true
-                Timer.schedule(VoteSystem(voteData), 0f, 1f, 60)
+                if (!ModuleRuntime.startVote(voteData)) {
+                    isVoting = false
+                    playerData.err("command.vote.unavailable")
+                }
             } else {
                 playerData.err("command.vote.process")
             }
@@ -2902,11 +2896,7 @@ class Commands {
             }
             Log.info(Bundle()["config.permission.updated"])
             Main.reloadConf()
-            if (conf.module.web) WebService.reloadConf()
-            if (conf.module.chat) ChatService.reloadConf()
-            if (conf.module.bridge) BridgeService.reloadConf()
-            if (conf.module.discord) DiscordService.reloadConf()
-            if (conf.module.protect) ProtectService.reloadConf()
+            ModuleRuntime.reloadEnabledConfigurations()
             Log.info(Bundle()["config.reloaded"])
         } catch (e: Exception) {
             e.printStackTrace()
