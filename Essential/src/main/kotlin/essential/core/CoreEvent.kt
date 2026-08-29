@@ -268,7 +268,11 @@ fun tap(event: TapEvent) {
                             val hubConnectionTime = Instant.fromEpochMilliseconds(event.player.con().connectTime).toLocalDateTime(systemTimezone)
                             grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
                         }
-                        Call.connect(event.player.con(), two.ip, two.port)
+                        val transfer = CustomEvents.ServerTransfer(event.player, two.ip, two.port)
+                        Events.fire(transfer)
+                        if (!transfer.handled) {
+                            Call.connect(event.player.con(), transfer.ip, transfer.port)
+                        }
                     }
                 }
                 return@forEach
@@ -298,7 +302,11 @@ fun tap(event: TapEvent) {
                         val hubConnectionTime = Instant.fromEpochMilliseconds(event.player.con().connectTime).toLocalDateTime(systemTimezone)
                         grantRoutingPermission(event.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
                     }
-                    Call.connect(event.player.con(), two.ip, two.port)
+                    val transfer = CustomEvents.ServerTransfer(event.player, two.ip, two.port)
+                    Events.fire(transfer)
+                    if (!transfer.handled) {
+                        Call.connect(event.player.con(), transfer.ip, transfer.port)
+                    }
                 }
                 continue
             }

@@ -1,6 +1,7 @@
 package essential.common.event
 
 import essential.common.database.data.PlayerData
+import mindustry.gen.Playerc
 import java.nio.file.WatchEvent
 
 object CustomEvents {
@@ -18,6 +19,9 @@ object CustomEvents {
     class PlayerDataLoadEnd(val playerData: PlayerData)
     class ConfigFileModified(val kind: WatchEvent.Kind<out Any>, val paths: String)
     class PlayerDiscordRequested(val uuid: String)
+    class ServerTransfer(val player: Playerc, val ip: String, val port: Int) {
+        var handled: Boolean = false
+    }
     class VoteDrawEvent(val starter: PlayerData) {
         var handled: Boolean = false
     }

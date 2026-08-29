@@ -72,6 +72,8 @@ suspend fun grantRoutingPermission(
         }
         ServerRoutingTable.selectAll()
             .where { ServerRoutingTable.playerUuid eq playerUuid }
+            .orderBy(ServerRoutingTable.id, SortOrder.DESC)
+            .limit(1)
             .map { row -> row.toServerRoutingData() }
             .singleOrNull()
     }

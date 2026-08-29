@@ -10,6 +10,7 @@ import arc.util.Time
 import arc.util.Timer
 import essential.common.bundle.Bundle
 import essential.common.database.data.PluginData
+import essential.common.event.CustomEvents
 import essential.common.database.data.cleanupExpiredRoutingPermissions
 import essential.common.database.data.grantRoutingPermission
 import essential.common.database.data.plugin.WarpCount
@@ -568,7 +569,11 @@ class Trigger {
                                 val hubConnectionTime = Instant.fromEpochMilliseconds(data.player.con().connectTime).toLocalDateTime(systemTimezone)
                                 grantRoutingPermission(data.player.uuid(), hubMapName, targetServerName, two.port, hubConnectionTime)
                             }
-                            Call.connect(data.player.con(), two.ip, two.port)
+                            val transfer = CustomEvents.ServerTransfer(data.player, two.ip, two.port)
+                            Events.fire(transfer)
+                            if (!transfer.handled) {
+                                Call.connect(data.player.con(), transfer.ip, transfer.port)
+                            }
                         }
                         break
                     }
@@ -667,7 +672,11 @@ class Trigger {
                                         grantRoutingPermission(it.player.uuid(), hubMapName, targetServerName, port, hubConnectionTime)
                                         Log.debug("Granted routing permission for ${it.player.plainName()} to $targetServerName (AFK)")
                                     }
-                                    Call.connect(it.player.con(), server[0], port)
+                                    val transfer = CustomEvents.ServerTransfer(it.player, server[0], port)
+                                    Events.fire(transfer)
+                                    if (!transfer.handled) {
+                                        Call.connect(it.player.con(), transfer.ip, transfer.port)
+                                    }
                                 }
                             }
                         }
