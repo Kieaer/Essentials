@@ -24,6 +24,8 @@ data class WebConfig (
     val maxFileSize: Long = 10485760,
     @YamlComment("Maximum requested width for generated map images")
     val maxImageWidth: Int = 2048,
+    @YamlComment("Base URL of the map render server")
+    val mapRenderServer: String = "https://api.mindustry-tool.com/api/v4/maps/image",
     @YamlComment("Discord server invitation URL shown to users who need to link their account")
     val discordUrl: String = "https://discord.gg/yourserver",
     @YamlComment("Enable WebSocket for real-time communication between web server and clients")

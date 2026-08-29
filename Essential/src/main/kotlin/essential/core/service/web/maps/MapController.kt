@@ -540,7 +540,7 @@ class MapController {
     }
 
     private fun fetchMapImageBatch(msavBytes: ByteArray, fileName: String, mapName: String, width: Int? = null): ByteArray? {
-        val baseUrl = "http://192.168.0.48:7000"
+        val baseUrl = conf.mapRenderServer.trim().trimEnd('/')
         val jobId = submitRenderJob(baseUrl, msavBytes, fileName, mapName, width)
             ?: return null
 
