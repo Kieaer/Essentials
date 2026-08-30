@@ -4,11 +4,19 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/downloads/kieaer/essentials/latest/total?style=flat-square)<br>
 
 Add more commands to the server.<br>
-**__Requires Java 17 or higher!__**
 
 This plugin was created because the creators were very angry with too many Griefers in Mindustry 4.0 Alpha version.<br>
 To create this plugin, I'm spent all night studying a programming language I hadn't looked at in my entire life. lol<br><br>
 Basically, this plugin focuses on finding cheats and griefers, but it adds additional features to make it useful on other servers as well.
+
+## Requirements
+
+**__Requires Java 17 or higher!__**
+
+**It does not support use with other plugins.**<br>
+This's a limitation of Mindustry and a problem that cannot be solved unless all plugin creators create a new common API specification.
+
+For example, if libraries such as kotlin, ktor, flyway, exposed, slf4j, etc. are used by other plugins, they cause errors due to shared classloader and package conflicts.
 
 ## Installation
 Put this plugin in the ``<server folder location>/config/mods`` folder.
