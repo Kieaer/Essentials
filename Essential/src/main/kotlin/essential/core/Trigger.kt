@@ -460,8 +460,12 @@ class Trigger {
                 return@run
             }
             for (data in players) {
-                if (Vars.state.rules.pvp && data.player.unit() != null && data.player.team()
-                        .cores().isEmpty && data.player.team() != Team.derelict && pvpPlayer.containsKey(data.uuid)
+                val registeredTeam = pvpPlayer[data.uuid]
+                if (Vars.state.rules.pvp
+                    && registeredTeam == data.player.team()
+                    && data.player.unit() != null
+                    && data.player.team().cores().isEmpty
+                    && data.player.team() != Team.derelict
                 ) {
                     data.pvpLoseCount++
                     if (conf.feature.pvp.spector) {
