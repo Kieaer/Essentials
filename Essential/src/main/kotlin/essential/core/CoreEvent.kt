@@ -7,6 +7,7 @@ import arc.graphics.Color
 import arc.util.Log
 import arc.util.Strings
 import essential.common.*
+import essential.common.bundle.BlockNameResolver
 import essential.common.bundle.Bundle
 import essential.common.config.Config
 import essential.common.database.WorldHistoryBuffer
@@ -60,7 +61,6 @@ import java.text.NumberFormat
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.regex.Pattern
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
@@ -92,7 +92,6 @@ var isNotTargetMap = false
 val coreListeners: ArrayList<ApplicationListener> = arrayListOf()
 lateinit var actionFilter: Administration.ActionFilter
 
-private val blockSelectRegex: Pattern = Pattern.compile("^build\\d{1,2}$")
 private val motdLocaleRegex = Regex("^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$")
 val worldEditSelection = mutableMapOf<String, WorldEditSelection>()
 
@@ -338,8 +337,7 @@ fun tap(event: TapEvent) {
 
                 val str = StringBuilder()
                 val bundle = data.bundle
-                val coreBundle =
-                    Bundle(ResourceBundle.getBundle("bundles/mindustry/bundle", Locale.forLanguageTag(data.player.locale().replace("_", "-"))))
+                val blockNames = BlockNameResolver(data.player.locale())
 
                 str.append(bundle["event.log.position", event.tile.x, event.tile.y]).append("\n")
 
@@ -359,11 +357,11 @@ fun tap(event: TapEvent) {
 
                         if (two.action == "message") {
                             str.append(
-                                bundle["event.log.format.message", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], two.value as String]
+                                bundle["event.log.format.message", dateformat.format(two.time), two.player, blockNames[two.tile], two.value as String]
                             ).append("\n")
                         } else {
                             str.append(
-                                bundle["event.log.format", dateformat.format(two.time), two.player, coreBundle["block.${two.tile}.name"], action]
+                                bundle["event.log.format", dateformat.format(two.time), two.player, blockNames[two.tile], action]
                             ).append("\n")
                         }
                     }
@@ -1432,12 +1430,9 @@ private fun calculateMapMD5Hash(map: Map): String {
     }
 }
 
-private fun checkValidBlock(tile: Tile): String {
-    return if (tile.build != null && blockSelectRegex.matcher(tile.block().name).matches()) {
-        (tile.build as ConstructBlock.ConstructBuild).current.name
-    } else {
-        tile.block().name
-    }
+internal fun checkValidBlock(tile: Tile): String {
+    val construction = tile.build as? ConstructBlock.ConstructBuild
+    return construction?.current?.name ?: tile.block().name
 }
 
 /**
