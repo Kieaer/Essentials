@@ -40,9 +40,8 @@ fun findPlayers(name: String): Playerc? {
 
 /** Get player information by name from built-in server info */
 fun findPlayersByName(name: String): Administration.PlayerInfo? {
-    return if (!Vars.netServer.admins.findByName(name).isEmpty) {
-        Vars.netServer.admins.findByName(name).first()
-    } else {
-        null
+    return synchronized(Vars.netServer.admins) {
+        val found = Vars.netServer.admins.findByName(name)
+        if (!found.isEmpty) found.first() else null
     }
 }
