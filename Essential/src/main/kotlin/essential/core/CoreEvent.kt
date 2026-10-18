@@ -720,8 +720,9 @@ fun blockBuildEnd(event: BlockBuildEndEvent) {
 
                     if (!Vars.state.rules.infiniteResources) {
                         target.blockBreakCount++
-                        target.exp -= blockExp[tile.block().name] ?: 0
-                        target.currentExp -= blockExp[tile.block().name] ?: 0
+                        val removedExp = blockExp[checkValidBlock(tile)] ?: 0
+                        target.exp -= removedExp
+                        target.currentExp -= removedExp
                     }
                 }
             }
