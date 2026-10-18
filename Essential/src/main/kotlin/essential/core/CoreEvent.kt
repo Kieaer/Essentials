@@ -951,7 +951,10 @@ fun worldLoad(event: WorldLoadEvent) {
     if (Vars.state.rules.pvp) {
         pvpSpecters.clear()
         pvpPlayer.clear()
+    }
 
+    // Hexed owns personal teams and creates their cores when players join.
+    if (Vars.state.rules.pvp && !Vars.state.rules.tags.getBool("hexed")) {
         val activeTeams = Vars.state.teams?.active?.filter {
             it.team != Team.derelict && it.hasCore() && !(Vars.state.rules.waves && Vars.state.rules.waveTeam == it.team)
         }
@@ -1196,8 +1199,8 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     playerNumber++
 
 
-    // If the current mode is PvP
-    if (Vars.state.rules.pvp) {
+    // Hexed must keep the team selected by its own assigner, even on late data loads.
+    if (Vars.state.rules.pvp && !Vars.state.rules.tags.getBool("hexed")) {
         when {
             // If this player previously joined a team, reassign them to that team
             pvpPlayer.containsKey(playerData.uuid) -> {
