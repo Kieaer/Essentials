@@ -860,7 +860,7 @@ fun playerLeave(event: PlayerLeave) {
 
         offlinePlayers.add(data)
 
-        if (Administration.Config.autoPause.bool()) {
+        if (Administration.Config.autoPause.bool() && (!Vars.state.rules.pvp || conf.feature.pvp.manageTeams)) {
             if (Vars.state.rules.pvp) {
                 val b = Groups.player.copy()
                 b.remove(event.player)
@@ -950,7 +950,9 @@ fun worldLoad(event: WorldLoadEvent) {
     if (Vars.state.rules.pvp) {
         pvpSpecters.clear()
         pvpPlayer.clear()
+    }
 
+    if (Vars.state.rules.pvp && conf.feature.pvp.manageTeams) {
         val activeTeams = Vars.state.teams?.active?.filter {
             it.team != Team.derelict && it.hasCore() && !(Vars.state.rules.waves && Vars.state.rules.waveTeam == it.team)
         }
@@ -1103,7 +1105,7 @@ fun buildingBulletDestroy(event: BuildingBulletDestroyEvent) {
             }
             data.send("event.bullet.kill", event.bullet.team.coloredName(), event.build.team.coloredName())
         }
-        if (Vars.netServer.isWaitingForPlayers) {
+        if (conf.feature.pvp.manageTeams && Vars.netServer.isWaitingForPlayers) {
             for (t in Vars.state.teams.getActive()) {
                 if (Groups.player.count { p: Player -> p.team() === t.team } > 0) {
                     Events.fire(GameOverEvent(t.team))
@@ -1195,8 +1197,8 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
     playerNumber++
 
 
-    // If the current mode is PvP
-    if (Vars.state.rules.pvp) {
+    // Restore or assign teams only when Essentials owns PvP team management.
+    if (Vars.state.rules.pvp && conf.feature.pvp.manageTeams) {
         when {
             // If this player previously joined a team, reassign them to that team
             pvpPlayer.containsKey(playerData.uuid) -> {
@@ -1237,6 +1239,7 @@ fun playerDataLoad(event: CustomEvents.PlayerDataLoad) {
 }
 
 fun selectAutoTeam(playerData: PlayerData, targetPlayers: List<PlayerData> = players): Team? {
+    if (!conf.feature.pvp.manageTeams) return null
     val state = Vars.state ?: return null
     val teams = state.teams ?: return null
     val activeTeams = teams.active ?: return null

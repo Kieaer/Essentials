@@ -793,7 +793,7 @@ object Trigger {
         pvpPlayer.remove(data.uuid)
         pvpSpecters.add(data.uuid)
         data.pvpLoseCount++
-        if (conf.feature.pvp.spector) {
+        if (conf.feature.pvp.manageTeams && conf.feature.pvp.spector) {
             player.team(Team.derelict)
         }
 

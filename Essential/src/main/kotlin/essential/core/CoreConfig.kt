@@ -106,6 +106,8 @@ data class PvP(
     val autoTeam: Boolean = false,
     @YamlComment("Spectator mode for defeated players")
     val spector: Boolean = false,
+    @YamlComment("Manage PvP teams and spectators; disable when another plugin controls player teams")
+    val manageTeams: Boolean = true,
 )
 
 /** Feature - Player level feature settings */
