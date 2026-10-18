@@ -132,7 +132,7 @@ class Main : Plugin() {
                     }
                 }
 
-                if (state.rules.pvp && conf.feature.pvp.autoTeam && e.player.team() == Team.derelict) {
+                if (state.rules.pvp && conf.feature.pvp.manageTeams && conf.feature.pvp.autoTeam && e.player.team() == Team.derelict) {
                     return false
                 }
 

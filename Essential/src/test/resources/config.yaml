@@ -45,6 +45,8 @@ feature:
 
   # Setting for PvP features
   pvp:
+    # Disable when another plugin manages player teams and spectators. (default: true)
+    manageTeams: true
     # Automatically sets PvP teams based on a player's PvP win rate. (default: false)
     autoTeam: true
     # If a PvP team loses, all affected players will become spectators.
