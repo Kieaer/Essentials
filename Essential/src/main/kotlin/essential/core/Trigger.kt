@@ -533,8 +533,9 @@ object Trigger {
                 }
 
                 for (two in pluginData.data.warpZone) {
-                    if (two.mapName == Vars.state.map.name() && !two.click && isUnitInside(
-                            data.player.unit().tileOn(),
+                    val playerUnit = data.player.unit()
+                    if (two.mapName == Vars.state.map.name() && !two.click && playerUnit != null && playerUnit.tileOn() != null && isUnitInside(
+                            playerUnit.tileOn(),
                             two.startTile,
                             two.finishTile
                         )

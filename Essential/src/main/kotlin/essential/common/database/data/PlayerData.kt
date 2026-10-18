@@ -15,6 +15,7 @@ import ksp.table.GenerateCode
 import mindustry.gen.Player
 import mindustry.gen.Playerc
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.r2dbc.*
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
@@ -153,21 +154,28 @@ suspend fun createPlayerData(player: Playerc): PlayerData {
         player.sendMessage(Bundle(rawLocale)["event.player.invalid.info"])
     }
 
-    suspendTransaction {
-        val notExists = PlayerTable.select(PlayerTable.id)
-            .where { PlayerTable.uuid eq player.uuid() }
-            .empty()
-        if (!notExists) return@suspendTransaction
-        PlayerTable.insert {
-            it[PlayerTable.name] = player.name()
-            it[PlayerTable.uuid] = player.uuid()
-            it[PlayerTable.languageTag] = locale ?: "en"
+    val playerName = player.plainName()
+    val rawName = player.name()
+
+    try {
+        suspendTransaction {
+            val notExists = PlayerTable.select(PlayerTable.id)
+                .where { (PlayerTable.uuid eq player.uuid()) or (PlayerTable.name eq rawName) or (PlayerTable.name eq playerName) }
+                .empty()
+            if (!notExists) return@suspendTransaction
+            PlayerTable.insert {
+                it[PlayerTable.name] = rawName
+                it[PlayerTable.uuid] = player.uuid()
+                it[PlayerTable.languageTag] = locale ?: "en"
+            }
         }
+    } catch (_: Exception) {
+        // Handled if already inserted by a concurrent thread/event
     }
 
     val entity = suspendTransaction {
         PlayerTable.select(PlayerTable.columns)
-            .where { PlayerTable.uuid eq player.uuid() }
+            .where { (PlayerTable.uuid eq player.uuid()) or (PlayerTable.name eq rawName) or (PlayerTable.name eq playerName) }
             .mapToPlayerDataList().first()
     }
 
@@ -176,18 +184,27 @@ suspend fun createPlayerData(player: Playerc): PlayerData {
 }
 
 suspend fun createPlayerData(name: String, uuid: String, accountID: String, accountPW: String): PlayerData {
-    suspendTransaction {
-        PlayerTable.insert {
-            it[PlayerTable.name] = name
-            it[PlayerTable.uuid] = uuid
-            it[PlayerTable.accountID] = accountID
-            it[PlayerTable.accountPW] = BCrypt.hashpw(accountPW, BCrypt.gensalt())
+    try {
+        suspendTransaction {
+            val notExists = PlayerTable.select(PlayerTable.id)
+                .where { (PlayerTable.uuid eq uuid) or (PlayerTable.name eq name) }
+                .empty()
+            if (notExists) {
+                PlayerTable.insert {
+                    it[PlayerTable.name] = name
+                    it[PlayerTable.uuid] = uuid
+                    it[PlayerTable.accountID] = accountID
+                    it[PlayerTable.accountPW] = BCrypt.hashpw(accountPW, BCrypt.gensalt())
+                }
+            }
         }
+    } catch (_: Exception) {
+        // Handled if already exists
     }
 
     val data = suspendTransaction {
         PlayerTable.select(PlayerTable.columns)
-            .where { PlayerTable.uuid eq uuid }
+            .where { (PlayerTable.uuid eq uuid) or (PlayerTable.name eq name) }
             .mapToPlayerDataList()
             .first()
     }

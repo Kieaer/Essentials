@@ -1,6 +1,7 @@
 package essential.common.database.data
 
 import essential.common.database.table.AchievementTable
+import essential.common.database.table.PlayerTable
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -25,6 +26,7 @@ data class AchievementData(
  * Check if a player has completed an achievement
  */
 suspend fun hasAchievement(playerData: PlayerData, achievementName: String): Boolean {
+    if (playerData.id == 0u) return false
     return suspendTransaction {
         val query = AchievementTable.select(AchievementTable.id)
             .where { 
@@ -40,7 +42,13 @@ suspend fun hasAchievement(playerData: PlayerData, achievementName: String): Boo
  * Set an achievement as completed for a player
  */
 suspend fun setAchievement(playerData: PlayerData, achievementName: String) {
+    if (playerData.id == 0u) return
     suspendTransaction {
+        val playerExists = !PlayerTable.select(PlayerTable.id)
+            .where { PlayerTable.id eq playerData.id }
+            .empty()
+        if (!playerExists) return@suspendTransaction
+
         // Check if the achievement is already completed
         val query = AchievementTable.select(AchievementTable.id)
             .where { 
