@@ -198,13 +198,25 @@ class Commands {
                 playerData.err("command.changePw.same")
                 return@launch
             }
+            if (playerData.id == 0u) {
+                // Command dispatched without a stored account (temporary data).
+                playerData.err("command.changePw.no.data")
+                return@launch
+            }
 
             val password = BCrypt.hashpw(arg[0], BCrypt.gensalt())
-            if (!ModuleRuntime.isPasswordAuthenticationEnabled()) {
-                playerData.accountID = playerData.name
+            val accountID =
+                if (!ModuleRuntime.isPasswordAuthenticationEnabled()) playerData.name else null
+            // Credentials are written on their own: a full-row save of a stale
+            // copy of this account, on this or another server, used to put the
+            // previous hash back and bring the "outdated format" error again.
+            if (!updateAccountCredentials(playerData.id, accountID, password)) {
+                playerData.err("command.changePw.failed")
+                return@launch
             }
+
+            if (accountID != null) playerData.accountID = accountID
             playerData.accountPW = password
-            playerData.update()
             playerData.send("command.changePw.apply")
         }
     }

@@ -19,6 +19,7 @@ import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.r2dbc.*
 import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import org.mindrot.jbcrypt.BCrypt
+import java.security.MessageDigest
 import java.util.*
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -35,7 +36,7 @@ internal fun parseLocaleOrDefault(rawLocale: String): String? {
     }
 }
 
-@GenerateCode
+@GenerateCode(excludeFromUpdate = ["accountID", "accountPW", "uuid"])
 data class PlayerData(
     val id: UInt,
     var name: String,
@@ -297,4 +298,57 @@ suspend fun rebindAccountUuid(id: UInt, newUuid: String): Boolean = suspendTrans
     PlayerTable.update({ PlayerTable.id eq id }) {
         it[PlayerTable.uuid] = newUuid
     } > 0
+}
+
+/**
+ * Passwords stored before the BCrypt switch are kept verbatim in account_pw, so
+ * anything without a known hash prefix is a legacy value. Legacy accounts can
+ * only be entered from the device they were created on, which is what the
+ * "outdated format" login rejection used to tell players about.
+ */
+fun String?.isBcryptHash(): Boolean =
+    this != null && (startsWith("$2a$") || startsWith("$2b$") || startsWith("$2y$"))
+
+/** Constant-time comparison against a legacy plaintext password. */
+fun String?.matchesLegacyPassword(provided: String): Boolean =
+    this != null && MessageDigest.isEqual(
+        this.toByteArray(Charsets.UTF_8),
+        provided.toByteArray(Charsets.UTF_8)
+    )
+
+/**
+ * Writes the credential columns only.
+ *
+ * The generated update() deliberately never touches them: every server in the
+ * network keeps its own PlayerData for the same row, so a full-row save from a
+ * copy that loaded the account before the password changed puts the old value
+ * straight back. That is why /changepw appeared to succeed and the login error
+ * returned as soon as the player passed through the lobby.
+ */
+suspend fun updateAccountCredentials(id: UInt, accountID: String?, passwordHash: String): Boolean =
+    suspendTransaction {
+        PlayerTable.update({ PlayerTable.id eq id }) {
+            if (accountID != null) it[PlayerTable.accountID] = accountID
+            it[PlayerTable.accountPW] = passwordHash
+        } > 0
+    }
+
+/**
+ * Re-hashes a legacy plaintext password in place. The password itself is kept,
+ * only its storage format changes, so the player does not have to pick a new
+ * one. The caller's copy is updated as well, which stops it from writing the
+ * old format back on its next save.
+ */
+suspend fun migrateLegacyPassword(data: PlayerData): Boolean {
+    val legacy = data.accountPW ?: return false
+    if (legacy.isBcryptHash()) return true
+
+    val hash = BCrypt.hashpw(legacy, BCrypt.gensalt())
+    if (!updateAccountCredentials(data.id, null, hash)) {
+        Log.warn("Failed to migrate the legacy password of account ${data.accountID} (id=${data.id})")
+        return false
+    }
+
+    data.accountPW = hash
+    return true
 }

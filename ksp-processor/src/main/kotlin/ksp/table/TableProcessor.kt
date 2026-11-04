@@ -49,15 +49,26 @@ class TableProcessor(
             .filter { property -> constructorParamNames.contains(property.simpleName.asString()) }
             .toList()
 
-        val db = classDeclaration.annotations.find { it.shortName.asString() == "GenerateCode" }
-            ?.arguments
+        val annotation = classDeclaration.annotations.find { it.shortName.asString() == "GenerateCode" }
+
+        val db = annotation?.arguments
             ?.find { it.name?.asString() == "db" }
             ?.value
             ?.toString()
             ?.removeSurrounding("\"", "'")
             ?: ""
 
-        val fileSpec = createFileSpec(packageName, className, tableClassName, properties, db)
+        // Array arguments arrive as a list of resolved values, KSP does not
+        // normalise them to a typed array for us.
+        val excludedFromUpdate = when (val raw = annotation?.arguments
+            ?.find { it.name?.asString() == "excludeFromUpdate" }?.value) {
+            is List<*> -> raw.mapNotNull { it?.toString() }
+            is Array<*> -> raw.mapNotNull { it?.toString() }
+            is String -> listOf(raw)
+            else -> emptyList()
+        }.toSet()
+
+        val fileSpec = createFileSpec(packageName, className, tableClassName, properties, db, excludedFromUpdate)
 
         val fileName = "${className}Extensions"
         val dependencies = Dependencies(false, classDeclaration.containingFile!!)
@@ -76,7 +87,8 @@ class TableProcessor(
         className: String,
         tableClassName: String,
         properties: List<KSPropertyDeclaration>,
-        db: String
+        db: String,
+        excludedFromUpdate: Set<String>
     ): String {
         val sb = StringBuilder()
 
@@ -164,12 +176,22 @@ class TableProcessor(
         sb.append("    return this.map { $tableClassName.toData(it) }.toList()\n")
         sb.append("}\n\n")
 
+        val updatable = properties.filter {
+            val name = it.simpleName.asString()
+            name != "id" && name !in excludedFromUpdate
+        }
+
         // update
         sb.append("/**\n")
         sb.append(" * Updates a database record using a $className instance.\n")
         sb.append(" * This function is generated automatically by the @GenerateCode annotation.\n")
+        if (excludedFromUpdate.isNotEmpty()) {
+            sb.append(" * Excluded from the write: ${excludedFromUpdate.joinToString(", ")}.\n")
+            sb.append(" * Those columns are owned by dedicated statements, because a stale\n")
+            sb.append(" * in-memory copy of this row must never roll them back.\n")
+        }
         sb.append(" */\n")
-        sb.append("@OptIn(ExperimentalTime::class)")
+        sb.append("@OptIn(ExperimentalTime::class)\n")
         sb.append("suspend fun $className.update(): Boolean {\n")
         sb.append("    val data = this\n")
         if (db.isNotEmpty()) {
@@ -179,7 +201,7 @@ class TableProcessor(
         }
         sb.append("        $tableClassName.update({ $tableClassName.id eq data.id }) {\n")
 
-        properties.filter { it.simpleName.asString() != "id" }.forEach { property ->
+        updatable.forEach { property ->
             val propertyName = property.simpleName.asString()
             val typeDecl = property.type.resolve().declaration as? KSClassDeclaration
             val needsJson = !isSimpleType(typeDecl) && isSerializableType(typeDecl)

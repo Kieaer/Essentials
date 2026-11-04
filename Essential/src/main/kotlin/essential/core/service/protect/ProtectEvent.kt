@@ -226,6 +226,21 @@ fun playerJoin(e: EventType.PlayerJoin) {
                         Events.fire(CustomEvents.PlayerDataLoad(data))
                     }
                 }
+
+                // Auto-login on the original device is the only place a legacy
+                // password is available without a prompt, so upgrade the storage
+                // format here. The player keeps using the same password and can
+                // log in from other devices straight away.
+                if (!data.accountPW.isBcryptHash()) {
+                    scope.launch {
+                        if (migrateLegacyPassword(data)) {
+                            arc.Core.app.post {
+                                Groups.player.find { p -> p.uuid() == uuid }
+                                    ?.sendMessage(Bundle(locale)["command.login.migrated"])
+                            }
+                        }
+                    }
+                }
             } else {
                 arc.Core.app.post {
                     val activePlayer = Groups.player.find { p -> p.uuid() == uuid }

@@ -1,4 +1,4 @@
-package ksp.table
+﻿package ksp.table
 
 /**
  * Annotation to generate code for data classes.
@@ -97,7 +97,22 @@ package ksp.table
  *         .first()
  * }
  * ```
+ *
+ * Columns listed in [excludeFromUpdate] are read by [toData] but never written by
+ * the generated update(). Use it for fields that only dedicated statements may
+ * change, so a full-row save of a stale in-memory copy cannot roll them back.
+ *
+ * ```
+ * @GenerateCode(excludeFromUpdate = ["accountID", "accountPW"])
+ * data class MyData(
+ *     val id: UInt,
+ *     var accountPW: String?
+ * )
+ * ```
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-annotation class GenerateCode(val db: String = "")
+annotation class GenerateCode(
+    val db: String = "",
+    val excludeFromUpdate: Array<String> = []
+)

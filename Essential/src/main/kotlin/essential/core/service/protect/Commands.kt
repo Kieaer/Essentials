@@ -42,26 +42,30 @@ class Commands {
             }.firstOrNull()
             val existingDeviceAccount = getPlayerData(currentUuid)
 
+            // Verified off the game thread: BCrypt's cost factor must not stall
+            // the world tick.
+            val stored = target?.accountPW
+            val legacyStored = stored != null && !stored.isBcryptHash()
+            val passwordMatches = when {
+                stored == null -> false
+                legacyStored -> stored.matchesLegacyPassword(arg[1])
+                else -> runCatching { BCrypt.checkpw(arg[1], stored) }.getOrDefault(false)
+            }
+            // A legacy password is re-hashed the moment it has been proven, so
+            // the account works on other devices without the player having to
+            // run /changepw first. The password itself never changes.
+            val migratedLegacyPassword = passwordMatches && legacyStored && migrateLegacyPassword(target)
+
             Core.app.post {
                 if (target == null) {
                     playerData.err("command.login.not.found")
                     return@post
                 }
-                val isBcryptHash = target.accountPW != null && (target.accountPW!!.startsWith($$"$2a$") || target.accountPW!!.startsWith($$"$2b$") || target.accountPW!!.startsWith(
-                    $$"$2y$"
-                ))
-
-                if (!isBcryptHash) {
-                    player.sendMessage(bundle["command.login.plaintext"])
+                if (target.accountPW == null) {
+                    playerData.err("command.login.default.password")
                     return@post
                 }
-
-                try {
-                    if (!BCrypt.checkpw(arg[1], target.accountPW!!)) {
-                        playerData.err("command.login.not.found")
-                        return@post
-                    }
-                } catch (e: Exception) {
+                if (!passwordMatches) {
                     playerData.err("command.login.not.found")
                     return@post
                 }
@@ -92,6 +96,9 @@ class Commands {
                             if (activePlayer != null) {
                                 Events.fire(CustomEvents.PlayerDataLoad(target))
                                 activePlayer.sendMessage(bundle["command.login.success"])
+                                if (migratedLegacyPassword) {
+                                    activePlayer.sendMessage(bundle["command.login.migrated"])
+                                }
                             }
                         }
                     } catch (e: Exception) {
@@ -138,8 +145,13 @@ class Commands {
 
                     val existing = getPlayerData(currentUuid)
                     val data = if (existing != null) {
+                        val hash = BCrypt.hashpw(arg[1], BCrypt.gensalt())
+                        if (!updateAccountCredentials(existing.id, arg[0], hash)) {
+                            Core.app.post { playerData.err("command.reg.failed") }
+                            return@launch
+                        }
                         existing.accountID = arg[0]
-                        existing.accountPW = BCrypt.hashpw(arg[1], BCrypt.gensalt())
+                        existing.accountPW = hash
                         existing.permission = "user"
                         existing.update()
                         existing
