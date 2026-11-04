@@ -1348,12 +1348,12 @@ class Commands {
         val prebuilt = ArrayList<Pair<String, Array<Array<String>>>>()
         val buffer = Mathf.ceil(players.size.toFloat() / 6)
         val pages = if (buffer > 1.0) buffer - 1 else 0
-        val title = bundle["command.page.server"]
+        val title = bundle["command.page.players"]
 
         for (page in 0..pages) {
             val build = StringBuilder()
             for (a in 6 * page until (6 * (page + 1)).coerceAtMost(players.size)) {
-                build.append("ID: [gray]${players[a].entityId} ${players[a].player.coloredName()}\n")
+                build.append("ID: [gray]${players[a].entityId} ${players[a].player.coloredName()}[]\n")
             }
 
             val options = arrayOf(
