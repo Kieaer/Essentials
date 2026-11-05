@@ -794,6 +794,7 @@ object Trigger {
         pvpSpecters.add(data.uuid)
         data.pvpLoseCount++
         if (conf.feature.pvp.manageTeams && conf.feature.pvp.spector) {
+            player.clearUnit()
             player.team(Team.derelict)
         }
 
