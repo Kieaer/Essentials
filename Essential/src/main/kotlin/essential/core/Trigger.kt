@@ -31,6 +31,7 @@ import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Playerc
+import mindustry.net.NetConnection
 import mindustry.io.SaveIO
 import mindustry.net.Host
 import mindustry.net.NetworkIO
@@ -73,6 +74,13 @@ object Trigger {
 
     class PingThread : Runnable {
         private var ping = 0.000
+        private class LabelEntry(val player: Playerc, val text: String, val x: Float, val y: Float, val id: Int)
+        private val sent = HashMap<Int, HashMap<Int, String>>()
+
+        private companion object {
+            const val PERSISTENT = Float.MAX_VALUE
+            fun labelId(kind: Int, key: Int): Int = (key * 8 + kind) and Int.MAX_VALUE
+        }
 
         private fun calculateCenter(startTile: Tile, endTile: Tile): Pair<Int, Int> {
             data class Point(val x: Int, val y: Int)
@@ -136,6 +144,7 @@ object Trigger {
             try {
                 while (currentThread().isInterrupted.not()) {
                     val data = pluginData.data
+                    val memory = mutableListOf<LabelEntry>()
 
                     isNotTargetMap = false
                     if (data.warpCount.none { f -> f.mapName == Vars.state.map.name() } &&
@@ -186,7 +195,6 @@ object Trigger {
                                 }
                             }
 
-                            val memory = mutableListOf<Pair<Playerc, Triple<String, Float, Float>>>()
                             val warpBlocks = data.warpBlock.toList()
                             for (value in warpBlocks) {
                                 if (Vars.state.map.name() != value.mapName) continue
@@ -246,7 +254,8 @@ object Trigger {
                                     if (isDup) y += 4
                                     Groups.player.forEach { a ->
                                         memory.add(
-                                            a to Triple(
+                                            LabelEntry(
+                                                a,
                                                 label(
                                                     a,
                                                     value.ip,
@@ -257,7 +266,8 @@ object Trigger {
                                                     "$currentMap\n[white][yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
                                                 ),
                                                 x,
-                                                y
+                                                y,
+                                                labelId(1, tile.pos())
                                             )
                                         )
                                     }
@@ -265,7 +275,8 @@ object Trigger {
                                 } else {
                                     Groups.player.forEach { a ->
                                         memory.add(
-                                            a to Triple(
+                                            LabelEntry(
+                                                a,
                                                 label(
                                                     a,
                                                     value.ip,
@@ -276,7 +287,8 @@ object Trigger {
                                                     Bundle(a.locale)["event.server.warp.offline"],
                                                 ),
                                                 x,
-                                                y
+                                                y,
+                                                labelId(1, tile.pos())
                                             )
                                         )
                                     }
@@ -285,7 +297,7 @@ object Trigger {
 
                                 if (isDup) margin -= 4
                                 Groups.player.forEach { a ->
-                                    memory.add(a to Triple(value.description, x, tile.build.getY() - margin))
+                                    memory.add(LabelEntry(a, value.description, x, tile.build.getY() - margin, labelId(2, tile.pos())))
                                 }
                             }
 
@@ -314,7 +326,8 @@ object Trigger {
                                     if (alive) {
                                         for (a in Groups.player) {
                                             memory.add(
-                                                a to Triple(
+                                                LabelEntry(
+                                                    a,
                                                     label(
                                                         a,
                                                         value.ip,
@@ -325,14 +338,16 @@ object Trigger {
                                                         "[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
                                                     ),
                                                     (center.first * 8).toFloat(),
-                                                    (center.second * 8).toFloat()
+                                                    (center.second * 8).toFloat(),
+                                                    labelId(3, Vars.world.tile(center.first, center.second).pos())
                                                 )
                                             )
                                         }
                                     } else {
                                         for (a in Groups.player) {
                                             memory.add(
-                                                a to Triple(
+                                                LabelEntry(
+                                                    a,
                                                     label(
                                                         a,
                                                         value.ip,
@@ -343,23 +358,12 @@ object Trigger {
                                                         Bundle(a.locale)["event.server.warp.offline"],
                                                     ),
                                                     (center.first * 8).toFloat(),
-                                                    (center.second * 8).toFloat()
+                                                    (center.second * 8).toFloat(),
+                                                    labelId(3, Vars.world.tile(center.first, center.second).pos())
                                                 )
                                             )
                                         }
                                     }
-                                }
-                            }
-
-                            for (m in memory) {
-                                Core.app.post {
-                                    Call.label(
-                                        m.first.con(),
-                                        m.second.first,
-                                        ping.toFloat() + 3f,
-                                        m.second.second,
-                                        m.second.third
-                                    )
                                 }
                             }
 
@@ -407,6 +411,32 @@ object Trigger {
                             Core.settings.put("totalPlayers", total + Groups.player.size())
                         }
                     }
+
+                    val seen = HashMap<Int, MutableSet<Int>>()
+                    for (m in memory) {
+                        seen.getOrPut(m.player.id()) { HashSet() }.add(m.id)
+                        val cache = sent.getOrPut(m.player.id()) { HashMap() }
+                        if (cache[m.id] == m.text) continue
+                        cache[m.id] = m.text
+                        val con = m.player.con() ?: continue
+                        Core.app.post {
+                            if (!con.hasDisconnected) Call.label(con, m.text, m.id, PERSISTENT, m.x, m.y)
+                        }
+                    }
+
+                    val online = HashMap<Int, NetConnection>()
+                    Groups.player.forEach { p -> p.con()?.let { online[p.id()] = it } }
+                    for ((pid, cache) in sent.entries.toList()) {
+                        val keep = seen[pid]
+                        for (id in cache.keys.filter { keep == null || it !in keep }) {
+                            cache.remove(id)
+                            val con = online[pid] ?: continue
+                            Core.app.post {
+                                if (!con.hasDisconnected) Call.label(con, null, id, PERSISTENT, 0f, 0f)
+                            }
+                        }
+                    }
+                    sent.keys.retainAll(online.keys)
 
                     ping = 0.000
                     sleep(3000)
