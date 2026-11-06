@@ -22,6 +22,12 @@ object CustomEvents {
     class ServerTransfer(val player: Playerc, val ip: String, val port: Int) {
         var handled: Boolean = false
     }
+
+    class ServerLabel(val player: Playerc, val ip: String, val port: Int, val alive: Boolean, val players: Int, val mapName: String, var text: String)
+    class ServerUnreachable(val player: Playerc, val ip: String, val port: Int, val zone: Boolean) {
+        var handled: Boolean = false
+    }
+
     class VoteDrawEvent(val starter: PlayerData) {
         var handled: Boolean = false
     }

@@ -271,6 +271,8 @@ fun tap(event: TapEvent) {
                             Call.connect(event.player.con(), transfer.ip, transfer.port)
                         }
                     }
+                } else {
+                    Events.fire(CustomEvents.ServerUnreachable(event.player, two.ip, two.port, false))
                 }
                 return@forEach
             }
@@ -283,6 +285,11 @@ fun tap(event: TapEvent) {
                     two.finishTile
                 )
             ) {
+                if (!two.reachable) {
+                    Events.fire(CustomEvents.ServerUnreachable(event.player, two.ip, two.port, true))
+                    continue
+                }
+
                 Log.info(Bundle()["log.warp.move", event.player.plainName(), two.ip, two.port.toString()])
 
                 val currentMapName = Vars.state.map.name()

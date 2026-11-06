@@ -247,7 +247,15 @@ object Trigger {
                                     Groups.player.forEach { a ->
                                         memory.add(
                                             a to Triple(
-                                                "$currentMap\n[white][yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
+                                                label(
+                                                    a,
+                                                    value.ip,
+                                                    value.port,
+                                                    true,
+                                                    alivePlayer,
+                                                    currentMap,
+                                                    "$currentMap\n[white][yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
+                                                ),
                                                 x,
                                                 y
                                             )
@@ -258,7 +266,15 @@ object Trigger {
                                     Groups.player.forEach { a ->
                                         memory.add(
                                             a to Triple(
-                                                Bundle(a.locale)["event.server.warp.offline"],
+                                                label(
+                                                    a,
+                                                    value.ip,
+                                                    value.port,
+                                                    false,
+                                                    0,
+                                                    "",
+                                                    Bundle(a.locale)["event.server.warp.offline"],
+                                                ),
                                                 x,
                                                 y
                                             )
@@ -280,18 +296,34 @@ object Trigger {
                                     var alive = false
                                     var alivePlayer = 0
                                     serverInfo.forEach {
-                                        if ((it.address == value.ip || it.address == InetAddress.getByName(value.ip).hostAddress) && it.port == value.port) {
-                                            alive = true
-                                            alivePlayer = it.players
+                                        try {
+                                            val address = InetAddress.getByName(value.ip).hostAddress
+                                            if ((it.address == value.ip || it.address == address) && it.port == value.port) {
+                                                alive = true
+                                                alivePlayer = it.players
+                                            }
+                                        } catch (_: UnknownHostException) {
+                                            Log.warn("Could not find a matching address ${value.ip}:${value.port}")
+                                        } catch (_: Exception) {
+
                                         }
                                     }
+                                    value.reachable = alive
 
                                     // todo 중앙 정렬 안됨
                                     if (alive) {
                                         for (a in Groups.player) {
                                             memory.add(
                                                 a to Triple(
-                                                    "[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
+                                                    label(
+                                                        a,
+                                                        value.ip,
+                                                        value.port,
+                                                        true,
+                                                        alivePlayer,
+                                                        "",
+                                                        "[yellow]$alivePlayer[] ${Bundle(a.locale)["event.server.warp.players"]}",
+                                                    ),
                                                     (center.first * 8).toFloat(),
                                                     (center.second * 8).toFloat()
                                                 )
@@ -301,7 +333,15 @@ object Trigger {
                                         for (a in Groups.player) {
                                             memory.add(
                                                 a to Triple(
-                                                    Bundle(a.locale)["event.server.warp.offline"],
+                                                    label(
+                                                        a,
+                                                        value.ip,
+                                                        value.port,
+                                                        false,
+                                                        0,
+                                                        "",
+                                                        Bundle(a.locale)["event.server.warp.offline"],
+                                                    ),
                                                     (center.first * 8).toFloat(),
                                                     (center.second * 8).toFloat()
                                                 )
@@ -381,6 +421,20 @@ object Trigger {
                 Log.err(e)
                 Core.app.exit()
             }
+        }
+
+        private fun label(
+            player: Playerc,
+            ip: String,
+            port: Int,
+            alive: Boolean,
+            players: Int,
+            mapName: String,
+            text: String,
+        ): String {
+            val event = CustomEvents.ServerLabel(player, ip, port, alive, players, mapName, text)
+            Events.fire(event)
+            return event.text
         }
 
         private fun getServerInfo(pluginData: PluginData): MutableSet<Host> {
@@ -540,6 +594,14 @@ object Trigger {
                             two.finishTile
                         )
                     ) {
+                        if (!two.reachable) {
+                            val unreachable = CustomEvents.ServerUnreachable(data.player, two.ip, two.port, true)
+                            Events.fire(unreachable)
+                            if (unreachable.handled) {
+                                break
+                            }
+                        }
+
                         Log.info(Bundle()["log.warp.move", data.player.plainName(), two.ip, two.port.toString()])
 
                         val currentMapName = Vars.state.map.name()
