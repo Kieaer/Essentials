@@ -24,7 +24,7 @@ object CustomEvents {
     }
 
     class ServerLabel(val player: Playerc, val ip: String, val port: Int, val alive: Boolean, val players: Int, val mapName: String, var text: String)
-    class ServerUnreachable(val player: Playerc, val ip: String, val port: Int, val zone: Boolean) {
+    class ServerUnreachable(val player: Playerc, val ip: String, val port: Int, val zone: Boolean, val description: String = "") {
         var handled: Boolean = false
     }
 

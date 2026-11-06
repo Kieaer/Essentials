@@ -272,7 +272,7 @@ fun tap(event: TapEvent) {
                         }
                     }
                 } else {
-                    Events.fire(CustomEvents.ServerUnreachable(event.player, two.ip, two.port, false))
+                    Events.fire(CustomEvents.ServerUnreachable(event.player, two.ip, two.port, false, two.description))
                 }
                 return@forEach
             }
