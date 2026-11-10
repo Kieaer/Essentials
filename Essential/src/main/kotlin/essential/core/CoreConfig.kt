@@ -119,6 +119,8 @@ data class LevelConfig(
     val levelNotify: Boolean = false,
     @YamlComment("Display level information")
     val display: Boolean = false,
+    @YamlComment("Gain experience on block placement and lose experience on block deconstruction")
+    val blockExp: Boolean = true,
 )
 
 /** Feature - Movement effects per level */
