@@ -486,7 +486,7 @@ fun tap(event: TapEvent) {
 @Event
 fun wave(event: WaveEvent) {
     for (data in players) {
-        data.exp += 500
+        if (conf.feature.level.playExp) data.exp += 500
         data.waveClear++
     }
 

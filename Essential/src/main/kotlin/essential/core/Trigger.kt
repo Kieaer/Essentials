@@ -782,10 +782,12 @@ object Trigger {
                     it.mousePosition = it.player.mouseX() + it.player.mouseY()
                 }
 
-                val randomResult = (Random.nextInt(7) * it.expMultiplier)
-                it.exp += randomResult.toInt()
-                it.currentExp += randomResult.toInt()
-                Commands.Exp[it]
+                if (conf.feature.level.playExp) {
+                    val randomResult = (Random.nextInt(7) * it.expMultiplier)
+                    it.exp += randomResult.toInt()
+                    it.currentExp += randomResult.toInt()
+                    Commands.Exp[it]
+                }
 
                 if (conf.feature.level.display) {
                     val message = "${it.exp}/${floor(Commands.Exp.calculateFullTargetXp(it.level)).toInt()}"
