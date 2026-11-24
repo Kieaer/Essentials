@@ -2272,7 +2272,7 @@ class Commands {
         }
     }
 
-    @ClientCommand("vote", "<kick/map/gg/skip/back/random/draw> [player/amount/world] [reason]", "Start voting")
+    @ClientCommand("vote", "<kick/map/gg/skip/back/random/draw> [player/amount/world/\"map-name\"] [reason...]", "Start voting")
     fun vote(playerData: PlayerData, arg: Array<out String>) {
         val coolTime = "command.vote.coolTime"
         val noReason = "command.vote.no.reason"
@@ -2354,53 +2354,60 @@ class Commands {
                     playerData.err("command.vote.no.map")
                     return
                 }
-                if (arg.size == 2) {
-                    playerData.err(noReason)
-                    return
-                }
-                if (arg[1].toIntOrNull() != null) {
-                    try {
-                        var target: Map? = null
-                        val list = Vars.maps.all().sortedBy { a -> a.name() }
-                        val arr = HashMap<Map, Int>()
-                        list.forEachIndexed { index, map ->
-                            arr[map] = index
-                        }
-                        arr.forEach {
-                            if (it.value == arg[1].toInt()) {
-                                target = it.key
-                                return@forEach
-                            }
-                        }
-
-                        if (target == null) {
-                            target = Vars.maps.all().find { e -> e.plainName().contains(arg[1]) }
-                        }
-
-                        if (target != null) {
-                            if (players.size != 1) {
-                                val voteData = VoteData(
-                                    type = VoteType.Map,
-                                    map = target,
-                                    reason = arg[2],
-                                    starter = playerData
-                                )
-                                start(voteData)
-                            } else {
-                                isSurrender = true
-                                val currentRule = Vars.state.rules.mode()
-                                val reloader = WorldReloader()
-                                reloader.begin()
-                                Vars.world.loadMap(target, target.applyRules(currentRule))
-                                Vars.state.rules = Vars.state.map.applyRules(currentRule)
-                                Vars.logic.play()
-                                reloader.end()
-                            }
+                val query = arg[1]
+                val index = query.toIntOrNull()
+                val target: Map?
+                val reason: String
+                if (index != null) {
+                    // vote map <index> <reason>
+                    if (arg.size == 2) {
+                        playerData.err(noReason)
+                        return
+                    }
+                    val list = Vars.maps.all().sortedBy { a -> a.name() }
+                    target = list.getOrNull(index)
+                        ?: Vars.maps.all().find { e -> e.plainName().contains(query) }
+                    reason = arg[2]
+                } else {
+                    // vote map "Test Map" Any Reasons
+                    val rest = arg.copyOfRange(1, arg.size).joinToString(" ")
+                    val name: String
+                    if (rest.startsWith("\"")) {
+                        val end = rest.indexOf('"', 1)
+                        if (end > 0) {
+                            name = rest.substring(1, end)
+                            reason = rest.substring(end + 1).trim()
                         } else {
-                            playerData.err(mapNotFound)
+                            name = rest.substring(1)
+                            reason = ""
                         }
-                    } catch (_: IndexOutOfBoundsException) {
-                        playerData.err(mapNotFound)
+                    } else {
+                        name = rest
+                        reason = ""
+                    }
+                    target = Vars.maps.all().find { e -> e.plainName().equals(name, ignoreCase = true) }
+                        ?: Vars.maps.all().find { e -> e.name().equals(name, ignoreCase = true) }
+                        ?: Vars.maps.all().find { e -> e.plainName().contains(name, ignoreCase = true) }
+                }
+
+                if (target != null) {
+                    if (players.size != 1) {
+                        val voteData = VoteData(
+                            type = VoteType.Map,
+                            map = target,
+                            reason = reason,
+                            starter = playerData
+                        )
+                        start(voteData)
+                    } else {
+                        isSurrender = true
+                        val currentRule = Vars.state.rules.mode()
+                        val reloader = WorldReloader()
+                        reloader.begin()
+                        Vars.world.loadMap(target, target.applyRules(currentRule))
+                        Vars.state.rules = Vars.state.map.applyRules(currentRule)
+                        Vars.logic.play()
+                        reloader.end()
                     }
                 } else {
                     playerData.err(mapNotFound)
