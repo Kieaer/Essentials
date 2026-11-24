@@ -53,7 +53,9 @@ class Main : Plugin() {
         }
 
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        val threadPool: ExecutorService = Executors.newFixedThreadPool(2)
+        val threadPool: ExecutorService = Executors.newFixedThreadPool(2) { r ->
+            Thread(r).apply { isDaemon = true; name = "Essentials-worker" }
+        }
     }
 
     override fun init() = runBlocking {
