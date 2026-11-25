@@ -304,6 +304,9 @@ dependencies {
 
     proguard(libs.proguard)
     proguardLibraries(rootProject.libs.bundles.game)
+    proguardLibraries(libs.micrometer.core)
+    proguardLibraries(libs.micrometer.tracing)
+    proguardLibraries(libs.context.propagation)
 
     testImplementation(kotlin("test"))
     testImplementation(libs.bundles.game.test)
@@ -419,6 +422,7 @@ val verifyProguardJar = tasks.register<VerifyProguardJarTask>("verifyProguardJar
     excludedCodePrefixes.set(excludedCodePrefixValues)
     excludedResourcePrefixes.set(excludedResourcePrefixValues)
     excludedDependencyPrefixes.set(excludedDependencyPrefixValues)
+    onlyIf { archiveFile.get().asFile.exists() }
 }
 
 tasks.register<JavaExec>("proguardJar") {
